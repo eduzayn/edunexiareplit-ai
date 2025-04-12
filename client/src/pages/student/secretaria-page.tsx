@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Sidebar } from "@/components/layout/sidebar";
 import {
@@ -27,7 +27,12 @@ import {
   Download as DownloadIcon, 
   User as UserIcon, 
   CheckCircle as CheckCircleIcon,
-  XCircle as XCircleIcon 
+  XCircle as XCircleIcon,
+  Upload as UploadCloudIcon,
+  FileText as FileTextIcon2,
+  AlertCircle as AlertCircleIcon,
+  Loader2,
+  Trash2
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -94,6 +99,21 @@ interface UserDocument {
   uploadedAt: string;
 }
 
+// Interface para documentos acadêmicos
+type DocumentStatus = "pending" | "approved" | "rejected";
+
+interface AcademicDocument {
+  id: string;
+  name: string;
+  description: string;
+  required: boolean;
+  status: DocumentStatus;
+  fileUrl?: string;
+  uploadedAt?: string;
+  reviewedAt?: string;
+  rejectionReason?: string;
+}
+
 // Esquemas de validação
 const documentUploadSchema = z.object({
   files: z.instanceof(FileList).refine(files => files.length > 0, {
@@ -114,6 +134,92 @@ export default function SecretariaPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [isUploading, setIsUploading] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [selectedDocumentType, setSelectedDocumentType] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("requests");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Lista de documentos acadêmicos requeridos
+  const requiredDocuments: AcademicDocument[] = [
+    {
+      id: "certificado_ensino_medio",
+      name: "Certificado Ensino Médio",
+      description: "Certificado de conclusão do ensino médio emitido pela instituição de ensino.",
+      required: true,
+      status: "approved",
+      fileUrl: "#",
+      uploadedAt: "2023-02-15T10:30:00",
+      reviewedAt: "2023-02-20T14:20:00"
+    },
+    {
+      id: "diploma_ensino_medio",
+      name: "Diploma Ensino Médio",
+      description: "Diploma oficial que comprova a conclusão do ensino médio.",
+      required: true,
+      status: "approved",
+      fileUrl: "#",
+      uploadedAt: "2023-02-15T10:35:00",
+      reviewedAt: "2023-02-20T14:25:00"
+    },
+    {
+      id: "historico_graduacao",
+      name: "Histórico Graduação",
+      description: "Histórico escolar de graduação anterior, se aplicável.",
+      required: false,
+      status: "pending",
+      fileUrl: "#",
+      uploadedAt: "2023-03-10T09:15:00"
+    },
+    {
+      id: "diploma_graduacao",
+      name: "Diploma Graduação",
+      description: "Diploma de curso de graduação anterior, se aplicável.",
+      required: false,
+      status: "pending",
+      fileUrl: "#",
+      uploadedAt: "2023-03-10T09:20:00"
+    },
+    {
+      id: "rg",
+      name: "RG",
+      description: "Documento de identidade (frente e verso).",
+      required: true,
+      status: "rejected",
+      fileUrl: "#",
+      uploadedAt: "2023-02-10T14:30:00",
+      reviewedAt: "2023-02-20T14:30:00",
+      rejectionReason: "Documento ilegível. Por favor, envie uma cópia mais nítida."
+    },
+    {
+      id: "cpf",
+      name: "CPF",
+      description: "Cadastro de Pessoa Física.",
+      required: true,
+      status: "approved",
+      fileUrl: "#",
+      uploadedAt: "2023-02-15T10:40:00",
+      reviewedAt: "2023-02-20T14:35:00"
+    },
+    {
+      id: "comprovante_endereco",
+      name: "Comprovante de Endereço",
+      description: "Comprovante de residência recente (últimos 3 meses).",
+      required: true,
+      status: "pending",
+      fileUrl: "#",
+      uploadedAt: "2023-03-15T11:20:00"
+    },
+    {
+      id: "certidao_reservista",
+      name: "Certidão de Reservista",
+      description: "Certificado de dispensa de incorporação (apenas para homens).",
+      required: true,
+      status: "pending",
+      fileUrl: "#",
+      uploadedAt: "2023-03-15T11:25:00"
+    }
+  ];
 
   // Simular tipos de solicitações disponíveis
   const requestTypes: RequestType[] = [
@@ -302,6 +408,60 @@ export default function SecretariaPage() {
     }
   };
 
+  // Função para upload de documentos acadêmicos
+  const handleAcademicDocumentUpload = (documentId: string) => {
+    if (!fileInputRef.current?.files?.length) {
+      toast({
+        title: "Erro no upload",
+        description: "Por favor, selecione um arquivo para enviar.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const file = fileInputRef.current.files[0];
+    setIsUploading(documentId);
+    setUploadProgress(0);
+
+    // Simular progresso de upload
+    const interval = setInterval(() => {
+      setUploadProgress((prev) => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          
+          // Atualizar o status do documento para "pending" (em análise)
+          // Numa aplicação real, isso seria feito via API
+          setTimeout(() => {
+            setIsUploading(null);
+            toast({
+              title: "Documento enviado",
+              description: "Seu documento foi enviado e está em análise pela secretaria.",
+            });
+          }, 500);
+          
+          return 100;
+        }
+        return prev + 5;
+      });
+    }, 100);
+  };
+
+  // Função para reenviar documento rejeitado
+  const handleResendRejectedDocument = (documentId: string) => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+      setSelectedDocumentType(documentId);
+    }
+  };
+
+  // Função para tratar o upload quando o arquivo é selecionado
+  const handleFileSelected = () => {
+    if (selectedDocumentType && fileInputRef.current?.files?.length) {
+      handleAcademicDocumentUpload(selectedDocumentType);
+      setSelectedDocumentType(null);
+    }
+  };
+
   // Filtragem de solicitações
   const filteredRequests = mockUserRequests.filter(request => {
     // Filtro de busca
@@ -396,10 +556,11 @@ export default function SecretariaPage() {
           </div>
 
           {/* Tabs */}
-          <Tabs defaultValue="requests" className="mb-6">
+          <Tabs defaultValue="requests" className="mb-6" onValueChange={(value) => setActiveTab(value)}>
             <TabsList>
               <TabsTrigger value="requests">Minhas Solicitações</TabsTrigger>
               <TabsTrigger value="services">Serviços Disponíveis</TabsTrigger>
+              <TabsTrigger value="documents">Documentos Acadêmicos</TabsTrigger>
               <TabsTrigger value="info">Informações e Prazos</TabsTrigger>
             </TabsList>
 
@@ -569,6 +730,195 @@ export default function SecretariaPage() {
                   </Card>
                 ))}
               </div>
+            </TabsContent>
+
+            {/* Tab - Documentos Acadêmicos */}
+            <TabsContent value="documents">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Documentos Acadêmicos</CardTitle>
+                  <CardDescription>
+                    Gerencie seus documentos acadêmicos para matrícula e processos institucionais
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    {/* Status dos Documentos */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                      <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <div className="flex">
+                          <CheckCircleIcon className="h-5 w-5 text-green-600 mr-2" />
+                          <h3 className="font-medium text-green-800">Aprovados</h3>
+                        </div>
+                        <p className="mt-1 text-sm text-green-700">
+                          {requiredDocuments.filter((doc) => doc.status === "approved").length} documentos
+                        </p>
+                      </div>
+                      <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <div className="flex">
+                          <AlertCircleIcon className="h-5 w-5 text-yellow-600 mr-2" />
+                          <h3 className="font-medium text-yellow-800">Em Análise</h3>
+                        </div>
+                        <p className="mt-1 text-sm text-yellow-700">
+                          {requiredDocuments.filter((doc) => doc.status === "pending").length} documentos
+                        </p>
+                      </div>
+                      <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                        <div className="flex">
+                          <XCircleIcon className="h-5 w-5 text-red-600 mr-2" />
+                          <h3 className="font-medium text-red-800">Reprovados</h3>
+                        </div>
+                        <p className="mt-1 text-sm text-red-700">
+                          {requiredDocuments.filter((doc) => doc.status === "rejected").length} documentos
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Lista de Documentos */}
+                    <div className="border rounded-md">
+                      <div className="bg-gray-50 px-4 py-3 border-b">
+                        <h3 className="font-medium">Lista de Documentos</h3>
+                      </div>
+                      <div className="divide-y">
+                        {requiredDocuments.map((document) => (
+                          <div key={document.id} className="p-4">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between">
+                              <div className="flex items-start">
+                                {document.status === "approved" ? (
+                                  <CheckCircleIcon className="h-5 w-5 text-green-500 mt-0.5 mr-3 flex-shrink-0" />
+                                ) : document.status === "rejected" ? (
+                                  <XCircleIcon className="h-5 w-5 text-red-500 mt-0.5 mr-3 flex-shrink-0" />
+                                ) : (
+                                  <AlertCircleIcon className="h-5 w-5 text-yellow-500 mt-0.5 mr-3 flex-shrink-0" />
+                                )}
+                                <div>
+                                  <div className="flex items-baseline">
+                                    <h4 className="font-medium text-gray-900">{document.name}</h4>
+                                    {document.required && (
+                                      <Badge variant="outline" className="ml-2 text-xs">Obrigatório</Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-sm text-gray-600 mt-1">
+                                    {document.description}
+                                  </p>
+                                  {document.status === "pending" && document.uploadedAt && (
+                                    <p className="text-xs text-yellow-600 mt-1">
+                                      Enviado em {formatDate(document.uploadedAt)}. Aguardando análise.
+                                    </p>
+                                  )}
+                                  {document.status === "approved" && document.reviewedAt && (
+                                    <p className="text-xs text-green-600 mt-1">
+                                      Aprovado em {formatDate(document.reviewedAt)}.
+                                    </p>
+                                  )}
+                                  {document.status === "rejected" && document.rejectionReason && (
+                                    <div className="mt-1 text-xs text-red-600 bg-red-50 p-2 rounded-sm border border-red-100">
+                                      <span className="font-medium">Motivo da rejeição:</span> {document.rejectionReason}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="mt-3 sm:mt-0 flex flex-wrap gap-2">
+                                {document.fileUrl && (
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline" 
+                                    className="text-xs"
+                                    onClick={() => {
+                                      toast({
+                                        title: "Download iniciado",
+                                        description: "O documento está sendo baixado.",
+                                      });
+                                    }}
+                                  >
+                                    <DownloadIcon className="h-3 w-3 mr-1" />
+                                    Baixar
+                                  </Button>
+                                )}
+
+                                {document.status === "rejected" ? (
+                                  <Button 
+                                    size="sm" 
+                                    className="text-xs"
+                                    onClick={() => handleResendRejectedDocument(document.id)}
+                                  >
+                                    <UploadCloudIcon className="h-3 w-3 mr-1" />
+                                    Reenviar
+                                  </Button>
+                                ) : document.status === "pending" ? (
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline" 
+                                    className="text-xs"
+                                    disabled
+                                  >
+                                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                    Em análise
+                                  </Button>
+                                ) : !document.fileUrl ? (
+                                  <Button 
+                                    size="sm" 
+                                    className="text-xs"
+                                    onClick={() => {
+                                      if (fileInputRef.current) {
+                                        fileInputRef.current.click();
+                                        setSelectedDocumentType(document.id);
+                                      }
+                                    }}
+                                  >
+                                    <UploadCloudIcon className="h-3 w-3 mr-1" />
+                                    Enviar
+                                  </Button>
+                                ) : null}
+                              </div>
+                            </div>
+
+                            {/* Upload Progress */}
+                            {isUploading === document.id && (
+                              <div className="mt-3">
+                                <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                                  <div 
+                                    className="h-full bg-green-500 rounded-full" 
+                                    style={{ width: `${uploadProgress}%` }}
+                                  />
+                                </div>
+                                <p className="text-xs text-gray-500 mt-1 text-center">
+                                  Enviando... {uploadProgress}%
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Informações */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
+                      <div className="flex">
+                        <Info className="h-5 w-5 text-blue-600 mr-2 flex-shrink-0" />
+                        <div>
+                          <h4 className="font-medium">Informações importantes</h4>
+                          <ul className="list-disc list-inside mt-1 space-y-1 ml-1 text-blue-700">
+                            <li>Documentos obrigatórios são necessários para validação da matrícula</li>
+                            <li>Envie documentos legíveis em formato PDF, JPG ou PNG</li>
+                            <li>A análise dos documentos pode levar até 3 dias úteis</li>
+                            <li>Em caso de rejeição, leia atentamente o motivo e reenvie o documento</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Input para upload de arquivo (hidden) */}
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept=".pdf,.jpg,.jpeg,.png"
+                onChange={handleFileSelected}
+              />
             </TabsContent>
 
             {/* Tab - Informações e Prazos */}
