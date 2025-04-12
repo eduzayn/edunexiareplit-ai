@@ -1,0 +1,1413 @@
++----------------------------------------------------------+
+|  LOGO  |  MÓDULOS  |  PLANOS  |  SOBRE  |  BLOG  | LOGIN |
++----------------------------------------------------------+
+Mobile (<767px):
++-----------------------------+
+|  LOGO               | MENU |
++-----------------------------+
+Menu Mobile Expandido:
++-----------------------------+
+|  LOGO               | ✕    |
++-----------------------------+
+|  MÓDULOS                    |
++-----------------------------+
+|  PLANOS                     |
++-----------------------------+
+|  SOBRE                      |
++-----------------------------+
+|  BLOG                       |
++-----------------------------+
+|  LOGIN                      |
++-----------------------------+
+|  WHATSAPP / CONTATO         |
++-----------------------------+
+O site principal da EdunexIA apresenta os módulos do sistema e os planos de assinatura/aquisição disponíveis, ao invés da estrutura de "Cursos" que mencionei incorretamente. Os módulos refletem a estrutura do sistema completo (Portal do Aluno, Chat, Financeiro, etc.) e os planos mostram as opções de contratação disponíveis para instituições.
+
+Obrigado pela correção, isso ajuda a manter a consistência com o outro desenvolvedor e representa corretamente a estrutura do seu site.
+
+Agora expliquee detalahadamente como é a página que abre ao clicar em MODULOS, no cabeçalho do site.
+
+13 hours ago
+MA
+
+magonder
+Página de Módulos da EdunexIA - Detalhamento Técnico
+Ao clicar em "MÓDULOS" no cabeçalho do site, o usuário é direcionado para uma página especializada que apresenta todos os módulos disponíveis na plataforma EdunexIA. Esta página possui layout e funcionalidades específicas projetadas para destacar cada módulo do sistema de forma clara e atraente.
+
+Estrutura da Página de Módulos
++----------------------------------------------------------+
+|                      HEADER                              |
++----------------------------------------------------------+
+|                                                          |
+|  +----------------------------------------------+        |
+|  |           BANNER DE MÓDULOS                  |        |
+|  |  Título: "Módulos EdunexIA"                  |        |
+|  |  Subtítulo: "Soluções completas para gestão  |        |
+|  |  educacional inteligente"                    |        |
+|  |  Background com visual tecnológico           |        |
+|  +----------------------------------------------+        |
+|                                                          |
+|  +----------------------------------------------+        |
+|  |           NAVEGAÇÃO POR CATEGORIAS           |        |
+|  |  [Todos] [Gestão] [Financeiro] [Acadêmico] [Comunicação]|
+|  +----------------------------------------------+        |
+|                                                          |
+|  +------+ +------+ +------+ +------+                     |
+|  |      | |      | |      | |      |                     |
+|  | MOD1 | | MOD2 | | MOD3 | | MOD4 |                     |
+|  |      | |      | |      | |      |                     |
+|  +------+ +------+ +------+ +------+                     |
+|                                                          |
+|  +------+ +------+ +------+ +------+                     |
+|  |      | |      | |      | |      |                     |
+|  | MOD5 | | MOD6 | | MOD7 | | MOD8 |                     |
+|  |      | |      | |      | |      |                     |
+|  +------+ +------+ +------+ +------+                     |
+|                                                          |
+|  +------+ +------+ +------+ +------+                     |
+|  |      | |      | |      | |      |                     |
+|  | MOD9 | | MOD10| | MOD11| | MOD12|                     |
+|  |      | |      | |      | |      |                     |
+|  +------+ +------+ +------+ +------+                     |
+|                                                          |
+|  +----------------------------------------------+        |
+|  |           COMPARATIVO DE MÓDULOS             |        |
+|  |  Tabela interativa de recursos por módulo    |        |
+|  +----------------------------------------------+        |
+|                                                          |
+|  +----------------------------------------------+        |
+|  |           CTA CONSULTORIA                    |        |
+|  |  "Precisa de ajuda para escolher os módulos  |        |
+|  |  ideais para sua instituição?"               |        |
+|  |  [FALE COM UM CONSULTOR]                     |        |
+|  +----------------------------------------------+        |
+|                                                          |
+|                      FOOTER                              |
++----------------------------------------------------------+
+Detalhamento dos Elementos
+1. Banner Principal
+Título Grande: "Módulos EdunexIA"
+Subtítulo: "Soluções completas para gestão educacional inteligente"
+Background: Gradiente escuro com elementos visuais tecnológicos (linhas de código, componentes de UI, gráficos sutis)
+Animação: Elementos sutis que se movem ou reagem ao scroll
+2. Navegação por Categorias
+Formato: Pills horizontais ou tabs
+Categorias:
+Todos os Módulos
+Gestão Administrativa
+Financeiro & Matrículas
+Acadêmico & Pedagógico
+Comunicação & Marketing
+Inteligência Artificial
+Comportamento: Ao clicar, filtra os módulos exibidos abaixo
+Estado Ativo: Pill destacada com cor primária (#4D61FC)
+3. Grid de Módulos
+Layout: Grid responsivo (4 colunas em desktop, 2 em tablet, 1 em mobile)
+Espaçamento: 24px entre os cards
+Animação: Fade-in suave dos cards ao carregar ou filtrar
+4. Cards de Módulo
+Cada módulo é representado por um card interativo com a seguinte estrutura:
+
++----------------------------------+
+|                                  |
+|          [ÍCONE MÓDULO]          |
+|                                  |
+|          NOME DO MÓDULO          |
+|                                  |
+|  Breve descrição do módulo em    |
+|  2-3 linhas no máximo para       |
+|  explicar o propósito principal. |
+|                                  |
+|  • Recurso principal 1           |
+|  • Recurso principal 2           |
+|  • Recurso principal 3           |
+|                                  |
+|         [SAIBA MAIS]             |
+|                                  |
++----------------------------------+
+Dimensões: 280-320px de largura x 400-450px de altura
+Cor de Fundo: Background mais escuro (#1A1A1D)
+Borda: Sutil (1px) com raio de 12px
+Sombra: Leve elevação para destacar do fundo
+Ícone: 64x64px, colorido conforme o módulo
+Título: 20px, bold, alinhado ao centro
+Descrição: 14px, regular, alinhado ao centro
+Lista de Recursos: 14px, com bullets personalizados
+Botão: Ghost button que se transforma em filled no hover
+Estados Interativos:
+Hover: Elevação sutilmente maior, highlight na borda
+Clique: Leva à página detalhada do módulo
+5. Módulos Apresentados
+A página exibe cards para todos os módulos principais do sistema:
+
+Portal do Aluno
+
+Ícone: Graduação/usuário estudante
+Cor temática: Verde (#12B76A)
+Recursos destacados: Credencial digital, certificados, AVA
+Chat Multicanal
+
+Ícone: Bolhas de mensagem
+Cor temática: Azul (#4D61FC)
+Recursos destacados: WhatsApp, Email, Kanban de leads
+Financeiro
+
+Ícone: Cifrão/gráfico
+Cor temática: Roxo (#7C4DFC)
+Recursos destacados: Pagamentos, contratos, relatórios
+Matrículas
+
+Ícone: Documento com check
+Cor temática: Laranja (#F79009)
+Recursos destacados: Processo online, renovação, documentos
+Professora Ana (IA)
+
+Ícone: Assistente/IA
+Cor temática: Teal (#0CA4A5)
+Recursos destacados: Atendimento automático, base de conhecimento
+Portal do Professor
+
+Ícone: Quadro/professor
+Cor temática: Vermelho suave (#E5484D)
+Recursos destacados: Conteúdo, avaliações, notas
+Polos
+
+Ícone: Mapa/localização
+Cor temática: Amarelo (#F3C13A)
+Recursos destacados: Gestão, comissões, captação
+Parceiros
+
+Ícone: Aperto de mãos
+Cor temática: Verde água (#36B37E)
+Recursos destacados: Afiliados, comissões, materiais
+Contabilidade
+
+Ícone: Calculadora/planilha
+Cor temática: Azul escuro (#3451B2)
+Recursos destacados: Relatórios, conciliação, impostos
+Site Institucional
+
+Ícone: Globo/browser
+Cor temática: Rosa (#E94397)
+Recursos destacados: Landing pages, blog, leads
+Relatórios & BI
+
+Ícone: Gráficos/dashboard
+Cor temática: Cinza azulado (#64748B)
+Recursos destacados: Dashboards, KPIs, exportação
+App Mobile
+
+Ícone: Smartphone
+Cor temática: Turquesa (#14B8A6)
+Recursos destacados: Notificações, acesso rápido, offline
+6. Tabela Comparativa de Módulos
+Abaixo do grid de módulos, há uma tabela interativa que permite comparar recursos entre diferentes módulos:
+
++----------------------------------------------------------+
+|  COMPARE OS MÓDULOS                                      |
++----------------------------------------------------------+
+|                | MOD 1 | MOD 2 | MOD 3 | MOD 4 | MOD 5   |
++----------------+-------+-------+-------+-------+---------+
+| Recurso A      |   ✓   |   ✓   |   ✓   |   ✕   |    ✓    |
++----------------+-------+-------+-------+-------+---------+
+| Recurso B      |   ✕   |   ✓   |   ✕   |   ✓   |    ✓    |
++----------------+-------+-------+-------+-------+---------+
+| Recurso C      |   ✓   |   ✕   |   ✓   |   ✓   |    ✕    |
++----------------+-------+-------+-------+-------+---------+
+Comportamento: Inicialmente mostra 5 módulos mais populares
+Personalização: Usuário pode selecionar quais módulos comparar
+Scroll: Tabela permite scroll horizontal em dispositivos menores
+Tooltip: Explicação detalhada de cada recurso ao passar o mouse
+7. CTA de Consultoria
+Ao final da página, há uma seção de chamada para ação:
+
++----------------------------------------------------------+
+|                                                          |
+|  Precisa de ajuda para escolher os módulos ideais        |
+|  para sua instituição?                                   |
+|                                                          |
+|  Nossos consultores podem ajudar a montar o pacote       |
+|  perfeito para suas necessidades.                        |
+|                                                          |
+|          [FALE COM UM CONSULTOR]                         |
+|                                                          |
++----------------------------------------------------------+
+Background: Gradiente ou imagem de fundo sutil
+Botão CTA: Botão grande e destacado que direciona para página de contato ou abre modal de agendamento
+Ícone: Pequeno ícone de consultoria/calendário ao lado do texto
+8. Interação e Navegação
+Clique no Card: Leva à página detalhada do módulo específico
+Filtros: Aplicados instantaneamente sem reload da página
+Animações: Transições suaves entre estados de filtro
+Modo Comparação: Botão que permite selecionar múltiplos módulos para comparação detalhada
+9. Responsividade
+Desktop: 4 cards por linha, tabela de comparação completa
+Tablet: 2 cards por linha, tabela com scroll horizontal
+Mobile: 1 card por linha, comparativo simplificado ou colapsado em accordion
+10. Performance e Acessibilidade
+Lazy Loading: Carregamento progressivo dos cards ao scroll
+Keyboard Navigation: Navegação completa via teclado
+Screen Readers: Texto alternativo para ícones e descrições ARIA
+Contraste: Cores que garantem legibilidade (WCAG AA)
+Esta página de Módulos serve como um hub central para que os visitantes conheçam todas as capacidades do sistema EdunexIA, podendo explorar cada módulo individualmente ou comparar funcionalidades para tomar decisões informadas sobre quais componentes melhor atendem às necessidades de sua instituição educacional.
+
+faça o mesmo para a página de planos
+
+13 hours ago
+MA
+
+magonder
+Página de Planos da EdunexIA - Detalhamento Técnico
+Ao clicar em "PLANOS" no cabeçalho do site, o usuário é direcionado para uma página especializada que apresenta todas as opções de contratação e assinatura da plataforma EdunexIA. Esta página possui layout e funcionalidades específicas projetadas para facilitar a comparação e seleção do plano ideal.
+
+Estrutura da Página de Planos
++----------------------------------------------------------+
+|                      HEADER                              |
++----------------------------------------------------------+
+|                                                          |
+|  +----------------------------------------------+        |
+|  |           BANNER DE PLANOS                   |        |
+|  |  Título: "Planos EdunexIA"                   |        |
+|  |  Subtítulo: "Escolha a solução ideal para    |        |
+|  |  sua instituição de ensino"                  |        |
+|  |  Background com visual premium/corporativo   |        |
+|  +----------------------------------------------+        |
+|                                                          |
+|  +----------------------------------------------+        |
+|  |           SELETOR DE SEGMENTO                |        |
+|  |  [Faculdades] [Escolas Técnicas] [Cursos Livres]     |
+|  +----------------------------------------------+        |
+|                                                          |
+|  +----------------------------------------------+        |
+|  |          TOGGLE FATURAMENTO                  |        |
+|  |    Mensal  O----------------O  Anual (20% OFF)        |
+|  +----------------------------------------------+        |
+|                                                          |
+|  +----------+ +----------+ +----------+                  |
+|  |          | |          | |          |                  |
+|  |   PLANO  | |   PLANO  | |   PLANO  |                  |
+|  |  BÁSICO  | | AVANÇADO | | PREMIUM  |                  |
+|  |          | |          | |          |                  |
+|  |  R$XXX   | |  R$XXX   | |  R$XXX   |                  |
+|  | por mês  | | por mês  | | por mês  |                  |
+|  |          | |          | |          |                  |
+|  | • Item 1 | | • Item 1 | | • Item 1 |                  |
+|  | • Item 2 | | • Item 2 | | • Item 2 |                  |
+|  | • Item 3 | | • Item 3 | | • Item 3 |                  |
+|  | ...      | | ...      | | ...      |                  |
+|  |          | |          | |          |                  |
+|  | [ASSINAR]| | [ASSINAR]| | [ASSINAR]|                  |
+|  |          | |          | |          |                  |
+|  +----------+ +----------+ +----------+                  |
+|                                                          |
+|  +----------------------------------------------+        |
+|  |           PERGUNTAS FREQUENTES               |        |
+|  |  Accordion com dúvidas sobre os planos       |        |
+|  +----------------------------------------------+        |
+|                                                          |
+|  +----------------------------------------------+        |
+|  |           PLANO PERSONALIZADO                |        |
+|  |  "Precisa de uma solução sob medida?"        |        |
+|  |  Texto sobre planos enterprise/customizados  |        |
+|  |  [SOLICITAR ORÇAMENTO]                       |        |
+|  +----------------------------------------------+        |
+|                                                          |
+|  +----------------------------------------------+        |
+|  |           TESTEMUNHOS DE CLIENTES            |        |
+|  |  Carrossel com depoimentos de instituições   |        |
+|  +----------------------------------------------+        |
+|                                                          |
+|                      FOOTER                              |
++----------------------------------------------------------+
+Detalhamento dos Elementos
+1. Banner Principal
+Título Grande: "Planos EdunexIA"
+Subtítulo: "Escolha a solução ideal para sua instituição de ensino"
+Background: Gradiente premium (azul escuro para roxo) com elementos visuais sutis relacionados a educação e tecnologia
+Animação: Elementos sutis que se movem ou reagem ao scroll
+2. Seletor de Segmento
+Formato: Tabs horizontais grandes e destacadas
+Segmentos:
+Faculdades e Universidades
+Escolas Técnicas e Profissionalizantes
+Cursos Livres e Especializações
+Comportamento: Ao clicar, adapta os planos e preços para o segmento selecionado
+Estado Ativo: Tab destacada com cor primária e indicador na parte inferior
+3. Toggle de Faturamento
+Design: Switch toggle estilizado com labels claros
+Opções:
+Mensal (padrão)
+Anual (com badge de desconto de 20%)
+Comportamento: Altera os valores exibidos nos cards de planos
+Animação: Transição suave nos preços ao alternar
+4. Cards de Planos
+Cada plano é representado por um card premium com a seguinte estrutura:
+
++----------------------------------+
+|                                  |
+|           NOME DO PLANO          |
+|                                  |
+|        [BADGE MAIS POPULAR]      |
+|                                  |
+|            R$ XXX,XX             |
+|         por mês/por ano          |
+|                                  |
+|     Até X alunos/usuários        |
+|                                  |
+|  ------------------------------  |
+|                                  |
+|  MÓDULOS INCLUSOS:               |
+|  • Módulo 1                      |
+|  • Módulo 2                      |
+|  • Módulo 3                      |
+|  ...                             |
+|                                  |
+|  RECURSOS DESTACADOS:            |
+|  • Recurso principal 1           |
+|  • Recurso principal 2           |
+|  • Recurso principal 3           |
+|  ...                             |
+|                                  |
+|         [ASSINAR AGORA]          |
+|                                  |
++----------------------------------+
+Dimensões: 320-350px de largura x 600-650px de altura
+Cor de Fundo: Background mais claro para o plano básico, mais premium (com gradiente sutil) para os planos superiores
+Borda: 1px com raio de 12px, destaque especial para o plano mais popular
+Sombra: Elevação progressiva conforme o nível do plano
+Título: 24px, bold, alinhado ao centro
+Preço: 32px, extra bold, destaque visual
+Período: 16px, regular, abaixo do preço
+Limite de Usuários: Indicação clara do número de alunos/usuários permitidos
+Módulos: Lista com check verde para inclusos, X cinza para não inclusos
+Recursos: Lista detalhada com bullets personalizados
+Botão: Grande e destacado, com cor específica para cada nível de plano
+Destaque do Plano Popular: Ribbon ou badge no canto superior, borda mais proeminente ou background mais vibrante
+5. Estrutura de Planos
+A página apresenta 3-4 níveis de planos principais:
+
+Plano Básico
+
+Cor temática: Azul claro
+Posicionamento: Adequado para instituições pequenas ou que estão começando
+Módulos inclusos: Portal do Aluno básico, Financeiro básico, Chat limitado
+Limitações: Número restrito de alunos, features básicas
+Plano Avançado (Mais Popular)
+
+Cor temática: Azul principal da marca (#4D61FC)
+Posicionamento: Ideal para a maioria das instituições de médio porte
+Módulos inclusos: Portal do Aluno completo, Financeiro, Chat, Matrículas, IA básica
+Destaque visual: Badge "Mais Popular", card levemente maior
+Plano Premium
+
+Cor temática: Roxo premium (#7C4DFC)
+Posicionamento: Para instituições maiores com necessidades avançadas
+Módulos inclusos: Todos os módulos do sistema sem restrições
+Diferenciais: Suporte prioritário, personalizações, API access
+Plano Enterprise (Opcional, geralmente apresentado separadamente)
+
+Cor temática: Dourado/Premium
+Posicionamento: Para grandes redes de ensino
+Características: Totalmente personalizado, integrações específicas
+Apresentação: Geralmente como CTA para contato direto
+6. Tabela Comparativa (Alternativa ou Complementar aos Cards)
+Abaixo ou ao lado dos cards, pode haver uma tabela detalhada de comparação:
+
++----------------------------------------------------------+
+|  COMPARATIVO DETALHADO DE PLANOS                         |
++----------------------------------------------------------+
+|  RECURSO               | BÁSICO | AVANÇADO | PREMIUM     |
++------------------------+--------+----------+-------------+
+| Alunos/Usuários        | Até 100|  Até 500 | Ilimitados  |
++------------------------+--------+----------+-------------+
+| Portal do Aluno        | Básico | Completo | Completo    |
++------------------------+--------+----------+-------------+
+| Chat Multicanal        |   ✕    |    ✓     |     ✓       |
++------------------------+--------+----------+-------------+
+| Integrações WhatsApp   |   ✕    |    ✓     |     ✓       |
++------------------------+--------+----------+-------------+
+| Professora Ana (IA)    |   ✕    |  Básico  |  Avançado   |
++------------------------+--------+----------+-------------+
+Design: Tabela clara com bordas sutis e cabeçalho destacado
+Responsividade: Scroll horizontal em dispositivos móveis ou versão colapsada
+Interatividade: Tooltips explicativos ao passar o mouse sobre recursos
+7. FAQ - Perguntas Frequentes
+Seção de acordeão com perguntas comuns sobre os planos:
+
++----------------------------------------------------------+
+|  PERGUNTAS FREQUENTES                                    |
++----------------------------------------------------------+
+|  ▼ Posso mudar de plano depois da contratação?           |
+|    Sim, você pode fazer upgrade ou downgrade do seu      |
+|    plano a qualquer momento. O valor será...             |
++----------------------------------------------------------+
+|  ▶ Existe período mínimo de contratação?                 |
++----------------------------------------------------------+
+|  ▶ Como funciona a cobrança por número de alunos?        |
++----------------------------------------------------------+
+|  ▶ Os planos incluem treinamento e implementação?        |
++----------------------------------------------------------+
+|  ▶ Posso adicionar módulos específicos ao meu plano?     |
++----------------------------------------------------------+
+Comportamento: Expansão/colapso ao clicar
+Animação: Transição suave na abertura/fechamento
+Design: Consistente com o resto da página, com ícones indicadores claros
+8. CTA de Plano Personalizado
+Seção destacada para instituições que precisam de soluções customizadas:
+
++----------------------------------------------------------+
+|                                                          |
+|  PRECISA DE UMA SOLUÇÃO SOB MEDIDA?                      |
+|                                                          |
+|  Para instituições com necessidades específicas ou       |
+|  redes de ensino com múltiplas unidades, oferecemos      |
+|  planos personalizados que atendem exatamente ao seu     |
+|  cenário.                                                |
+|                                                          |
+|          [SOLICITAR ORÇAMENTO PERSONALIZADO]             |
+|                                                          |
++----------------------------------------------------------+
+Background: Gradiente premium ou imagem institucional como background
+Botão CTA: Botão grande e destacado que direciona para formulário de contato ou abre modal
+Design: Aspecto visual enterprise/premium
+9. Testemunhos de Clientes
+Carrossel de depoimentos de instituições que utilizam a plataforma:
+
++----------------------------------------------------------+
+|  O QUE NOSSOS CLIENTES DIZEM                             |
++----------------------------------------------------------+
+|  +------------------------------------------------+      |
+|  |                                                |      |
+|  |  "A EdunexIA transformou nossa gestão..."      |      |
+|  |                                                |      |
+|  |  [Foto] Nome da Pessoa                         |      |
+|  |        Cargo - Instituição                     |      |
+|  |                                                |      |
+|  +------------------------------------------------+      |
+|           <  •••  >                                      |
++----------------------------------------------------------+
+Layout: Carrossel com controles de navegação
+Conteúdo: Foto, nome, cargo, instituição e depoimento curto
+Design: Cards elegantes com aspecto testimonial
+Credibilidade: Logos de instituições reconhecidas
+10. Garantias e Segurança
+Seção final com elementos de confiança:
+
++----------------------------------------------------------+
+|  GARANTIAS E SEGURANÇA                                   |
++----------------------------------------------------------+
+|                                                          |
+|  [Ícone]        [Ícone]        [Ícone]        [Ícone]   |
+|  Teste          99.9%          Suporte         Dados     |
+|  Gratuito       Uptime         24/7            Seguros   |
+|                                                          |
++----------------------------------------------------------+
+Ícones: Visuais claros representando cada garantia
+Layout: Distribuição equilibrada horizontalmente
+Design: Clean e confiável
+11. Responsividade
+Desktop: 3-4 cards lado a lado, tabela completa
+Tablet: 2 cards lado a lado, tabela com scroll
+Mobile:
+Cards em formato de carrossel horizontal ou empilhados verticalmente
+Tabela substituída por comparativo em formato de lista
+Toggle de planos no topo para navegação rápida
+12. Interações e Comportamentos
+Hover nos Cards: Elevação sutil, highlight na borda
+Toggle Anual/Mensal: Animação de preços com contador
+Seleção de Segmento: Atualização dinâmica de planos e valores
+Scroll Automático: Ao selecionar um segmento, faz scroll suave até os cards
+Sticky Elements: Cabeçalho de comparação permanece visível durante o scroll em tabelas longas
+13. Microcopy e Elementos Persuasivos
+Badges: "Mais Popular", "Melhor Custo-Benefício"
+Urgência: "Oferta por tempo limitado" (quando aplicável)
+Garantias: "Teste Gratuito por 14 dias", "Sem compromisso"
+Social Proof: "Utilizado por X instituições" ou "Y alunos gerenciados"
+Callouts: Destaque para recursos exclusivos de cada plano
+14. Checkout e Conversão
+Fluxo de Contratação:
+
+Clique em "Assinar" no plano desejado
+Modal ou redirecionamento para página de checkout
+Formulário de informações da instituição
+Seleção de método de pagamento
+Confirmação e boas-vindas
+Elementos de Confiança no Checkout:
+
+Selos de segurança
+Garantia de satisfação
+Lembrete dos benefícios principais
+Esta página de Planos serve como ponto principal de conversão do site, apresentando de forma clara e persuasiva as diferentes opções de contratação da plataforma EdunexIA, com foco em ajudar o visitante a identificar a melhor solução para as necessidades específicas de sua instituição educacional.
+
+Explique com riqueza de detalhes o comportamento quando o cliente clica em escolher plano.
+
+13 hours ago
+MA
+
+magonder
+Comportamento Detalhado do Fluxo "Escolher Plano" na EdunexIA
+Quando um cliente clica no botão "ASSINAR AGORA" ou "ESCOLHER PLANO" em um dos cards da página de planos da EdunexIA, inicia-se um fluxo de contratação sofisticado e orientado à conversão. Vamos detalhar minuciosamente cada etapa deste processo:
+
+1. Interação Inicial com o Botão
+Feedback Visual Imediato
+Animação do Botão: Uma micro-animação de pressionar (scale down 0.98) com duração de 200ms
+Ripple Effect: Efeito de onda que se expande do ponto de clique
+Mudança de Estado: O botão muda para estado "Carregando" com um spinner sutil
+Feedback Tátil: Em dispositivos móveis, vibração háptica leve (quando suportado)
+Tracking de Evento
+Disparo de evento analítico plan_selection_initiated
+Registro dos dados: plano selecionado, segmento, preço, periodicidade (mensal/anual)
+2. Modal de Pré-qualificação
+Ao invés de ir diretamente para o checkout, abre-se um modal elegante de pré-qualificação:
+
++----------------------------------------------------------+
+|                                                    [✕]   |
+|  VOCÊ SELECIONOU O PLANO [NOME DO PLANO]                 |
+|                                                          |
+|  Para garantir a melhor experiência com a EdunexIA,      |
+|  precisamos conhecer um pouco mais sobre sua instituição |
+|                                                          |
+|  +------------------------------------------------+      |
+|  |  Tipo de Instituição:                          |      |
+|  |  [Dropdown]                                    |      |
+|  +------------------------------------------------+      |
+|                                                          |
+|  +------------------------------------------------+      |
+|  |  Quantidade aproximada de alunos:              |      |
+|  |  [Dropdown]                                    |      |
+|  +------------------------------------------------+      |
+|                                                          |
+|  +------------------------------------------------+      |
+|  |  Principal objetivo com a plataforma:          |      |
+|  |  [Dropdown]                                    |      |
+|  +------------------------------------------------+      |
+|                                                          |
+|  [   VOLTAR   ]              [   CONTINUAR   ]           |
+|                                                          |
++----------------------------------------------------------+
+Características do Modal
+Entrada Animada: Fade-in suave com leve movimento ascendente (300ms)
+Background Overlay: Escurecimento gradual do conteúdo por trás (opacity 0.7)
+Foco Automático: O primeiro campo recebe foco automaticamente
+Campos Inteligentes: Dropdowns com opções pré-definidas para agilizar preenchimento
+Responsividade: Em mobile, ocupa tela cheia com animação bottom-up
+Acessibilidade: Trap focus dentro do modal, escape key para fechar
+Validação Instantânea
+Cada campo é validado em tempo real
+Botão "CONTINUAR" só fica habilitado quando todos campos estão preenchidos
+Tooltips explicativos aparecem ao passar o mouse sobre os campos
+3. Seleção de Módulos (Para Planos Customizáveis)
+Para planos que permitem personalização, após a pré-qualificação exibe-se uma tela de seleção de módulos:
+
++----------------------------------------------------------+
+|                                                    [✕]   |
+|  PERSONALIZE SEU PLANO [NOME DO PLANO]                   |
+|                                                          |
+|  Selecione os módulos que deseja incluir                 |
+|  em sua solução EdunexIA                                 |
+|                                                          |
+|  +------------+ +------------+ +------------+            |
+|  | [✓] Portal | | [✓] Chat   | | [ ] Polos  |            |
+|  |  do Aluno  | |            | |            |            |
+|  |  Incluído  | |  Incluído  | |  +R$XXX    |            |
+|  +------------+ +------------+ +------------+            |
+|                                                          |
+|  +------------+ +------------+ +------------+            |
+|  | [✓] Financ.| | [ ] Prof.  | | [ ] Contab.|            |
+|  |            | |  Ana (IA)  | |            |            |
+|  |  Incluído  | |  +R$XXX    | |  +R$XXX    |            |
+|  +------------+ +------------+ +------------+            |
+|                                                          |
+|  RESUMO DO PLANO:                                        |
+|  • Plano Base: R$XXX                                     |
+|  • Módulos adicionais: +R$XXX                            |
+|  • Total mensal/anual: R$XXX                             |
+|                                                          |
+|  [   VOLTAR   ]              [   CONTINUAR   ]           |
+|                                                          |
++----------------------------------------------------------+
+Comportamentos da Seleção de Módulos
+Módulos Inclusos: Já vêm pré-selecionados e não podem ser desmarcados
+Módulos Opcionais: Podem ser selecionados com atualização em tempo real do valor
+Atualização Dinâmica: O resumo do plano atualiza instantaneamente ao selecionar/desmarcar
+Animação: Suave highlight do valor quando atualizado
+Tooltips: Ao passar o mouse sobre cada módulo, exibe detalhes sobre funcionalidades
+Recomendação: Badge "Recomendado" em módulos que combinam com o perfil da instituição
+4. Formulário de Cadastro Institucional
+Após a configuração do plano, o cliente é direcionado para uma página de cadastro institucional:
+
++----------------------------------------------------------+
+|                                                          |
+|  CRIAR SUA CONTA EDUNEXIA                                |
+|  Preencha os dados da sua instituição                    |
+|                                                          |
+|  +------------------------+ +------------------------+    |
+|  | Nome da Instituição*   | | CNPJ*                 |    |
+|  | [Input]                | | [Input]               |    |
+|  +------------------------+ +------------------------+    |
+|                                                          |
+|  +------------------------+ +------------------------+    |
+|  | Nome do Responsável*   | | Cargo*                |    |
+|  | [Input]                | | [Input]               |    |
+|  +------------------------+ +------------------------+    |
+|                                                          |
+|  +------------------------+ +------------------------+    |
+|  | E-mail Corporativo*    | | Telefone*             |    |
+|  | [Input]                | | [Input]               |    |
+|  +------------------------+ +------------------------+    |
+|                                                          |
+|  +------------------------------------------------+      |
+|  | Como conheceu a EdunexIA?                      |      |
+|  | [Dropdown]                                     |      |
+|  +------------------------------------------------+      |
+|                                                          |
+|  [✓] Concordo com os Termos de Serviço e Política de    |
+|      Privacidade da EdunexIA                            |
+|                                                          |
+|  [✓] Desejo receber atualizações e novidades sobre      |
+|      educação digital e gestão educacional              |
+|                                                          |
+|  [   VOLTAR   ]              [   CONTINUAR   ]           |
+|                                                          |
++----------------------------------------------------------+
+Recursos do Formulário de Cadastro
+Validação em Tempo Real: Feedback visual instantâneo para cada campo
+Máscaras Inteligentes: Formatação automática para CNPJ e telefone
+Autofill Support: Compatibilidade com preenchimento automático do navegador
+Persistência: Dados salvos em localStorage para recuperação em caso de interrupção
+Verificação de CNPJ: Consulta em tempo real para validar existência
+Assistência Contextual: Ícones de ajuda (?) com explicações para cada campo
+Indicador de Força: Para campos de senha, com sugestões de melhoria
+Verificação de E-mail: Check de formato e sugestão de correção para erros comuns
+Progress Bar: Indicador de progresso no topo do formulário
+5. Método de Pagamento e Checkout
+Após o cadastro institucional, o cliente é direcionado para a página de pagamento:
+
++----------------------------------------------------------+
+|                                                          |
+|  FINALIZAR CONTRATAÇÃO                                   |
+|  Escolha seu método de pagamento preferido               |
+|                                                          |
+|  +------------------------------------------------+      |
+|  |  RESUMO DO PLANO                               |      |
+|  |  • Plano [Nome]: R$XXX                         |      |
+|  |  • Módulos adicionais: +R$XXX                  |      |
+|  |  • Periodicidade: Mensal/Anual                 |      |
+|  |  • Total: R$XXX                                |      |
+|  +------------------------------------------------+      |
+|                                                          |
+|  +------------------------------------------------+      |
+|  |  FORMA DE PAGAMENTO                            |      |
+|  |  [○] Cartão de Crédito                         |      |
+|  |      [Campos de cartão]                        |      |
+|  |                                                |      |
+|  |  [○] Boleto Bancário                           |      |
+|  |      [Info sobre boleto]                       |      |
+|  |                                                |      |
+|  |  [○] PIX                                       |      |
+|  |      [Info sobre PIX]                          |      |
+|  +------------------------------------------------+      |
+|                                                          |
+|  SEGURANÇA GARANTIDA                                     |
+|  [Ícones de segurança e certificações]                   |
+|                                                          |
+|  [   VOLTAR   ]              [   FINALIZAR COMPRA   ]    |
+|                                                          |
++----------------------------------------------------------+
+Detalhes do Processo de Pagamento
+Integração Nativa: Com Asaas e Lytex para processamento de pagamentos
+Campos de Cartão: Com validação de número, data, CVV e nome em tempo real
+Detecção de Bandeira: Identificação automática da bandeira do cartão ao digitar
+Validação de CEP: Para faturamento, com autopreenchimento de endereço
+Opções de Parcelamento: Exibição dinâmica das parcelas disponíveis
+Carregamento Otimizado: Framework de cartão carregado apenas quando selecionado
+Persistência Segura: Armazenamento temporário criptografado dos dados parciais
+Feedback de Erro: Mensagens específicas para problemas comuns (cartão expirado, etc)
+Certificações Visíveis: Selos de segurança PCI DSS, SSL e outros
+Para Pagamento em Boleto
+Geração Instantânea: Opção para visualizar/baixar boleto imediatamente
+Envio Automatizado: Envio do boleto para o e-mail cadastrado
+Instruções Claras: Passo a passo para pagamento em bancos e apps
+Lembretes: Sistema de lembretes automáticos antes do vencimento
+Para Pagamento via PIX
+QR Code Dinâmico: Geração instantânea de QR code para pagamento
+Chave Copiável: Opção para copiar chave PIX com um clique
+Timer: Contador de validade do código PIX gerado
+Verificação Automática: Sistema que detecta quando o pagamento é confirmado
+6. Confirmação e Onboarding
+Após a finalização do pagamento (ou geração de boleto/PIX), o cliente é direcionado para uma tela de confirmação:
+
++----------------------------------------------------------+
+|                                                          |
+|  [Ícone de Sucesso] CONTRATAÇÃO CONCLUÍDA!               |
+|                                                          |
+|  Obrigado por escolher a EdunexIA para                   |
+|  transformar a gestão da sua instituição!                |
+|                                                          |
+|  +------------------------------------------------+      |
+|  |  DETALHES DA CONTRATAÇÃO                       |      |
+|  |  • Número do pedido: #XXXXXX                   |      |
+|  |  • Plano contratado: [Plano e módulos]         |      |
+|  |  • Valor: R$XXX (Mensal/Anual)                 |      |
+|  |  • Método de pagamento: [Método]               |      |
+|  |  • Status: [Confirmado/Aguardando]             |      |
+|  +------------------------------------------------+      |
+|                                                          |
+|  PRÓXIMOS PASSOS:                                        |
+|                                                          |
+|  1. Você receberá um e-mail com os dados de acesso       |
+|     em até 5 minutos                                     |
+|                                                          |
+|  2. Nossa equipe entrará em contato para agendar a       |
+|     sessão de onboarding e configuração inicial          |
+|                                                          |
+|  3. Você terá acesso ao portal administrativo para       |
+|     começar a personalizar sua plataforma                |
+|                                                          |
+|  [  ACESSAR PORTAL  ]    [  BAIXAR COMPROVANTE  ]        |
+|                                                          |
++----------------------------------------------------------+
+Características da Confirmação
+Efeito Celebratório: Animação de confetes ou efeito visual comemorativo
+Tracking de Conclusão: Evento de conversão para analytics
+E-mail Automático: Envio imediato de e-mail de confirmação
+Notificação interna: Alerta para equipe de Customer Success
+Follow-up Automático: Agendamento de sequência de e-mails de onboarding
+Pós-Contratação Imediata
+Acesso Provisório: Credenciais temporárias para primeiro acesso
+Welcome Call: Agendamento automático no calendário do CS
+Recursos Iniciais: Links para guias, tutoriais e documentação
+Kit de Boas-vindas: Disponibilização de materiais para primeiros passos
+7. Cenários Alternativos
+A. Abandono no Processo
+Captura de E-mail Prévia: Pop-up de salvamento de progresso
+Recuperação: Envio de e-mail com link para retomar do ponto abandonado
+Remarketing: Inclusão em campanha específica de retorno
+Persistent State: Estado salvo em cookies/localStorage (respeitando LGPD)
+B. Solicitação de Demonstração Antes da Compra
+Demo Option: Botão alternativo "Quero uma demonstração"
+Calendly Integration: Agendamento direto de call com consultor
+Desconto Especial: Oferta por tempo limitado após a demo
+C. Necessidade de Faturamento para Pessoa Jurídica
+Faturamento PJ: Opção específica no checkout
+Dados Adicionais: Campos para informações de faturamento
+Aprovação: Fluxo de aprovação interna para pedidos PJ
+Documentação: Upload de documentos necessários
+8. Integrações Técnicas
+A. Integração CRM
+Zapier/Webhook: Envio automático dos dados para CRM
+Lead Scoring: Atribuição de pontuação baseada no plano e comportamento
+Pipeline Automation: Movimentação automática no funil de vendas
+Atribuição: Associação ao consultor correto baseado na região/segmento
+B. Integração de Pagamentos
+Asaas API: Integração completa para gerenciamento de assinaturas
+Lytex Gateway: Processamento de pagamentos com tokenização
+Webhooks: Recebimento de eventos de pagamento em tempo real
+Retry Logic: Automação para tentativas em caso de falha
+C. Email Marketing
+Segmentação: Adição automática à lista correspondente ao plano
+Trigger Emails: Disparo de sequência de emails de onboarding
+Dynamic Content: Conteúdos personalizados baseados no plano escolhido
+Behavioral Triggers: Emails baseados em comportamento pós-compra
+9. Aspectos de UX/UI Detalhados
+A. Microinterações
+Botões: Estado hover com scale 1.02, transição de 150ms
+Campos: Highlight gradual ao focar, com transição de 200ms
+Seleções: Ripple effect em checkboxes e radio buttons
+Confirmações: Animação de check mark com easing bounce
+Erros: Shake animation suave em campos com erro
+B. Copy e Linguagem
+Tom: Profissional mas acessível, orientado à solução
+Clareza: Instruções explícitas em cada etapa
+Segurança: Enfoque em confiabilidade e credibilidade
+Urgência: Elementos sutis de escassez (quando aplicável)
+C. Design Visual
+Hierarquia: Clara distinção entre informações primárias e secundárias
+Contraste: WCAG AA/AAA para todos os textos
+Consistência: Mesma família de ícones e estilo visual em todas etapas
+White Space: Espaçamento generoso para reduzir carga cognitiva
+Progress Indication: Feedback visual constante do progresso
+10. Aspectos Técnicos e Performance
+A. Carregamento Otimizado
+Code Splitting: Carregamento sob demanda de componentes pesados
+Prefetching: Pré-carregamento da próxima etapa provável
+Lazy Loading: Imagens e recursos não críticos carregados progressivamente
+Critical CSS: Estilos críticos inline para renderização inicial rápida
+B. Resiliência
+Retry Logic: Tentativas automáticas em caso de falha de requisição
+Offline Support: Salvamento local de progresso em caso de desconexão
+Validação Dupla: Cliente e servidor para garantir integridade dos dados
+State Preservation: Restauração de estado em caso de refresh acidental
+C. Segurança
+Sanitização: Todos inputs sanitizados contra XSS
+CSRF Protection: Tokens para todas requisições POST
+Sensitive Data: Dados sensíveis nunca salvos em plaintext
+Session Timeout: Expiração segura de sessões inativas
+Este detalhamento representa o fluxo completo e sofisticado que ocorre quando um cliente clica em "ESCOLHER PLANO" no site da EdunexIA, garantindo uma experiência de contratação fluida, segura e orientada à conversão, com atenção aos detalhes em cada micro-interação e possíveis cenários alternativos.
+
+escreva os termos de uso
+
+12 hours ago
+MA
+
+magonder
+TERMOS DE USO DA PLATAFORMA EDUNEXIA
+Última atualização: 11 de Abril de 2025
+
+1. INTRODUÇÃO
+Bem-vindo à EdunexIA ("nós", "nosso", "plataforma" ou "serviço"), uma plataforma completa de gestão educacional projetada para instituições de ensino. Estes Termos de Uso ("Termos") regem o acesso e uso da plataforma EdunexIA, incluindo todos os seus módulos, recursos, ferramentas, aplicativos móveis, e quaisquer outros serviços associados oferecidos pela TechEdu Desenvolvimento de Sistemas Educacionais Ltda., inscrita no CNPJ XX.XXX.XXX/XXXX-XX.
+
+Ao utilizar nossa plataforma, você concorda expressamente com estes Termos. Por favor, leia-os cuidadosamente. Se você não concordar com estes Termos, não utilize nossos serviços.
+
+2. DEFINIÇÕES
+Para os fins destes Termos de Uso:
+
+"Cliente" refere-se à instituição de ensino que contrata os serviços da EdunexIA.
+
+"Usuário" refere-se a qualquer pessoa que acesse ou utilize a plataforma, incluindo administradores, professores, alunos, funcionários do Cliente e outros participantes autorizados.
+
+"Conteúdo" refere-se a todos os textos, imagens, vídeos, áudios, documentos, informações, dados ou outros materiais enviados, armazenados ou processados na plataforma.
+
+"Dados Pessoais" refere-se a qualquer informação relacionada a uma pessoa natural identificada ou identificável, conforme definido na Lei Geral de Proteção de Dados (LGPD).
+
+"Plataforma" refere-se ao conjunto de módulos, aplicações, sistemas e serviços fornecidos pela EdunexIA.
+
+3. CADASTRO E ACESSO
+3.1 Elegibilidade
+Para utilizar a plataforma EdunexIA, o Cliente deve ser uma instituição de ensino legalmente constituída, com representantes legais maiores de 18 anos ou emancipados, e com plena capacidade para contratar.
+
+3.2 Cadastro da Instituição
+O acesso à plataforma requer o cadastro prévio da instituição. O Cliente é responsável por:
+
+Fornecer informações precisas, completas e atualizadas durante o processo de cadastro
+Manter a confidencialidade das credenciais de acesso
+Notificar imediatamente a EdunexIA sobre qualquer uso não autorizado ou violação de segurança
+3.3 Contas de Usuários
+Após o cadastro institucional, o Cliente poderá criar contas para seus usuários. O Cliente é integralmente responsável por:
+
+Gerenciar os níveis de acesso de cada usuário
+Garantir que os usuários cumpram estes Termos
+Remover o acesso de usuários que não estejam mais vinculados à instituição
+3.4 Uso Não Autorizado
+Qualquer uso não autorizado das credenciais de acesso ou da plataforma deverá ser imediatamente reportado através do e-mail seguranca@edunexia.com.br.
+
+4. SERVIÇOS E MÓDULOS
+4.1 Descrição dos Serviços
+A EdunexIA oferece uma plataforma modular para gestão educacional, que pode incluir, conforme o plano contratado:
+
+Portal do Aluno
+Módulo de Chat Multicanal
+Módulo Financeiro
+Módulo de Matrículas
+Professora Ana (IA Assistente)
+Portal do Professor
+Módulo de Polos
+Módulo de Parceiros
+Módulo de Contabilidade
+Site Institucional
+Outros módulos e funcionalidades disponíveis conforme atualizações
+4.2 Atualizações e Novos Recursos
+A EdunexIA se reserva o direito de adicionar, alterar ou remover funcionalidades e recursos da plataforma, bem como lançar atualizações periódicas. O Cliente será notificado sobre mudanças significativas com antecedência razoável.
+
+4.3 Disponibilidade dos Serviços
+A EdunexIA envidará esforços comercialmente razoáveis para manter a plataforma operacional 24 horas por dia, 7 dias por semana, exceto durante manutenções programadas, das quais o Cliente será notificado com antecedência.
+
+4.4 Serviços de Terceiros
+A plataforma pode integrar-se a serviços de terceiros (como gateways de pagamento, serviços de comunicação, etc.). O uso desses serviços está sujeito aos termos e políticas adicionais desses provedores.
+
+5. CONDIÇÕES COMERCIAIS
+5.1 Planos de Assinatura
+O acesso à plataforma EdunexIA é oferecido mediante contratação de planos de assinatura, que podem ser:
+
+Mensal
+Anual
+Enterprise (personalizado)
+5.2 Pagamentos
+O Cliente concorda em pagar todos os valores conforme o plano contratado, nas datas estipuladas, através dos métodos de pagamento disponíveis. Para pagamentos recorrentes, o Cliente autoriza a EdunexIA a cobrar automaticamente o valor correspondente.
+
+5.3 Reajustes
+Os valores dos planos são reajustados anualmente com base no IGP-M ou outro índice que venha a substituí-lo. Para planos mensais, a EdunexIA poderá alterar os preços mediante notificação prévia de 30 dias.
+
+5.4 Inadimplência
+Em caso de inadimplência:
+
+Após 10 dias, o Cliente receberá notificações de cobrança
+Após 30 dias, o acesso à plataforma poderá ser restringido
+Após 60 dias, o acesso poderá ser suspenso
+Após 90 dias, os dados poderão ser arquivados e a conta encerrada
+5.5 Cancelamento
+O Cliente pode cancelar sua assinatura a qualquer momento, observando as seguintes condições:
+
+Para planos mensais: comunicação com 15 dias de antecedência
+Para planos anuais: sujeito às condições específicas do contrato
+Não há reembolso proporcional para períodos parciais
+6. PROPRIEDADE INTELECTUAL
+6.1 Propriedade da EdunexIA
+Todos os direitos de propriedade intelectual relativos à plataforma EdunexIA, incluindo software, código-fonte, marcas, logotipos, design, layout, algoritmos, funcionalidades e documentação, pertencem exclusivamente à TechEdu Desenvolvimento de Sistemas Educacionais Ltda.
+
+6.2 Licença de Uso
+A EdunexIA concede ao Cliente uma licença limitada, não exclusiva, não transferível e revogável para utilizar a plataforma durante a vigência da assinatura, exclusivamente para fins de gestão educacional.
+
+6.3 Conteúdo do Cliente
+O Cliente mantém todos os direitos sobre o conteúdo que inserir na plataforma. Ao fazer upload de conteúdo, o Cliente concede à EdunexIA uma licença mundial, não exclusiva e isenta de royalties para hospedar, armazenar, transferir e exibir tal conteúdo, exclusivamente para fins de prestação dos serviços contratados.
+
+6.4 Feedback e Sugestões
+Quaisquer feedbacks, sugestões ou recomendações fornecidos pelo Cliente em relação à plataforma podem ser utilizados pela EdunexIA para aprimorar os serviços, sem qualquer obrigação de compensação ou atribuição.
+
+7. PROTEÇÃO DE DADOS E PRIVACIDADE
+7.1 Conformidade com a LGPD
+A EdunexIA cumpre com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018) e outras legislações aplicáveis à proteção de dados pessoais. O tratamento de dados pessoais está detalhado em nossa Política de Privacidade.
+
+7.2 Controladora e Operadora
+Para os fins da LGPD, o Cliente é considerado o Controlador dos dados pessoais de seus usuários (alunos, professores, funcionários), enquanto a EdunexIA atua como Operadora desses dados.
+
+7.3 Responsabilidades do Cliente
+Como Controlador, o Cliente é responsável por:
+
+Obter consentimento válido dos titulares dos dados
+Informar os titulares sobre o tratamento de seus dados
+Garantir a base legal adequada para o tratamento
+Atender às solicitações dos titulares de dados
+7.4 Responsabilidades da EdunexIA
+Como Operadora, a EdunexIA se compromete a:
+
+Implementar medidas técnicas e organizacionais de segurança
+Tratar os dados apenas conforme instruções documentadas do Cliente
+Notificar o Cliente em caso de incidentes de segurança
+Cooperar com o Cliente para atender solicitações dos titulares
+7.5 Transferência Internacional
+Os dados pessoais podem ser transferidos para servidores localizados fora do Brasil, sempre observando as salvaguardas e garantias adequadas conforme exigido pela LGPD.
+
+8. OBRIGAÇÕES DO CLIENTE
+8.1 Uso Aceitável
+O Cliente concorda em utilizar a plataforma apenas para fins legítimos e lícitos relacionados à gestão educacional, comprometendo-se a:
+
+Não violar leis, regulamentos ou direitos de terceiros
+Não enviar conteúdo ilegal, ofensivo, difamatório ou prejudicial
+Não tentar acessar áreas restritas da plataforma
+Não realizar engenharia reversa do software
+Não interferir no funcionamento da plataforma
+8.2 Integridade da Plataforma
+O Cliente não deve tentar:
+
+Explorar vulnerabilidades de segurança
+Realizar testes de penetração sem autorização prévia
+Sobrecarregar os servidores com tráfego excessivo
+Utilizar scripts, bots ou crawlers não autorizados
+Inserir malware, vírus ou códigos maliciosos
+8.3 Conteúdo do Cliente
+O Cliente é integralmente responsável pelo conteúdo que insere ou permite que seus usuários insiram na plataforma, garantindo que tal conteúdo:
+
+Não viola direitos de propriedade intelectual de terceiros
+Não contém material ilegal, ofensivo ou inapropriado
+Não infringe a privacidade ou outros direitos de terceiros
+8.4 Conformidade Regulatória
+O Cliente é responsável por cumprir todos os regulamentos e legislações aplicáveis à sua atividade educacional, incluindo, mas não se limitando a:
+
+Leis educacionais
+Regulamentos do MEC
+Legislação trabalhista
+Código de Defesa do Consumidor
+Estatuto da Criança e do Adolescente (quando aplicável)
+9. LIMITAÇÕES DE RESPONSABILIDADE
+9.1 Exclusão de Garantias
+A plataforma EdunexIA é fornecida "no estado em que se encontra" e "conforme disponível", sem garantias de qualquer tipo, expressas ou implícitas, incluindo, mas não se limitando a, garantias de comercialização, adequação a um propósito específico e não violação.
+
+9.2 Interrupções e Falhas
+A EdunexIA não garante que a plataforma funcionará ininterruptamente, livre de erros ou segura. Eventuais falhas, interrupções ou indisponibilidades podem ocorrer e não constituirão inadimplemento contratual quando resultantes de:
+
+Manutenções programadas previamente informadas
+Circunstâncias fora do controle razoável da EdunexIA
+Ataques cibernéticos
+Falhas em serviços de terceiros (internet, energia, etc.)
+9.3 Limitação de Danos
+A EdunexIA não será responsável por danos indiretos, incidentais, consequenciais, especiais ou punitivos, incluindo lucros cessantes, perda de dados, interrupção de negócios ou outros prejuízos comerciais, mesmo se previamente advertida sobre a possibilidade de tais danos.
+
+9.4 Limite de Responsabilidade
+Em nenhuma hipótese a responsabilidade total da EdunexIA excederá o valor pago pelo Cliente nos 12 meses anteriores ao evento que gerou a responsabilidade.
+
+10. CONFIDENCIALIDADE
+10.1 Definição de Informações Confidenciais
+Informações Confidenciais incluem quaisquer informações não públicas divulgadas por uma parte à outra, incluindo, mas não se limitando a:
+
+Dados de alunos e professores
+Informações financeiras
+Estratégias de negócio
+Tecnologias e metodologias proprietárias
+Credenciais de acesso
+10.2 Obrigações de Confidencialidade
+Ambas as partes se comprometem a:
+
+Manter a confidencialidade das informações recebidas
+Utilizar tais informações apenas para os fins contemplados nestes Termos
+Implementar medidas de segurança adequadas para proteger as informações
+Não divulgar informações confidenciais a terceiros sem autorização prévia
+10.3 Exceções
+As obrigações de confidencialidade não se aplicam a informações que:
+
+Sejam ou se tornem de domínio público sem culpa da parte receptora
+Estejam legalmente em posse da parte receptora antes da divulgação
+Sejam obtidas legitimamente de terceiros sem restrições de confidencialidade
+Devam ser divulgadas por força de lei ou ordem judicial
+11. DURAÇÃO E RESCISÃO
+11.1 Vigência
+Estes Termos permanecerão em vigor enquanto o Cliente utilizar a plataforma EdunexIA ou enquanto durar a assinatura contratada.
+
+11.2 Rescisão pelo Cliente
+O Cliente pode rescindir sua assinatura a qualquer momento, mediante notificação prévia conforme estipulado na seção 5.5, observando o período mínimo de fidelidade, quando aplicável.
+
+11.3 Rescisão pela EdunexIA
+A EdunexIA pode rescindir ou suspender, total ou parcialmente, o acesso do Cliente à plataforma, imediatamente e sem aviso prévio, por qualquer das seguintes razões:
+
+Violação material destes Termos
+Inadimplência por período superior a 60 dias
+Uso da plataforma para atividades fraudulentas ou ilegais
+Descumprimento das políticas de uso aceitável
+11.4 Efeitos da Rescisão
+Após a rescisão:
+
+O acesso à plataforma será desativado
+Os dados do Cliente permanecerão disponíveis para exportação por 30 dias
+Após 90 dias, os dados poderão ser excluídos permanentemente
+As obrigações de pagamento por serviços já prestados persistirão
+12. DISPOSIÇÕES GERAIS
+12.1 Alterações nos Termos
+A EdunexIA se reserva o direito de modificar estes Termos a qualquer momento. As alterações entrarão em vigor após 30 dias da notificação ao Cliente. O uso continuado da plataforma após este período constitui aceitação das modificações.
+
+12.2 Comunicações
+Todas as notificações à EdunexIA devem ser enviadas para contato@edunexia.com.br. As notificações ao Cliente serão enviadas para o endereço de e-mail registrado em sua conta.
+
+12.3 Cessão
+O Cliente não pode ceder ou transferir quaisquer direitos ou obrigações decorrentes destes Termos sem o consentimento prévio por escrito da EdunexIA.
+
+12.4 Força Maior
+Nenhuma das partes será responsável por falhas ou atrasos resultantes de circunstâncias além de seu controle razoável, incluindo desastres naturais, atos governamentais, falhas de telecomunicações, ataques cibernéticos ou outros eventos de força maior.
+
+12.5 Lei Aplicável
+Estes Termos são regidos pelas leis da República Federativa do Brasil.
+
+12.6 Resolução de Conflitos
+Qualquer controvérsia oriunda destes Termos será resolvida preferencialmente por mediação. Não sendo possível uma solução amigável, os conflitos serão dirimidos pelo foro da comarca de São Paulo/SP, com exclusão de qualquer outro, por mais privilegiado que seja.
+
+12.7 Independência das Disposições
+Se qualquer disposição destes Termos for considerada inválida ou inexequível, tal invalidez não afetará as demais disposições, que permanecerão em pleno vigor e efeito.
+
+12.8 Acordo Integral
+Estes Termos, juntamente com a Política de Privacidade e quaisquer contratos específicos assinados entre as partes, constituem o acordo completo entre o Cliente e a EdunexIA em relação ao objeto aqui tratado.
+
+12.9 Renúncia
+A falha da EdunexIA em exercer ou fazer valer qualquer direito ou disposição destes Termos não constituirá renúncia a tal direito ou disposição.
+
+12.10 Sobrevivência
+As disposições relativas à propriedade intelectual, responsabilidade, confidencialidade e quaisquer outras que, por sua natureza, devam sobreviver ao término destes Termos, permanecerão em vigor após a rescisão.
+
+13. ATENDIMENTO AO CLIENTE
+Para questões relacionadas a estes Termos ou à plataforma EdunexIA, o Cliente pode entrar em contato através dos seguintes canais:
+
+E-mail: suporte@edunexia.com.br
+Telefone: (11) XXXX-XXXX
+Chat: Disponível na plataforma em dias úteis, das 8h às 18h
+Endereço: Av. Paulista, XXXX, XX° andar, São Paulo/SP, CEP XXXXX-XXX
+
+Ao utilizar a plataforma EdunexIA, você confirma que leu, compreendeu e concorda com estes Termos de Uso.
+
+TechEdu Desenvolvimento de Sistemas Educacionais Ltda.
+CNPJ XX.XXX.XXX/XXXX-XX
+
+Faça um detalhamento do select de portais no presente no botão ENTRAR do site principal e como deve ser o comportamento de redirecionamento.
+
+12 hours ago
+MA
+
+magonder
+Detalhamento do Seletor de Portais no Botão "ENTRAR" do Site Principal
+1. Interface e Comportamento do Botão "ENTRAR"
+1.1 Estado Inicial no Header
++----------------------------------------------------------+
+|  LOGO  |  MÓDULOS  |  PLANOS  |  SOBRE  |  BLOG  | ENTRAR|
++----------------------------------------------------------+
+Aparência do Botão:
+
+Estilo: Ghost button com borda 1px
+Cor: Borda e texto na cor primária (#4D61FC)
+Tamanho: Altura de 40px, padding horizontal 16-20px
+Tipografia: 14px, Medium/Semi-bold
+Ícone: Pequeno ícone de usuário à esquerda (opcional)
+Estados Interativos:
+
+Hover: Background com opacidade 10% da cor primária
+Active: Background com opacidade 20% da cor primária
+Focus: Outline sutil para acessibilidade
+1.2 Comportamento ao Clicar
+Ao clicar no botão "ENTRAR", em vez de navegar diretamente para uma página de login, um dropdown sofisticado de seleção de portais é exibido:
+
++----------------------------------------------------------+
+|  LOGO  |  MÓDULOS  |  PLANOS  |  SOBRE  |  BLOG  | ENTRAR|
++----------------------------------------------------------+
+                                                    |
+                                                    v
+                              +-------------------------------+
+                              |     ESCOLHA SEU PORTAL        |
+                              +-------------------------------+
+                              |                               |
+                              | [Ícone] Portal do Aluno      |
+                              |   Acesso para estudantes      |
+                              |                               |
+                              | [Ícone] Portal do Professor  |
+                              |   Acesso para docentes        |
+                              |                               |
+                              | [Ícone] Portal do Polo       |
+                              |   Gestão de unidades          |
+                              |                               |
+                              | [Ícone] Portal Financeiro    |
+                              |   Gestão financeira           |
+                              |                               |
+                              | [Ícone] Administrativo       |
+                              |   Acesso completo             |
+                              |                               |
+                              +-------------------------------+
+2. Especificações Detalhadas do Dropdown
+2.1 Animação e Entrada
+Animação de Entrada: Fade-in com leve movimento descendente (duração: 250ms)
+Easing: Curva ease-out-cubic para aparência natural
+Focus Management: Primeiro item automaticamente focado para navegação por teclado
+Backdrop: Overlay transparente (opcional) no resto da página para enfatizar o dropdown
+2.2 Estrutura do Dropdown
+Container:
+
+Largura: 280-320px
+Background: Branco (#FFFFFF) para contraste com o tema escuro do site
+Borda: 1px com cor neutra (#E2E8F0)
+Border radius: 12px
+Shadow: Sombra suave para elevação (0 4px 20px rgba(0,0,0,0.15))
+Z-index: Alto para sobrepor outros elementos
+Cabeçalho:
+
+Título: "ESCOLHA SEU PORTAL" ou "ACESSO RESTRITO"
+Estilo: Centralizado, 16px, Semi-bold
+Padding: 16px
+Borda inferior: 1px para separação visual
+Itens do Portal:
+
+Altura: 64-72px por item para área de toque adequada
+Layout: Ícone à esquerda (32px), texto principal e descrição à direita
+Padding: 16px horizontal, 12px vertical
+Separador: Linha sutil 1px entre itens
+Hover state: Background #F7FAFC ou tom sutil da cor do portal
+2.3 Detalhes de Cada Portal
+Portal do Aluno
+
+Ícone: Estudante com chapéu de formatura
+Cor temática: Verde (#12B76A)
+Texto principal: "Portal do Aluno"
+Descrição: "Acesso para estudantes"
+Destino: /aluno/login
+Portal do Professor
+
+Ícone: Professor com livro/quadro
+Cor temática: Azul (#3E63DD)
+Texto principal: "Portal do Professor"
+Descrição: "Acesso para docentes"
+Destino: /professor/login
+Portal do Polo
+
+Ícone: Prédio/localização
+Cor temática: Laranja (#F79009)
+Texto principal: "Portal do Polo"
+Descrição: "Gestão de unidades"
+Destino: /polo/login
+Portal Financeiro
+
+Ícone: Cifrão/gráfico
+Cor temática: Roxo (#7C4DFC)
+Texto principal: "Portal Financeiro"
+Descrição: "Gestão financeira"
+Destino: /financeiro/login
+Portal Administrativo
+
+Ícone: Engrenagem/dashboard
+Cor temática: Azul escuro (#0C356A)
+Texto principal: "Administrativo"
+Descrição: "Acesso completo"
+Destino: /admin/login
+2.4 Comportamentos Interativos
+Hover:
+
+Background light: Tom suave da cor do portal (10% opacidade)
+Cursor: pointer
+Transição: 150ms para todas as propriedades
+Focus:
+
+Outline sutil para navegação por teclado
+Comportamento similar ao hover
+Active/Press:
+
+Scale down sutil (0.98)
+Background mais intenso (15% opacidade)
+3. Comportamento de Redirecionamento
+3.1 Fluxo de Redirecionamento
+Quando um usuário seleciona um dos portais do dropdown, o comportamento de redirecionamento segue este fluxo:
+
+Animação de Saída do Dropdown:
+
+Fade-out rápido (150ms)
+Indicador de loading sutil no botão "ENTRAR" (opcional)
+Redirecionamento para a Página de Login Específica:
+
+URL específico para cada portal (ex: /aluno/login, /admin/login)
+Parâmetros UTM mantidos para tracking (se aplicável)
+Preservação do estado de referrer para retorno pós-logout
+Página de Login Específica:
+
+Cada portal tem sua própria página de login temática
+O logotipo e elementos da marca EdunexIA são mantidos
+As cores e elementos visuais seguem a identidade do portal específico
+3.2 Persistência de Preferência
+Cookie de Preferência:
+Um cookie "ultimo_portal" é definido no navegador do usuário
+Duração do cookie: 30 dias
+Na próxima visita ao site, clicar em "ENTRAR" pode:
+Mostrar o dropdown com o último portal usado destacado
+Ou redirecionar diretamente para o último portal usado (opção configurável)
+3.3 Login Único vs. Portais Separados
+Sistema de Autenticação:
+
+Cada portal utiliza o mesmo backend de autenticação
+Credenciais diferentes por tipo de usuário (aluno, professor, etc.)
+Tokens de autenticação específicos por portal para isolamento de sessão
+Cross-Portal Navigation:
+
+Usuários com múltiplos perfis podem trocar entre portais após login
+Exigência de nova autenticação ao trocar entre portais com níveis distintos de acesso (ex: de Aluno para Admin)
+3.4 Detecção de Sessão Ativa
+Verificação de Sessão:
+Antes de exibir a página de login, verificação de sessão ativa para o portal selecionado
+Se sessão existente, redirecionamento direto para dashboard do portal
+Opção de "Usar outra conta" sempre disponível
+4. Responsividade e Acessibilidade
+4.1 Comportamento em Mobile
++-----------------------------+
+|  LOGO               | MENU |
++-----------------------------+
+                       |
+                       v
++-----------------------------+
+|     ESCOLHA SEU PORTAL     |
++-----------------------------+
+|                            |
+| [Ícone] Portal do Aluno    |
+|   Acesso para estudantes   |
+|                            |
+| [Ícone] Portal do Professor|
+|   Acesso para docentes     |
++-----------------------------+
+|           ...              |
++-----------------------------+
+Menu Mobile:
+
+O botão "ENTRAR" aparece no menu hamburger expandido
+Ao tocar, pode exibir o dropdown abaixo do item
+Ou abrir diretamente uma nova página com os portais disponíveis
+Dropdown Adaptativo:
+
+Em telas menores que 480px, ocupa 100% da largura
+Position fixed para evitar problemas de overflow
+Bottom sheet em vez de dropdown (opcional para mobile)
+4.2 Acessibilidade
+Navegação por Teclado:
+
+Tab sequencial entre os itens do dropdown
+Enter/Space para selecionar
+Escape para fechar o dropdown
+Setas para navegação entre opções
+Screen Readers:
+
+ARIA role="menu" para o dropdown
+role="menuitem" para cada opção
+aria-expanded no botão "ENTRAR"
+Anúncios apropriados para abertura/fechamento do menu
+Contrastes e Legibilidade:
+
+Contraste mínimo de 4.5:1 para todos os textos
+Ícones acompanhados de texto para compreensão
+Tamanho mínimo de fonte de 14px para legibilidade
+5. Implementação Técnica
+5.1 HTML Estrutural
+<div class="portal-selector-dropdown">
+  <div class="portal-selector-header">
+    <h3>ESCOLHA SEU PORTAL</h3>
+  </div>
+  
+  <ul class="portal-list" role="menu">
+    <li class="portal-item" role="menuitem">
+      <a href="/aluno/login" class="portal-link portal-aluno">
+        <div class="portal-icon">
+          <svg><!-- Ícone SVG --></svg>
+        </div>
+        <div class="portal-info">
+          <span class="portal-name">Portal do Aluno</span>
+          <span class="portal-description">Acesso para estudantes</span>
+        </div>
+      </a>
+    </li>
+    
+    <!-- Outros itens de portal similar -->
+  </ul>
+</div>
+5.2 Comportamento JavaScript
+Event Listeners:
+
+Click outside para fechar o dropdown
+Escape key para fechar o dropdown
+Navegação por setas via keyboard
+Tracking de cliques para analytics
+Estado:
+
+Dropdown controlado por estado (aberto/fechado)
+Memorização da última seleção
+5.3 Redirecionamento e Query Params
+Preservação de UTM:
+// Exemplo de código para preservação de parâmetros
+function redirectToPortal(portalUrl) {
+  const currentParams = new URLSearchParams(window.location.search);
+  let redirectUrl = portalUrl;
+  
+  // Adicionar UTM params se existirem
+  if (currentParams.toString()) {
+    redirectUrl += `?${currentParams.toString()}`;
+  }
+  
+  // Adicionar referrer
+  localStorage.setItem('portal_referrer', window.location.href);
+  
+  // Salvar preferência
+  setCookie('ultimo_portal', portalUrl, 30);
+  
+  // Redirecionar
+  window.location.href = redirectUrl;
+}
+6. Cenários de Uso
+6.1 Usuário de Primeira Visita
+Usuário novo clica em "ENTRAR"
+Dropdown de seleção de portal é exibido
+Usuário seleciona o portal desejado
+Redirecionamento para página de login específica
+Preferência é salva para visitas futuras
+6.2 Usuário Recorrente
+Usuário retorna ao site e clica em "ENTRAR"
+Dropdown é exibido com último portal usado destacado
+Usuário pode selecionar o mesmo portal ou outro diferente
+Redirecionamento para a página de login escolhida
+6.3 Usuário com Sessão Ativa
+Usuário com sessão ativa em um portal clica em "ENTRAR"
+Sistema detecta sessão válida após seleção
+Redirecionamento direto para dashboard do portal
+Opção "Usar outra conta" disponível no portal
+6.4 Dispositivo Móvel
+Usuário em mobile abre o menu hamburguer
+Toca no item "ENTRAR"
+Dropdown ou página dedicada exibe opções de portal
+Seleção leva à página de login específica otimizada para mobile
+Esta implementação do seletor de portais no botão "ENTRAR" oferece uma experiência fluida, intuitiva e esteticamente alinhada com o design da EdunexIA, facilitando o acesso dos usuários aos diferentes ambientes da plataforma de acordo com seus perfis e necessidades.
+
+Agora faça o mesmo processo para explicar com riqueza de detalhes como´é o portal do aluno, onde o aluno autenticado deverá ser dicionado após o login na página principal do site. Mencione claramente a integração com o módulo de matrículas, todas as funcionalidades quee ele possui. Não se esqueça de nenhum detalhe.
