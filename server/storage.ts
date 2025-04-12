@@ -1,5 +1,6 @@
 import { users, type User, type InsertUser } from "@shared/schema";
 import session from "express-session";
+import { Store as SessionStore } from "express-session";
 import connectPg from "connect-pg-simple";
 import { db } from "./db";
 import { pool } from "./db";
@@ -13,12 +14,12 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   getUsersByPortalType(portalType: string): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
-  sessionStore: session.SessionStore;
+  sessionStore: SessionStore;
 }
 
 // Database storage implementation
 export class DatabaseStorage implements IStorage {
-  sessionStore: session.SessionStore;
+  sessionStore: SessionStore;
 
   constructor() {
     this.sessionStore = new PostgresSessionStore({ 

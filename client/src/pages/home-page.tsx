@@ -144,6 +144,7 @@ export default function HomePage() {
                   <Button 
                     variant="outline" 
                     className="w-full text-primary border-primary hover:bg-primary hover:text-white"
+                    onClick={() => navigate('/modulos')}
                   >
                     Saiba mais
                   </Button>
@@ -171,6 +172,7 @@ export default function HomePage() {
                   <Button 
                     variant="outline" 
                     className="w-full text-primary border-primary hover:bg-primary hover:text-white"
+                    onClick={() => navigate('/modulos')}
                   >
                     Saiba mais
                   </Button>
@@ -179,7 +181,11 @@ export default function HomePage() {
             </div>
             
             <div className="text-center mt-12">
-              <Button variant="link" className="text-primary hover:text-primary-dark">
+              <Button 
+                variant="link" 
+                className="text-primary hover:text-primary-dark"
+                onClick={() => navigate('/modulos')}
+              >
                 Ver todos os módulos
                 <span className="ml-1">→</span>
               </Button>
@@ -208,6 +214,7 @@ export default function HomePage() {
                     variant="secondary"
                     size="lg"
                     className="bg-white/10 text-white hover:bg-white/20"
+                    onClick={() => navigate('/contato')}
                   >
                     <span className="mr-2">📞</span>
                     Fale conosco
