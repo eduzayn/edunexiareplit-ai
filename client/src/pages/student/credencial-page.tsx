@@ -1,7 +1,9 @@
 import { useState, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Sidebar } from "@/components/layout/sidebar";
+import { getStudentSidebarItems } from "@/components/layout/student-sidebar-items";
 import {
   Card,
   CardContent,
@@ -58,7 +60,6 @@ import {
   AlertTitle,
   AlertDescription,
 } from "@/components/ui/alert";
-import { useLocation } from "wouter";
 
 // Interface para o status do estudante
 interface StudentCredentialStatus {
@@ -128,18 +129,9 @@ export default function CredencialPage() {
     }
   ];
 
-  // Sidebarr
-  const sidebarItems = [
-    { name: "Dashboard", icon: <ChartIcon />, href: "/student/dashboard" },
-    { name: "Meus Cursos", icon: <MenuBookIcon />, href: "/student/courses" },
-    { name: "Credencial", icon: <CreditCard />, active: true, href: "/student/credencial" },
-    { name: "Calendário", icon: <EventNoteIcon />, href: "/student/calendar" },
-    { name: "Documentos", icon: <DescriptionIcon />, href: "/student/documents" },
-    { name: "Biblioteca", icon: <LayersIcon />, href: "/student/library" },
-    { name: "Secretaria", icon: <FileTextIcon />, href: "/student/secretaria" },
-    { name: "Financeiro", icon: <PaymentsIcon />, href: "/student/financial" },
-    { name: "Suporte", icon: <HelpOutlineIcon />, href: "/student/support" },
-  ];
+  // Usar o componente padronizado para os itens da barra lateral
+  const [location] = useLocation();
+  const sidebarItems = getStudentSidebarItems(location);
 
   // Formatador de data
   const formatDate = (dateString: string) => {
