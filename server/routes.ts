@@ -874,6 +874,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Erro ao buscar detalhes do curso" });
     }
   });
+  
+  // Obter detalhes de uma disciplina específica para o aluno
+  app.get("/api/student/disciplines/:id", requireStudent, async (req, res) => {
+    try {
+      const disciplineId = parseInt(req.params.id);
+      const discipline = await storage.getDiscipline(disciplineId);
+      
+      if (!discipline) {
+        return res.status(404).json({ message: "Disciplina não encontrada" });
+      }
+      
+      // Simular progresso do aluno nesta disciplina
+      const progress = Math.floor(Math.random() * 101);
+      
+      // Retornar disciplina com dados adicionais
+      res.json({
+        ...discipline,
+        progress,
+      });
+    } catch (error) {
+      console.error("Error fetching student discipline:", error);
+      res.status(500).json({ message: "Erro ao buscar detalhes da disciplina" });
+    }
+  });
 
   const httpServer = createServer(app);
 
