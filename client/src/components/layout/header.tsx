@@ -97,12 +97,12 @@ export default function Header({ onLogin }: HeaderProps) {
                     <nav className="flex flex-col space-y-1">
                       {navItems.map((item) => (
                         <SheetClose key={item.name} asChild>
-                          <a 
+                          <Link 
                             href={item.href} 
                             className="px-3 py-3 rounded-md text-base font-medium text-neutral-600 hover:text-primary hover:bg-neutral-100"
                           >
                             {item.name}
-                          </a>
+                          </Link>
                         </SheetClose>
                       ))}
                       <div className="pt-4">

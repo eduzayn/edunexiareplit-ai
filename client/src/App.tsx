@@ -8,6 +8,7 @@ import ModulosPage from "@/pages/modulos-page";
 import PlanosPage from "@/pages/planos-page";
 import SobrePage from "@/pages/sobre-page";
 import ContatoPage from "@/pages/contato-page";
+import BlogPage from "@/pages/blog-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { useAuth, AuthProvider } from "./hooks/use-auth";
 
@@ -37,7 +38,7 @@ function Router() {
       <Route path="/planos" component={PlanosPage} />
       <Route path="/sobre" component={SobrePage} />
       <Route path="/contato" component={ContatoPage} />
-      <Route path="/blog" component={NotFound} />
+      <Route path="/blog" component={BlogPage} />
       
       <ProtectedRoute path="/student/dashboard" portalType="student" />
       <ProtectedRoute path="/partner/dashboard" portalType="partner" />

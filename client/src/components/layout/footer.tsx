@@ -60,14 +60,14 @@ export default function Footer() {
             </p>
             <div className="mt-6 flex space-x-4">
               {socialLinks.map((social, index) => (
-                <a 
+                <Link 
                   key={index} 
                   href={social.href} 
                   className="text-neutral-400 hover:text-white transition-colors"
                   aria-label={social.label}
                 >
                   {social.icon}
-                </a>
+                </Link>
               ))}
             </div>
           </div>
@@ -79,12 +79,12 @@ export default function Footer() {
               <ul className="space-y-2">
                 {section.links.map((link) => (
                   <li key={link.name}>
-                    <a 
+                    <Link 
                       href={link.href} 
                       className="hover:text-white transition-colors"
                     >
                       {link.name}
-                    </a>
+                    </Link>
                   </li>
                 ))}
               </ul>
