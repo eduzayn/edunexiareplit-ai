@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
+import { useLocation } from "wouter";
+import { getAdminSidebarItems } from "@/components/layout/admin-sidebar-items";
 import {
   Card,
   CardContent,

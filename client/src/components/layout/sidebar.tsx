@@ -88,6 +88,7 @@ export function Sidebar({
   // Função para colorir ícones com base no nome da seção
   const getColoredIcon = (name: string, icon: React.ReactNode, isActive: boolean) => {
     const iconClasses = {
+      // Portal do Aluno
       "Dashboard": "text-blue-500",
       "Meus Cursos": "text-green-500",
       "Progresso": "text-purple-500",
@@ -98,6 +99,19 @@ export function Sidebar({
       "Secretaria": "text-cyan-500",
       "Financeiro": "text-emerald-500",
       "Suporte": "text-orange-500",
+      
+      // Portal Administrativo
+      "Disciplinas": "text-indigo-500",
+      "Cursos": "text-green-500",
+      "Instituições": "text-blue-600",
+      "Usuários": "text-purple-500",
+      "Parceiros": "text-yellow-600",
+      "Polos": "text-teal-500",
+      "Relatórios": "text-pink-500",
+      "Integrações": "text-violet-500",
+      "Sistema": "text-slate-500",
+      "Segurança": "text-red-500",
+      "Configurações": "text-gray-500",
     };
     
     // Aplica a classe de cor correspondente ao nome da seção
