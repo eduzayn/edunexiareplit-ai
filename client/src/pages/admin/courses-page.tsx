@@ -302,6 +302,7 @@ export default function CoursesPage() {
   // Funções para abrir diálogos
   const handleOpenCreateDialog = () => {
     createForm.reset();
+    setSelectedDisciplines([]);
     setIsCreateDialogOpen(true);
   };
 
@@ -596,47 +597,49 @@ export default function CoursesPage() {
                     <FormItem>
                       <FormLabel>Carga Horária (horas)</FormLabel>
                       <FormControl>
-                        <Input type="number" min="1" {...field} />
+                        <Input
+                          type="number"
+                          placeholder="Ex: 60"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              </div>
-
-              <FormField
-                control={createForm.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome do Curso</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Ex: Introdução à Programação" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={createForm.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Descrição</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Descreva o curso em detalhes..."
-                        rows={4}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <FormField
+                  control={createForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem className="md:col-span-2">
+                      <FormLabel>Nome do Curso</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Ex: Introdução à Programação"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={createForm.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem className="md:col-span-2">
+                      <FormLabel>Descrição</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Descreva o curso em detalhes..."
+                          className="min-h-[100px]"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <FormField
                   control={createForm.control}
                   name="price"
@@ -644,7 +647,11 @@ export default function CoursesPage() {
                     <FormItem>
                       <FormLabel>Preço (R$)</FormLabel>
                       <FormControl>
-                        <Input type="number" min="0" step="0.01" {...field} />
+                        <Input
+                          type="number"
+                          placeholder="Ex: 299.90"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -661,14 +668,14 @@ export default function CoursesPage() {
                           onValueChange={field.onChange}
                           defaultValue={field.value}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="w-full">
                             <SelectValue placeholder="Selecione..." />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="quiz">Quiz</SelectItem>
                             <SelectItem value="exam">Prova</SelectItem>
                             <SelectItem value="project">Projeto</SelectItem>
-                            <SelectItem value="mixed">Método Misto</SelectItem>
+                            <SelectItem value="mixed">Misto</SelectItem>
                           </SelectContent>
                         </Select>
                       </FormControl>
@@ -676,21 +683,25 @@ export default function CoursesPage() {
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={createForm.control}
+                  name="thumbnail"
+                  render={({ field }) => (
+                    <FormItem className="md:col-span-2">
+                      <FormLabel>URL da Imagem de Capa</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="https://example.com/image.jpg"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
-              <FormField
-                control={createForm.control}
-                name="thumbnail"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>URL da Imagem de Capa</FormLabel>
-                    <FormControl>
-                      <Input placeholder="https://example.com/image.jpg" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <Separator className="my-4" />
 
               <FormField
                 control={createForm.control}
@@ -717,6 +728,61 @@ export default function CoursesPage() {
                   </FormItem>
                 )}
               />
+              
+              <Separator className="my-4" />
+              
+              <div>
+                <h3 className="text-lg font-medium mb-2">Disciplinas do Curso</h3>
+                <p className="text-sm text-gray-500 mb-4">
+                  Selecione as disciplinas que farão parte deste curso.
+                </p>
+                
+                {isDisciplinesLoading ? (
+                  <div className="space-y-2">
+                    {Array(3)
+                      .fill(0)
+                      .map((_, index) => (
+                        <div key={index} className="flex items-center space-x-2">
+                          <Skeleton className="h-4 w-4 rounded" />
+                          <Skeleton className="h-4 w-[250px]" />
+                        </div>
+                      ))}
+                  </div>
+                ) : disciplines && disciplines.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-60 overflow-y-auto border rounded p-3">
+                    {disciplines.map((discipline: Discipline) => (
+                      <div key={discipline.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`discipline-${discipline.id}`}
+                          checked={selectedDisciplines.includes(discipline.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedDisciplines([...selectedDisciplines, discipline.id]);
+                            } else {
+                              setSelectedDisciplines(
+                                selectedDisciplines.filter((id) => id !== discipline.id)
+                              );
+                            }
+                          }}
+                        />
+                        <label
+                          htmlFor={`discipline-${discipline.id}`}
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                        >
+                          {discipline.code} - {discipline.name}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <Alert>
+                    <AlertTitle>Nenhuma disciplina encontrada</AlertTitle>
+                    <AlertDescription>
+                      Você precisa criar disciplinas antes de poder adicioná-las a um curso.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
 
               <DialogFooter>
                 <Button 
@@ -765,47 +831,49 @@ export default function CoursesPage() {
                     <FormItem>
                       <FormLabel>Carga Horária (horas)</FormLabel>
                       <FormControl>
-                        <Input type="number" min="1" {...field} />
+                        <Input
+                          type="number"
+                          placeholder="Ex: 60"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              </div>
-
-              <FormField
-                control={editForm.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome do Curso</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Ex: Introdução à Programação" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={editForm.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Descrição</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Descreva o curso em detalhes..."
-                        rows={4}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <FormField
+                  control={editForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem className="md:col-span-2">
+                      <FormLabel>Nome do Curso</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Ex: Introdução à Programação"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem className="md:col-span-2">
+                      <FormLabel>Descrição</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Descreva o curso em detalhes..."
+                          className="min-h-[100px]"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <FormField
                   control={editForm.control}
                   name="price"
@@ -813,7 +881,11 @@ export default function CoursesPage() {
                     <FormItem>
                       <FormLabel>Preço (R$)</FormLabel>
                       <FormControl>
-                        <Input type="number" min="0" step="0.01" {...field} />
+                        <Input
+                          type="number"
+                          placeholder="Ex: 299.90"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -830,14 +902,14 @@ export default function CoursesPage() {
                           onValueChange={field.onChange}
                           defaultValue={field.value}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="w-full">
                             <SelectValue placeholder="Selecione..." />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="quiz">Quiz</SelectItem>
                             <SelectItem value="exam">Prova</SelectItem>
                             <SelectItem value="project">Projeto</SelectItem>
-                            <SelectItem value="mixed">Método Misto</SelectItem>
+                            <SelectItem value="mixed">Misto</SelectItem>
                           </SelectContent>
                         </Select>
                       </FormControl>
@@ -845,21 +917,25 @@ export default function CoursesPage() {
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={editForm.control}
+                  name="thumbnail"
+                  render={({ field }) => (
+                    <FormItem className="md:col-span-2">
+                      <FormLabel>URL da Imagem de Capa</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="https://example.com/image.jpg"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
-              <FormField
-                control={editForm.control}
-                name="thumbnail"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>URL da Imagem de Capa</FormLabel>
-                    <FormControl>
-                      <Input placeholder="https://example.com/image.jpg" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <Separator className="my-4" />
 
               <FormField
                 control={editForm.control}
@@ -902,7 +978,7 @@ export default function CoursesPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Course Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -912,8 +988,8 @@ export default function CoursesPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="mt-2 space-y-2">
-            <p className="text-sm text-red-500">
-              Atenção: Todos os dados associados a este curso serão removidos permanentemente.
+            <p className="text-sm text-gray-500">
+              Todos os dados associados a este curso, incluindo disciplinas vinculadas, serão removidos permanentemente.
             </p>
           </div>
           <DialogFooter>
@@ -925,10 +1001,11 @@ export default function CoursesPage() {
               Cancelar
             </Button>
             <Button 
+              type="button" 
               variant="destructive" 
               onClick={handleDelete}
             >
-              Excluir Curso
+              Excluir
             </Button>
           </DialogFooter>
         </DialogContent>
