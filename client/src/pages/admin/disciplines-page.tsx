@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
+import { useLocation } from "wouter";
 import { Sidebar } from "@/components/layout/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
@@ -79,6 +80,7 @@ export default function DisciplinesPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const [, navigate] = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -369,6 +371,14 @@ export default function DisciplinesPage() {
                           <TableCell>{discipline.workload}h</TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => navigate(`/admin/disciplines/${discipline.id}/content`)}
+                              >
+                                <FileTextIcon className="h-4 w-4" />
+                                <span className="sr-only md:not-sr-only md:ml-2">Conteúdo</span>
+                              </Button>
                               <Button
                                 variant="outline"
                                 size="sm"
