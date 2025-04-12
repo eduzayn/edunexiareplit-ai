@@ -75,6 +75,7 @@ import {
   ReceiptIcon,
   ArrowLeftIcon,
   SaveIcon,
+  CheckIcon,
 } from "@/components/ui/icons";
 
 import { Input } from "@/components/ui/input";
@@ -159,14 +160,15 @@ export default function CourseFormPage() {
       return response.json();
     },
     enabled: !!courseId,
-    onSuccess: (data) => {
-      // Extrair os IDs das disciplinas
-      if (data && data.length > 0) {
-        const disciplineIds = data.map((item: any) => item.disciplineId);
-        setSelectedDisciplines(disciplineIds);
-      }
-    }
   });
+  
+  // Efeito para extrair os IDs das disciplinas do curso
+  useEffect(() => {
+    if (courseDisciplines && courseDisciplines.length > 0) {
+      const disciplineIds = courseDisciplines.map((item: any) => item.disciplineId);
+      setSelectedDisciplines(disciplineIds);
+    }
+  }, [courseDisciplines]);
 
   // Consulta para listar todas as disciplinas disponíveis
   const { 
@@ -706,25 +708,25 @@ export default function CourseFormPage() {
                                 URL da imagem que será exibida como capa do curso (opcional)
                               </FormDescription>
                               <FormMessage />
+                              
+                              {field.value && (
+                                <div className="mt-2">
+                                  <p className="text-sm text-gray-500 mb-2">Preview da imagem:</p>
+                                  <div className="border rounded-md p-2 max-w-xs">
+                                    <img 
+                                      src={field.value} 
+                                      alt="Preview da capa" 
+                                      className="rounded-md"
+                                      onError={(e) => {
+                                        e.currentTarget.src = "https://placehold.co/600x400?text=Imagem+Inválida";
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                              )}
                             </FormItem>
                           )}
                         />
-
-                        {field.value && (
-                          <div className="mt-2">
-                            <p className="text-sm text-gray-500 mb-2">Preview da imagem:</p>
-                            <div className="border rounded-md p-2 max-w-xs">
-                              <img 
-                                src={field.value} 
-                                alt="Preview da capa" 
-                                className="rounded-md"
-                                onError={(e) => {
-                                  e.currentTarget.src = "https://placehold.co/600x400?text=Imagem+Inválida";
-                                }}
-                              />
-                            </div>
-                          </div>
-                        )}
 
                         <div className="flex justify-between pt-4">
                           <Button

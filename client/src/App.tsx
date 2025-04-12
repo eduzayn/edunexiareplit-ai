@@ -12,6 +12,7 @@ import BlogPage from "@/pages/blog-page";
 import AdminAuthPage from "@/pages/admin-auth-page";
 import DisciplinesPage from "@/pages/admin/disciplines-page";
 import CoursesPage from "@/pages/admin/courses-page";
+import CourseFormPage from "@/pages/admin/course-form-page";
 import DisciplineContentPage from "@/pages/admin/discipline-content-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { useAuth, AuthProvider } from "./hooks/use-auth";
@@ -65,6 +66,12 @@ function Router() {
       </Route>
       <Route path="/admin/disciplines/:id/content">
         {() => user?.portalType === "admin" ? <DisciplineContentPage /> : <Redirect to="/admin" />}
+      </Route>
+      <Route path="/admin/courses/new">
+        {() => user?.portalType === "admin" ? <CourseFormPage /> : <Redirect to="/admin" />}
+      </Route>
+      <Route path="/admin/courses/edit/:id">
+        {() => user?.portalType === "admin" ? <CourseFormPage /> : <Redirect to="/admin" />}
       </Route>
       
       <Route component={NotFound} />
