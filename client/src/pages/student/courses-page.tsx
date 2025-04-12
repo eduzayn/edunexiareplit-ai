@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, ChangeEvent } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
@@ -43,6 +43,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+// Definindo a interface para os cursos
+interface StudentCourse {
+  id: number;
+  name: string;
+  code: string;
+  description: string;
+  status: string;
+  workload: number;
+  progress: number;
+  enrolledAt: string;
+  updatedAt: string;
+}
+
 export default function StudentCoursesPage() {
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
@@ -50,7 +63,7 @@ export default function StudentCoursesPage() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const { data: courses, isLoading } = useQuery({
+  const { data: courses = [], isLoading } = useQuery<StudentCourse[]>({
     queryKey: ["/api/student/courses"],
     staleTime: 1000 * 60 * 2, // 2 minutes
   });
@@ -67,45 +80,43 @@ export default function StudentCoursesPage() {
 
   // Filter and sort courses
   const filteredCourses = courses
-    ? courses
-        .filter((course) => {
-          // Apply search filter
-          if (searchTerm && !course.name.toLowerCase().includes(searchTerm.toLowerCase())) {
-            return false;
-          }
-          
-          // Apply status filter
-          if (filterStatus === "inProgress" && course.progress >= 100) return false;
-          if (filterStatus === "completed" && course.progress < 100) return false;
-          if (filterStatus === "notStarted" && course.progress > 0) return false;
-          
-          return true;
-        })
-        .sort((a, b) => {
-          // Apply sorting
-          if (sortBy === "name") return a.name.localeCompare(b.name);
-          if (sortBy === "progress") return b.progress - a.progress;
-          if (sortBy === "recent") return new Date(b.updatedAt) - new Date(a.updatedAt);
-          return 0;
-        })
-    : [];
+    .filter((course: StudentCourse) => {
+      // Apply search filter
+      if (searchTerm && !course.name.toLowerCase().includes(searchTerm.toLowerCase())) {
+        return false;
+      }
+      
+      // Apply status filter
+      if (filterStatus === "inProgress" && course.progress >= 100) return false;
+      if (filterStatus === "completed" && course.progress < 100) return false;
+      if (filterStatus === "notStarted" && course.progress > 0) return false;
+      
+      return true;
+    })
+    .sort((a: StudentCourse, b: StudentCourse) => {
+      // Apply sorting
+      if (sortBy === "name") return a.name.localeCompare(b.name);
+      if (sortBy === "progress") return b.progress - a.progress;
+      if (sortBy === "recent") return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+      return 0;
+    });
 
   // Status badge for each course
-  const getStatusBadge = (progress) => {
+  const getStatusBadge = (progress: number) => {
     if (progress === 0) return <Badge variant="outline">Não iniciado</Badge>;
     if (progress < 100) return <Badge variant="secondary">Em andamento</Badge>;
-    return <Badge variant="success">Concluído</Badge>;
+    return <Badge>Concluído</Badge>; // Usando a variante default para "Concluído"
   };
 
   // Button text based on progress
-  const getButtonText = (progress) => {
+  const getButtonText = (progress: number) => {
     if (progress === 0) return "Começar";
     if (progress < 100) return "Continuar";
     return "Revisar";
   };
 
   // Random background colors for course cards
-  const getRandomColor = (index) => {
+  const getRandomColor = (index: number) => {
     const colors = [
       "bg-primary-light",
       "bg-green-200",
@@ -218,7 +229,7 @@ export default function StudentCoursesPage() {
                   )}
                 </div>
               ) : (
-                filteredCourses.map((course, index) => (
+                filteredCourses.map((course: StudentCourse, index: number) => (
                   <Card key={course.id} className="overflow-hidden">
                     <div className={`h-36 ${getRandomColor(index)} flex items-center justify-center`}>
                       <MenuBookIcon className="h-16 w-16 text-white" />

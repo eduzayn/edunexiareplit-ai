@@ -861,6 +861,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // === ROTAS DO PORTAL DO ALUNO ===
+
+  // Middleware para autenticar estudantes
+  const requireStudent = (req: Request, res: Response, next: NextFunction) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Não autenticado" });
+    }
+    
+    if (req.user?.portalType !== "student") {
+      return res.status(403).json({ message: "Acesso permitido apenas para estudantes" });
+    }
+    
+    next();
+  };
+
+  // Obter todos os cursos do estudante
+  app.get("/api/student/courses", requireStudent, async (req, res) => {
+    try {
+      // Em uma implementação real, filtrar apenas os cursos em que o estudante está matriculado
+      // Para este protótipo, retornaremos todos os cursos publicados
+      const courses = await storage.getCourses(undefined, "published");
+      
+      // Adicionar informações de progresso simuladas
+      const coursesWithProgress = courses.map(course => ({
+        ...course,
+        // Simular um progresso aleatório por enquanto
+        progress: Math.floor(Math.random() * 101),
+        enrolledAt: new Date(Date.now() - Math.random() * 10000000000).toISOString(),
+        // Adicionar data da última atualização simulada para ordenação
+        updatedAt: new Date(Date.now() - Math.random() * 1000000000).toISOString()
+      }));
+      
+      res.json(coursesWithProgress);
+    } catch (error) {
+      console.error("Error fetching student courses:", error);
+      res.status(500).json({ message: "Erro ao buscar cursos do estudante" });
+    }
+  });
+
+  // Obter detalhes de um curso específico com suas disciplinas
+  app.get("/api/student/courses/:id", requireStudent, async (req, res) => {
+    try {
+      const courseId = parseInt(req.params.id);
+      const course = await storage.getCourse(courseId);
+      
+      if (!course) {
+        return res.status(404).json({ message: "Curso não encontrado" });
+      }
+      
+      if (course.status !== "published") {
+        return res.status(403).json({ message: "Este curso não está disponível" });
+      }
+      
+      // Buscar disciplinas do curso
+      const courseDisciplines = await storage.getCourseDisciplines(courseId);
+      
+      // Buscar detalhes completos de cada disciplina
+      const disciplinePromises = courseDisciplines.map(async (cd) => {
+        const discipline = await storage.getDiscipline(cd.disciplineId);
+        return {
+          ...discipline,
+          order: cd.order,
+          // Simular progresso para cada disciplina
+          progress: Math.floor(Math.random() * 101)
+        };
+      });
+      
+      const disciplines = await Promise.all(disciplinePromises);
+      
+      // Calcular o progresso geral com base no progresso das disciplinas
+      const totalProgress = disciplines.length > 0
+        ? Math.floor(disciplines.reduce((sum, disc) => sum + (disc.progress || 0), 0) / disciplines.length)
+        : 0;
+      
+      // Retornar curso com detalhes adicionais
+      res.json({
+        ...course,
+        disciplines: disciplines.sort((a, b) => a.order - b.order),
+        // Dados simulados para o protótipo
+        progress: totalProgress,
+        enrolledAt: new Date(Date.now() - Math.random() * 10000000000).toISOString()
+      });
+    } catch (error) {
+      console.error("Error fetching student course details:", error);
+      res.status(500).json({ message: "Erro ao buscar detalhes do curso" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
