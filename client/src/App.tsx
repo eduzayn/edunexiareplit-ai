@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, Redirect } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import HomePage from "@/pages/home-page";
@@ -10,6 +10,7 @@ import SobrePage from "@/pages/sobre-page";
 import ContatoPage from "@/pages/contato-page";
 import BlogPage from "@/pages/blog-page";
 import AdminAuthPage from "@/pages/admin-auth-page";
+import DisciplinesPage from "@/pages/admin/disciplines-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { useAuth, AuthProvider } from "./hooks/use-auth";
 
@@ -54,6 +55,9 @@ function Router() {
       <ProtectedRoute path="/partner/dashboard" portalType="partner" />
       <ProtectedRoute path="/polo/dashboard" portalType="polo" />
       <ProtectedRoute path="/admin/dashboard" portalType="admin" />
+      <Route path="/admin/disciplines">
+        {() => user?.portalType === "admin" ? <DisciplinesPage /> : <Redirect to="/admin" />}
+      </Route>
       
       <Route component={NotFound} />
     </Switch>
