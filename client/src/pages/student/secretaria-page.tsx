@@ -31,6 +31,7 @@ import {
   Upload as UploadCloudIcon,
   FileText as FileTextIcon2,
   AlertCircle as AlertCircleIcon,
+  Info,
   Loader2,
   Trash2
 } from "lucide-react";
