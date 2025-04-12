@@ -147,6 +147,24 @@ export function StorefrontIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
+export function ShowChartIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="M3 3v18h18" />
+      <path d="m19 9-5 5-4-4-3 3" />
+    </svg>
+  );
+}
+
 export function BarChartIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
@@ -315,6 +333,25 @@ export function BusinessIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
+export function ComputerIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+      <line x1="8" x2="16" y1="21" y2="21" />
+      <line x1="12" x2="12" y1="17" y2="21" />
+    </svg>
+  );
+}
+
 export function CloudIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
@@ -345,6 +382,26 @@ export function HandshakeIcon(props: React.SVGProps<SVGSVGElement>) {
       {...props}
     >
       <path d="M20.42 4.58a5.4 5.4 0 0 0-7.65 0l-.77.78-.77-.78a5.4 5.4 0 0 0-7.65 0C1.46 6.7 1.33 10.28 4 13l8 8 8-8c2.67-2.72 2.54-6.3.42-8.42z" />
+    </svg>
+  );
+}
+
+export function WavingHandIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0" />
+      <path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2" />
+      <path d="M10 10V2a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v4" />
+      <path d="M6 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v7c0 5 2 10 8 10h6c5 0 8-4 8-8v0c0-2.5-2-2.5-2-2.5" />
     </svg>
   );
 }
@@ -424,6 +481,26 @@ export function PlayCircleIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
+export function ReceiptIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z" />
+      <path d="M16 8h-6" />
+      <path d="M16 12h-6" />
+      <path d="M16 16h-6" />
+    </svg>
+  );
+}
+
 export function PaymentsIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
@@ -438,6 +515,46 @@ export function PaymentsIcon(props: React.SVGProps<SVGSVGElement>) {
     >
       <rect width="20" height="14" x="2" y="5" rx="2" />
       <line x1="2" x2="22" y1="10" y2="10" />
+    </svg>
+  );
+}
+
+export function PersonAddIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="8.5" cy="7" r="4" />
+      <line x1="20" x2="20" y1="8" y2="14" />
+      <line x1="23" x2="17" y1="11" y2="11" />
+    </svg>
+  );
+}
+
+export function PeopleIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
     </svg>
   );
 }
