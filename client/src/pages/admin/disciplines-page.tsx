@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { Sidebar } from "@/components/layout/sidebar";
+import { getAdminSidebarItems } from "@/components/layout/admin-sidebar-items";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -80,7 +81,7 @@ export default function DisciplinesPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const isMobile = useIsMobile();
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -88,12 +89,8 @@ export default function DisciplinesPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedDiscipline, setSelectedDiscipline] = useState<Discipline | null>(null);
   
-  // Sidebar items for admin portal
-  const sidebarItems = [
-    { name: "Dashboard", icon: <DashboardIcon />, href: "/admin/dashboard" },
-    { name: "Disciplinas", icon: <BookIcon />, href: "/admin/disciplines", active: true },
-    { name: "Cursos", icon: <SchoolIcon />, href: "/admin/courses" },
-  ];
+  // Usar o componente padronizado para os itens da barra lateral
+  const sidebarItems = getAdminSidebarItems(location || "");
 
   // Consulta para listar disciplinas
   const { 

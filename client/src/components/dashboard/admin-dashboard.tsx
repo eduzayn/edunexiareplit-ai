@@ -60,21 +60,9 @@ export function AdminDashboard() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Sidebar items for admin portal
-  const sidebarItems = [
-    { name: "Dashboard", icon: <DashboardIcon />, active: true, href: "/admin/dashboard" },
-    { name: "Instituições", icon: <BusinessIcon />, href: "/admin/institutions" },
-    { name: "Usuários", icon: <GroupIcon />, href: "/admin/users" },
-    { name: "Cursos", icon: <SchoolIcon />, href: "/admin/courses" },
-    { name: "Parceiros", icon: <HandshakeIcon />, href: "/admin/partners" },
-    { name: "Polos", icon: <StorefrontIcon />, href: "/admin/polos" },
-    { name: "Financeiro", icon: <MonetizationOnIcon />, href: "/admin/financial" },
-    { name: "Relatórios", icon: <BarChartIcon />, href: "/admin/reports" },
-    { name: "Integrações", icon: <CloudIcon />, href: "/admin/integrations" },
-    { name: "Sistema", icon: <BuildIcon />, href: "/admin/system" },
-    { name: "Segurança", icon: <SecurityIcon />, href: "/admin/security" },
-    { name: "Configurações", icon: <SettingsIcon />, href: "/admin/settings" },
-  ];
+  // Usar o componente padronizado para os itens da barra lateral
+  const [location] = useLocation();
+  const sidebarItems = getAdminSidebarItems(location);
 
   return (
     <div className="flex h-screen bg-gray-50">
