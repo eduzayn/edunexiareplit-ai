@@ -401,7 +401,6 @@ export default function LearningPage() {
               <div className="flex items-center">
                 <div className="relative">
                   <Avatar className="h-16 w-16">
-                    <AvatarImage src={user?.imageUrl} alt={studentName} />
                     <AvatarFallback className="bg-green-100 text-green-800 text-lg">{studentName?.substring(0, 2).toUpperCase()}</AvatarFallback>
                   </Avatar>
                   <div className="absolute -bottom-1 -right-1 bg-green-500 text-white text-xs font-bold rounded-full w-7 h-7 flex items-center justify-center border-2 border-white">
@@ -934,7 +933,6 @@ export default function LearningPage() {
                       <div className="bg-blue-50 rounded-lg p-6 text-center">
                         <div className="inline-block relative mb-2">
                           <Avatar className="h-20 w-20">
-                            <AvatarImage src={user?.imageUrl} alt={studentName} />
                             <AvatarFallback className="bg-blue-100 text-blue-800 text-xl">{studentName?.substring(0, 2).toUpperCase()}</AvatarFallback>
                           </Avatar>
                           <div className="absolute -bottom-2 -right-2 bg-blue-500 text-white rounded-full w-10 h-10 flex items-center justify-center text-xl font-bold border-4 border-blue-50">
@@ -1043,7 +1041,6 @@ export default function LearningPage() {
                       <div className="bg-green-50 rounded-lg p-6 text-center">
                         <div className="inline-block relative mb-2">
                           <Avatar className="h-20 w-20">
-                            <AvatarImage src={user?.imageUrl} alt={studentName} />
                             <AvatarFallback className="bg-green-100 text-green-800 text-xl">{studentName?.substring(0, 2).toUpperCase()}</AvatarFallback>
                           </Avatar>
                           <div className="absolute -bottom-2 -right-2 bg-green-500 text-white rounded-full w-10 h-10 flex items-center justify-center text-xl font-bold border-4 border-green-50">
