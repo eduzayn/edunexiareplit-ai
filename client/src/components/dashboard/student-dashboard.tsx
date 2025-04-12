@@ -56,8 +56,12 @@ export function StudentDashboard() {
   const sidebarItems = [
     { name: "Dashboard", icon: <ChartIcon />, active: true, href: "/student/dashboard" },
     { name: "Meus Cursos", icon: <MenuBookIcon />, href: "/student/courses" },
+    { name: "Progresso", icon: <TrendingUpIcon />, href: "/student/learning" },
+    { name: "Credencial", icon: <SchoolIcon />, href: "/student/credencial" },
     { name: "Calendário", icon: <EventNoteIcon />, href: "/student/calendar" },
     { name: "Documentos", icon: <DescriptionIcon />, href: "/student/documents" },
+    { name: "Biblioteca", icon: <AssignmentIcon />, href: "/student/library" },
+    { name: "Secretaria", icon: <GroupIcon />, href: "/student/secretaria" },
     { name: "Financeiro", icon: <PaymentsIcon />, href: "/student/financial" },
     { name: "Suporte", icon: <HelpOutlineIcon />, href: "/student/support" },
   ];
