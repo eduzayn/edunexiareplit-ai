@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -41,13 +40,18 @@ const registerSchema = insertUserSchema.extend({
 type LoginFormValues = z.infer<typeof loginSchema>;
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
-export default function AuthPage() {
+interface AuthPageProps {
+  adminOnly?: boolean;
+}
+
+export default function AuthPage({ adminOnly = false }: AuthPageProps) {
   const { loginMutation, registerMutation } = useAuth();
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const search = useSearch();
   const params = new URLSearchParams(search);
-  const portalType = params.get("portal") as PortalType || "student";
+  const portalParam = params.get("portal") as PortalType;
+  const portalType = adminOnly ? "admin" : (portalParam || "student");
   const [selectedTab, setSelectedTab] = useState<"login" | "register">("login");
 
   const portalIcons = {
@@ -124,242 +128,330 @@ export default function AuthPage() {
                 {portalIcons[portalType]}
               </div>
               <p className="ml-4 text-gray-600">
-                Faça login ou crie uma conta para acessar.
+                {adminOnly 
+                  ? "Área restrita para administradores do sistema." 
+                  : "Faça login ou crie uma conta para acessar."}
               </p>
             </div>
-            <p className="mt-2 text-sm text-gray-600">
-              Ou{" "}
-              <Button 
-                variant="link" 
-                className="p-0" 
-                onClick={() => navigate("/portal-selection")}
-              >
-                escolha outro portal
-              </Button>
-            </p>
+            {!adminOnly && (
+              <p className="mt-2 text-sm text-gray-600">
+                Ou{" "}
+                <Button 
+                  variant="link" 
+                  className="p-0" 
+                  onClick={() => navigate("/portal-selection")}
+                >
+                  escolha outro portal
+                </Button>
+              </p>
+            )}
           </div>
 
-          <Tabs 
-            defaultValue="login" 
-            value={selectedTab} 
-            onValueChange={(v) => setSelectedTab(v as "login" | "register")}
-            className="w-full"
-          >
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="register">Criar Conta</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="login">
-              <Form {...loginForm}>
-                <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
-                  <FormField
-                    control={loginForm.control}
-                    name="username"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Usuário</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="seu.usuario" 
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={loginForm.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Senha</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="password" 
-                            placeholder="••••••••" 
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <div className="flex items-center justify-between">
+          {adminOnly && (
+            <div className="mb-6">
+              <div className="p-4 border border-blue-100 rounded-md bg-blue-50">
+                <p className="text-sm text-blue-800">
+                  <strong>Área de administração restrita.</strong> Acesso permitido somente para administradores autorizados do sistema.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {!adminOnly ? (
+            <Tabs 
+              defaultValue="login" 
+              value={selectedTab} 
+              onValueChange={(v) => setSelectedTab(v as "login" | "register")}
+              className="w-full"
+            >
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="login">Login</TabsTrigger>
+                <TabsTrigger value="register">Criar Conta</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="login">
+                <Form {...loginForm}>
+                  <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
                     <FormField
                       control={loginForm.control}
-                      name="rememberMe"
+                      name="username"
                       render={({ field }) => (
-                        <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                        <FormItem>
+                          <FormLabel>Usuário</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="seu.usuario" 
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={loginForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Senha</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="password" 
+                              placeholder="••••••••" 
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <div className="flex items-center justify-between">
+                      <FormField
+                        control={loginForm.control}
+                        name="rememberMe"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                            <FormControl>
+                              <Checkbox 
+                                checked={field.value} 
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <FormLabel className="text-sm font-normal">Lembrar-me</FormLabel>
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <Button 
+                        variant="link" 
+                        className="p-0 text-sm text-primary hover:text-primary-dark"
+                      >
+                        Esqueceu a senha?
+                      </Button>
+                    </div>
+                    
+                    <Button 
+                      type="submit" 
+                      className="w-full" 
+                      disabled={loginMutation.isPending}
+                    >
+                      {loginMutation.isPending ? "Entrando..." : "Entrar"}
+                    </Button>
+                  </form>
+                </Form>
+              </TabsContent>
+              
+              <TabsContent value="register">
+                <Form {...registerForm}>
+                  <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
+                    <FormField
+                      control={registerForm.control}
+                      name="fullName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nome Completo</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Seu Nome Completo" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={registerForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>E-mail</FormLabel>
+                          <FormControl>
+                            <Input type="email" placeholder="seu@email.com" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={registerForm.control}
+                      name="username"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nome de Usuário</FormLabel>
+                          <FormControl>
+                            <Input placeholder="usuario.exemplo" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={registerForm.control}
+                        name="password"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Senha</FormLabel>
+                            <FormControl>
+                              <Input type="password" placeholder="••••••••" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={registerForm.control}
+                        name="confirmPassword"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Confirmar Senha</FormLabel>
+                            <FormControl>
+                              <Input type="password" placeholder="••••••••" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    <FormField
+                      control={registerForm.control}
+                      name="portalType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tipo de Portal</FormLabel>
+                          <FormControl>
+                            <Input type="hidden" {...field} value={portalType} />
+                          </FormControl>
+                          <div className="p-2 border rounded bg-gray-50">
+                            <div className="flex items-center">
+                              <div className={`flex items-center justify-center h-8 w-8 rounded-full ${portalColors[portalType]}`}>
+                                {portalIcons[portalType]}
+                              </div>
+                              <span className="ml-2 font-medium">{portalTitles[portalType]}</span>
+                            </div>
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={registerForm.control}
+                      name="terms"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-2 space-y-0 mt-4">
                           <FormControl>
                             <Checkbox 
                               checked={field.value} 
                               onCheckedChange={field.onChange}
                             />
                           </FormControl>
-                          <FormLabel className="text-sm font-normal">Lembrar-me</FormLabel>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel className="font-normal text-sm">
+                              Eu concordo com os{" "}
+                              <Button variant="link" className="p-0 text-sm" onClick={(e) => e.preventDefault()}>
+                                termos de serviço
+                              </Button>{" "}
+                              e{" "}
+                              <Button variant="link" className="p-0 text-sm" onClick={(e) => e.preventDefault()}>
+                                política de privacidade
+                              </Button>
+                            </FormLabel>
+                            <FormMessage />
+                          </div>
                         </FormItem>
                       )}
                     />
                     
                     <Button 
-                      variant="link" 
-                      className="p-0 text-sm text-primary hover:text-primary-dark"
+                      type="submit" 
+                      className="w-full" 
+                      disabled={registerMutation.isPending}
                     >
-                      Esqueceu a senha?
+                      {registerMutation.isPending ? "Criando..." : "Criar Conta"}
                     </Button>
-                  </div>
-                  
-                  <Button 
-                    type="submit" 
-                    className="w-full" 
-                    disabled={loginMutation.isPending}
-                  >
-                    {loginMutation.isPending ? "Entrando..." : "Entrar"}
-                  </Button>
-                </form>
-              </Form>
-            </TabsContent>
-            
-            <TabsContent value="register">
-              <Form {...registerForm}>
-                <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
+                  </form>
+                </Form>
+              </TabsContent>
+            </Tabs>
+          ) : (
+            <Form {...loginForm}>
+              <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
+                <FormField
+                  control={loginForm.control}
+                  name="username"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Usuário</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="admin.usuario" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={loginForm.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Senha</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="password" 
+                          placeholder="••••••••" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <div className="flex items-center justify-between">
                   <FormField
-                    control={registerForm.control}
-                    name="fullName"
+                    control={loginForm.control}
+                    name="rememberMe"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nome Completo</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Seu Nome Completo" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={registerForm.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>E-mail</FormLabel>
-                        <FormControl>
-                          <Input type="email" placeholder="seu@email.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={registerForm.control}
-                    name="username"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nome de Usuário</FormLabel>
-                        <FormControl>
-                          <Input placeholder="usuario.exemplo" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={registerForm.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Senha</FormLabel>
-                          <FormControl>
-                            <Input type="password" placeholder="••••••••" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={registerForm.control}
-                      name="confirmPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Confirmar Senha</FormLabel>
-                          <FormControl>
-                            <Input type="password" placeholder="••••••••" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  
-                  <FormField
-                    control={registerForm.control}
-                    name="portalType"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Tipo de Portal</FormLabel>
-                        <FormControl>
-                          <Input type="hidden" {...field} value={portalType} />
-                        </FormControl>
-                        <div className="p-2 border rounded bg-gray-50">
-                          <div className="flex items-center">
-                            <div className={`flex items-center justify-center h-8 w-8 rounded-full ${portalColors[portalType]}`}>
-                              {portalIcons[portalType]}
-                            </div>
-                            <span className="ml-2 font-medium">{portalTitles[portalType]}</span>
-                          </div>
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={registerForm.control}
-                    name="terms"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-start space-x-2 space-y-0 mt-4">
+                      <FormItem className="flex flex-row items-center space-x-2 space-y-0">
                         <FormControl>
                           <Checkbox 
                             checked={field.value} 
                             onCheckedChange={field.onChange}
                           />
                         </FormControl>
-                        <div className="space-y-1 leading-none">
-                          <FormLabel className="font-normal text-sm">
-                            Eu concordo com os{" "}
-                            <Button variant="link" className="p-0 text-sm" onClick={(e) => e.preventDefault()}>
-                              termos de serviço
-                            </Button>{" "}
-                            e{" "}
-                            <Button variant="link" className="p-0 text-sm" onClick={(e) => e.preventDefault()}>
-                              política de privacidade
-                            </Button>
-                          </FormLabel>
-                          <FormMessage />
-                        </div>
+                        <FormLabel className="text-sm font-normal">Lembrar-me</FormLabel>
                       </FormItem>
                     )}
                   />
                   
                   <Button 
-                    type="submit" 
-                    className="w-full" 
-                    disabled={registerMutation.isPending}
+                    variant="link" 
+                    className="p-0 text-sm text-primary hover:text-primary-dark"
                   >
-                    {registerMutation.isPending ? "Criando..." : "Criar Conta"}
+                    Esqueceu a senha?
                   </Button>
-                </form>
-              </Form>
-            </TabsContent>
-          </Tabs>
+                </div>
+                
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={loginMutation.isPending}
+                >
+                  {loginMutation.isPending ? "Entrando..." : "Entrar"}
+                </Button>
+              </form>
+            </Form>
+          )}
         </div>
       </div>
       

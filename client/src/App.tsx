@@ -9,6 +9,7 @@ import PlanosPage from "@/pages/planos-page";
 import SobrePage from "@/pages/sobre-page";
 import ContatoPage from "@/pages/contato-page";
 import BlogPage from "@/pages/blog-page";
+import AdminAuthPage from "@/pages/admin-auth-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { useAuth, AuthProvider } from "./hooks/use-auth";
 
@@ -33,6 +34,15 @@ function Router() {
         }}
       </Route>
       <Route path="/portal-selection" component={PortalSelectionPage} />
+      <Route path="/admin">
+        {() => {
+          if (user && user.portalType === "admin") {
+            window.location.href = "/admin/dashboard";
+            return null;
+          }
+          return <AdminAuthPage />;
+        }}
+      </Route>
       
       <Route path="/modulos" component={ModulosPage} />
       <Route path="/planos" component={PlanosPage} />

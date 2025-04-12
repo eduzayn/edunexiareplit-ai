@@ -1,0 +1,22 @@
+Tarefa Detalhada: Reformulação do Portal Administrativo Edunéxia
+I. Introdução e Visão Geral do Projeto
+Este documento detalha as tarefas necessárias para a reformulação completa do Portal Administrativo da Edunéxia. O objetivo central deste projeto é transformar o portal existente, que atualmente carece de uma função definida na arquitetura geral do sistema, na interface mestre de governança e no banco de dados central para todo o ecossistema Edunéxia. Esta nova arquitetura posiciona o Portal Administrativo como o núcleo de controle, responsável pela alimentação de dados, gestão de permissões e configurações gerais que impactam todos os portais secundários (Aluno, Polo, Parceiro, Professor) e módulos integrados (Financeiro, Comunicação, RH, Analytics, Conteúdo, Matrículas, Certificação).
+
+A lógica técnica subjacente a esta reformulação é a centralização. Todas as tabelas de dados fundamentais (cursos, disciplinas, polos, professores, parceiros, usuários, etc.) serão gerenciadas exclusivamente através deste portal. Os demais portais atuarão como consumidores desses dados, acessando informações sincronizadas através de APIs e webhooks seguros, sem capacidade de alterar diretamente a base de dados central. Esta abordagem garante a centralização das operações, a rastreabilidade das modificações, a padronização dos dados e um reforço significativo na segurança da informação.
+
+Os benefícios esperados desta nova arquitetura incluem a centralização das operações administrativas, a redução drástica de inconsistências de dados e retrabalho manual, a facilitação da escalabilidade futura com a adição de novos módulos ou portais, a integração em tempo real entre todos os componentes do ecossistema e um controle mais granular e seguro sobre permissões de acesso. Este documento serve como um guia detalhado para a equipe de desenvolvimento, delineando as fases do projeto, as funcionalidades específicas a serem implementadas e os padrões técnicos a serem seguidos.
+
+II. Fase 1: Ações Imediatas para Início do Desenvolvimento
+A fase inicial concentra-se em estabelecer a infraestrutura básica de acesso e autenticação para o novo Portal Administrativo.
+
+A. Tarefa 1: Criação da Rota de Acesso "/admin"
+A primeira ação concreta é habilitar o acesso ao novo portal. Isso envolve a criação de uma rota específica /admin no sistema de roteamento principal da aplicação. Esta rota deverá ser vinculada ao botão "ENTRAR" existente no site principal da Edunéxia, direcionando os usuários que selecionarem a opção de login administrativo para o ponto de entrada correto. Esta etapa requer coordenação com a equipe responsável pelo frontend do site principal para garantir que a lógica de direcionamento seja implementada corretamente, oferecendo uma experiência de usuário coesa desde o ponto de entrada inicial.
+
+B. Tarefa 2: Desenvolvimento da Interface Segura de Login do Administrador
+Associada à rota /admin, é necessário desenvolver uma tela de login dedicada exclusivamente aos administradores. O design visual desta tela deve manter a consistência com os demais portais do ecossistema ("igual aos demais portais"), mas o mecanismo de autenticação subjacente deve ser robusto e específico. Ele precisa validar as credenciais fornecidas (usuário e senha) contra a base de dados central de usuários, verificando especificamente se o usuário possui as roles (funções) e permissões administrativas adequadas, conforme definido pelo sistema de Controle de Acesso Baseado em Função (RBAC) a ser implementado.   
+
+A implementação deve seguir as melhores práticas de segurança padrão:
+
+Armazenamento seguro de senhas (utilizando hashing forte e salting).
+Proteção contra ataques de força bruta (implementando limites de tentativas de login, captchas ou bloqueio temporário de contas).
+Comunicação segura via HTTPS para criptografar os dados em trânsito.
