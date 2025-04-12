@@ -8,6 +8,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Course, courseStatusEnum, Discipline } from "@shared/schema";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useLocation, Link } from "wouter";
 import { useForm } from "react-hook-form";
 import {
   Table,
@@ -400,13 +401,14 @@ export default function CoursesPage() {
               </p>
             </div>
             <div className="mt-4 flex space-x-2 md:mt-0">
-              <Button
-                onClick={handleOpenCreateDialog}
-                className="flex items-center bg-blue-600 hover:bg-blue-700"
-              >
-                <PlusIcon className="mr-1 h-4 w-4" />
-                Novo Curso
-              </Button>
+              <Link href="/admin/courses/new">
+                <Button
+                  className="flex items-center bg-blue-600 hover:bg-blue-700"
+                >
+                  <PlusIcon className="mr-1 h-4 w-4" />
+                  Novo Curso
+                </Button>
+              </Link>
             </div>
           </div>
 
@@ -552,13 +554,14 @@ export default function CoursesPage() {
                   <p className="mt-1 text-gray-500">
                     Crie seu primeiro curso para oferecer aos alunos.
                   </p>
-                  <Button
-                    onClick={handleOpenCreateDialog}
-                    className="mt-4 flex items-center"
-                  >
-                    <PlusIcon className="mr-1 h-4 w-4" />
-                    Criar Curso
-                  </Button>
+                  <Link href="/admin/courses/new">
+                    <Button
+                      className="mt-4 flex items-center"
+                    >
+                      <PlusIcon className="mr-1 h-4 w-4" />
+                      Criar Curso
+                    </Button>
+                  </Link>
                 </div>
               )}
             </CardContent>
