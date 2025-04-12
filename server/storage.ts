@@ -1,7 +1,10 @@
 import { users, type User, type InsertUser,
   disciplines, type Discipline, type InsertDiscipline,
   courses, type Course, type InsertCourse,
-  courseDisciplines, type CourseDiscipline, type InsertCourseDiscipline
+  courseDisciplines, type CourseDiscipline, type InsertCourseDiscipline,
+  questions, type Question, type InsertQuestion,
+  assessments, type Assessment, type InsertAssessment,
+  assessmentQuestions, type AssessmentQuestion, type InsertAssessmentQuestion
 } from "@shared/schema";
 import session from "express-session";
 import { Store as SessionStore } from "express-session";
@@ -27,6 +30,8 @@ export interface IStorage {
   createDiscipline(discipline: InsertDiscipline): Promise<Discipline>;
   updateDiscipline(id: number, discipline: Partial<InsertDiscipline>): Promise<Discipline | undefined>;
   deleteDiscipline(id: number): Promise<boolean>;
+  updateDisciplineContent(id: number, contentData: Partial<InsertDiscipline>): Promise<Discipline | undefined>;
+  checkDisciplineCompleteness(id: number): Promise<boolean>;
   
   // Cursos
   getCourse(id: number): Promise<Course | undefined>;
@@ -42,6 +47,26 @@ export interface IStorage {
   addDisciplineToCourse(courseDiscipline: InsertCourseDiscipline): Promise<CourseDiscipline>;
   removeDisciplineFromCourse(courseId: number, disciplineId: number): Promise<boolean>;
   reorderCourseDisciplines(courseId: number, disciplineOrder: { disciplineId: number, order: number }[]): Promise<boolean>;
+  
+  // Questões
+  getQuestion(id: number): Promise<Question | undefined>;
+  getQuestionsByDiscipline(disciplineId: number): Promise<Question[]>;
+  createQuestion(question: InsertQuestion): Promise<Question>;
+  updateQuestion(id: number, question: Partial<InsertQuestion>): Promise<Question | undefined>;
+  deleteQuestion(id: number): Promise<boolean>;
+  
+  // Avaliações
+  getAssessment(id: number): Promise<Assessment | undefined>;
+  getAssessmentsByDiscipline(disciplineId: number, type?: string): Promise<Assessment[]>;
+  createAssessment(assessment: InsertAssessment): Promise<Assessment>;
+  updateAssessment(id: number, assessment: Partial<InsertAssessment>): Promise<Assessment | undefined>;
+  deleteAssessment(id: number): Promise<boolean>;
+  
+  // Questões em Avaliações
+  getAssessmentQuestions(assessmentId: number): Promise<AssessmentQuestion[]>;
+  addQuestionToAssessment(assessmentQuestion: InsertAssessmentQuestion): Promise<AssessmentQuestion>;
+  removeQuestionFromAssessment(assessmentId: number, questionId: number): Promise<boolean>;
+  reorderAssessmentQuestions(assessmentId: number, questionOrder: { questionId: number, order: number }[]): Promise<boolean>;
   
   sessionStore: SessionStore;
 }
