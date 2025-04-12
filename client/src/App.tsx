@@ -24,6 +24,7 @@ import DisciplineSimuladoPage from "@/pages/student/discipline-simulado-page";
 import DisciplineAvaliacaoPage from "@/pages/student/discipline-avaliacao-page";
 import LibraryPage from "@/pages/student/library-page";
 import SecretariaPage from "@/pages/student/secretaria-page";
+import CredencialPage from "@/pages/student/credencial-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { useAuth, AuthProvider } from "./hooks/use-auth";
 
@@ -93,6 +94,9 @@ function Router() {
       </Route>
       <Route path="/student/secretaria">
         {() => user?.portalType === "student" ? <SecretariaPage /> : <Redirect to="/auth" />}
+      </Route>
+      <Route path="/student/credencial">
+        {() => user?.portalType === "student" ? <CredencialPage /> : <Redirect to="/auth" />}
       </Route>
       <ProtectedRoute path="/partner/dashboard" portalType="partner" />
       <ProtectedRoute path="/polo/dashboard" portalType="polo" />
