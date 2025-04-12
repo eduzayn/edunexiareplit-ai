@@ -1766,6 +1766,20 @@ export default function DisciplineContentPage() {
                           </Label>
                         </div>
                         <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="google_drive" id="google_drive-edit" />
+                          <Label htmlFor="google_drive-edit" className="flex items-center">
+                            <GoogleDriveIcon className="mr-2 h-4 w-4 text-green-500" />
+                            Google Drive
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="vimeo" id="vimeo-edit" />
+                          <Label htmlFor="vimeo-edit" className="flex items-center">
+                            <VimeoIcon className="mr-2 h-4 w-4 text-blue-600" />
+                            Vimeo
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
                           <RadioGroupItem value="upload" id="upload-edit" />
                           <Label htmlFor="upload-edit" className="flex items-center">
                             <UploadIcon className="mr-2 h-4 w-4" />
