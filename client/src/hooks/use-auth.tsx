@@ -95,7 +95,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
-      const res = await apiRequest("POST", "/api/login", credentials);
+      // Garantir que o portalType esteja presente na requisição
+      const data = { ...credentials };
+      const res = await apiRequest("POST", "/api/login", data);
       return await res.json();
     },
     onSuccess: (user: SelectUser) => {
