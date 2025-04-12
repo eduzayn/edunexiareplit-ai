@@ -96,6 +96,7 @@ export default function CoursesPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [selectedDisciplines, setSelectedDisciplines] = useState<number[]>([]);
+  const [disciplineSearchTerm, setDisciplineSearchTerm] = useState("");
   
   // Consulta para listar disciplinas disponíveis
   const { 
@@ -737,6 +738,16 @@ export default function CoursesPage() {
                   Selecione as disciplinas que farão parte deste curso.
                 </p>
                 
+                <div className="relative mb-4">
+                  <SearchIcon className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Buscar disciplinas..."
+                    className="pl-9"
+                    value={disciplineSearchTerm}
+                    onChange={(e) => setDisciplineSearchTerm(e.target.value)}
+                  />
+                </div>
+                
                 {isDisciplinesLoading ? (
                   <div className="space-y-2">
                     {Array(3)
@@ -750,7 +761,13 @@ export default function CoursesPage() {
                   </div>
                 ) : disciplines && disciplines.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-60 overflow-y-auto border rounded p-3">
-                    {disciplines.map((discipline: Discipline) => (
+                    {disciplines
+                      .filter((discipline: Discipline) => 
+                        !disciplineSearchTerm || 
+                        discipline.name.toLowerCase().includes(disciplineSearchTerm.toLowerCase()) ||
+                        discipline.code.toLowerCase().includes(disciplineSearchTerm.toLowerCase())
+                      )
+                      .map((discipline: Discipline) => (
                       <div key={discipline.id} className="flex items-center space-x-2">
                         <Checkbox
                           id={`discipline-${discipline.id}`}
