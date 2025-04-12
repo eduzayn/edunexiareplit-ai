@@ -79,6 +79,7 @@ export default function LibraryPage() {
   const [viewType, setViewType] = useState<"grid" | "list">("grid");
   const [myBookmarks, setMyBookmarks] = useState<number[]>([]);
   const [myBorrowings, setMyBorrowings] = useState<number[]>([]);
+  const [selectedTab, setSelectedTab] = useState("all");
 
   // Simular itens da biblioteca
   const mockLibraryItems: LibraryItem[] = [
@@ -282,6 +283,11 @@ export default function LibraryPage() {
     } else {
       setMyBorrowings([...myBorrowings, id]);
     }
+  };
+
+  // Função para navegar para a tab "all"
+  const navigateToAllTab = () => {
+    setSelectedTab("all");
   };
 
   // Renderizar detalhes do item selecionado
@@ -513,7 +519,7 @@ export default function LibraryPage() {
           </div>
 
           {/* Tabs */}
-          <Tabs defaultValue="all" className="mb-6">
+          <Tabs defaultValue="all" className="mb-6" value={selectedTab} onValueChange={setSelectedTab}>
             <TabsList>
               <TabsTrigger value="all">Todos</TabsTrigger>
               <TabsTrigger value="borrowed">Meus Empréstimos</TabsTrigger>
@@ -653,7 +659,7 @@ export default function LibraryPage() {
                   <p className="text-gray-600 mb-4">
                     Você não possui nenhum material emprestado no momento.
                   </p>
-                  <Button onClick={() => document.querySelector('[data-value="all"]')?.click()}>
+                  <Button onClick={() => navigateToAllTab()}>
                     Explorar biblioteca
                   </Button>
                 </div>
@@ -678,7 +684,7 @@ export default function LibraryPage() {
                   <p className="text-gray-600 mb-4">
                     Você ainda não adicionou itens aos seus favoritos.
                   </p>
-                  <Button onClick={() => document.querySelector('[data-value="all"]')?.click()}>
+                  <Button onClick={() => navigateToAllTab()}>
                     Explorar biblioteca
                   </Button>
                 </div>
