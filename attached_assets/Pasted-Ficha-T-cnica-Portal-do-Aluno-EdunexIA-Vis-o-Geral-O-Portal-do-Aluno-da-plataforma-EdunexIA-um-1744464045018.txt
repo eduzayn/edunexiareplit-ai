@@ -1,0 +1,151 @@
+Ficha Técnica - Portal do Aluno EdunexIA
+Visão Geral
+O Portal do Aluno da plataforma EdunexIA é uma interface digital completa que oferece aos estudantes acesso centralizado a todas as funcionalidades educacionais. A interface foi projetada com foco na experiência do usuário, utilizando uma navegação intuitiva através de um menu lateral e exibição de conteúdo personalizado.
+
+Stack Tecnológica
+Frontend: React com TypeScript
+Estilização: Tailwind CSS
+Gerenciamento de Estado: React Query (@tanstack/react-query)
+Roteamento: Wouter
+Componentes UI: Shadcn UI com Radix
+Ícones: Lucide Icons
+Backend: Express.js
+Banco de Dados: PostgreSQL
+ORM: Drizzle ORM
+Funcionalidades do Portal do Aluno
+1. Dashboard
+Descrição: Tela inicial que apresenta uma visão geral de todas as atividades e informações importantes do aluno.
+Componentes:
+Cards com resumo de cursos em andamento
+Atividades próximas e pendentes
+Notificações recentes
+Progresso em cursos atuais
+Implementação: StudentDashboard.tsx com consultas ao backend para obter dados do usuário logado
+2. Credencial Digital
+Descrição: Sistema de identificação digital do aluno dentro da plataforma.
+Funcionalidades:
+Visualização da credencial do aluno
+Código QR para validação da identidade
+Dados acadêmicos essenciais
+Rota: /student/credential
+3. Progresso Gamificado
+Descrição: Visualização do progresso acadêmico do aluno em formato gamificado.
+Funcionalidades:
+Exibição de conquistas e troféus
+Níveis de progresso
+Pontuação em atividades
+Ranking comparativo com outros alunos
+Rota: /student/learning
+4. Meus Cursos
+Descrição: Listagem e gerenciamento de todos os cursos em que o aluno está matriculado.
+Funcionalidades:
+Visualização de cursos ativos
+Progresso em cada curso
+Acesso aos módulos e lições
+Status de conclusão
+Rotas:
+Lista de cursos: /student/courses
+Detalhes de um curso específico: /student/courses/:courseId
+5. Calendário
+Descrição: Visualização de todas as atividades e compromissos acadêmicos.
+Funcionalidades:
+Calendário mensal/semanal
+Prazos de entrega de atividades
+Datas de provas e eventos
+Criação de lembretes pessoais
+Rota: /student/calendar
+6. Materiais
+Descrição: Repositório de materiais didáticos disponibilizados nos cursos.
+Funcionalidades:
+Download de apostilas e documentos
+Visualização de materiais complementares
+Organização por disciplina/curso
+Rota: /student/materials
+7. Avaliações
+Descrição: Sistema para realização e acompanhamento de avaliações.
+Funcionalidades:
+Lista de avaliações pendentes e concluídas
+Notas obtidas
+Feedback dos professores
+Calendário de provas
+Rota: /student/exams
+8. Financeiro
+Descrição: Gerenciamento de aspectos financeiros do aluno.
+Funcionalidades:
+Consulta de mensalidades
+Histórico de pagamentos
+Emissão de boletos
+Comprovantes financeiros
+Rota: /financial
+9. Biblioteca
+Descrição: Acesso à biblioteca digital da instituição.
+Funcionalidades:
+Catálogo de e-books e materiais digitais
+Sistema de busca por título, autor e categoria
+Empréstimos virtuais
+Marcadores e anotações
+Rota: /student/library
+10. Certificados
+Descrição: Gerenciamento e visualização de certificados obtidos.
+Funcionalidades:
+Lista de certificados disponíveis
+Download em formato PDF
+Verificação de autenticidade
+Compartilhamento em redes sociais
+Rota: /student/certificates
+11. Secretaria
+Descrição: Interface para solicitações administrativas.
+Funcionalidades:
+Abertura de solicitações acadêmicas
+Acompanhamento de processos
+Documentos oficiais (histórico, declarações)
+Status de requerimentos
+Rota: /student/services
+12. Suporte
+Descrição: Canal de atendimento e suporte ao aluno.
+Funcionalidades:
+Chat com equipe de suporte
+FAQ com respostas comuns
+Abertura de tickets para problemas técnicos
+Tutoriais de uso da plataforma
+Rota: /chat
+13. Professora Ana (IA)
+Descrição: Assistente virtual inteligente para auxílio pedagógico.
+Funcionalidades:
+Perguntas e respostas sobre conteúdos acadêmicos
+Recomendações de estudo personalizadas
+Resolução de dúvidas em tempo real
+Histórico de conversas
+Rota: /assistant
+14. Configurações
+Descrição: Gerenciamento de preferências e configurações da conta.
+Funcionalidades:
+Edição de perfil
+Configurações de privacidade
+Preferências de notificação
+Alteração de senha
+Rota: /student/settings
+Sistema de Autenticação e Permissões
+Autenticação: Baseada em localStorage com tokens
+Controle de Acesso: Verificação via portalId (student) e userRole
+Redirecionamento: Sistema que direciona o usuário para o portal adequado após login
+Proteção de Rotas: Implementado via componente ProtectedRoute
+Arquitetura de Componentes
+Layouts: Estrutura principal com sidebar, topbar e área de conteúdo
+Módulos: Componentes específicos para cada funcionalidade
+UI Components: Componentes reutilizáveis (cards, botões, tabelas)
+Hooks: Hooks personalizados para gerenciamento de estado e lógica de negócio
+Interação com a API
+Endpoints: Múltiplos endpoints REST para cada funcionalidade
+Cache: Gerenciamento de cache via React Query para otimização de desempenho
+Tipagem: Interfaces TypeScript para garantir consistência de dados
+Fluxo de Navegação
+O aluno acessa o portal através da URL /student ou é redirecionado após o login. A navegação ocorre através do menu lateral que exibe apenas as opções disponíveis para seu perfil, garantindo uma experiência personalizada.
+
+Responsividade
+A interface é totalmente responsiva, adaptando-se a diferentes tamanhos de tela:
+
+Desktop: Menu lateral sempre visível, conteúdo em formato de grid
+Tablet: Menu colapsável, ajuste de tamanho de componentes
+Mobile: Menu hamburger, visualização vertical otimizada
+Esta ficha técnica detalha as principais funcionalidades e aspectos técnicos do Portal do Aluno da plataforma EdunexIA, servindo como referência para reconstrução em outro sistema.
