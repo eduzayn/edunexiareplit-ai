@@ -1,7 +1,8 @@
 import { useState, ChangeEvent } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
+import { getStudentSidebarItems } from "@/components/layout/student-sidebar-items";
 import { Sidebar } from "@/components/layout/sidebar";
 import {
   Card,
@@ -70,17 +71,9 @@ export default function StudentCoursesPage() {
     staleTime: 1000 * 60 * 2, // 2 minutes
   });
 
-  // Sidebar items for student portal
-  const sidebarItems = [
-    { name: "Dashboard", icon: <ChartIcon />, href: "/student/dashboard" },
-    { name: "Meus Cursos", icon: <MenuBookIcon />, active: true, href: "/student/courses" },
-    { name: "Calendário", icon: <EventNoteIcon />, href: "/student/calendar" },
-    { name: "Documentos", icon: <DescriptionIcon />, href: "/student/documents" },
-    { name: "Biblioteca", icon: <LayersIcon />, href: "/student/library" },
-    { name: "Secretaria", icon: <FileTextIcon />, href: "/student/secretaria" },
-    { name: "Financeiro", icon: <PaymentsIcon />, href: "/student/financial" },
-    { name: "Suporte", icon: <HelpOutlineIcon />, href: "/student/support" },
-  ];
+  // Usar o componente compartilhado para os itens do sidebar
+  const [location] = useLocation();
+  const sidebarItems = getStudentSidebarItems(location);
 
   // Filter and sort courses
   const filteredCourses = courses
