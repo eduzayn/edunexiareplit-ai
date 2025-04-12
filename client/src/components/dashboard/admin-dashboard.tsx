@@ -70,7 +70,7 @@ export function AdminDashboard() {
         items={sidebarItems}
         user={user}
         portalType="admin"
-        portalColor="#3451B2"
+        portalColor="#4CAF50"
         isMobileMenuOpen={isMobileMenuOpen}
         setIsMobileMenuOpen={setIsMobileMenuOpen}
       />

@@ -32,13 +32,13 @@ export function getAdminSidebarItems(currentPath: string) {
       name: "Disciplinas", 
       icon: <MenuBookIcon />, 
       href: "/admin/disciplines",
-      active: currentPath === "/admin/disciplines" || currentPath.includes("/admin/discipline/")
+      active: currentPath === "/admin/disciplines" || currentPath.includes("/admin/disciplines/")
     },
     { 
       name: "Cursos", 
       icon: <SchoolIcon />, 
       href: "/admin/courses",
-      active: currentPath === "/admin/courses" || currentPath.includes("/admin/course/")
+      active: currentPath === "/admin/courses" || currentPath.includes("/admin/courses/")
     },
     { 
       name: "Instituições", 
