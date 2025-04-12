@@ -14,6 +14,9 @@ import DisciplinesPage from "@/pages/admin/disciplines-page";
 import CoursesPage from "@/pages/admin/courses-page";
 import CourseFormPage from "@/pages/admin/course-form-page";
 import DisciplineContentPage from "@/pages/admin/discipline-content-page";
+// Import student pages
+import StudentCoursesPage from "@/pages/student/courses-page";
+import CourseDetailPage from "@/pages/student/course-detail-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { useAuth, AuthProvider } from "./hooks/use-auth";
 
@@ -57,6 +60,12 @@ function Router() {
       <Route path="/blog" component={BlogPage} />
       
       <ProtectedRoute path="/student/dashboard" portalType="student" />
+      <Route path="/student/courses">
+        {() => user?.portalType === "student" ? <StudentCoursesPage /> : <Redirect to="/auth" />}
+      </Route>
+      <Route path="/student/courses/:id">
+        {() => user?.portalType === "student" ? <CourseDetailPage /> : <Redirect to="/auth" />}
+      </Route>
       <ProtectedRoute path="/partner/dashboard" portalType="partner" />
       <ProtectedRoute path="/polo/dashboard" portalType="polo" />
       <ProtectedRoute path="/admin/dashboard" portalType="admin" />
