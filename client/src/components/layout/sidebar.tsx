@@ -43,8 +43,8 @@ export function Sidebar({
   const [, navigate] = useLocation();
   const [currentPath, setCurrentPath] = useState("");
 
+  // Atualizar o caminho atual quando a página mudar
   useEffect(() => {
-    // Get current path to highlight active sidebar item
     setCurrentPath(window.location.pathname);
   }, []);
 

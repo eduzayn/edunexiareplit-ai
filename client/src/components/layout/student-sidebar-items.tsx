@@ -10,6 +10,11 @@ import {
   AssignmentIcon,
 } from "@/components/ui/icons";
 
+/**
+ * Retorna uma lista completa de itens para a barra lateral do portal do aluno
+ * Essa função garante que todos os itens da navegação estejam sempre presentes
+ * independente da página atual
+ */
 export function getStudentSidebarItems(currentPath: string) {
   return [
     { 
