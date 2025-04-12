@@ -17,6 +17,11 @@ import DisciplineContentPage from "@/pages/admin/discipline-content-page";
 // Import student pages
 import StudentCoursesPage from "@/pages/student/courses-page";
 import CourseDetailPage from "@/pages/student/course-detail-page";
+import DisciplineVideoPage from "@/pages/student/discipline-video-page";
+import DisciplinePdfPage from "@/pages/student/discipline-pdf-page";
+import DisciplineEbookPage from "@/pages/student/discipline-ebook-page";
+import DisciplineSimuladoPage from "@/pages/student/discipline-simulado-page";
+import DisciplineAvaliacaoPage from "@/pages/student/discipline-avaliacao-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { useAuth, AuthProvider } from "./hooks/use-auth";
 
@@ -66,8 +71,20 @@ function Router() {
       <Route path="/student/courses/:id">
         {() => user?.portalType === "student" ? <CourseDetailPage /> : <Redirect to="/auth" />}
       </Route>
-      <Route path="/student/discipline/:id/:contentType">
-        {() => user?.portalType === "student" ? <Redirect to="/student/courses" /> : <Redirect to="/auth" />}
+      <Route path="/student/discipline/:id/video/:videoNumber">
+        {() => user?.portalType === "student" ? <DisciplineVideoPage /> : <Redirect to="/auth" />}
+      </Route>
+      <Route path="/student/discipline/:id/apostila">
+        {() => user?.portalType === "student" ? <DisciplinePdfPage /> : <Redirect to="/auth" />}
+      </Route>
+      <Route path="/student/discipline/:id/ebook">
+        {() => user?.portalType === "student" ? <DisciplineEbookPage /> : <Redirect to="/auth" />}
+      </Route>
+      <Route path="/student/discipline/:id/simulado">
+        {() => user?.portalType === "student" ? <DisciplineSimuladoPage /> : <Redirect to="/auth" />}
+      </Route>
+      <Route path="/student/discipline/:id/avaliacao">
+        {() => user?.portalType === "student" ? <DisciplineAvaliacaoPage /> : <Redirect to="/auth" />}
       </Route>
       <ProtectedRoute path="/partner/dashboard" portalType="partner" />
       <ProtectedRoute path="/polo/dashboard" portalType="polo" />
