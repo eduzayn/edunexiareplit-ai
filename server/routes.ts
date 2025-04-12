@@ -807,13 +807,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Em uma implementação real, filtrar apenas os cursos em que o estudante está matriculado
       // Para este protótipo, retornaremos todos os cursos publicados
-      const courses = await storage.getCourses(undefined, "published");
+      let courses = await storage.getCourses(undefined, "published");
+      
+      // Se não existem cursos, criar alguns exemplos para demonstração
+      if (courses.length === 0) {
+        courses = [
+          {
+            id: 1001,
+            name: "Gestão de Projetos com Metodologias Ágeis",
+            code: "MBA-AGP-2023",
+            description: "Aprenda as mais modernas metodologias ágeis para gerenciamento eficaz de projetos",
+            status: "published",
+            workload: 60,
+            enrollmentStartDate: new Date().toISOString(),
+            enrollmentEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            startDate: new Date().toISOString(),
+            endDate: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString(),
+            price: 1800.00,
+            modality: "ead",
+            evaluationMethod: "quiz",
+            createdAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
+            updatedAt: new Date().toISOString(),
+            createdById: 1
+          },
+          {
+            id: 1002,
+            name: "Inteligência Artificial e Machine Learning",
+            code: "DCS-IA-2023",
+            description: "Fundamentos e práticas avançadas em IA e aprendizado de máquina",
+            status: "published",
+            workload: 80,
+            enrollmentStartDate: new Date().toISOString(),
+            enrollmentEndDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+            startDate: new Date().toISOString(),
+            endDate: new Date(Date.now() + 240 * 24 * 60 * 60 * 1000).toISOString(),
+            price: 2400.00,
+            modality: "ead",
+            evaluationMethod: "project",
+            createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+            updatedAt: new Date().toISOString(),
+            createdById: 1
+          },
+          {
+            id: 1003,
+            name: "Marketing Digital e Mídias Sociais",
+            code: "MKT-DIG-2023",
+            description: "Estratégias inovadoras para marketing digital e gestão de redes sociais",
+            status: "published",
+            workload: 40,
+            enrollmentStartDate: new Date().toISOString(),
+            enrollmentEndDate: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString(),
+            startDate: new Date().toISOString(),
+            endDate: new Date(Date.now() + 120 * 24 * 60 * 60 * 1000).toISOString(),
+            price: 1200.00,
+            modality: "ead",
+            evaluationMethod: "mixed",
+            createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+            updatedAt: new Date().toISOString(),
+            createdById: 1
+          },
+          {
+            id: 1004,
+            name: "Análise de Dados com Python",
+            code: "DAT-PY-2023",
+            description: "Do básico ao avançado: análise e visualização de dados usando Python",
+            status: "published",
+            workload: 60,
+            enrollmentStartDate: new Date().toISOString(),
+            enrollmentEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            startDate: new Date().toISOString(),
+            endDate: new Date(Date.now() + 150 * 24 * 60 * 60 * 1000).toISOString(),
+            price: 1600.00,
+            modality: "hybrid",
+            evaluationMethod: "exam",
+            createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+            updatedAt: new Date().toISOString(),
+            createdById: 1
+          }
+        ];
+      }
       
       // Adicionar informações de progresso simuladas
       const coursesWithProgress = courses.map(course => ({
         ...course,
-        // Simular um progresso aleatório por enquanto
-        progress: Math.floor(Math.random() * 101),
+        // Definindo progresso variado para demonstração
+        progress: [0, 25, 50, 75, 100][Math.floor(Math.random() * 5)],
         enrolledAt: new Date(Date.now() - Math.random() * 10000000000).toISOString(),
         // Adicionar data da última atualização simulada para ordenação
         updatedAt: new Date(Date.now() - Math.random() * 1000000000).toISOString()
@@ -830,7 +908,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/student/courses/:id", requireStudent, async (req, res) => {
     try {
       const courseId = parseInt(req.params.id);
-      const course = await storage.getCourse(courseId);
+      let course = await storage.getCourse(courseId);
+      
+      // Se o curso não existir no banco de dados, mas é um dos cursos de demonstração
+      // Vamos criar uma resposta simulada
+      if (!course && courseId >= 1001 && courseId <= 1004) {
+        // Dados de demonstração para os cursos de exemplo
+        const demoCourses = {
+          1001: {
+            id: 1001,
+            name: "Gestão de Projetos com Metodologias Ágeis",
+            code: "MBA-AGP-2023",
+            description: "Aprenda as mais modernas metodologias ágeis para gerenciamento eficaz de projetos, incluindo Scrum, Kanban e XP. Este curso vai prepará-lo para liderar equipes ágeis em ambientes dinâmicos.",
+            status: "published",
+            workload: 60,
+            enrollmentStartDate: new Date().toISOString(),
+            enrollmentEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            startDate: new Date().toISOString(),
+            endDate: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString(),
+            price: 1800.00,
+            modality: "ead",
+            evaluationMethod: "quiz",
+            createdAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
+            updatedAt: new Date().toISOString(),
+            createdById: 1
+          },
+          1002: {
+            id: 1002,
+            name: "Inteligência Artificial e Machine Learning",
+            code: "DCS-IA-2023",
+            description: "Fundamentos e práticas avançadas em IA e aprendizado de máquina com aplicações práticas em Python. Aprenda desde algoritmos básicos até redes neurais profundas.",
+            status: "published",
+            workload: 80,
+            enrollmentStartDate: new Date().toISOString(),
+            enrollmentEndDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+            startDate: new Date().toISOString(),
+            endDate: new Date(Date.now() + 240 * 24 * 60 * 60 * 1000).toISOString(),
+            price: 2400.00,
+            modality: "ead",
+            evaluationMethod: "project",
+            createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+            updatedAt: new Date().toISOString(),
+            createdById: 1
+          },
+          1003: {
+            id: 1003,
+            name: "Marketing Digital e Mídias Sociais",
+            code: "MKT-DIG-2023",
+            description: "Estratégias inovadoras para marketing digital e gestão de redes sociais. Aprenda a criar campanhas eficazes, analisar métricas e otimizar resultados nas plataformas digitais.",
+            status: "published",
+            workload: 40,
+            enrollmentStartDate: new Date().toISOString(),
+            enrollmentEndDate: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString(),
+            startDate: new Date().toISOString(),
+            endDate: new Date(Date.now() + 120 * 24 * 60 * 60 * 1000).toISOString(),
+            price: 1200.00,
+            modality: "ead",
+            evaluationMethod: "mixed",
+            createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+            updatedAt: new Date().toISOString(),
+            createdById: 1
+          },
+          1004: {
+            id: 1004,
+            name: "Análise de Dados com Python",
+            code: "DAT-PY-2023",
+            description: "Do básico ao avançado: análise e visualização de dados usando Python. Aprenda pandas, matplotlib, seaborn e técnicas estatísticas para extrair insights de conjuntos de dados complexos.",
+            status: "published",
+            workload: 60,
+            enrollmentStartDate: new Date().toISOString(),
+            enrollmentEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            startDate: new Date().toISOString(),
+            endDate: new Date(Date.now() + 150 * 24 * 60 * 60 * 1000).toISOString(),
+            price: 1600.00,
+            modality: "hybrid",
+            evaluationMethod: "exam",
+            createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+            updatedAt: new Date().toISOString(),
+            createdById: 1
+          }
+        };
+        
+        course = demoCourses[courseId as keyof typeof demoCourses];
+      }
       
       if (!course) {
         return res.status(404).json({ message: "Curso não encontrado" });
@@ -841,20 +1001,261 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Buscar disciplinas do curso
-      const courseDisciplines = await storage.getCourseDisciplines(courseId);
+      let disciplines = [];
       
-      // Buscar detalhes completos de cada disciplina
-      const disciplinePromises = courseDisciplines.map(async (cd) => {
-        const discipline = await storage.getDiscipline(cd.disciplineId);
-        return {
-          ...discipline,
-          order: cd.order,
-          // Simular progresso para cada disciplina
-          progress: Math.floor(Math.random() * 101)
+      // Para cursos de demonstração, criar disciplinas simuladas
+      if (courseId >= 1001 && courseId <= 1004) {
+        // Mapeamento de disciplinas por curso de demonstração
+        const demoDisciplines = {
+          1001: [
+            {
+              id: 10001,
+              name: "Fundamentos de Gestão de Projetos",
+              code: "AGP-FUN-001",
+              description: "Introdução aos conceitos fundamentais de gestão de projetos e frameworks ágeis",
+              contentStatus: "complete",
+              createdAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000),
+              updatedAt: new Date(),
+              order: 1,
+              progress: 100
+            },
+            {
+              id: 10002,
+              name: "Scrum Framework",
+              code: "AGP-SCR-002",
+              description: "Metodologia Scrum, papéis, eventos e artefatos para gerenciamento de projetos",
+              contentStatus: "complete",
+              createdAt: new Date(Date.now() - 19 * 24 * 60 * 60 * 1000),
+              updatedAt: new Date(),
+              order: 2,
+              progress: 75
+            },
+            {
+              id: 10003,
+              name: "Kanban e Fluxos de Trabalho",
+              code: "AGP-KAN-003",
+              description: "Implementação de quadros Kanban e otimização de fluxos de trabalho",
+              contentStatus: "complete",
+              createdAt: new Date(Date.now() - 18 * 24 * 60 * 60 * 1000),
+              updatedAt: new Date(),
+              order: 3,
+              progress: 50
+            },
+            {
+              id: 10004,
+              name: "Extreme Programming (XP)",
+              code: "AGP-XP-004",
+              description: "Práticas de desenvolvimento de software do Extreme Programming",
+              contentStatus: "complete",
+              createdAt: new Date(Date.now() - 17 * 24 * 60 * 60 * 1000),
+              updatedAt: new Date(),
+              order: 4,
+              progress: 25
+            },
+            {
+              id: 10005,
+              name: "Métricas e KPIs em Metodologias Ágeis",
+              code: "AGP-MET-005",
+              description: "Como medir o desempenho em projetos ágeis e interpretar indicadores-chave",
+              contentStatus: "complete",
+              createdAt: new Date(Date.now() - 16 * 24 * 60 * 60 * 1000),
+              updatedAt: new Date(),
+              order: 5,
+              progress: 0
+            }
+          ],
+          1002: [
+            {
+              id: 10006,
+              name: "Introdução à Inteligência Artificial",
+              code: "IA-INT-001",
+              description: "Fundamentos e história da IA, tipos de aprendizado e aplicações modernas",
+              contentStatus: "complete",
+              createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
+              updatedAt: new Date(),
+              order: 1,
+              progress: 100
+            },
+            {
+              id: 10007,
+              name: "Algoritmos de Machine Learning",
+              code: "IA-ML-002",
+              description: "Principais algoritmos supervisionados e não-supervisionados de ML",
+              contentStatus: "complete",
+              createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
+              updatedAt: new Date(),
+              order: 2,
+              progress: 80
+            },
+            {
+              id: 10008,
+              name: "Deep Learning e Redes Neurais",
+              code: "IA-DL-003",
+              description: "Estrutura e funcionamento de redes neurais e técnicas de deep learning",
+              contentStatus: "complete",
+              createdAt: new Date(Date.now() - 13 * 24 * 60 * 60 * 1000),
+              updatedAt: new Date(),
+              order: 3,
+              progress: 60
+            },
+            {
+              id: 10009,
+              name: "Processamento de Linguagem Natural",
+              code: "IA-NLP-004",
+              description: "Técnicas de NLP para análise e geração de texto com IA",
+              contentStatus: "complete",
+              createdAt: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000),
+              updatedAt: new Date(),
+              order: 4,
+              progress: 40
+            },
+            {
+              id: 10010,
+              name: "Visão Computacional",
+              code: "IA-VIS-005",
+              description: "Reconhecimento de imagens e objetos usando técnicas de visão computacional",
+              contentStatus: "complete",
+              createdAt: new Date(Date.now() - 11 * 24 * 60 * 60 * 1000),
+              updatedAt: new Date(),
+              order: 5,
+              progress: 20
+            },
+            {
+              id: 10011,
+              name: "Ética e IA Responsável",
+              code: "IA-ETI-006",
+              description: "Considerações éticas, vieses e uso responsável da inteligência artificial",
+              contentStatus: "complete",
+              createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+              updatedAt: new Date(),
+              order: 6,
+              progress: 0
+            }
+          ],
+          1003: [
+            {
+              id: 10012,
+              name: "Fundamentos de Marketing Digital",
+              code: "MKT-FUN-001",
+              description: "Conceitos essenciais e ecossistema do marketing digital",
+              contentStatus: "complete",
+              createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+              updatedAt: new Date(),
+              order: 1,
+              progress: 100
+            },
+            {
+              id: 10013,
+              name: "SEO e Otimização para Buscadores",
+              code: "MKT-SEO-002",
+              description: "Técnicas para ranqueamento orgânico e visibilidade nos buscadores",
+              contentStatus: "complete",
+              createdAt: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000),
+              updatedAt: new Date(),
+              order: 2,
+              progress: 65
+            },
+            {
+              id: 10014,
+              name: "Marketing de Conteúdo",
+              code: "MKT-CON-003",
+              description: "Estratégias para criação e distribuição de conteúdo relevante",
+              contentStatus: "complete",
+              createdAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000),
+              updatedAt: new Date(),
+              order: 3,
+              progress: 30
+            },
+            {
+              id: 10015,
+              name: "Marketing em Redes Sociais",
+              code: "MKT-SOC-004",
+              description: "Estratégias específicas para cada plataforma de mídia social",
+              contentStatus: "complete",
+              createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+              updatedAt: new Date(),
+              order: 4,
+              progress: 0
+            }
+          ],
+          1004: [
+            {
+              id: 10016,
+              name: "Introdução ao Python para Dados",
+              code: "PY-INT-001",
+              description: "Fundamentos da linguagem Python aplicados à análise de dados",
+              contentStatus: "complete",
+              createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+              updatedAt: new Date(),
+              order: 1,
+              progress: 100
+            },
+            {
+              id: 10017,
+              name: "Manipulação de Dados com Pandas",
+              code: "PY-PND-002",
+              description: "Uso da biblioteca Pandas para manipulação e análise de dados tabulares",
+              contentStatus: "complete",
+              createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
+              updatedAt: new Date(),
+              order: 2,
+              progress: 85
+            },
+            {
+              id: 10018,
+              name: "Visualização de Dados",
+              code: "PY-VIS-003",
+              description: "Criação de visualizações eficazes com Matplotlib e Seaborn",
+              contentStatus: "complete",
+              createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+              updatedAt: new Date(),
+              order: 3,
+              progress: 55
+            },
+            {
+              id: 10019,
+              name: "Análise Estatística com Python",
+              code: "PY-EST-004",
+              description: "Técnicas estatísticas para análise e inferência de dados",
+              contentStatus: "complete",
+              createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+              updatedAt: new Date(),
+              order: 4,
+              progress: 25
+            },
+            {
+              id: 10020,
+              name: "Machine Learning para Análise Preditiva",
+              code: "PY-ML-005",
+              description: "Aplicação de algoritmos de ML para previsão e classificação",
+              contentStatus: "complete",
+              createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+              updatedAt: new Date(),
+              order: 5,
+              progress: 0
+            }
+          ]
         };
-      });
-      
-      const disciplines = await Promise.all(disciplinePromises);
+        
+        // Pegar as disciplinas correspondentes ao curso
+        disciplines = demoDisciplines[courseId as keyof typeof demoDisciplines] || [];
+      } else {
+        // Para cursos do banco de dados, buscar disciplinas normalmente
+        const courseDisciplines = await storage.getCourseDisciplines(courseId);
+        
+        // Buscar detalhes completos de cada disciplina
+        const disciplinePromises = courseDisciplines.map(async (cd) => {
+          const discipline = await storage.getDiscipline(cd.disciplineId);
+          return {
+            ...discipline,
+            order: cd.order,
+            // Simular progresso para cada disciplina
+            progress: Math.floor(Math.random() * 101)
+          };
+        });
+        
+        disciplines = await Promise.all(disciplinePromises);
+      }
       
       // Calcular o progresso geral com base no progresso das disciplinas
       const totalProgress = disciplines.length > 0
@@ -879,6 +1280,122 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/student/disciplines/:id", requireStudent, async (req, res) => {
     try {
       const disciplineId = parseInt(req.params.id);
+      
+      // Verificar se é uma disciplina de demonstração (ID entre 10001 e 10020)
+      if (disciplineId >= 10001 && disciplineId <= 10020) {
+        // Encontrar a disciplina de demonstração com base no ID
+        let demoDiscipline = null;
+        
+        // Procurar em todos os cursos de demonstração
+        const coursesWithDisciplines = {
+          1001: [10001, 10002, 10003, 10004, 10005],
+          1002: [10006, 10007, 10008, 10009, 10010, 10011],
+          1003: [10012, 10013, 10014, 10015],
+          1004: [10016, 10017, 10018, 10019, 10020]
+        };
+        
+        // Para cada curso de demonstração
+        for (const courseId in coursesWithDisciplines) {
+          // Se a disciplina pertence a este curso
+          if (coursesWithDisciplines[courseId as keyof typeof coursesWithDisciplines].includes(disciplineId)) {
+            // Buscar detalhes do curso
+            const courseUrl = `/api/student/courses/${courseId}`;
+            const courseResponse = await new Promise<any>((resolve) => {
+              // Simular uma chamada à API interna
+              const req = { params: { id: courseId }, isAuthenticated: () => true, user: null } as any;
+              const res = {
+                json: (data: any) => resolve(data),
+                status: () => ({ json: () => resolve(null) })
+              } as any;
+              
+              // Chamar o handler diretamente 
+              app._router.stack
+                .filter((r: any) => r.route && r.route.path === `/api/student/courses/:id`)
+                .forEach((r: any) => r.route.stack.forEach((handler: any) => {
+                  handler.handle(req, res, () => {});
+                }));
+            });
+            
+            if (courseResponse) {
+              // Encontrar a disciplina específica
+              demoDiscipline = courseResponse.disciplines.find((d: any) => d.id === disciplineId);
+              break;
+            }
+          }
+        }
+        
+        if (demoDiscipline) {
+          // Adicionar conteúdo simulado para a disciplina de demonstração
+          const progressValue = demoDiscipline.progress || Math.floor(Math.random() * 101);
+          
+          // Dados de conteúdo de exemplo para as disciplinas
+          const disciplineContent = {
+            videoAulas: [
+              {
+                id: disciplineId * 100 + 1,
+                title: `Vídeo-aula 1: Introdução à ${demoDiscipline.name}`,
+                duration: Math.floor(Math.random() * 30) + 15, // 15-45 minutos
+                url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                thumbnail: "https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg",
+                watched: progressValue > 30
+              },
+              {
+                id: disciplineId * 100 + 2,
+                title: `Vídeo-aula 2: Aplicações práticas de ${demoDiscipline.name}`,
+                duration: Math.floor(Math.random() * 30) + 20, // 20-50 minutos
+                url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                thumbnail: "https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg",
+                watched: progressValue > 60
+              }
+            ],
+            materiais: [
+              {
+                id: disciplineId * 100 + 3,
+                title: `Apostila: ${demoDiscipline.name}`,
+                type: "pdf",
+                fileSize: Math.floor(Math.random() * 10) + 2, // 2-12 MB
+                downloadUrl: "#",
+                downloaded: progressValue > 20
+              },
+              {
+                id: disciplineId * 100 + 4,
+                title: `E-book interativo: ${demoDiscipline.name}`,
+                type: "html",
+                url: "#",
+                accessed: progressValue > 40
+              }
+            ],
+            avaliacao: {
+              id: disciplineId * 10 + 1,
+              title: `Avaliação Final - ${demoDiscipline.name}`,
+              questions: 10,
+              totalPoints: 100,
+              minApprovalScore: 70,
+              timeLimit: 60, // minutos
+              available: progressValue > 75,
+              completed: progressValue === 100,
+              score: progressValue === 100 ? Math.floor(Math.random() * 30) + 70 : null // 70-100 se completado
+            },
+            simulado: {
+              id: disciplineId * 10 + 2,
+              title: `Simulado - ${demoDiscipline.name}`,
+              questions: 30,
+              timeLimit: 120, // minutos
+              available: progressValue > 50,
+              completed: progressValue > 75,
+              attempts: progressValue > 75 ? Math.floor(Math.random() * 3) + 1 : 0
+            }
+          };
+          
+          return res.json({
+            ...demoDiscipline,
+            progress: progressValue,
+            content: disciplineContent
+          });
+        }
+      }
+      
+      // Se não for uma disciplina de demonstração ou não for encontrada, buscar no banco de dados
       const discipline = await storage.getDiscipline(disciplineId);
       
       if (!discipline) {
