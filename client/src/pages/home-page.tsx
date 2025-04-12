@@ -31,6 +31,7 @@ export default function HomePage() {
                   variant="secondary"
                   size="lg"
                   className="bg-white text-primary hover:bg-gray-100"
+                  onClick={() => navigate('/modulos')}
                 >
                   <PlayCircleIcon className="mr-2 h-5 w-5" />
                   Assistir demonstração
@@ -38,6 +39,7 @@ export default function HomePage() {
                 <Button 
                   size="lg"
                   className="bg-[#12B76A] hover:bg-[#0E9355] text-white"
+                  onClick={() => navigate('/contato')}
                 >
                   <CalendarIcon className="mr-2 h-5 w-5" />
                   Agendar demonstração
@@ -86,6 +88,7 @@ export default function HomePage() {
                   <Button 
                     variant="outline" 
                     className="w-full text-primary border-primary hover:bg-primary hover:text-white"
+                    onClick={() => navigate('/modulos')}
                   >
                     Saiba mais
                   </Button>
@@ -113,6 +116,7 @@ export default function HomePage() {
                   <Button 
                     variant="outline" 
                     className="w-full text-primary border-primary hover:bg-primary hover:text-white"
+                    onClick={() => navigate('/modulos')}
                   >
                     Saiba mais
                   </Button>

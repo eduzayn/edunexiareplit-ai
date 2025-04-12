@@ -9,40 +9,40 @@ export default function Footer() {
     {
       title: "Plataforma",
       links: [
-        { name: "Módulos", href: "#modules" },
-        { name: "Planos", href: "#plans" },
-        { name: "Atualizações", href: "#updates" },
-        { name: "Roadmap", href: "#roadmap" },
-        { name: "API", href: "#api" },
+        { name: "Módulos", href: "/modulos" },
+        { name: "Planos", href: "/planos" },
+        { name: "Atualizações", href: "/atualizacoes" },
+        { name: "Roadmap", href: "/roadmap" },
+        { name: "API", href: "/api-docs" },
       ],
     },
     {
       title: "Empresa",
       links: [
-        { name: "Sobre nós", href: "#about" },
-        { name: "Blog", href: "#blog" },
-        { name: "Carreiras", href: "#careers" },
-        { name: "Parceiros", href: "#partners" },
-        { name: "Imprensa", href: "#press" },
+        { name: "Sobre nós", href: "/sobre" },
+        { name: "Blog", href: "/blog" },
+        { name: "Carreiras", href: "/carreiras" },
+        { name: "Parceiros", href: "/parceiros" },
+        { name: "Imprensa", href: "/imprensa" },
       ],
     },
     {
       title: "Suporte",
       links: [
-        { name: "Ajuda", href: "#help" },
-        { name: "Status", href: "#status" },
-        { name: "Contato", href: "#contact" },
-        { name: "Privacidade", href: "#privacy" },
-        { name: "Termos", href: "#terms" },
+        { name: "Ajuda", href: "/ajuda" },
+        { name: "Status", href: "/status" },
+        { name: "Contato", href: "/contato" },
+        { name: "Privacidade", href: "/privacidade" },
+        { name: "Termos", href: "/termos" },
       ],
     },
   ];
 
   const socialLinks = [
-    { icon: <Facebook size={20} />, href: "#", label: "Facebook" },
-    { icon: <Instagram size={20} />, href: "#", label: "Instagram" },
-    { icon: <Linkedin size={20} />, href: "#", label: "LinkedIn" },
-    { icon: <Youtube size={20} />, href: "#", label: "YouTube" },
+    { icon: <Facebook size={20} />, href: "https://facebook.com", label: "Facebook" },
+    { icon: <Instagram size={20} />, href: "https://instagram.com", label: "Instagram" },
+    { icon: <Linkedin size={20} />, href: "https://linkedin.com", label: "LinkedIn" },
+    { icon: <Youtube size={20} />, href: "https://youtube.com", label: "YouTube" },
   ];
 
   return (

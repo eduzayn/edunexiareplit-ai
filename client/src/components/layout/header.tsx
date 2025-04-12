@@ -27,10 +27,10 @@ export default function Header({ onLogin }: HeaderProps) {
   };
 
   const navItems = [
-    { name: "MÓDULOS", href: "#modules" },
-    { name: "PLANOS", href: "#plans" },
-    { name: "SOBRE", href: "#about" },
-    { name: "BLOG", href: "#blog" },
+    { name: "MÓDULOS", href: "/modulos" },
+    { name: "PLANOS", href: "/planos" },
+    { name: "SOBRE", href: "/sobre" },
+    { name: "BLOG", href: "/blog" },
   ];
 
   return (
