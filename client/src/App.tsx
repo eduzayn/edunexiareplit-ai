@@ -22,6 +22,7 @@ import DisciplinePdfPage from "@/pages/student/discipline-pdf-page";
 import DisciplineEbookPage from "@/pages/student/discipline-ebook-page";
 import DisciplineSimuladoPage from "@/pages/student/discipline-simulado-page";
 import DisciplineAvaliacaoPage from "@/pages/student/discipline-avaliacao-page";
+import LibraryPage from "@/pages/student/library-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { useAuth, AuthProvider } from "./hooks/use-auth";
 
@@ -85,6 +86,9 @@ function Router() {
       </Route>
       <Route path="/student/discipline/:id/avaliacao">
         {() => user?.portalType === "student" ? <DisciplineAvaliacaoPage /> : <Redirect to="/auth" />}
+      </Route>
+      <Route path="/student/library">
+        {() => user?.portalType === "student" ? <LibraryPage /> : <Redirect to="/auth" />}
       </Route>
       <ProtectedRoute path="/partner/dashboard" portalType="partner" />
       <ProtectedRoute path="/polo/dashboard" portalType="polo" />
