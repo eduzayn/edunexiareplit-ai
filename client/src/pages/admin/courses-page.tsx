@@ -10,6 +10,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocation, Link } from "wouter";
 import { useForm } from "react-hook-form";
+import { getAdminSidebarItems } from "@/components/layout/admin-sidebar-items";
 import {
   Table,
   TableBody,
@@ -111,12 +112,9 @@ export default function CoursesPage() {
     },
   });
   
-  // Sidebar items for admin portal
-  const sidebarItems = [
-    { name: "Dashboard", icon: <DashboardIcon />, href: "/admin/dashboard" },
-    { name: "Disciplinas", icon: <BookIcon />, href: "/admin/disciplines" },
-    { name: "Cursos", icon: <SchoolIcon />, href: "/admin/courses", active: true },
-  ];
+  // Usar o componente padronizado para os itens da barra lateral
+  const [location] = useLocation();
+  const sidebarItems = getAdminSidebarItems(location || "");
 
   // Consulta para listar cursos
   const { 
@@ -381,7 +379,7 @@ export default function CoursesPage() {
         items={sidebarItems}
         user={user}
         portalType="admin"
-        portalColor="#3451B2"
+        portalColor="#4CAF50"
         isMobileMenuOpen={isMobileMenuOpen}
         setIsMobileMenuOpen={setIsMobileMenuOpen}
       />
