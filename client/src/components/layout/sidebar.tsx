@@ -90,17 +90,17 @@ export function Sidebar({
               {items.map((item) => {
                 const isActive = item.active || currentPath === item.href;
                 return (
-                  <Link key={item.name} href={item.href}>
-                    <a
-                      className={`flex items-center px-4 py-3 rounded-md ${
-                        isActive
-                          ? `text-white bg-primary`
-                          : `text-neutral-400 hover:text-white hover:bg-neutral-800`
-                      }`}
-                    >
-                      <span className="mr-3">{item.icon}</span>
-                      {item.name}
-                    </a>
+                  <Link 
+                    key={item.name} 
+                    href={item.href}
+                    className={`flex items-center px-4 py-3 rounded-md ${
+                      isActive
+                        ? `text-white bg-primary`
+                        : `text-neutral-400 hover:text-white hover:bg-neutral-800`
+                    }`}
+                  >
+                    <span className="mr-3">{item.icon}</span>
+                    {item.name}
                   </Link>
                 );
               })}
@@ -180,18 +180,18 @@ export function Sidebar({
                 {items.map((item) => {
                   const isActive = item.active || currentPath === item.href;
                   return (
-                    <Link key={item.name} href={item.href}>
-                      <a
-                        className={`flex items-center px-4 py-3 rounded-md ${
-                          isActive
-                            ? `text-white bg-primary`
-                            : `text-neutral-400 hover:text-white hover:bg-neutral-800`
-                        }`}
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        <span className="mr-3">{item.icon}</span>
-                        {item.name}
-                      </a>
+                    <Link 
+                      key={item.name} 
+                      href={item.href}
+                      className={`flex items-center px-4 py-3 rounded-md ${
+                        isActive
+                          ? `text-white bg-primary`
+                          : `text-neutral-400 hover:text-white hover:bg-neutral-800`
+                      }`}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <span className="mr-3">{item.icon}</span>
+                      {item.name}
                     </Link>
                   );
                 })}

@@ -1,0 +1,26 @@
+Warning: validateDOMNesting(...): <a> cannot appear as a descendant of <a>.
+    at a
+    at a
+    at https://d7775755-86d6-46c0-9e80-55092b836808-00-1wokokcfxh045.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=fdd0cf1a:337:18
+    at nav
+    at div
+    at div
+    at https://d7775755-86d6-46c0-9e80-55092b836808-00-1wokokcfxh045.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-7ZRT33Z6.js?v=fdd0cf1a:41:13
+    at https://d7775755-86d6-46c0-9e80-55092b836808-00-1wokokcfxh045.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-scroll-area.js?v=fdd0cf1a:116:13
+    at div
+    at https://d7775755-86d6-46c0-9e80-55092b836808-00-1wokokcfxh045.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-7ZRT33Z6.js?v=fdd0cf1a:41:13
+    at Provider (https://d7775755-86d6-46c0-9e80-55092b836808-00-1wokokcfxh045.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-ICA7ZJMY.js?v=fdd0cf1a:38:15)
+    at https://d7775755-86d6-46c0-9e80-55092b836808-00-1wokokcfxh045.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-scroll-area.js?v=fdd0cf1a:54:7
+    at _c (https://d7775755-86d6-46c0-9e80-55092b836808-00-1wokokcfxh045.worf.replit.dev/src/components/ui/scroll-area.tsx:21:11)
+    at div
+    at div
+    at Sidebar (https://d7775755-86d6-46c0-9e80-55092b836808-00-1wokokcfxh045.worf.replit.dev/src/components/layout/sidebar.tsx:33:3)
+    at div
+    at AdminDashboard (https://d7775755-86d6-46c0-9e80-55092b836808-00-1wokokcfxh045.worf.replit.dev/src/components/dashboard/admin-dashboard.tsx:56:20)
+    at Route (https://d7775755-86d6-46c0-9e80-55092b836808-00-1wokokcfxh045.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=fdd0cf1a:323:16)
+    at ProtectedRoute (https://d7775755-86d6-46c0-9e80-55092b836808-00-1wokokcfxh045.worf.replit.dev/src/lib/protected-route.tsx:25:34)
+    at Switch (https://d7775755-86d6-46c0-9e80-55092b836808-00-1wokokcfxh045.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=fdd0cf1a:379:17)
+    at Router (https://d7775755-86d6-46c0-9e80-55092b836808-00-1wokokcfxh045.worf.replit.dev/src/App.tsx?t=1744435826310&v=yv8ykdJdZmFt9RiTxHMde:33:31)
+    at AuthProvider (https://d7775755-86d6-46c0-9e80-55092b836808-00-1wokokcfxh045.worf.replit.dev/src/hooks/use-auth.tsx:92:32)
+    at App
+    at QueryClientProvider (https://d7775755-86d6-46c0-9e80-55092b836808-00-1wokokcfxh045.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=fdd0cf1a:2805:3)
