@@ -74,6 +74,8 @@ export default function StudentCoursesPage() {
     { name: "Meus Cursos", icon: <MenuBookIcon />, active: true, href: "/student/courses" },
     { name: "Calendário", icon: <EventNoteIcon />, href: "/student/calendar" },
     { name: "Documentos", icon: <DescriptionIcon />, href: "/student/documents" },
+    { name: "Biblioteca", icon: <LayersIcon />, href: "/student/library" },
+    { name: "Secretaria", icon: <FileTextIcon />, href: "/student/secretaria" },
     { name: "Financeiro", icon: <PaymentsIcon />, href: "/student/financial" },
     { name: "Suporte", icon: <HelpOutlineIcon />, href: "/student/support" },
   ];
