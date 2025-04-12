@@ -3,6 +3,7 @@ import { useParams, Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import { Sidebar } from "@/components/layout/sidebar";
+import { getStudentSidebarItems } from "@/components/layout/student-sidebar-items";
 import {
   Card,
   CardContent,
