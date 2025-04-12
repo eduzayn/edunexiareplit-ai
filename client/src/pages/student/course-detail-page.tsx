@@ -38,6 +38,35 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
+// Interface para disciplina dentro do curso
+interface CourseDiscipline {
+  id: number;
+  name: string;
+  code: string;
+  description: string;
+  workload: number;
+  order: number;
+  progress: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// Interface para o curso com detalhes
+interface CourseDetail {
+  id: number;
+  name: string;
+  code: string;
+  description: string;
+  status: string;
+  workload: number;
+  progress: number;
+  enrolledAt: string;
+  publishedAt?: string;
+  modality?: string;
+  evaluationMethod?: string;
+  disciplines: CourseDiscipline[];
+}
+
 export default function CourseDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
@@ -45,7 +74,7 @@ export default function CourseDetailPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("content");
 
-  const { data: course, isLoading } = useQuery({
+  const { data: course, isLoading } = useQuery<CourseDetail>({
     queryKey: [`/api/student/courses/${id}`],
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
@@ -130,7 +159,7 @@ export default function CourseDetailPage() {
               <div className="mb-6">
                 <div className="flex flex-wrap items-center gap-2 mb-1">
                   <h1 className="text-2xl font-bold text-gray-900">{course?.name}</h1>
-                  <Badge variant={course?.status === "published" ? "success" : "outline"}>
+                  <Badge variant={course?.status === "published" ? "default" : "outline"}>
                     {course?.status === "published" ? "Publicado" : "Rascunho"}
                   </Badge>
                 </div>
@@ -170,7 +199,7 @@ export default function CourseDetailPage() {
 
                     <div className="flex flex-col border-l border-gray-200 pl-6">
                       <div className="text-2xl font-bold text-gray-900">
-                        {course?.disciplines?.reduce((acc, disc) => acc + (disc.progress === 100 ? 1 : 0), 0) || 0}
+                        {course?.disciplines?.reduce((acc: number, disc: CourseDiscipline) => acc + (disc.progress === 100 ? 1 : 0), 0) || 0}
                       </div>
                       <div className="text-sm text-gray-600">Disciplinas concluídas</div>
                     </div>
@@ -208,7 +237,7 @@ export default function CourseDetailPage() {
                             </p>
                           </div>
                         ) : (
-                          course?.disciplines?.map((discipline, index) => (
+                          course?.disciplines?.map((discipline: CourseDiscipline, index: number) => (
                             <AccordionItem key={discipline.id} value={`discipline-${discipline.id}`}>
                               <AccordionTrigger className="hover:bg-gray-50 px-4">
                                 <div className="flex items-center justify-between w-full pr-4">
@@ -488,7 +517,7 @@ export default function CourseDetailPage() {
                                       <td className="px-6 py-4 whitespace-nowrap">
                                         {media !== null ? (
                                           parseFloat(media) >= 6 ? (
-                                            <Badge variant="success">Aprovado</Badge>
+                                            <Badge variant="default">Aprovado</Badge>
                                           ) : (
                                             <Badge variant="destructive">Reprovado</Badge>
                                           )
