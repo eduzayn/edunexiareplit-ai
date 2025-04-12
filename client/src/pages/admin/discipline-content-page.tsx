@@ -1661,6 +1661,10 @@ export default function DisciplineContentPage() {
                         ? "Cole a URL completa do vídeo no YouTube."
                         : videoForm.watch("videoSource") === "onedrive"
                         ? "Cole a URL de compartilhamento do OneDrive."
+                        : videoForm.watch("videoSource") === "google_drive"
+                        ? "Cole a URL de compartilhamento do Google Drive."
+                        : videoForm.watch("videoSource") === "vimeo"
+                        ? "Cole a URL completa do vídeo no Vimeo."
                         : "Cole a URL de upload direto do vídeo."}
                     </FormDescription>
                     <FormMessage />
@@ -1809,6 +1813,10 @@ export default function DisciplineContentPage() {
                         ? "Cole a URL completa do vídeo no YouTube."
                         : videoForm.watch("videoSource") === "onedrive"
                         ? "Cole a URL de compartilhamento do OneDrive."
+                        : videoForm.watch("videoSource") === "google_drive"
+                        ? "Cole a URL de compartilhamento do Google Drive."
+                        : videoForm.watch("videoSource") === "vimeo"
+                        ? "Cole a URL completa do vídeo no Vimeo."
                         : "Cole a URL de upload direto do vídeo."}
                     </FormDescription>
                     <FormMessage />
