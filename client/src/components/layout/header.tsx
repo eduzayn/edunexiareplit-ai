@@ -50,13 +50,13 @@ export default function Header({ onLogin }: HeaderProps) {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex space-x-10">
             {navItems.map((item) => (
-              <a 
+              <Link 
                 key={item.name} 
                 href={item.href} 
                 className="text-neutral-600 hover:text-primary px-3 py-2 text-sm font-medium"
               >
                 {item.name}
-              </a>
+              </Link>
             ))}
           </nav>
           
