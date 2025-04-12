@@ -60,15 +60,9 @@ export default function DisciplinePdfPage() {
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
-  // Sidebar items for student portal
-  const sidebarItems = [
-    { name: "Dashboard", icon: <ChartIcon />, href: "/student/dashboard" },
-    { name: "Meus Cursos", icon: <MenuBookIcon />, active: true, href: "/student/courses" },
-    { name: "Calendário", icon: <EventNoteIcon />, href: "/student/calendar" },
-    { name: "Documentos", icon: <DescriptionIcon />, href: "/student/documents" },
-    { name: "Financeiro", icon: <PaymentsIcon />, href: "/student/financial" },
-    { name: "Suporte", icon: <HelpOutlineIcon />, href: "/student/support" },
-  ];
+  // Usar o componente padronizado para os itens da barra lateral
+  const [location] = useLocation();
+  const sidebarItems = getStudentSidebarItems(location);
 
   // Função para renderizar o visualizador de PDF
   const renderPdfViewer = () => {

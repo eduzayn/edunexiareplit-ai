@@ -3,6 +3,7 @@ import { useParams, Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import { Sidebar } from "@/components/layout/sidebar";
+import { getStudentSidebarItems } from "@/components/layout/student-sidebar-items";
 import {
   Card,
   CardContent,
@@ -90,15 +91,9 @@ export default function DisciplineSimuladoPage() {
     correctOption: Math.floor(Math.random() * 5) // Simular alternativa correta aleatória
   }));
 
-  // Sidebar items for student portal
-  const sidebarItems = [
-    { name: "Dashboard", icon: <ChartIcon />, href: "/student/dashboard" },
-    { name: "Meus Cursos", icon: <MenuBookIcon />, active: true, href: "/student/courses" },
-    { name: "Calendário", icon: <EventNoteIcon />, href: "/student/calendar" },
-    { name: "Documentos", icon: <DescriptionIcon />, href: "/student/documents" },
-    { name: "Financeiro", icon: <PaymentsIcon />, href: "/student/financial" },
-    { name: "Suporte", icon: <HelpOutlineIcon />, href: "/student/support" },
-  ];
+  // Usar o componente padronizado para os itens da barra lateral
+  const [location] = useLocation();
+  const sidebarItems = getStudentSidebarItems(location);
 
   // Formatar o tempo restante em MM:SS
   const formatTime = (seconds: number) => {
