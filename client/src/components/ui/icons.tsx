@@ -220,6 +220,45 @@ export function OneDriveIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
+export function GoogleDriveIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="M9 18l3-3h-7l-3 3z" />
+      <path d="M15 18l3-3h-7l-3 3z" />
+      <path d="M15 18l3-3h-7v6h7z" />
+      <path d="M9 18v-15l-3 4v11z" />
+      <path d="M15 18v-15l-3 4v11z" />
+    </svg>
+  );
+}
+
+export function VimeoIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="M19 2H5a3 3 0 0 0-3 3v14a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3V5a3 3 0 0 0-3-3z" />
+      <path d="m10 9 5 3-5 3z" />
+    </svg>
+  );
+}
+
 export function CheckIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg

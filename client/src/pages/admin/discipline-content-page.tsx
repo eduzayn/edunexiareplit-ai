@@ -76,6 +76,8 @@ import {
   AlertTriangleIcon,
   YoutubeIcon,
   OneDriveIcon,
+  GoogleDriveIcon,
+  VimeoIcon,
   CheckIcon,
 } from "@/components/ui/icons";
 import { Input } from "@/components/ui/input";
@@ -93,7 +95,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 const videoFormSchema = z.object({
   title: z.string().min(3, { message: "Título deve ter pelo menos 3 caracteres" }),
   description: z.string().min(10, { message: "Descrição deve ter pelo menos 10 caracteres" }),
-  videoSource: z.enum(["youtube", "onedrive", "upload"]),
+  videoSource: z.enum(["youtube", "onedrive", "google_drive", "vimeo", "upload"]),
   url: z.string().url({ message: "URL inválida" }),
   duration: z.coerce.number().min(1, { message: "Duração deve ser maior que 0" }),
 });
@@ -1613,6 +1615,20 @@ export default function DisciplineContentPage() {
                           <Label htmlFor="onedrive" className="flex items-center">
                             <OneDriveIcon className="mr-2 h-4 w-4 text-blue-500" />
                             OneDrive
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="google_drive" id="google_drive" />
+                          <Label htmlFor="google_drive" className="flex items-center">
+                            <GoogleDriveIcon className="mr-2 h-4 w-4 text-green-500" />
+                            Google Drive
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="vimeo" id="vimeo" />
+                          <Label htmlFor="vimeo" className="flex items-center">
+                            <VimeoIcon className="mr-2 h-4 w-4 text-blue-600" />
+                            Vimeo
                           </Label>
                         </div>
                         <div className="flex items-center space-x-2">

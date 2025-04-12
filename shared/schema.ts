@@ -11,7 +11,7 @@ export type PortalType = typeof portalTypes[number];
 export const courseStatusEnum = pgEnum("course_status", ["draft", "published", "archived"]);
 export const evaluationMethodEnum = pgEnum("evaluation_method", ["quiz", "exam", "project", "mixed"]);
 export const courseModalityEnum = pgEnum("course_modality", ["ead", "hybrid", "presential"]);
-export const videoSourceEnum = pgEnum("video_source", ["youtube", "onedrive", "upload"]);
+export const videoSourceEnum = pgEnum("video_source", ["youtube", "onedrive", "google_drive", "vimeo", "upload"]);
 export const contentCompletionStatusEnum = pgEnum("content_completion_status", ["incomplete", "complete"]);
 export const assessmentTypeEnum = pgEnum("assessment_type", ["simulado", "avaliacao_final"]);
 
