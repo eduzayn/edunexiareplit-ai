@@ -522,14 +522,15 @@ export default function CoursesPage() {
                                   <span className="sr-only md:not-sr-only md:ml-2">Publicar</span>
                                 </Button>
                               )}
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleOpenEditDialog(course)}
-                              >
-                                <EditIcon className="h-4 w-4" />
-                                <span className="sr-only md:not-sr-only md:ml-2">Editar</span>
-                              </Button>
+                              <Link href={`/admin/courses/edit/${course.id}`}>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                >
+                                  <EditIcon className="h-4 w-4" />
+                                  <span className="sr-only md:not-sr-only md:ml-2">Editar</span>
+                                </Button>
+                              </Link>
                               <Button
                                 variant="destructive"
                                 size="sm"
