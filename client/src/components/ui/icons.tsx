@@ -308,6 +308,27 @@ export function AnalyticsIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
+export function AccountBalanceIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="M4 10h16v10H4V10z" />
+      <path d="M12 3L2 9h20L12 3z" />
+      <path d="M7 16v-3" />
+      <path d="M12 16v-3" />
+      <path d="M17 16v-3" />
+    </svg>
+  );
+}
+
 export function BusinessIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
