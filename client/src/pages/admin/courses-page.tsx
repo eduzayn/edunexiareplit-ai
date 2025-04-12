@@ -5,7 +5,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Course, courseStatusEnum } from "@shared/schema";
+import { Course, courseStatusEnum, Discipline } from "@shared/schema";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -94,6 +94,19 @@ export default function CoursesPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [selectedDisciplines, setSelectedDisciplines] = useState<number[]>([]);
+  
+  // Consulta para listar disciplinas disponíveis
+  const { 
+    data: disciplines, 
+    isLoading: isDisciplinesLoading 
+  } = useQuery({
+    queryKey: ["/api/admin/disciplines"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/admin/disciplines");
+      return response.json();
+    },
+  });
   
   // Sidebar items for admin portal
   const sidebarItems = [

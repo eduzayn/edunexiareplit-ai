@@ -2,7 +2,14 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertDisciplineSchema, insertCourseSchema, insertCourseDisciplineSchema } from "@shared/schema";
+import { 
+  insertDisciplineSchema, 
+  insertCourseSchema, 
+  insertCourseDisciplineSchema,
+  insertQuestionSchema,
+  insertAssessmentSchema,
+  insertAssessmentQuestionSchema 
+} from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -410,6 +417,370 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error reordering disciplines:", error);
       res.status(500).json({ message: "Erro ao reordenar disciplinas" });
+    }
+  });
+
+  // ================== Rotas para Conteúdo de Disciplinas ==================
+  // Atualizar conteúdo de uma disciplina
+  app.put("/api/admin/disciplines/:id/content", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const existingDiscipline = await storage.getDiscipline(id);
+      
+      if (!existingDiscipline) {
+        return res.status(404).json({ message: "Disciplina não encontrada" });
+      }
+      
+      // Validar os dados de conteúdo
+      const contentData = insertDisciplineSchema.partial().pick({
+        videoAula1Url: true,
+        videoAula1Source: true,
+        videoAula2Url: true,
+        videoAula2Source: true,
+        apostilaPdfUrl: true,
+        ebookInterativoUrl: true,
+        contentStatus: true,
+      }).parse(req.body);
+      
+      const updatedDiscipline = await storage.updateDisciplineContent(id, contentData);
+      
+      if (!updatedDiscipline) {
+        return res.status(500).json({ message: "Erro ao atualizar conteúdo da disciplina" });
+      }
+      
+      // Verificar completude após atualização
+      const isComplete = await storage.checkDisciplineCompleteness(id);
+      
+      res.json({
+        discipline: updatedDiscipline,
+        isComplete
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Dados inválidos", 
+          errors: error.errors 
+        });
+      }
+      console.error("Error updating discipline content:", error);
+      res.status(500).json({ message: "Erro ao atualizar conteúdo da disciplina" });
+    }
+  });
+
+  // Verificar completude de uma disciplina
+  app.get("/api/admin/disciplines/:id/completeness", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const discipline = await storage.getDiscipline(id);
+      
+      if (!discipline) {
+        return res.status(404).json({ message: "Disciplina não encontrada" });
+      }
+      
+      const isComplete = await storage.checkDisciplineCompleteness(id);
+      res.json({ isComplete });
+    } catch (error) {
+      console.error("Error checking discipline completeness:", error);
+      res.status(500).json({ message: "Erro ao verificar completude da disciplina" });
+    }
+  });
+
+  // ================== Rotas para Questões ==================
+  // Listar questões de uma disciplina
+  app.get("/api/admin/disciplines/:disciplineId/questions", requireAdmin, async (req, res) => {
+    try {
+      const disciplineId = parseInt(req.params.disciplineId);
+      const questions = await storage.getQuestionsByDiscipline(disciplineId);
+      res.json(questions);
+    } catch (error) {
+      console.error("Error fetching questions:", error);
+      res.status(500).json({ message: "Erro ao buscar questões" });
+    }
+  });
+
+  // Obter uma questão específica
+  app.get("/api/admin/questions/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const question = await storage.getQuestion(id);
+      
+      if (!question) {
+        return res.status(404).json({ message: "Questão não encontrada" });
+      }
+      
+      res.json(question);
+    } catch (error) {
+      console.error("Error fetching question:", error);
+      res.status(500).json({ message: "Erro ao buscar questão" });
+    }
+  });
+
+  // Criar uma nova questão
+  app.post("/api/admin/disciplines/:disciplineId/questions", requireAdmin, async (req, res) => {
+    try {
+      const disciplineId = parseInt(req.params.disciplineId);
+      
+      // Verificar se a disciplina existe
+      const discipline = await storage.getDiscipline(disciplineId);
+      if (!discipline) {
+        return res.status(404).json({ message: "Disciplina não encontrada" });
+      }
+      
+      // Validar os dados da questão
+      const questionData = insertQuestionSchema.parse({
+        ...req.body,
+        disciplineId,
+        createdById: req.user.id
+      });
+      
+      const question = await storage.createQuestion(questionData);
+      res.status(201).json(question);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Dados inválidos", 
+          errors: error.errors 
+        });
+      }
+      console.error("Error creating question:", error);
+      res.status(500).json({ message: "Erro ao criar questão" });
+    }
+  });
+
+  // Atualizar uma questão
+  app.put("/api/admin/questions/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const existingQuestion = await storage.getQuestion(id);
+      
+      if (!existingQuestion) {
+        return res.status(404).json({ message: "Questão não encontrada" });
+      }
+      
+      // Validar os dados da atualização
+      const updateData = insertQuestionSchema.partial().parse(req.body);
+      
+      const updatedQuestion = await storage.updateQuestion(id, updateData);
+      res.json(updatedQuestion);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Dados inválidos", 
+          errors: error.errors 
+        });
+      }
+      console.error("Error updating question:", error);
+      res.status(500).json({ message: "Erro ao atualizar questão" });
+    }
+  });
+
+  // Excluir uma questão
+  app.delete("/api/admin/questions/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteQuestion(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Questão não encontrada ou não pode ser excluída" });
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      console.error("Error deleting question:", error);
+      res.status(500).json({ message: "Erro ao excluir questão" });
+    }
+  });
+
+  // ================== Rotas para Avaliações ==================
+  // Listar avaliações de uma disciplina
+  app.get("/api/admin/disciplines/:disciplineId/assessments", requireAdmin, async (req, res) => {
+    try {
+      const disciplineId = parseInt(req.params.disciplineId);
+      const type = req.query.type?.toString();
+      const assessments = await storage.getAssessmentsByDiscipline(disciplineId, type);
+      res.json(assessments);
+    } catch (error) {
+      console.error("Error fetching assessments:", error);
+      res.status(500).json({ message: "Erro ao buscar avaliações" });
+    }
+  });
+
+  // Obter uma avaliação específica
+  app.get("/api/admin/assessments/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const assessment = await storage.getAssessment(id);
+      
+      if (!assessment) {
+        return res.status(404).json({ message: "Avaliação não encontrada" });
+      }
+      
+      res.json(assessment);
+    } catch (error) {
+      console.error("Error fetching assessment:", error);
+      res.status(500).json({ message: "Erro ao buscar avaliação" });
+    }
+  });
+
+  // Criar uma nova avaliação
+  app.post("/api/admin/disciplines/:disciplineId/assessments", requireAdmin, async (req, res) => {
+    try {
+      const disciplineId = parseInt(req.params.disciplineId);
+      
+      // Verificar se a disciplina existe
+      const discipline = await storage.getDiscipline(disciplineId);
+      if (!discipline) {
+        return res.status(404).json({ message: "Disciplina não encontrada" });
+      }
+      
+      // Validar os dados da avaliação
+      const assessmentData = insertAssessmentSchema.parse({
+        ...req.body,
+        disciplineId,
+        createdById: req.user.id
+      });
+      
+      const assessment = await storage.createAssessment(assessmentData);
+      res.status(201).json(assessment);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Dados inválidos", 
+          errors: error.errors 
+        });
+      }
+      console.error("Error creating assessment:", error);
+      res.status(500).json({ message: "Erro ao criar avaliação" });
+    }
+  });
+
+  // Atualizar uma avaliação
+  app.put("/api/admin/assessments/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const existingAssessment = await storage.getAssessment(id);
+      
+      if (!existingAssessment) {
+        return res.status(404).json({ message: "Avaliação não encontrada" });
+      }
+      
+      // Validar os dados da atualização
+      const updateData = insertAssessmentSchema.partial().parse(req.body);
+      
+      const updatedAssessment = await storage.updateAssessment(id, updateData);
+      res.json(updatedAssessment);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Dados inválidos", 
+          errors: error.errors 
+        });
+      }
+      console.error("Error updating assessment:", error);
+      res.status(500).json({ message: "Erro ao atualizar avaliação" });
+    }
+  });
+
+  // Excluir uma avaliação
+  app.delete("/api/admin/assessments/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteAssessment(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Avaliação não encontrada ou não pode ser excluída" });
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      console.error("Error deleting assessment:", error);
+      res.status(500).json({ message: "Erro ao excluir avaliação" });
+    }
+  });
+
+  // ================== Rotas para Questões em Avaliações ==================
+  // Listar questões de uma avaliação
+  app.get("/api/admin/assessments/:assessmentId/questions", requireAdmin, async (req, res) => {
+    try {
+      const assessmentId = parseInt(req.params.assessmentId);
+      const assessmentQuestions = await storage.getAssessmentQuestions(assessmentId);
+      res.json(assessmentQuestions);
+    } catch (error) {
+      console.error("Error fetching assessment questions:", error);
+      res.status(500).json({ message: "Erro ao buscar questões da avaliação" });
+    }
+  });
+
+  // Adicionar uma questão a uma avaliação
+  app.post("/api/admin/assessments/:assessmentId/questions", requireAdmin, async (req, res) => {
+    try {
+      const assessmentId = parseInt(req.params.assessmentId);
+      
+      // Validar os dados
+      const assessmentQuestionData = insertAssessmentQuestionSchema.parse({
+        ...req.body,
+        assessmentId,
+      });
+      
+      const assessmentQuestion = await storage.addQuestionToAssessment(assessmentQuestionData);
+      res.status(201).json(assessmentQuestion);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Dados inválidos", 
+          errors: error.errors 
+        });
+      }
+      console.error("Error adding question to assessment:", error);
+      res.status(500).json({ message: "Erro ao adicionar questão à avaliação" });
+    }
+  });
+
+  // Remover uma questão de uma avaliação
+  app.delete("/api/admin/assessments/:assessmentId/questions/:questionId", requireAdmin, async (req, res) => {
+    try {
+      const assessmentId = parseInt(req.params.assessmentId);
+      const questionId = parseInt(req.params.questionId);
+      
+      const success = await storage.removeQuestionFromAssessment(assessmentId, questionId);
+      
+      if (!success) {
+        return res.status(404).json({ 
+          message: "Questão não encontrada na avaliação ou não pode ser removida" 
+        });
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      console.error("Error removing question from assessment:", error);
+      res.status(500).json({ message: "Erro ao remover questão da avaliação" });
+    }
+  });
+
+  // Reordenar questões em uma avaliação
+  app.put("/api/admin/assessments/:assessmentId/questions/reorder", requireAdmin, async (req, res) => {
+    try {
+      const assessmentId = parseInt(req.params.assessmentId);
+      const { questionOrder } = req.body;
+      
+      if (!Array.isArray(questionOrder)) {
+        return res.status(400).json({ 
+          message: "O corpo da requisição deve conter um array 'questionOrder'"
+        });
+      }
+      
+      const success = await storage.reorderAssessmentQuestions(assessmentId, questionOrder);
+      
+      if (!success) {
+        return res.status(500).json({ 
+          message: "Erro ao reordenar questões"
+        });
+      }
+      
+      res.status(200).json({ message: "Questões reordenadas com sucesso" });
+    } catch (error) {
+      console.error("Error reordering assessment questions:", error);
+      res.status(500).json({ message: "Erro ao reordenar questões da avaliação" });
     }
   });
 

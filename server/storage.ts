@@ -160,6 +160,67 @@ export class DatabaseStorage implements IStorage {
       return false;
     }
   }
+  
+  async updateDisciplineContent(id: number, contentData: Partial<InsertDiscipline>): Promise<Discipline | undefined> {
+    try {
+      // Filtra apenas os campos de conteúdo
+      const contentFields = {
+        videoAula1Url: contentData.videoAula1Url,
+        videoAula1Source: contentData.videoAula1Source,
+        videoAula2Url: contentData.videoAula2Url,
+        videoAula2Source: contentData.videoAula2Source,
+        apostilaPdfUrl: contentData.apostilaPdfUrl,
+        ebookInterativoUrl: contentData.ebookInterativoUrl,
+      };
+      
+      // Atualiza os campos de conteúdo
+      const [updatedDiscipline] = await db
+        .update(disciplines)
+        .set(contentFields)
+        .where(eq(disciplines.id, id))
+        .returning();
+        
+      // Verifica a completude após a atualização
+      const isComplete = await this.checkDisciplineCompleteness(id);
+      
+      if (isComplete) {
+        await db
+          .update(disciplines)
+          .set({ contentStatus: 'complete' })
+          .where(eq(disciplines.id, id));
+      }
+      
+      return updatedDiscipline;
+    } catch (error) {
+      console.error("Error updating discipline content:", error);
+      return undefined;
+    }
+  }
+  
+  async checkDisciplineCompleteness(id: number): Promise<boolean> {
+    const [discipline] = await db
+      .select()
+      .from(disciplines)
+      .where(eq(disciplines.id, id));
+      
+    if (!discipline) return false;
+    
+    // Verifica se todos os elementos de conteúdo estão preenchidos
+    const hasVideo1 = !!discipline.videoAula1Url && !!discipline.videoAula1Source;
+    const hasVideo2 = !!discipline.videoAula2Url && !!discipline.videoAula2Source;
+    const hasApostila = !!discipline.apostilaPdfUrl;
+    const hasEbook = !!discipline.ebookInterativoUrl;
+    
+    // Verifica se existem simulado e avaliação final associados
+    const simulados = await this.getAssessmentsByDiscipline(id, 'simulado');
+    const avaliacoes = await this.getAssessmentsByDiscipline(id, 'avaliacao_final');
+    
+    const hasSimulado = simulados.length > 0;
+    const hasAvaliacao = avaliacoes.length > 0;
+    
+    // Uma disciplina está completa se tiver todos os elementos obrigatórios
+    return hasVideo1 && hasVideo2 && hasApostila && hasEbook && hasSimulado && hasAvaliacao;
+  }
 
   // ==================== Cursos ====================
   async getCourse(id: number): Promise<Course | undefined> {
@@ -288,6 +349,158 @@ export class DatabaseStorage implements IStorage {
       return true;
     } catch (error) {
       console.error("Error reordering disciplines:", error);
+      return false;
+    }
+  }
+  
+  // ==================== Questões ====================
+  async getQuestion(id: number): Promise<Question | undefined> {
+    const [question] = await db.select().from(questions).where(eq(questions.id, id));
+    return question || undefined;
+  }
+  
+  async getQuestionsByDiscipline(disciplineId: number): Promise<Question[]> {
+    return await db
+      .select()
+      .from(questions)
+      .where(eq(questions.disciplineId, disciplineId))
+      .orderBy(desc(questions.createdAt));
+  }
+  
+  async createQuestion(question: InsertQuestion): Promise<Question> {
+    const [newQuestion] = await db
+      .insert(questions)
+      .values(question)
+      .returning();
+    return newQuestion;
+  }
+  
+  async updateQuestion(id: number, question: Partial<InsertQuestion>): Promise<Question | undefined> {
+    const [updatedQuestion] = await db
+      .update(questions)
+      .set(question)
+      .where(eq(questions.id, id))
+      .returning();
+    return updatedQuestion;
+  }
+  
+  async deleteQuestion(id: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(questions)
+        .where(eq(questions.id, id))
+        .returning({ id: questions.id });
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting question:", error);
+      return false;
+    }
+  }
+  
+  // ==================== Avaliações ====================
+  async getAssessment(id: number): Promise<Assessment | undefined> {
+    const [assessment] = await db.select().from(assessments).where(eq(assessments.id, id));
+    return assessment || undefined;
+  }
+  
+  async getAssessmentsByDiscipline(disciplineId: number, type?: string): Promise<Assessment[]> {
+    let query = db
+      .select()
+      .from(assessments)
+      .where(eq(assessments.disciplineId, disciplineId));
+      
+    if (type) {
+      query = query.where(eq(assessments.type, type));
+    }
+    
+    return await query.orderBy(desc(assessments.createdAt));
+  }
+  
+  async createAssessment(assessment: InsertAssessment): Promise<Assessment> {
+    const [newAssessment] = await db
+      .insert(assessments)
+      .values(assessment)
+      .returning();
+    return newAssessment;
+  }
+  
+  async updateAssessment(id: number, assessment: Partial<InsertAssessment>): Promise<Assessment | undefined> {
+    const [updatedAssessment] = await db
+      .update(assessments)
+      .set(assessment)
+      .where(eq(assessments.id, id))
+      .returning();
+    return updatedAssessment;
+  }
+  
+  async deleteAssessment(id: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(assessments)
+        .where(eq(assessments.id, id))
+        .returning({ id: assessments.id });
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting assessment:", error);
+      return false;
+    }
+  }
+  
+  // ==================== Questões em Avaliações ====================
+  async getAssessmentQuestions(assessmentId: number): Promise<AssessmentQuestion[]> {
+    return await db
+      .select()
+      .from(assessmentQuestions)
+      .where(eq(assessmentQuestions.assessmentId, assessmentId))
+      .orderBy(asc(assessmentQuestions.order));
+  }
+  
+  async addQuestionToAssessment(assessmentQuestion: InsertAssessmentQuestion): Promise<AssessmentQuestion> {
+    const [newAssessmentQuestion] = await db
+      .insert(assessmentQuestions)
+      .values(assessmentQuestion)
+      .returning();
+    return newAssessmentQuestion;
+  }
+  
+  async removeQuestionFromAssessment(assessmentId: number, questionId: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(assessmentQuestions)
+        .where(
+          and(
+            eq(assessmentQuestions.assessmentId, assessmentId),
+            eq(assessmentQuestions.questionId, questionId)
+          )
+        )
+        .returning({ id: assessmentQuestions.id });
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error removing question from assessment:", error);
+      return false;
+    }
+  }
+  
+  async reorderAssessmentQuestions(
+    assessmentId: number, 
+    questionOrder: { questionId: number, order: number }[]
+  ): Promise<boolean> {
+    try {
+      // Atualizar cada ordem de questão
+      for (const item of questionOrder) {
+        await db
+          .update(assessmentQuestions)
+          .set({ order: item.order })
+          .where(
+            and(
+              eq(assessmentQuestions.assessmentId, assessmentId),
+              eq(assessmentQuestions.questionId, item.questionId)
+            )
+          );
+      }
+      return true;
+    } catch (error) {
+      console.error("Error reordering assessment questions:", error);
       return false;
     }
   }
