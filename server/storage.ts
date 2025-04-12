@@ -1,8 +1,11 @@
 import { users, type User, type InsertUser } from "@shared/schema";
 import session from "express-session";
-import createMemoryStore from "memorystore";
+import connectPg from "connect-pg-simple";
+import { db } from "./db";
+import { pool } from "./db";
+import { eq } from "drizzle-orm";
 
-const MemoryStore = createMemoryStore(session);
+const PostgresSessionStore = connectPg(session);
 
 // Interface for storage operations
 export interface IStorage {
@@ -13,89 +16,38 @@ export interface IStorage {
   sessionStore: session.SessionStore;
 }
 
-// In-memory storage implementation
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  currentId: number;
+// Database storage implementation
+export class DatabaseStorage implements IStorage {
   sessionStore: session.SessionStore;
 
   constructor() {
-    this.users = new Map();
-    this.currentId = 1;
-    this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000, // Clear expired entries every 24h
+    this.sessionStore = new PostgresSessionStore({ 
+      pool, 
+      createTableIfMissing: true 
     });
-
-    // Seed with default users for each portal type
-    this.seedUsers();
-  }
-
-  private async seedUsers() {
-    // Only seed if no users exist
-    if (this.users.size === 0) {
-      const defaultPassword = await this.hashPassword("password123");
-      
-      this.createUser({
-        username: "student",
-        password: defaultPassword,
-        fullName: "Student User",
-        email: "student@example.com",
-        portalType: "student"
-      });
-      
-      this.createUser({
-        username: "partner",
-        password: defaultPassword,
-        fullName: "Partner User",
-        email: "partner@example.com",
-        portalType: "partner"
-      });
-      
-      this.createUser({
-        username: "polo",
-        password: defaultPassword,
-        fullName: "Polo Manager",
-        email: "polo@example.com",
-        portalType: "polo"
-      });
-      
-      this.createUser({
-        username: "admin",
-        password: defaultPassword,
-        fullName: "Admin User",
-        email: "admin@example.com",
-        portalType: "admin"
-      });
-    }
-  }
-
-  private async hashPassword(password: string): Promise<string> {
-    // Simple hash for seeding - the real hashing happens in auth.ts
-    return password;
   }
 
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
   }
 
   async getUsersByPortalType(portalType: string): Promise<User[]> {
-    return Array.from(this.users.values()).filter(
-      (user) => user.portalType === portalType,
-    );
+    return await db.select().from(users).where(eq(users.portalType, portalType));
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
     return user;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
