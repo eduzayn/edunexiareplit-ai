@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { SchoolIcon } from "@/components/ui/icons";
@@ -84,6 +84,30 @@ export function Sidebar({
       default: return "text-gray-700 bg-gray-100 hover:bg-gray-200";
     }
   };
+  
+  // Função para colorir ícones com base no nome da seção
+  const getColoredIcon = (name: string, icon: React.ReactNode, isActive: boolean) => {
+    const iconClasses = {
+      "Dashboard": "text-blue-500",
+      "Meus Cursos": "text-green-500",
+      "Progresso": "text-purple-500",
+      "Credencial": "text-indigo-500",
+      "Calendário": "text-amber-500",
+      "Documentos": "text-red-500",
+      "Biblioteca": "text-teal-500",
+      "Secretaria": "text-cyan-500",
+      "Financeiro": "text-emerald-500",
+      "Suporte": "text-orange-500",
+    };
+    
+    // Aplica a classe de cor correspondente ao nome da seção
+    const colorClass = iconClasses[name as keyof typeof iconClasses] || "text-gray-500";
+    
+    // Clona o elemento React com a nova classe
+    return React.cloneElement(icon as React.ReactElement, {
+      className: `h-5 w-5 ${colorClass} ${isActive ? 'text-primary' : ''}`
+    });
+  };
 
   return (
     <>
@@ -121,7 +145,7 @@ export function Sidebar({
                         : `text-gray-600 hover:bg-gray-100 hover:text-gray-800`
                     }`}
                   >
-                    <span className="mr-3 text-gray-500">{item.icon}</span>
+                    <span className="mr-3">{getColoredIcon(item.name, item.icon, isActive)}</span>
                     {item.name}
                   </Link>
                 );
@@ -212,7 +236,7 @@ export function Sidebar({
                       }`}
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
-                      <span className="mr-3 text-gray-500">{item.icon}</span>
+                      <span className="mr-3">{getColoredIcon(item.name, item.icon, isActive)}</span>
                       {item.name}
                     </Link>
                   );
