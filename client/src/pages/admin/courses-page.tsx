@@ -68,6 +68,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // Schema Zod para validação do formulário
 const courseFormSchema = z.object({
@@ -139,17 +140,54 @@ export default function CoursesPage() {
     },
   });
 
+  // Mutation para adicionar disciplinas ao curso
+  const addDisciplinesToCourseMutation = useMutation({
+    mutationFn: async ({ courseId, disciplineIds }: { courseId: number; disciplineIds: number[] }) => {
+      const promises = disciplineIds.map((disciplineId, index) => {
+        return apiRequest("POST", "/api/admin/course-disciplines", {
+          courseId,
+          disciplineId,
+          order: index + 1
+        });
+      });
+      await Promise.all(promises);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Disciplinas adicionadas com sucesso!",
+        description: "As disciplinas foram vinculadas ao curso.",
+      });
+      setSelectedDisciplines([]);
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro ao adicionar disciplinas",
+        description: error.message || "Ocorreu um erro ao vincular as disciplinas ao curso.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Mutation para criar curso
   const createCourseMutation = useMutation({
     mutationFn: async (data: CourseFormValues) => {
       const response = await apiRequest("POST", "/api/admin/courses", data);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (createdCourse) => {
       toast({
         title: "Curso criado com sucesso!",
         description: "O novo curso foi adicionado ao sistema.",
       });
+      
+      // Se há disciplinas selecionadas, vincula-as ao curso
+      if (selectedDisciplines.length > 0) {
+        addDisciplinesToCourseMutation.mutate({
+          courseId: createdCourse.id,
+          disciplineIds: selectedDisciplines
+        });
+      }
+      
       setIsCreateDialogOpen(false);
       refetch();
       createForm.reset();
