@@ -11,6 +11,7 @@ import ContatoPage from "@/pages/contato-page";
 import BlogPage from "@/pages/blog-page";
 import AdminAuthPage from "@/pages/admin-auth-page";
 import DisciplinesPage from "@/pages/admin/disciplines-page";
+import CoursesPage from "@/pages/admin/courses-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { useAuth, AuthProvider } from "./hooks/use-auth";
 
@@ -57,6 +58,9 @@ function Router() {
       <ProtectedRoute path="/admin/dashboard" portalType="admin" />
       <Route path="/admin/disciplines">
         {() => user?.portalType === "admin" ? <DisciplinesPage /> : <Redirect to="/admin" />}
+      </Route>
+      <Route path="/admin/courses">
+        {() => user?.portalType === "admin" ? <CoursesPage /> : <Redirect to="/admin" />}
       </Route>
       
       <Route component={NotFound} />
