@@ -83,17 +83,25 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err, user, info) => {
+    passport.authenticate("local", async (err, user, info) => {
       if (err) return next(err);
       if (!user) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
       
-      // Verify portal type match
+      // Registrar o último portal acessado
+      const userUpdate = { ...user };
+      userUpdate.portalType = req.body.portalType;
+      
+      // Atualizar o usuário no banco se necessário
       if (user.portalType !== req.body.portalType) {
-        return res.status(403).json({ 
-          message: "Access denied: You don't have access to this portal" 
-        });
+        try {
+          await storage.updateUser(user.id, { portalType: req.body.portalType });
+          // Atualizar o objeto do usuário para a sessão
+          user.portalType = req.body.portalType;
+        } catch (error) {
+          console.error("Erro ao atualizar portalType:", error);
+        }
       }
 
       req.login(user, (err) => {

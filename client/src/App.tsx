@@ -1,4 +1,4 @@
-import { Switch, Route, Redirect } from "wouter";
+import { Switch, Route, Redirect, useLocation } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import HomePage from "@/pages/home-page";
@@ -19,6 +19,7 @@ import { useAuth, AuthProvider } from "./hooks/use-auth";
 
 function Router() {
   const { user, isLoading } = useAuth();
+  const [, setLocation] = useLocation();
 
   if (isLoading) {
     return null;
@@ -31,7 +32,8 @@ function Router() {
         {() => {
           if (user) {
             const dashboardPath = `/${user.portalType}/dashboard`;
-            window.location.href = dashboardPath;
+            // Use setLocation ao invés de window.location.href para evitar recarregar a página
+            setLocation(dashboardPath);
             return null;
           }
           return <AuthPage />;
@@ -41,7 +43,7 @@ function Router() {
       <Route path="/admin">
         {() => {
           if (user && user.portalType === "admin") {
-            window.location.href = "/admin/dashboard";
+            setLocation("/admin/dashboard");
             return null;
           }
           return <AdminAuthPage />;
