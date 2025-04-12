@@ -24,6 +24,8 @@ import {
   SearchIcon,
   SortIcon,
   FilterIcon,
+  LayersIcon,
+  FileTextIcon,
 } from "@/components/ui/icons";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
