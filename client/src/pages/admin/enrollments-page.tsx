@@ -72,6 +72,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -175,6 +176,8 @@ export default function EnrollmentsPage() {
       partnerId: null,
       paymentGateway: "asaas",
       amount: 0,
+      contractTemplateId: 0,
+      observations: "",
     }
   });
 
@@ -941,6 +944,55 @@ export default function EnrollmentsPage() {
                           placeholder="0,00"
                           value={field.value}
                           onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <FormField
+                  control={newEnrollmentForm.control}
+                  name="contractTemplateId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Modelo de Contrato</FormLabel>
+                      <div className="space-y-2">
+                        <Select
+                          value={field.value ? field.value.toString() : ""}
+                          onValueChange={(value) => field.onChange(parseInt(value))}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione um modelo de contrato" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {contractTemplates.map((template) => (
+                              <SelectItem key={template.id} value={template.id.toString()}>
+                                {template.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={newEnrollmentForm.control}
+                  name="observations"
+                  render={({ field }) => (
+                    <FormItem className="md:col-span-2">
+                      <FormLabel>Observações</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Observações adicionais sobre a matrícula"
+                          {...field}
                         />
                       </FormControl>
                       <FormMessage />
