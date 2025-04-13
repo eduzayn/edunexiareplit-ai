@@ -46,13 +46,13 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="bg-neutral-900 text-neutral-400">
+    <footer className="bg-gradient-to-b from-blue-950 to-indigo-950 text-blue-200/70">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Company Info */}
           <div className="col-span-1 md:col-span-1">
             <Link href="/" className="text-2xl font-bold text-white flex items-center">
-              <SchoolIcon className="h-8 w-8 mr-2" />
+              <SchoolIcon className="h-8 w-8 mr-2 text-primary" />
               EdunexIA
             </Link>
             <p className="mt-4 text-sm">
@@ -63,7 +63,7 @@ export default function Footer() {
                 <Link 
                   key={index} 
                   href={social.href} 
-                  className="text-neutral-400 hover:text-white transition-colors"
+                  className="text-blue-300 hover:text-white transition-colors"
                   aria-label={social.label}
                 >
                   {social.icon}
@@ -75,7 +75,7 @@ export default function Footer() {
           {/* Footer Sections */}
           {footerSections.map((section) => (
             <div key={section.title}>
-              <h3 className="text-white font-medium mb-4">{section.title}</h3>
+              <h3 className="text-blue-100 font-medium mb-4">{section.title}</h3>
               <ul className="space-y-2">
                 {section.links.map((link) => (
                   <li key={link.name}>
@@ -92,7 +92,7 @@ export default function Footer() {
           ))}
         </div>
         
-        <div className="mt-12 pt-8 border-t border-neutral-800 text-sm text-center">
+        <div className="mt-12 pt-8 border-t border-blue-900/30 text-sm text-center text-blue-300/60">
           <p>&copy; {currentYear} EdunexIA. Todos os direitos reservados.</p>
         </div>
       </div>

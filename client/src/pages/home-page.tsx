@@ -287,17 +287,18 @@ export default function HomePage() {
         </section>
         
         {/* CTA Section */}
-        <section className="py-12 md:py-24 bg-neutral-950 text-white">
+        <section className="py-12 md:py-24 bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 text-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="lg:flex lg:items-center lg:justify-between">
               <div className="lg:w-1/2">
                 <h2 className="text-3xl font-bold text-white mb-4">Pronto para transformar sua instituição?</h2>
-                <p className="text-lg text-white/80 mb-8">
+                <p className="text-lg text-white/90 mb-8">
                   Explore todos os recursos da plataforma mais moderna do Brasil para ensino a distância.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Button 
                     size="lg"
+                    className="bg-primary hover:bg-primary/90 text-white transition-all"
                     onClick={handleLogin}
                   >
                     <span className="mr-2">🔑</span>
@@ -306,7 +307,7 @@ export default function HomePage() {
                   <Button 
                     variant="secondary"
                     size="lg"
-                    className="bg-white/10 text-white hover:bg-white/20"
+                    className="bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm transition-all"
                     onClick={() => navigate('/contato')}
                   >
                     <span className="mr-2">📞</span>
@@ -314,8 +315,8 @@ export default function HomePage() {
                   </Button>
                 </div>
               </div>
-              <div className="hidden lg:block lg:w-2/5">
-                <div className="rounded-lg shadow-2xl bg-gradient-to-r from-gray-700 to-gray-900 h-72 flex items-center justify-center">
+              <div className="hidden lg:block lg:w-2/5 mt-10 lg:mt-0">
+                <div className="rounded-lg shadow-2xl bg-blue-950/50 border border-blue-700/20 backdrop-blur-sm h-72 flex items-center justify-center">
                   <div className="text-white text-center">
                     <SchoolIcon className="h-16 w-16 mx-auto mb-4 text-primary" />
                     <p className="text-lg font-medium">EdunexIA</p>
