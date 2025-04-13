@@ -49,7 +49,6 @@ import {
   LinkIcon,
   CopyIcon,
   MailIcon,
-  ExternalLinkIcon,
 } from "@/components/ui/icons";
 import {
   Select,
@@ -165,6 +164,61 @@ export default function PoloEnrollmentsPage() {
       title: "Gerando documento",
       description: `Preparando ${documentType} para ${enrollment.studentName}`,
     });
+  };
+  
+  // Funções para manipulação de link de pagamento
+  const handleCopyPaymentLink = (url: string) => {
+    navigator.clipboard.writeText(url)
+      .then(() => {
+        toast({
+          title: "Link copiado!",
+          description: "O link de pagamento foi copiado para a área de transferência",
+        });
+      })
+      .catch((error) => {
+        console.error("Erro ao copiar link:", error);
+        toast({
+          title: "Erro ao copiar",
+          description: "Não foi possível copiar o link. Tente novamente.",
+          variant: "destructive",
+        });
+      });
+  };
+  
+  const handleSendPaymentLinkByEmail = (enrollment: Enrollment) => {
+    if (!enrollment.paymentUrl) {
+      toast({
+        title: "Link indisponível",
+        description: "Não há link de pagamento disponível para esta matrícula.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Na implementação real, aqui faria a requisição para enviar o email
+    apiRequest("POST", `/api/polo/enrollments/${enrollment.id}/send-payment-link`, {
+      studentEmail: enrollment.studentEmail,
+      paymentUrl: enrollment.paymentUrl
+    })
+      .then(async (response) => {
+        if (response.ok) {
+          toast({
+            title: "Email enviado com sucesso",
+            description: `Link de pagamento enviado para ${enrollment.studentEmail}`,
+          });
+        } else {
+          const errorData = await response.json();
+          throw new Error(errorData.message || "Erro ao enviar email");
+        }
+      })
+      .catch((error) => {
+        console.error("Erro ao enviar email:", error);
+        toast({
+          title: "Erro ao enviar email",
+          description: error.message || "Não foi possível enviar o email. Tente novamente.",
+          variant: "destructive",
+        });
+      });
   };
 
   const handlePaymentStatus = (status: string) => {
@@ -620,6 +674,79 @@ export default function PoloEnrollmentsPage() {
                     )}
                   </CardContent>
                 </Card>
+                
+                {/* Link de Pagamento */}
+                {selectedEnrollment?.paymentStatus === "pending" && (
+                  <Card className="mb-4">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-gray-500">Link de Pagamento</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {selectedEnrollment.paymentUrl ? (
+                        <div className="space-y-4">
+                          <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-sm">
+                            <p className="text-amber-800 font-medium mb-1">
+                              <AlertCircleIcon className="h-4 w-4 inline-block mr-1" />
+                              Compartilhe o link de pagamento
+                            </p>
+                            <p className="text-amber-700">
+                              O link abaixo permite que o aluno realize o pagamento online sem precisar entrar no portal.
+                            </p>
+                          </div>
+                          
+                          <div className="p-3 border rounded-md bg-gray-50 relative">
+                            <div className="mb-1 text-xs text-gray-500 font-medium">LINK DE PAGAMENTO:</div>
+                            <div className="font-mono text-xs text-gray-800 break-all pr-16 py-1">
+                              {selectedEnrollment.paymentUrl}
+                            </div>
+                            <div className="absolute right-2 top-5">
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                onClick={() => handleCopyPaymentLink(selectedEnrollment.paymentUrl as string)}
+                                className="h-8 w-8 p-0"
+                                title="Copiar link"
+                              >
+                                <CopyIcon className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          <div className="flex gap-2 mt-2">
+                            <Button 
+                              variant="default" 
+                              size="sm"
+                              className="flex items-center gap-1 bg-orange-500 hover:bg-orange-600"
+                              onClick={() => handleSendPaymentLinkByEmail(selectedEnrollment)}
+                            >
+                              <MailIcon className="h-4 w-4" />
+                              Enviar por Email
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              className="flex items-center gap-1"
+                              onClick={() => window.open(selectedEnrollment.paymentUrl, '_blank')}
+                            >
+                              <LinkIcon className="h-4 w-4" />
+                              Abrir Link
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-sm">
+                          <p className="text-amber-800 font-medium mb-1">
+                            <AlertCircleIcon className="h-4 w-4 inline-block mr-1" />
+                            Link de pagamento não disponível
+                          </p>
+                          <p className="text-amber-700">
+                            Esta matrícula não possui um link de pagamento gerado. Verifique o status do pagamento.
+                          </p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
                 
                 <Card>
                   <CardHeader className="pb-2">

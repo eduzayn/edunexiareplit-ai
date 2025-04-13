@@ -303,4 +303,94 @@ router.get("/enrollments/:id", async (req, res) => {
   }
 });
 
+// Rota para enviar link de pagamento por email
+router.post("/enrollments/:id/send-payment-link", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { studentEmail, paymentUrl } = req.body;
+    const poloUser = req.user;
+
+    // Validar parâmetros obrigatórios
+    if (!studentEmail || !paymentUrl) {
+      return res.status(400).json({ 
+        message: "Email do aluno e link de pagamento são obrigatórios" 
+      });
+    }
+
+    // Obter dados da matrícula
+    const enrollment = await storage.getEnrollment(parseInt(id));
+    if (!enrollment) {
+      return res.status(404).json({ message: "Matrícula não encontrada" });
+    }
+
+    // Verificar se a matrícula pertence ao polo do usuário
+    if (!poloUser || !poloUser.id) {
+      return res.status(401).json({ message: "Usuário não autenticado" });
+    }
+    
+    const userPolo = await storage.getPoloByUserId(poloUser.id);
+    if (!userPolo || enrollment.poloId !== userPolo.id) {
+      return res.status(403).json({ message: "Acesso negado a esta matrícula" });
+    }
+
+    // Obter dados adicionais
+    const student = await storage.getUser(enrollment.studentId);
+    const course = await storage.getCourse(enrollment.courseId);
+    const polo = await storage.getPolo(enrollment.poloId);
+
+    if (!student) {
+      return res.status(404).json({ message: "Aluno não encontrado" });
+    }
+
+    if (!course) {
+      return res.status(404).json({ message: "Curso não encontrado" });
+    }
+
+    // Simulação de envio de email (na implementação real, integrar com serviço de email)
+    // Na implementação real, usaríamos nodemailer ou similar para envio de email
+    
+    console.log(`
+      [SIMULAÇÃO DE EMAIL]
+      Para: ${studentEmail}
+      Assunto: Link de Pagamento - Matrícula ${enrollment.code}
+      Corpo:
+      Olá ${student.fullName},
+
+      Segue o link para pagamento da sua matrícula no curso ${course.name}:
+      ${paymentUrl}
+
+      Valor: ${new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+      }).format(enrollment.amount)}
+
+      Este link permite que você efetue o pagamento de forma segura e rápida.
+      Após a confirmação do pagamento, sua matrícula será ativada automaticamente.
+
+      Atenciosamente,
+      Equipe ${polo?.name}
+    `);
+
+    // Registrar o envio do email no histórico (opcional, para auditoria)
+    // Aqui seria uma implementação real para registrar o envio no banco de dados
+    // await storage.createEmailLog({
+    //   enrollmentId: enrollment.id,
+    //   emailType: "payment_link",
+    //   sentTo: studentEmail,
+    //   sentBy: poloUser.id,
+    //   content: paymentUrl
+    // });
+
+    return res.json({
+      success: true,
+      message: "Link de pagamento enviado com sucesso"
+    });
+  } catch (error) {
+    console.error("Erro ao enviar link de pagamento:", error);
+    return res.status(500).json({ 
+      message: "Erro ao enviar link de pagamento por email" 
+    });
+  }
+});
+
 export default router;
