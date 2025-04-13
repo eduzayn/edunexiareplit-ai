@@ -650,6 +650,8 @@ export default function NewEnrollmentPage() {
                         </p>
                       </div>
                       
+                      
+                      
                       <FormField
                         control={form.control}
                         name="amount"
@@ -719,7 +721,8 @@ export default function NewEnrollmentPage() {
                         )}
                       />
                       
-                      {form.watch("paymentMethod") === "credit_card" && (
+                      {/* Opções de parcelamento baseadas na forma de pagamento */}
+                      {form.watch("paymentMethod") && (
                         <FormField
                           control={form.control}
                           name="installments"
@@ -736,18 +739,42 @@ export default function NewEnrollmentPage() {
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  <SelectItem value="1">1x sem juros</SelectItem>
-                                  <SelectItem value="2">2x sem juros</SelectItem>
-                                  <SelectItem value="3">3x sem juros</SelectItem>
-                                  <SelectItem value="4">4x sem juros</SelectItem>
-                                  <SelectItem value="5">5x sem juros</SelectItem>
-                                  <SelectItem value="6">6x sem juros</SelectItem>
-                                  <SelectItem value="7">7x sem juros</SelectItem>
-                                  <SelectItem value="8">8x sem juros</SelectItem>
-                                  <SelectItem value="9">9x sem juros</SelectItem>
-                                  <SelectItem value="10">10x sem juros</SelectItem>
-                                  <SelectItem value="11">11x sem juros</SelectItem>
-                                  <SelectItem value="12">12x sem juros</SelectItem>
+                                  {/* Opções de parcelas sem juros (até 6x) */}
+                                  <SelectItem value="1">1x de {(() => {
+                                    // Usar a função para calcular o valor da parcela
+                                    return getInstallmentValue(1);
+                                  })()} sem juros</SelectItem>
+                                  <SelectItem value="2">2x de {getInstallmentValue(2)} sem juros</SelectItem>
+                                  <SelectItem value="3">3x de {getInstallmentValue(3)} sem juros</SelectItem>
+                                  <SelectItem value="4">4x de {getInstallmentValue(4)} sem juros</SelectItem>
+                                  <SelectItem value="5">5x de {getInstallmentValue(5)} sem juros</SelectItem>
+                                  <SelectItem value="6">6x de {getInstallmentValue(6)} sem juros</SelectItem>
+                                  
+                                  {/* Opções específicas para cartão de crédito (até 10x) */}
+                                  {form.watch("paymentMethod") === "credit_card" && (
+                                    <>
+                                      <SelectItem value="7">7x de {getInstallmentValue(7)} com juros</SelectItem>
+                                      <SelectItem value="8">8x de {getInstallmentValue(8)} com juros</SelectItem>
+                                      <SelectItem value="9">9x de {getInstallmentValue(9)} com juros</SelectItem>
+                                      <SelectItem value="10">10x de {getInstallmentValue(10)} com juros</SelectItem>
+                                    </>
+                                  )}
+                                  
+                                  {/* Opções específicas para boleto/PIX (até 16x) */}
+                                  {(form.watch("paymentMethod") === "bank_slip" || form.watch("paymentMethod") === "pix") && (
+                                    <>
+                                      <SelectItem value="7">7x de {getInstallmentValue(7)} com juros</SelectItem>
+                                      <SelectItem value="8">8x de {getInstallmentValue(8)} com juros</SelectItem>
+                                      <SelectItem value="9">9x de {getInstallmentValue(9)} com juros</SelectItem>
+                                      <SelectItem value="10">10x de {getInstallmentValue(10)} com juros</SelectItem>
+                                      <SelectItem value="11">11x de {getInstallmentValue(11)} com juros</SelectItem>
+                                      <SelectItem value="12">12x de {getInstallmentValue(12)} com juros</SelectItem>
+                                      <SelectItem value="13">13x de {getInstallmentValue(13)} com juros</SelectItem>
+                                      <SelectItem value="14">14x de {getInstallmentValue(14)} com juros</SelectItem>
+                                      <SelectItem value="15">15x de {getInstallmentValue(15)} com juros</SelectItem>
+                                      <SelectItem value="16">16x de {getInstallmentValue(16)} com juros</SelectItem>
+                                    </>
+                                  )}
                                 </SelectContent>
                               </Select>
                               <FormMessage />
@@ -796,6 +823,70 @@ export default function NewEnrollmentPage() {
                           O contrato será gerado após a confirmação da matrícula. O aluno deverá assinar digitalmente o documento pelo Portal do Aluno posteriormente.
                         </AlertDescription>
                       </Alert>
+                      
+                      {/* Resumo da Matrícula */}
+                      <Card className="mb-6">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">Resumo da Matrícula</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-2">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <h4 className="text-sm font-medium mb-1">Dados do Aluno</h4>
+                                <p className="text-sm">
+                                  {selectedStudent?.fullName}<br />
+                                  {selectedStudent?.email}<br />
+                                  CPF: {selectedStudent?.cpf}
+                                </p>
+                              </div>
+                              
+                              <div>
+                                <h4 className="text-sm font-medium mb-1">Curso</h4>
+                                <p className="text-sm">
+                                  {selectedCourse?.name}<br />
+                                  Código: {selectedCourse?.code}<br />
+                                  Carga horária: {selectedCourse?.workload} horas
+                                </p>
+                              </div>
+                            </div>
+                            
+                            <Separator />
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <h4 className="text-sm font-medium mb-1">Dados de Pagamento</h4>
+                                <p className="text-sm">
+                                  Gateway: {form.watch("paymentGateway") === "asaas" ? "Asaas" : "Lytex"}<br />
+                                  Método: {(() => {
+                                    const method = form.watch("paymentMethod");
+                                    if (method === "credit_card") return "Cartão de Crédito";
+                                    if (method === "bank_slip") return "Boleto Bancário";
+                                    if (method === "pix") return "PIX";
+                                    return "";
+                                  })()}<br />
+                                  Valor total: R$ {parseFloat(form.watch("amount")?.replace(',', '.') || "0").toFixed(2)}
+                                </p>
+                              </div>
+                              
+                              <div>
+                                <h4 className="text-sm font-medium mb-1">Parcelamento</h4>
+                                <p className="text-sm">
+                                  {form.watch("installments")} parcela(s) de {(() => {
+                                    return getInstallmentValue(parseInt(form.watch("installments") || "1"));
+                                  })()}
+                                  <br />
+                                  {parseInt(form.watch("installments") || "1") > 6 ? (
+                                    <span className="text-amber-600">Com juros aplicados</span>
+                                  ) : (
+                                    <span className="text-green-600">Sem juros</span>
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
                       
                       <FormField
                         control={form.control}
