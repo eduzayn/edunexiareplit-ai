@@ -26,7 +26,7 @@ router.get("/", authenticateAdmin, async (req, res) => {
 });
 
 // Obter polo por ID
-router.get("/:id", async (req, res) => {
+router.get("/:id", authenticateAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const polo = await storage.getPolo(id);
@@ -43,7 +43,7 @@ router.get("/:id", async (req, res) => {
 });
 
 // Criar polo
-router.post("/", async (req, res) => {
+router.post("/", authenticateAdmin, async (req, res) => {
   try {
     const poloData = insertPoloSchema.parse(req.body);
     
@@ -70,7 +70,7 @@ router.post("/", async (req, res) => {
 });
 
 // Atualizar polo
-router.patch("/:id", async (req, res) => {
+router.patch("/:id", authenticateAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     
@@ -102,7 +102,7 @@ router.patch("/:id", async (req, res) => {
 });
 
 // Excluir polo
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", authenticateAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     

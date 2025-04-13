@@ -1,11 +1,12 @@
 import { Router } from "express";
 import { storage } from "../storage";
 import { insertFinancialTransactionSchema } from "@shared/schema";
+import { authenticateAdmin } from "../middleware/auth";
 
 const router = Router();
 
 // Listar transações financeiras com filtros opcionais
-router.get("/", async (req, res) => {
+router.get("/", authenticateAdmin, async (req, res) => {
   try {
     const { 
       type, 
@@ -37,7 +38,7 @@ router.get("/", async (req, res) => {
 });
 
 // Obter transação financeira por ID
-router.get("/:id", async (req, res) => {
+router.get("/:id", authenticateAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const transaction = await storage.getFinancialTransaction(id);
@@ -54,7 +55,7 @@ router.get("/:id", async (req, res) => {
 });
 
 // Criar transação financeira
-router.post("/", async (req, res) => {
+router.post("/", authenticateAdmin, async (req, res) => {
   try {
     const transactionData = insertFinancialTransactionSchema.parse(req.body);
     
@@ -76,7 +77,7 @@ router.post("/", async (req, res) => {
 });
 
 // Atualizar transação financeira
-router.patch("/:id", async (req, res) => {
+router.patch("/:id", authenticateAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     
@@ -106,7 +107,7 @@ router.patch("/:id", async (req, res) => {
 });
 
 // Excluir transação financeira
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", authenticateAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     
