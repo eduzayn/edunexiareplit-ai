@@ -9,6 +9,7 @@ import { useLocation } from "wouter";
 import { Sidebar } from "@/components/layout/sidebar";
 import { getAdminSidebarItems } from "@/components/layout/admin-sidebar-items";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { CreateUserDialog } from "@/components/dialogs/create-user-dialog";
 import {
   Form,
   FormControl,
@@ -109,6 +110,9 @@ export default function NewEnrollmentPage() {
   const [step, setStep] = useState(1);
   const [isCreatingEnrollment, setIsCreatingEnrollment] = useState(false);
   const [createdEnrollmentId, setCreatedEnrollmentId] = useState<number | null>(null);
+  
+  // Estado para controle do diálogo de criação de usuário
+  const [isCreateUserDialogOpen, setIsCreateUserDialogOpen] = useState(false);
   
   // Consulta para listar cursos disponíveis
   const { data: coursesData = [], isLoading: isLoadingCourses } = useQuery({
