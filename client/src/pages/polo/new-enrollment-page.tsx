@@ -789,11 +789,13 @@ export default function NewEnrollmentPage() {
                     <div className="flex justify-between">
                       <span>Nome do modelo:</span>
                       <span className="font-medium">
-                        {form.watch("contractTemplateId") === "1" && "Contrato Padrão de Prestação de Serviços Educacionais"}
-                        {form.watch("contractTemplateId") === "2" && "Contrato de Matrícula em Curso de Graduação"}
-                        {form.watch("contractTemplateId") === "3" && "Contrato de Matrícula em Curso de Pós-graduação"}
-                        {form.watch("contractTemplateId") === "4" && "Contrato de Matrícula em Curso Técnico"}
-                        {form.watch("contractTemplateId") === "5" && "Contrato de Matrícula em Curso de Extensão"}
+                        {isLoadingContractTemplates ? (
+                          <span className="text-gray-400">Carregando...</span>
+                        ) : (
+                          contractTemplatesData?.find(
+                            (template: any) => template.id.toString() === form.watch("contractTemplateId")
+                          )?.name || "Contrato Padrão"
+                        )}
                       </span>
                     </div>
                     <div className="flex justify-between">
