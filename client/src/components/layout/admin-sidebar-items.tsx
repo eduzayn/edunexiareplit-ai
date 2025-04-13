@@ -48,7 +48,7 @@ function hasCategoryActiveItem(category: SidebarCategory, currentPath: string): 
   return category.items.some(item => 
     item.active || 
     currentPath === item.href || 
-    (currentPath.includes(item.href) && item.href !== '/admin/dashboard')
+    (currentPath && currentPath.includes(item.href) && item.href !== '/admin/dashboard')
   );
 }
 
@@ -79,13 +79,13 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
           name: "Disciplinas", 
           icon: <MenuBookIcon />, 
           href: "/admin/disciplines",
-          active: currentPath === "/admin/disciplines" || currentPath.includes("/admin/disciplines/")
+          active: currentPath === "/admin/disciplines" || (currentPath && currentPath.includes("/admin/disciplines/"))
         },
         { 
           name: "Cursos", 
           icon: <SchoolIcon />, 
           href: "/admin/courses",
-          active: currentPath === "/admin/courses" || currentPath.includes("/admin/courses/")
+          active: currentPath === "/admin/courses" || (currentPath && currentPath.includes("/admin/courses/"))
         },
       ]
     }, currentPath),
@@ -94,13 +94,13 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
         name: "Disciplinas", 
         icon: <MenuBookIcon />, 
         href: "/admin/disciplines",
-        active: currentPath === "/admin/disciplines" || currentPath.includes("/admin/disciplines/")
+        active: currentPath === "/admin/disciplines" || (currentPath && currentPath.includes("/admin/disciplines/"))
       },
       { 
         name: "Cursos", 
         icon: <SchoolIcon />, 
         href: "/admin/courses",
-        active: currentPath === "/admin/courses" || currentPath.includes("/admin/courses/")
+        active: currentPath === "/admin/courses" || (currentPath && currentPath.includes("/admin/courses/"))
       },
     ]
   };
@@ -193,7 +193,7 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
           name: "Matrículas",
           icon: <AssignmentIcon />,
           href: "/admin/enrollments",
-          active: currentPath === "/admin/enrollments" || currentPath.includes("/admin/enrollments/")
+          active: currentPath === "/admin/enrollments" || (currentPath && currentPath.includes("/admin/enrollments/"))
         },
         { 
           name: "Financeiro Empresarial", 
