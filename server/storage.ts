@@ -79,6 +79,37 @@ export interface IStorage {
   updateInstitution(id: number, institution: Partial<InsertInstitution>): Promise<Institution | undefined>;
   deleteInstitution(id: number): Promise<boolean>;
   
+  // Polos
+  getPolo(id: number): Promise<Polo | undefined>;
+  getPoloByCode(code: string): Promise<Polo | undefined>;
+  getPolos(search?: string, status?: string, institutionId?: number, limit?: number, offset?: number): Promise<Polo[]>;
+  createPolo(polo: InsertPolo): Promise<Polo>;
+  updatePolo(id: number, polo: Partial<InsertPolo>): Promise<Polo | undefined>;
+  deletePolo(id: number): Promise<boolean>;
+  
+  // Transações Financeiras
+  getFinancialTransaction(id: number): Promise<FinancialTransaction | undefined>;
+  getFinancialTransactions(
+    type?: string, 
+    category?: string, 
+    search?: string, 
+    startDate?: Date, 
+    endDate?: Date, 
+    institutionId?: number,
+    limit?: number, 
+    offset?: number
+  ): Promise<FinancialTransaction[]>;
+  createFinancialTransaction(transaction: InsertFinancialTransaction): Promise<FinancialTransaction>;
+  updateFinancialTransaction(id: number, transaction: Partial<InsertFinancialTransaction>): Promise<FinancialTransaction | undefined>;
+  deleteFinancialTransaction(id: number): Promise<boolean>;
+  
+  // Categorias Financeiras
+  getFinancialCategory(id: number): Promise<FinancialCategory | undefined>;
+  getFinancialCategories(type?: string, institutionId?: number, limit?: number, offset?: number): Promise<FinancialCategory[]>;
+  createFinancialCategory(category: InsertFinancialCategory): Promise<FinancialCategory>;
+  updateFinancialCategory(id: number, category: Partial<InsertFinancialCategory>): Promise<FinancialCategory | undefined>;
+  deleteFinancialCategory(id: number): Promise<boolean>;
+  
   sessionStore: SessionStore;
 }
 
@@ -587,6 +618,205 @@ export class DatabaseStorage implements IStorage {
       return result.length > 0;
     } catch (error) {
       console.error("Error deleting institution:", error);
+      return false;
+    }
+  }
+
+  // ==================== Polos ====================
+  async getPolo(id: number): Promise<Polo | undefined> {
+    const [polo] = await db.select().from(polos).where(eq(polos.id, id));
+    return polo || undefined;
+  }
+
+  async getPoloByCode(code: string): Promise<Polo | undefined> {
+    const [polo] = await db.select().from(polos).where(eq(polos.code, code));
+    return polo || undefined;
+  }
+
+  async getPolos(search?: string, status?: string, institutionId?: number, limit: number = 50, offset: number = 0): Promise<Polo[]> {
+    let query = db.select().from(polos).limit(limit).offset(offset);
+    
+    if (search) {
+      query = query.where(
+        or(
+          like(polos.name, `%${search}%`),
+          like(polos.code, `%${search}%`),
+          like(polos.city, `%${search}%`)
+        )
+      );
+    }
+    
+    if (status) {
+      query = query.where(eq(polos.status, status as any));
+    }
+    
+    if (institutionId) {
+      query = query.where(eq(polos.institutionId, institutionId));
+    }
+    
+    return await query.orderBy(asc(polos.name));
+  }
+
+  async createPolo(polo: InsertPolo): Promise<Polo> {
+    const [newPolo] = await db
+      .insert(polos)
+      .values(polo)
+      .returning();
+    return newPolo;
+  }
+
+  async updatePolo(id: number, polo: Partial<InsertPolo>): Promise<Polo | undefined> {
+    const [updatedPolo] = await db
+      .update(polos)
+      .set({
+        ...polo,
+        updatedAt: new Date()
+      })
+      .where(eq(polos.id, id))
+      .returning();
+    return updatedPolo;
+  }
+
+  async deletePolo(id: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(polos)
+        .where(eq(polos.id, id))
+        .returning({ id: polos.id });
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting polo:", error);
+      return false;
+    }
+  }
+
+  // ==================== Transações Financeiras ====================
+  async getFinancialTransaction(id: number): Promise<FinancialTransaction | undefined> {
+    const [transaction] = await db.select().from(financialTransactions).where(eq(financialTransactions.id, id));
+    return transaction || undefined;
+  }
+
+  async getFinancialTransactions(
+    type?: string, 
+    category?: string, 
+    search?: string, 
+    startDate?: Date, 
+    endDate?: Date, 
+    institutionId?: number,
+    limit: number = 50, 
+    offset: number = 0
+  ): Promise<FinancialTransaction[]> {
+    let query = db.select().from(financialTransactions).limit(limit).offset(offset);
+    
+    if (type) {
+      query = query.where(eq(financialTransactions.type, type));
+    }
+    
+    if (category) {
+      query = query.where(eq(financialTransactions.category, category));
+    }
+    
+    if (search) {
+      query = query.where(like(financialTransactions.description, `%${search}%`));
+    }
+    
+    if (startDate) {
+      query = query.where(gte(financialTransactions.date, startDate));
+    }
+    
+    if (endDate) {
+      query = query.where(lte(financialTransactions.date, endDate));
+    }
+    
+    if (institutionId) {
+      query = query.where(eq(financialTransactions.institutionId, institutionId));
+    }
+    
+    return await query.orderBy(desc(financialTransactions.date));
+  }
+
+  async createFinancialTransaction(transaction: InsertFinancialTransaction): Promise<FinancialTransaction> {
+    const [newTransaction] = await db
+      .insert(financialTransactions)
+      .values(transaction)
+      .returning();
+    return newTransaction;
+  }
+
+  async updateFinancialTransaction(id: number, transaction: Partial<InsertFinancialTransaction>): Promise<FinancialTransaction | undefined> {
+    const [updatedTransaction] = await db
+      .update(financialTransactions)
+      .set({
+        ...transaction,
+        updatedAt: new Date()
+      })
+      .where(eq(financialTransactions.id, id))
+      .returning();
+    return updatedTransaction;
+  }
+
+  async deleteFinancialTransaction(id: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(financialTransactions)
+        .where(eq(financialTransactions.id, id))
+        .returning({ id: financialTransactions.id });
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting financial transaction:", error);
+      return false;
+    }
+  }
+
+  // ==================== Categorias Financeiras ====================
+  async getFinancialCategory(id: number): Promise<FinancialCategory | undefined> {
+    const [category] = await db.select().from(financialCategories).where(eq(financialCategories.id, id));
+    return category || undefined;
+  }
+
+  async getFinancialCategories(type?: string, institutionId?: number, limit: number = 50, offset: number = 0): Promise<FinancialCategory[]> {
+    let query = db.select().from(financialCategories).limit(limit).offset(offset);
+    
+    if (type) {
+      query = query.where(eq(financialCategories.type, type));
+    }
+    
+    if (institutionId) {
+      query = query.where(eq(financialCategories.institutionId, institutionId));
+    }
+    
+    return await query.orderBy(asc(financialCategories.name));
+  }
+
+  async createFinancialCategory(category: InsertFinancialCategory): Promise<FinancialCategory> {
+    const [newCategory] = await db
+      .insert(financialCategories)
+      .values(category)
+      .returning();
+    return newCategory;
+  }
+
+  async updateFinancialCategory(id: number, category: Partial<InsertFinancialCategory>): Promise<FinancialCategory | undefined> {
+    const [updatedCategory] = await db
+      .update(financialCategories)
+      .set({
+        ...category,
+        updatedAt: new Date()
+      })
+      .where(eq(financialCategories.id, id))
+      .returning();
+    return updatedCategory;
+  }
+
+  async deleteFinancialCategory(id: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(financialCategories)
+        .where(eq(financialCategories.id, id))
+        .returning({ id: financialCategories.id });
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting financial category:", error);
       return false;
     }
   }

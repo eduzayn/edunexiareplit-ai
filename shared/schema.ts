@@ -15,6 +15,7 @@ export const videoSourceEnum = pgEnum("video_source", ["youtube", "onedrive", "g
 export const contentCompletionStatusEnum = pgEnum("content_completion_status", ["incomplete", "complete"]);
 export const assessmentTypeEnum = pgEnum("assessment_type", ["simulado", "avaliacao_final"]);
 export const institutionStatusEnum = pgEnum("institution_status", ["active", "inactive", "pending"]);
+export const poloStatusEnum = pgEnum("polo_status", ["active", "inactive"]);
 
 // Usuários
 export const users = pgTable("users", {
@@ -123,6 +124,53 @@ export const assessmentQuestions = pgTable("assessment_questions", {
 });
 
 // Instituições
+// Polos (unidades físicas da instituição)
+export const polos = pgTable("polos", {
+  id: serial("id").primaryKey(),
+  code: text("code").notNull().unique(),
+  name: text("name").notNull(),
+  institutionId: integer("institution_id").notNull().references(() => institutions.id, { onDelete: 'cascade' }),
+  managerName: text("manager_name").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone").notNull(),
+  address: text("address").notNull(),
+  city: text("city").notNull(),
+  state: text("state").notNull(),
+  postalCode: text("postal_code").notNull(),
+  status: poloStatusEnum("status").default("active").notNull(),
+  capacity: integer("capacity"), // Capacidade de alunos
+  createdById: integer("created_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Transações financeiras
+export const financialTransactions = pgTable("financial_transactions", {
+  id: serial("id").primaryKey(),
+  type: text("type").notNull(), // entrada ou saida
+  amount: doublePrecision("amount").notNull(),
+  description: text("description").notNull(),
+  category: text("category").notNull(),
+  date: timestamp("date").defaultNow().notNull(),
+  status: text("status").notNull(), // concluído, pendente, agendado
+  institutionId: integer("institution_id").references(() => institutions.id),
+  createdById: integer("created_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Categorias financeiras
+export const financialCategories = pgTable("financial_categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  type: text("type").notNull(), // entrada ou saida
+  description: text("description"),
+  institutionId: integer("institution_id").references(() => institutions.id),
+  createdById: integer("created_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const institutions = pgTable("institutions", {
   id: serial("id").primaryKey(),
   code: text("code").notNull().unique(),
@@ -147,11 +195,50 @@ export const usersRelations = relations(users, ({ many }) => ({
   coursesCreated: many(courses),
   disciplinesCreated: many(disciplines),
   institutionsCreated: many(institutions),
+  polosCreated: many(polos),
+  financialTransactionsCreated: many(financialTransactions),
+  financialCategoriesCreated: many(financialCategories),
 }));
 
-export const institutionsRelations = relations(institutions, ({ one }) => ({
+export const institutionsRelations = relations(institutions, ({ one, many }) => ({
   createdBy: one(users, {
     fields: [institutions.createdById],
+    references: [users.id],
+  }),
+  polos: many(polos),
+  financialTransactions: many(financialTransactions),
+  financialCategories: many(financialCategories),
+}));
+
+export const polosRelations = relations(polos, ({ one }) => ({
+  institution: one(institutions, {
+    fields: [polos.institutionId],
+    references: [institutions.id],
+  }),
+  createdBy: one(users, {
+    fields: [polos.createdById],
+    references: [users.id],
+  }),
+}));
+
+export const financialTransactionsRelations = relations(financialTransactions, ({ one }) => ({
+  institution: one(institutions, {
+    fields: [financialTransactions.institutionId],
+    references: [institutions.id],
+  }),
+  createdBy: one(users, {
+    fields: [financialTransactions.createdById],
+    references: [users.id],
+  }),
+}));
+
+export const financialCategoriesRelations = relations(financialCategories, ({ one }) => ({
+  institution: one(institutions, {
+    fields: [financialCategories.institutionId],
+    references: [institutions.id],
+  }),
+  createdBy: one(users, {
+    fields: [financialCategories.createdById],
     references: [users.id],
   }),
 }));
@@ -337,3 +424,47 @@ export type AssessmentQuestion = typeof assessmentQuestions.$inferSelect;
 
 export type InsertInstitution = z.infer<typeof insertInstitutionSchema>;
 export type Institution = typeof institutions.$inferSelect;
+
+// Schemas e tipos para Polos
+export const insertPoloSchema = createInsertSchema(polos).pick({
+  code: true,
+  name: true,
+  institutionId: true,
+  managerName: true,
+  email: true,
+  phone: true,
+  address: true,
+  city: true,
+  state: true,
+  postalCode: true,
+  status: true,
+  capacity: true,
+  createdById: true,
+});
+export type InsertPolo = z.infer<typeof insertPoloSchema>;
+export type Polo = typeof polos.$inferSelect;
+
+// Schemas e tipos para Transações Financeiras
+export const insertFinancialTransactionSchema = createInsertSchema(financialTransactions).pick({
+  type: true,
+  amount: true,
+  description: true,
+  category: true,
+  date: true,
+  status: true,
+  institutionId: true,
+  createdById: true,
+});
+export type InsertFinancialTransaction = z.infer<typeof insertFinancialTransactionSchema>;
+export type FinancialTransaction = typeof financialTransactions.$inferSelect;
+
+// Schemas e tipos para Categorias Financeiras
+export const insertFinancialCategorySchema = createInsertSchema(financialCategories).pick({
+  name: true,
+  type: true,
+  description: true,
+  institutionId: true,
+  createdById: true,
+});
+export type InsertFinancialCategory = z.infer<typeof insertFinancialCategorySchema>;
+export type FinancialCategory = typeof financialCategories.$inferSelect;
