@@ -6,6 +6,7 @@ export interface PaymentGateway {
   createPayment(enrollment: Enrollment): Promise<{ externalId: string, paymentUrl: string }>;
   getPaymentStatus(externalId: string): Promise<string>;
   processWebhook(payload: any): { status: string, externalId: string };
+  registerStudent(userData: { id: number, fullName: string, email: string }): Promise<string>;
 }
 
 // Implementação do gateway Asaas

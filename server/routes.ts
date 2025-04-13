@@ -622,6 +622,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email
       });
       
+      // Se for um aluno, registrar nos gateways de pagamento
+      if (portalType === 'student') {
+        try {
+          console.log(`Registrando aluno ${fullName} nos gateways de pagamento`);
+          
+          // Registrar no Asaas
+          const asaasGateway = createPaymentGateway('asaas');
+          const asaasCustomerId = await asaasGateway.registerStudent({
+            id: newUser.id,
+            fullName: newUser.fullName,
+            email: newUser.email
+          });
+          
+          // Registrar no Lytex
+          const lytexGateway = createPaymentGateway('lytex');
+          const lytexCustomerId = await lytexGateway.registerStudent({
+            id: newUser.id,
+            fullName: newUser.fullName,
+            email: newUser.email
+          });
+          
+          console.log(`Aluno registrado com sucesso. IDs: Asaas=${asaasCustomerId}, Lytex=${lytexCustomerId}`);
+          
+          // Aqui poderíamos salvar os IDs externos no banco de dados se necessário
+          // await storage.updateUserPaymentIds(newUser.id, { asaasId: asaasCustomerId, lytexId: lytexCustomerId });
+          
+        } catch (integrationError) {
+          // Não falhar a criação do usuário se o registro nos gateways falhar
+          console.error("Erro ao registrar aluno nos gateways de pagamento:", integrationError);
+        }
+      }
+      
       res.status(201).json(newUser);
     } catch (error) {
       console.error("Error creating user:", error);
@@ -667,6 +699,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!updatedUser) {
         return res.status(500).json({ message: "Erro ao atualizar usuário" });
+      }
+      
+      // Se o usuário foi alterado para estudante, registrar nos gateways de pagamento
+      if (portalType === 'student' && existingUser.portalType !== 'student') {
+        try {
+          console.log(`Usuário ${fullName} alterado para aluno. Registrando nos gateways de pagamento`);
+          
+          // Registrar no Asaas
+          const asaasGateway = createPaymentGateway('asaas');
+          const asaasCustomerId = await asaasGateway.registerStudent({
+            id: updatedUser.id,
+            fullName: updatedUser.fullName,
+            email: updatedUser.email
+          });
+          
+          // Registrar no Lytex
+          const lytexGateway = createPaymentGateway('lytex');
+          const lytexCustomerId = await lytexGateway.registerStudent({
+            id: updatedUser.id,
+            fullName: updatedUser.fullName,
+            email: updatedUser.email
+          });
+          
+          console.log(`Aluno registrado com sucesso. IDs: Asaas=${asaasCustomerId}, Lytex=${lytexCustomerId}`);
+          
+          // Aqui poderíamos salvar os IDs externos no banco de dados se necessário
+          // await storage.updateUserPaymentIds(updatedUser.id, { asaasId: asaasCustomerId, lytexId: lytexCustomerId });
+          
+        } catch (integrationError) {
+          // Não falhar a atualização do usuário se o registro nos gateways falhar
+          console.error("Erro ao registrar aluno nos gateways de pagamento:", integrationError);
+        }
       }
       
       res.json(updatedUser);
