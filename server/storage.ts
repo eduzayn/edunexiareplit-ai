@@ -87,6 +87,7 @@ export interface IStorage {
   // Polos
   getPolo(id: number): Promise<Polo | undefined>;
   getPoloByCode(code: string): Promise<Polo | undefined>;
+  getPoloByUserId(userId: number): Promise<Polo | undefined>;
   getPolos(search?: string, status?: string, institutionId?: number, limit?: number, offset?: number): Promise<Polo[]>;
   createPolo(polo: InsertPolo): Promise<Polo>;
   updatePolo(id: number, polo: Partial<InsertPolo>): Promise<Polo | undefined>;
@@ -667,6 +668,19 @@ export class DatabaseStorage implements IStorage {
 
   async getPoloByCode(code: string): Promise<Polo | undefined> {
     const [polo] = await db.select().from(polos).where(eq(polos.code, code));
+    return polo || undefined;
+  }
+
+  async getPoloByUserId(userId: number): Promise<Polo | undefined> {
+    // Primeiro, obtém o usuário para verificar se ele tem um poloId associado
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    
+    if (!user || !user.poloId) {
+      return undefined;
+    }
+    
+    // Em seguida, obtém o polo com base no poloId do usuário
+    const [polo] = await db.select().from(polos).where(eq(polos.id, user.poloId));
     return polo || undefined;
   }
 

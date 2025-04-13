@@ -29,6 +29,7 @@ export const users = pgTable("users", {
   email: text("email").notNull(),
   cpf: text("cpf"), // CPF do usuário (obrigatório para alunos)
   portalType: text("portal_type").notNull(),
+  poloId: integer("polo_id").references(() => polos.id), // Referência ao polo (para usuários do tipo "polo")
 });
 
 // Disciplinas (blocos de construção dos cursos)
@@ -255,11 +256,15 @@ export const institutions = pgTable("institutions", {
 });
 
 // Relações
-export const usersRelations = relations(users, ({ many }) => ({
+export const usersRelations = relations(users, ({ many, one }) => ({
   coursesCreated: many(courses),
   disciplinesCreated: many(disciplines),
   institutionsCreated: many(institutions),
   polosCreated: many(polos),
+  polo: one(polos, { // Relação com o polo associado ao usuário (para usuários do tipo "polo")
+    fields: [users.poloId],
+    references: [polos.id],
+  }),
   financialTransactionsCreated: many(financialTransactions),
   financialCategoriesCreated: many(financialCategories),
   enrollments: many(enrollments, { relationName: "studentEnrollments" }),
@@ -433,11 +438,18 @@ export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
   cpf: true,
   portalType: true,
+  poloId: true,
 }).transform(data => {
   // CPF obrigatório apenas para alunos
   if (data.portalType === 'student' && !data.cpf) {
     throw new Error('CPF é obrigatório para alunos');
   }
+  
+  // poloId obrigatório apenas para usuários do tipo polo
+  if (data.portalType === 'polo' && !data.poloId) {
+    throw new Error('É necessário associar este usuário a um polo');
+  }
+  
   return data;
 });
 
