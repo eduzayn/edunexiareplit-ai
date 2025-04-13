@@ -967,49 +967,53 @@ export default function NewEnrollmentPage() {
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                   {renderStepContent()}
+                  
+                  {/* Footer com botões */}
+                  <div className="flex justify-between pt-4">
+                    {step > 1 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={prevStep}
+                        disabled={isCreatingEnrollment}
+                      >
+                        Voltar
+                      </Button>
+                    )}
+                    {step === 1 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => navigate("/polo/enrollments")}
+                      >
+                        Cancelar
+                      </Button>
+                    )}
+                    <Button
+                      type="submit"
+                      disabled={isCreatingEnrollment}
+                      className={`${step < 4 ? "bg-orange-500 hover:bg-orange-600" : "bg-green-600 hover:bg-green-700"}`}
+                    >
+                      {isCreatingEnrollment ? (
+                        <>
+                          <Skeleton className="h-4 w-4 rounded-full mr-2" />
+                          Processando...
+                        </>
+                      ) : step < 4 ? (
+                        "Continuar"
+                      ) : (
+                        <>
+                          <SaveIcon className="h-4 w-4 mr-2" />
+                          Finalizar Matrícula
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </form>
               </Form>
             </CardContent>
-            <CardFooter className="flex justify-between">
-              {step > 1 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={prevStep}
-                  disabled={isCreatingEnrollment}
-                >
-                  Voltar
-                </Button>
-              )}
-              {step === 1 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => navigate("/polo/enrollments")}
-                >
-                  Cancelar
-                </Button>
-              )}
-              <Button
-                type={step < 4 ? "button" : "submit"}
-                onClick={step < 4 ? nextStep : undefined}
-                disabled={isCreatingEnrollment}
-                className={`${step < 4 ? "bg-orange-500 hover:bg-orange-600" : "bg-green-600 hover:bg-green-700"}`}
-              >
-                {isCreatingEnrollment ? (
-                  <>
-                    <Skeleton className="h-4 w-4 rounded-full mr-2" />
-                    Processando...
-                  </>
-                ) : step < 4 ? (
-                  "Continuar"
-                ) : (
-                  <>
-                    <SaveIcon className="h-4 w-4 mr-2" />
-                    Finalizar Matrícula
-                  </>
-                )}
-              </Button>
+            <CardFooter className="hidden">
+              {/* Movido para dentro do formulário */}
             </CardFooter>
           </Card>
         </div>
