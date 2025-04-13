@@ -10,7 +10,9 @@ import { users, type User, type InsertUser,
   financialTransactions, type FinancialTransaction, type InsertFinancialTransaction,
   financialCategories, type FinancialCategory, type InsertFinancialCategory,
   enrollments, type Enrollment, type InsertEnrollment,
-  enrollmentStatusHistory, type EnrollmentStatusHistory, type InsertEnrollmentStatusHistory
+  enrollmentStatusHistory, type EnrollmentStatusHistory, type InsertEnrollmentStatusHistory,
+  contractTemplates, type ContractTemplate, type InsertContractTemplate,
+  contracts, type Contract, type InsertContract
 } from "@shared/schema";
 import session from "express-session";
 import { Store as SessionStore } from "express-session";
@@ -143,6 +145,23 @@ export interface IStorage {
   // Histórico de Status de Matrículas
   getEnrollmentStatusHistory(enrollmentId: number): Promise<EnrollmentStatusHistory[]>;
   addEnrollmentStatusHistory(historyEntry: InsertEnrollmentStatusHistory): Promise<EnrollmentStatusHistory>;
+  
+  // Templates de Contrato
+  getContractTemplate(id: number): Promise<ContractTemplate | undefined>;
+  getContractTemplates(institutionId?: number): Promise<ContractTemplate[]>;
+  createContractTemplate(template: InsertContractTemplate): Promise<ContractTemplate>;
+  updateContractTemplate(id: number, template: Partial<InsertContractTemplate>): Promise<ContractTemplate | undefined>;
+  deleteContractTemplate(id: number): Promise<boolean>;
+  
+  // Contratos
+  getContract(id: number): Promise<Contract | undefined>;
+  getContractByCode(code: string): Promise<Contract | undefined>;
+  getContractsByEnrollment(enrollmentId: number): Promise<Contract[]>;
+  getContractsByStudent(studentId: number): Promise<Contract[]>;
+  createContract(contract: InsertContract): Promise<Contract>;
+  updateContract(id: number, contract: Partial<InsertContract>): Promise<Contract | undefined>;
+  updateContractStatus(id: number, status: string): Promise<Contract | undefined>;
+  deleteContract(id: number): Promise<boolean>;
   
   // Gateway de pagamento
   createPayment(enrollment: Enrollment, gateway: string): Promise<{externalId: string, paymentUrl: string}>;

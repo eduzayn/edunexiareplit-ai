@@ -20,6 +20,15 @@ export const enrollmentStatusEnum = pgEnum("enrollment_status", ["pending_paymen
 export const paymentGatewayEnum = pgEnum("payment_gateway", ["asaas", "lytex"]);
 export const integrationTypeEnum = pgEnum("integration_type", ["asaas", "lytex", "openai", "elevenlabs", "zapi"]);
 
+// Tipos de curso
+export const courseTypes = pgTable("course_types", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Usuários
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -664,3 +673,112 @@ export const insertIntegrationSchema = createInsertSchema(integrations).pick({
 });
 export type InsertIntegration = z.infer<typeof insertIntegrationSchema>;
 export type Integration = typeof integrations.$inferSelect;
+
+// Enum para status de contratos
+export const contractStatusEnum = pgEnum("contract_status", ["pending", "signed", "cancelled", "expired"]);
+
+// Templates de Contrato
+export const contractTemplates = pgTable("contract_templates", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  content: text("content").notNull(), // Conteúdo do template em formato HTML ou Markdown
+  version: text("version").notNull(),
+  courseTypeId: integer("course_type_id").references(() => courseTypes.id),
+  institutionId: integer("institution_id").notNull().references(() => institutions.id),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdById: integer("created_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Contratos gerados para alunos
+export const contracts = pgTable("contracts", {
+  id: serial("id").primaryKey(),
+  code: text("code").notNull().unique(), // Código único do contrato, ex: CTR2025001
+  enrollmentId: integer("enrollment_id").notNull().references(() => enrollments.id, { onDelete: 'cascade' }),
+  templateId: integer("template_id").references(() => contractTemplates.id),
+  studentId: integer("student_id").notNull().references(() => users.id),
+  courseId: integer("course_id").notNull().references(() => courses.id),
+  content: text("content").notNull(), // Conteúdo final do contrato após preenchimento de variáveis
+  signatureRequired: boolean("signature_required").default(true).notNull(),
+  studentSignedAt: timestamp("student_signed_at"),
+  institutionSignedAt: timestamp("institution_signed_at"),
+  status: contractStatusEnum("status").default("pending").notNull(),
+  additionalNotes: text("additional_notes"),
+  generatedById: integer("generated_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Relações para Templates de Contrato
+export const contractTemplatesRelations = relations(contractTemplates, ({ one }) => ({
+  institution: one(institutions, {
+    fields: [contractTemplates.institutionId],
+    references: [institutions.id],
+  }),
+  courseType: one(courseTypes, {
+    fields: [contractTemplates.courseTypeId],
+    references: [courseTypes.id],
+  }),
+  createdBy: one(users, {
+    fields: [contractTemplates.createdById],
+    references: [users.id],
+  }),
+}));
+
+// Relações para Contratos
+export const contractsRelations = relations(contracts, ({ one }) => ({
+  enrollment: one(enrollments, {
+    fields: [contracts.enrollmentId],
+    references: [enrollments.id],
+  }),
+  template: one(contractTemplates, {
+    fields: [contracts.templateId],
+    references: [contractTemplates.id],
+  }),
+  student: one(users, {
+    fields: [contracts.studentId],
+    references: [users.id],
+  }),
+  course: one(courses, {
+    fields: [contracts.courseId],
+    references: [courses.id],
+  }),
+  generatedBy: one(users, {
+    fields: [contracts.generatedById],
+    references: [users.id],
+  }),
+}));
+
+// Schemas para Contract Templates
+export const insertContractTemplateSchema = createInsertSchema(contractTemplates).pick({
+  name: true,
+  description: true,
+  content: true,
+  version: true,
+  courseTypeId: true,
+  institutionId: true,
+  isActive: true,
+  createdById: true,
+});
+export type InsertContractTemplate = z.infer<typeof insertContractTemplateSchema>;
+export type ContractTemplate = typeof contractTemplates.$inferSelect;
+
+// Schemas para Contracts
+export const insertContractSchema = createInsertSchema(contracts).pick({
+  code: true,
+  enrollmentId: true,
+  templateId: true,
+  studentId: true,
+  courseId: true,
+  content: true,
+  signatureRequired: true,
+  studentSignedAt: true,
+  institutionSignedAt: true,
+  status: true,
+  additionalNotes: true,
+  generatedById: true,
+});
+export type InsertContract = z.infer<typeof insertContractSchema>;
+export type Contract = typeof contracts.$inferSelect;
