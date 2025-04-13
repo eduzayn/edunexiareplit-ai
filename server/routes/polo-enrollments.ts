@@ -142,13 +142,9 @@ router.post("/enrollments", async (req, res) => {
         password: tempPassword, // Será alterada no primeiro acesso
         email: enrollmentData.studentEmail,
         fullName: enrollmentData.studentName,
-        phone: enrollmentData.studentPhone,
-        address: enrollmentData.studentAddress,
-        city: enrollmentData.studentCity,
-        state: enrollmentData.studentState,
-        zipCode: enrollmentData.studentZipCode,
-        role: "student",
-        status: "active"
+        cpf: enrollmentData.studentCpf || null,
+        portalType: "student",
+        poloId: userPolo.id
       });
     }
 
