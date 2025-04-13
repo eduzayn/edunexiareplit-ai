@@ -127,7 +127,7 @@ export default function InstitutionsPage() {
         params.append("search", searchTerm);
       }
       
-      if (statusFilter) {
+      if (statusFilter && statusFilter !== "all") {
         params.append("status", statusFilter);
       }
       
