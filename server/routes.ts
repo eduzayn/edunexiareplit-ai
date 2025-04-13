@@ -12,10 +12,14 @@ import {
   insertInstitutionSchema
 } from "@shared/schema";
 import { z } from "zod";
+import { registerEnrollmentRoutes } from "./routes/enrollments";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
   setupAuth(app);
+  
+  // Registro das rotas de matrícula
+  registerEnrollmentRoutes(app);
 
   // Middleware para garantir que o usuário esteja autenticado
   const requireAuth = (req: Request, res: Response, next: NextFunction) => {
