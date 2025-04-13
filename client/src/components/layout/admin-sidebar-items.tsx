@@ -13,6 +13,7 @@ import {
   BuildIcon,
   SecurityIcon,
   SettingsIcon,
+  AssignmentIcon,
 } from "@/components/ui/icons";
 
 /**
@@ -63,6 +64,12 @@ export function getAdminSidebarItems(currentPath: string) {
       icon: <StorefrontIcon />, 
       href: "/admin/polos",
       active: currentPath === "/admin/polos"
+    },
+    {
+      name: "Matrículas",
+      icon: <AssignmentIcon />,
+      href: "/admin/enrollments",
+      active: currentPath === "/admin/enrollments" || currentPath.includes("/admin/enrollments/")
     },
     { 
       name: "Financeiro Empresarial", 
