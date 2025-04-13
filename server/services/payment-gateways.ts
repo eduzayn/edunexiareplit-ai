@@ -548,8 +548,8 @@ export class LytexGatewayAdapter implements PaymentGateway {
       // Primeiro, verificar se o cliente existe ou criar um novo
       if (customerDocument) {
         try {
-          // Implementação usando o LytexGateway da pasta services
-          const lytexService = new LytexGateway(this.clientId, this.apiKey);
+          // Implementação usando o LytexGatewayService da pasta services
+          const lytexService = new LytexGatewayService(this.clientId, this.apiKey);
           const client = await lytexService.getClientByCpfCnpj(customerDocument);
           
           if (client) {
@@ -603,7 +603,7 @@ export class LytexGatewayAdapter implements PaymentGateway {
       
       try {
         // Implementando formato V1 validado em testes
-        const lytexService = new LytexGateway(this.clientId, this.apiKey);
+        const lytexService = new LytexGatewayService(this.clientId, this.apiKey);
         const invoiceData = {
           client: {
             _id: customerId || null
@@ -820,7 +820,7 @@ export function createPaymentGateway(gateway: string): PaymentGateway {
     case 'asaas':
       return new AsaasGateway();
     case 'lytex':
-      return new LytexGateway();
+      return new LytexGatewayAdapter();
     default:
       throw new Error(`Gateway de pagamento não suportado: ${gateway}`);
   }
