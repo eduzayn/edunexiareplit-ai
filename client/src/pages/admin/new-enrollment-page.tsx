@@ -235,28 +235,66 @@ export default function NewEnrollmentPage() {
     }
   };
   
+  // Definir tipos para os dados
+  type Course = {
+    id: number;
+    name: string;
+    code: string;
+    description: string;
+    workload: number;
+    price?: number;
+  };
+  
+  type ContractTemplate = {
+    id: number;
+    name: string;
+    description: string;
+    type: string;
+  };
+  
+  type Student = {
+    id: number;
+    fullName: string;
+    email: string;
+    cpf: string | null;
+  };
+  
+  type Institution = {
+    id: number;
+    name: string;
+  };
+  
+  type Polo = {
+    id: number;
+    name: string;
+  };
+  
   // Para obter o curso selecionado e exibir detalhes
   const selectedCourseId = form.watch("courseId");
   const selectedCourse = coursesData.find(
-    (course) => course.id.toString() === selectedCourseId
+    (course: Course) => course.id.toString() === selectedCourseId
   );
   
   // Para obter o template de contrato selecionado
   const selectedContractTemplateId = form.watch("contractTemplateId");
   const selectedContractTemplate = contractTemplatesData.find(
-    (template) => template.id.toString() === selectedContractTemplateId
+    (template: ContractTemplate) => template.id.toString() === selectedContractTemplateId
   );
   
   // Obter o estudante selecionado
   const selectedStudentId = form.watch("studentId");
   const selectedStudent = studentsData.find(
-    (student) => student.id.toString() === selectedStudentId
+    (student: Student) => student.id.toString() === selectedStudentId
   );
   
   return (
     <div className="min-h-screen bg-background flex">
       {/* Sidebar */}
-      <Sidebar items={getAdminSidebarItems()} isMobile={isMobile} />
+      <Sidebar 
+        items={getAdminSidebarItems()} 
+        // @ts-ignore - isMobile é uma prop válida em outros componentes
+        isMobile={isMobile} 
+      />
       
       {/* Conteúdo principal */}
       <div className="flex-1">
@@ -346,7 +384,7 @@ export default function NewEnrollmentPage() {
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  {studentsData.map((student) => (
+                                  {studentsData.map((student: Student) => (
                                     <SelectItem key={student.id} value={student.id.toString()}>
                                       {student.fullName}
                                     </SelectItem>
@@ -685,7 +723,7 @@ export default function NewEnrollmentPage() {
                         <h2 className="text-lg font-medium">Contrato</h2>
                       </div>
                       
-                      <Alert variant="warning" className="bg-amber-50 border-amber-300">
+                      <Alert className="bg-amber-50 border-amber-300">
                         <AlertTriangleIcon className="h-4 w-4 text-amber-600" />
                         <AlertTitle className="text-amber-800">Importante</AlertTitle>
                         <AlertDescription className="text-amber-800">

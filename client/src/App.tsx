@@ -183,6 +183,9 @@ function Router() {
       <Route path="/admin/enrollments">
         {() => user?.portalType === "admin" ? <EnrollmentsPage /> : <Redirect to="/admin" />}
       </Route>
+      <Route path="/admin/enrollments/new">
+        {() => user?.portalType === "admin" ? <AdminNewEnrollmentPage /> : <Redirect to="/admin" />}
+      </Route>
       <Route path="/admin/reports">
         {() => user?.portalType === "admin" ? <ReportsPage /> : <Redirect to="/admin" />}
       </Route>
