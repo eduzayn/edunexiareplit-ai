@@ -998,38 +998,43 @@ export default function NewEnrollmentPage() {
                       )}
                     </div>
                   )}
+                  
+                  {/* Footer com botões */}
+                  <div className="flex justify-between pt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={step === 1 ? () => navigate("/admin/enrollments") : goToPreviousStep}
+                    >
+                      {step === 1 ? "Cancelar" : "Voltar"}
+                    </Button>
+                    
+                    <Button
+                      type="submit"
+                      disabled={isCreatingEnrollment}
+                      className={`${step < 4 ? "bg-green-600 hover:bg-green-700" : "bg-green-600 hover:bg-green-700"}`}
+                    >
+                      {isCreatingEnrollment ? (
+                        <>
+                          <Skeleton className="h-4 w-4 rounded-full mr-2" />
+                          Processando...
+                        </>
+                      ) : step < 4 ? (
+                        "Continuar"
+                      ) : (
+                        <>
+                          <SaveIcon className="h-4 w-4 mr-2" />
+                          Finalizar Matrícula
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </form>
               </Form>
             </CardContent>
             
-            <CardFooter className="flex justify-between">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={step === 1 ? () => navigate("/admin/enrollments") : goToPreviousStep}
-              >
-                {step === 1 ? "Cancelar" : "Voltar"}
-              </Button>
-              
-              <Button
-                type="submit"
-                disabled={isCreatingEnrollment}
-                className={`${step < 4 ? "bg-green-600 hover:bg-green-700" : "bg-green-600 hover:bg-green-700"}`}
-              >
-                {isCreatingEnrollment ? (
-                  <>
-                    <Skeleton className="h-4 w-4 rounded-full mr-2" />
-                    Processando...
-                  </>
-                ) : step < 4 ? (
-                  "Continuar"
-                ) : (
-                  <>
-                    <SaveIcon className="h-4 w-4 mr-2" />
-                    Finalizar Matrícula
-                  </>
-                )}
-              </Button>
+            <CardFooter className="hidden">
+              {/* Movido para dentro do formulário */}
             </CardFooter>
           </Card>
         </div>
