@@ -593,6 +593,13 @@ export function CreateCourseDialog({
           </form>
         </Form>
       </DialogContent>
+
+      {/* Diálogo de geração de imagem com IA */}
+      <GenerateImageDialog 
+        open={showImageGenerator}
+        onOpenChange={setShowImageGenerator}
+        onImageGenerated={handleImageGenerated}
+      />
     </Dialog>
   );
 }
