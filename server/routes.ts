@@ -1143,6 +1143,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   };
   
+  // ===== ROTAS DE CURSOS =====
+
+  // Rota para obter todos os cursos (Portal Administrativo)
+  app.get("/api/admin/courses", requireAdmin, async (req, res) => {
+    try {
+      const courses = await storage.getAllCourses();
+      res.status(200).json(courses);
+    } catch (error) {
+      console.error("Error fetching all courses:", error);
+      res.status(500).json({ message: "Erro ao buscar cursos" });
+    }
+  });
+  
+  // Rota para obter um curso específico por ID (Portal Administrativo)
+  app.get("/api/admin/courses/:id", requireAdmin, async (req, res) => {
+    try {
+      const courseId = parseInt(req.params.id);
+      const course = await storage.getCourse(courseId);
+      
+      if (!course) {
+        return res.status(404).json({ message: "Curso não encontrado" });
+      }
+      
+      res.status(200).json(course);
+    } catch (error) {
+      console.error("Error fetching course:", error);
+      res.status(500).json({ message: "Erro ao buscar curso" });
+    }
+  });
+  
+  // Rota para criar um novo curso (Portal Administrativo)
+  app.post("/api/admin/courses", requireAdmin, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Usuário não autenticado" });
+      }
+      
+      const courseData = {
+        ...req.body,
+        createdById: req.user.id,
+        status: req.body.status || "draft",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        publishedAt: req.body.status === "published" ? new Date() : null
+      };
+      
+      const newCourse = await storage.createCourse(courseData);
+      res.status(201).json(newCourse);
+    } catch (error) {
+      console.error("Error creating course:", error);
+      res.status(500).json({ message: "Erro ao criar curso" });
+    }
+  });
+  
+  // Rota para atualizar um curso (Portal Administrativo)
+  app.put("/api/admin/courses/:id", requireAdmin, async (req, res) => {
+    try {
+      const courseId = parseInt(req.params.id);
+      const courseData = {
+        ...req.body,
+        updatedAt: new Date(),
+        publishedAt: req.body.status === "published" ? new Date() : null
+      };
+      
+      const updatedCourse = await storage.updateCourse(courseId, courseData);
+      
+      if (!updatedCourse) {
+        return res.status(404).json({ message: "Curso não encontrado" });
+      }
+      
+      res.status(200).json(updatedCourse);
+    } catch (error) {
+      console.error("Error updating course:", error);
+      res.status(500).json({ message: "Erro ao atualizar curso" });
+    }
+  });
+  
+  // Rota para excluir um curso (Portal Administrativo)
+  app.delete("/api/admin/courses/:id", requireAdmin, async (req, res) => {
+    try {
+      const courseId = parseInt(req.params.id);
+      const result = await storage.deleteCourse(courseId);
+      
+      if (!result) {
+        return res.status(404).json({ message: "Curso não encontrado" });
+      }
+      
+      res.status(200).json({ message: "Curso removido com sucesso" });
+    } catch (error) {
+      console.error("Error deleting course:", error);
+      res.status(500).json({ message: "Erro ao remover curso" });
+    }
+  });
+
   // Rota para obter cursos disponíveis (Portal do Polo)
   app.get("/api/polo/available-courses", requirePolo, async (req, res) => {
     try {
