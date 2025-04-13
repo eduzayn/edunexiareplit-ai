@@ -14,6 +14,7 @@ export const courseModalityEnum = pgEnum("course_modality", ["ead", "hybrid", "p
 export const videoSourceEnum = pgEnum("video_source", ["youtube", "onedrive", "google_drive", "vimeo", "upload"]);
 export const contentCompletionStatusEnum = pgEnum("content_completion_status", ["incomplete", "complete"]);
 export const assessmentTypeEnum = pgEnum("assessment_type", ["simulado", "avaliacao_final"]);
+export const institutionStatusEnum = pgEnum("institution_status", ["active", "inactive", "pending"]);
 
 // Usuários
 export const users = pgTable("users", {
@@ -121,10 +122,38 @@ export const assessmentQuestions = pgTable("assessment_questions", {
   weight: doublePrecision("weight").default(1).notNull(), // Peso da questão na nota final
 });
 
+// Instituições
+export const institutions = pgTable("institutions", {
+  id: serial("id").primaryKey(),
+  code: text("code").notNull().unique(),
+  name: text("name").notNull(),
+  cnpj: text("cnpj").notNull().unique(),
+  email: text("email").notNull(),
+  phone: text("phone").notNull(),
+  address: text("address").notNull(),
+  city: text("city").notNull(),
+  state: text("state").notNull(),
+  status: institutionStatusEnum("status").default("active").notNull(),
+  logo: text("logo"), // URL do logo
+  primaryColor: text("primary_color").default("#4CAF50"),
+  website: text("website"),
+  createdById: integer("created_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Relações
 export const usersRelations = relations(users, ({ many }) => ({
   coursesCreated: many(courses),
   disciplinesCreated: many(disciplines),
+  institutionsCreated: many(institutions),
+}));
+
+export const institutionsRelations = relations(institutions, ({ one }) => ({
+  createdBy: one(users, {
+    fields: [institutions.createdById],
+    references: [users.id],
+  }),
 }));
 
 export const disciplinesRelations = relations(disciplines, ({ many, one }) => ({
@@ -260,6 +289,22 @@ export const insertAssessmentQuestionSchema = createInsertSchema(assessmentQuest
   weight: true,
 });
 
+export const insertInstitutionSchema = createInsertSchema(institutions).pick({
+  code: true,
+  name: true,
+  cnpj: true,
+  email: true,
+  phone: true,
+  address: true,
+  city: true,
+  state: true,
+  status: true,
+  logo: true,
+  primaryColor: true,
+  website: true,
+  createdById: true,
+});
+
 // Schema para autenticação
 export const loginSchema = z.object({
   username: z.string().min(3, "Username is required"),
@@ -289,3 +334,6 @@ export type Assessment = typeof assessments.$inferSelect;
 
 export type InsertAssessmentQuestion = z.infer<typeof insertAssessmentQuestionSchema>;
 export type AssessmentQuestion = typeof assessmentQuestions.$inferSelect;
+
+export type InsertInstitution = z.infer<typeof insertInstitutionSchema>;
+export type Institution = typeof institutions.$inferSelect;

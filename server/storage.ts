@@ -69,6 +69,15 @@ export interface IStorage {
   removeQuestionFromAssessment(assessmentId: number, questionId: number): Promise<boolean>;
   reorderAssessmentQuestions(assessmentId: number, questionOrder: { questionId: number, order: number }[]): Promise<boolean>;
   
+  // Instituições
+  getInstitution(id: number): Promise<Institution | undefined>;
+  getInstitutionByCode(code: string): Promise<Institution | undefined>;
+  getInstitutionByCNPJ(cnpj: string): Promise<Institution | undefined>;
+  getInstitutions(search?: string, status?: string, limit?: number, offset?: number): Promise<Institution[]>;
+  createInstitution(institution: InsertInstitution): Promise<Institution>;
+  updateInstitution(id: number, institution: Partial<InsertInstitution>): Promise<Institution | undefined>;
+  deleteInstitution(id: number): Promise<boolean>;
+  
   sessionStore: SessionStore;
 }
 
