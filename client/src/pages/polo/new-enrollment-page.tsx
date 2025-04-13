@@ -259,13 +259,42 @@ export default function NewEnrollmentPage() {
     return prices[courseId] || 1000.00;
   };
   
-  // Gerar valor da parcela
-  const getInstallmentValue = (): string => {
+  // Gerar valor da parcela com juros quando aplicável
+  const getInstallmentValue = (installmentOverride?: string): string => {
     const courseId = form.watch("courseId");
-    const installments = parseInt(form.watch("installments") || "1");
+    const paymentMethod = form.watch("paymentMethod");
+    const installments = parseInt(installmentOverride || form.watch("installments") || "1");
     
     const coursePrice = getCoursePrice(courseId);
-    const installmentValue = coursePrice / installments;
+    let installmentValue = coursePrice;
+    
+    // Aplicar juros para parcelas maiores que 6x
+    if (installments > 6) {
+      // Juros diferentes baseados no método de pagamento
+      if (paymentMethod === "credit_card") {
+        // 1.2% de juros ao mês para cartão acima de 6x
+        const monthlyInterest = 0.012;
+        // Cálculo de juros compostos (modelo Price)
+        installmentValue = coursePrice * (monthlyInterest * Math.pow(1 + monthlyInterest, installments)) / 
+                         (Math.pow(1 + monthlyInterest, installments) - 1) * installments;
+      } else if (paymentMethod === "bank_slip" || paymentMethod === "pix") {
+        // Juros progressivos para boleto/PIX
+        if (installments > 12) {
+          // 1.5% de juros ao mês para parcelas acima de 12x
+          const monthlyInterest = 0.015;
+          installmentValue = coursePrice * (monthlyInterest * Math.pow(1 + monthlyInterest, installments)) / 
+                           (Math.pow(1 + monthlyInterest, installments) - 1) * installments;
+        } else {
+          // 1% de juros ao mês para parcelas entre 7x e 12x
+          const monthlyInterest = 0.01;
+          installmentValue = coursePrice * (monthlyInterest * Math.pow(1 + monthlyInterest, installments)) / 
+                           (Math.pow(1 + monthlyInterest, installments) - 1) * installments;
+        }
+      }
+    }
+    
+    // Dividir o valor total pelo número de parcelas
+    installmentValue = installmentValue / installments;
     
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -583,7 +612,10 @@ export default function NewEnrollmentPage() {
               )}
             />
             
-            {form.watch("paymentMethod") === "credit_card" && (
+            {/* Exibir opções de parcelamento dependendo do método de pagamento */}
+            {(form.watch("paymentMethod") === "credit_card" || 
+              form.watch("paymentMethod") === "bank_slip" || 
+              form.watch("paymentMethod") === "pix") && (
               <FormField
                 control={form.control}
                 name="installments"
@@ -600,13 +632,51 @@ export default function NewEnrollmentPage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="1">1x de {getInstallmentValue()}</SelectItem>
-                        <SelectItem value="2">2x de {getInstallmentValue()}</SelectItem>
-                        <SelectItem value="3">3x de {getInstallmentValue()}</SelectItem>
-                        <SelectItem value="6">6x de {getInstallmentValue()}</SelectItem>
-                        <SelectItem value="12">12x de {getInstallmentValue()}</SelectItem>
+                        <SelectItem value="1">1x de {getInstallmentValue("1")}</SelectItem>
+                        <SelectItem value="2">2x de {getInstallmentValue("2")}</SelectItem>
+                        <SelectItem value="3">3x de {getInstallmentValue("3")}</SelectItem>
+                        <SelectItem value="4">4x de {getInstallmentValue("4")}</SelectItem>
+                        <SelectItem value="5">5x de {getInstallmentValue("5")}</SelectItem>
+                        <SelectItem value="6">6x de {getInstallmentValue("6")}</SelectItem>
+                        
+                        {/* Opções específicas para cartão de crédito (até 10x) */}
+                        {form.watch("paymentMethod") === "credit_card" && (
+                          <>
+                            <SelectItem value="7">7x de {getInstallmentValue("7")}</SelectItem>
+                            <SelectItem value="8">8x de {getInstallmentValue("8")}</SelectItem>
+                            <SelectItem value="9">9x de {getInstallmentValue("9")}</SelectItem>
+                            <SelectItem value="10">10x de {getInstallmentValue("10")}</SelectItem>
+                          </>
+                        )}
+                        
+                        {/* Opções específicas para boleto/PIX (até 16x) */}
+                        {(form.watch("paymentMethod") === "bank_slip" || form.watch("paymentMethod") === "pix") && (
+                          <>
+                            <SelectItem value="7">7x de {getInstallmentValue("7")}</SelectItem>
+                            <SelectItem value="8">8x de {getInstallmentValue("8")}</SelectItem>
+                            <SelectItem value="9">9x de {getInstallmentValue("9")}</SelectItem>
+                            <SelectItem value="10">10x de {getInstallmentValue("10")}</SelectItem>
+                            <SelectItem value="11">11x de {getInstallmentValue("11")}</SelectItem>
+                            <SelectItem value="12">12x de {getInstallmentValue("12")}</SelectItem>
+                            <SelectItem value="13">13x de {getInstallmentValue("13")}</SelectItem>
+                            <SelectItem value="14">14x de {getInstallmentValue("14")}</SelectItem>
+                            <SelectItem value="15">15x de {getInstallmentValue("15")}</SelectItem>
+                            <SelectItem value="16">16x de {getInstallmentValue("16")}</SelectItem>
+                          </>
+                        )}
                       </SelectContent>
                     </Select>
+                    <FormDescription>
+                      {form.watch("paymentMethod") === "credit_card" ? 
+                        "Parcelamento disponível em até 10x no cartão de crédito." : 
+                        "Parcelamento disponível em até 16x no boleto/PIX."}
+                      {parseInt(form.watch("installments") || "1") > 6 && 
+                       form.watch("paymentMethod") === "credit_card" && 
+                        " Parcelas acima de 6x possuem juros."}
+                      {parseInt(form.watch("installments") || "1") > 6 && 
+                       (form.watch("paymentMethod") === "bank_slip" || form.watch("paymentMethod") === "pix") && 
+                        " Parcelas acima de 6x possuem juros."}
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -640,11 +710,19 @@ export default function NewEnrollmentPage() {
                       {form.watch("paymentMethod") === "pix" && "PIX"}
                     </span>
                   </div>
-                  {form.watch("paymentMethod") === "credit_card" && (
+                  {(form.watch("paymentMethod") === "credit_card" || 
+                   form.watch("paymentMethod") === "bank_slip" || 
+                   form.watch("paymentMethod") === "pix") && form.watch("installments") && (
                     <div className="flex justify-between">
                       <span>Parcelamento:</span>
                       <span className="font-medium">
                         {form.watch("installments")}x de {getInstallmentValue()}
+                        {parseInt(form.watch("installments") || "1") > 6 && 
+                         form.watch("paymentMethod") === "credit_card" && 
+                          " (com juros)"}
+                        {parseInt(form.watch("installments") || "1") > 6 && 
+                         (form.watch("paymentMethod") === "bank_slip" || form.watch("paymentMethod") === "pix") && 
+                          " (com juros)"}
                       </span>
                     </div>
                   )}
@@ -765,6 +843,15 @@ export default function NewEnrollmentPage() {
                         {form.watch("paymentMethod") === "pix" && "PIX"}
                       </p>
                     </div>
+                    {form.watch("installments") && (
+                      <div>
+                        <p className="text-sm text-gray-500">Parcelamento</p>
+                        <p className="font-medium">
+                          {form.watch("installments")}x de {getInstallmentValue()}
+                          {parseInt(form.watch("installments") || "1") > 6 && " (com juros)"}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardContent>
