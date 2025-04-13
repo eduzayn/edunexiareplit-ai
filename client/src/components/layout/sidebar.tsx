@@ -1,22 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { SchoolIcon } from "@/components/ui/icons";
+import { SchoolIcon, ChevronDownIcon, ChevronRightIcon } from "@/components/ui/icons";
 import { useAuth } from "@/hooks/use-auth";
 import { User } from "@shared/schema";
 import { Menu, X, LogOut } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-
-interface SidebarItem {
-  name: string;
-  icon: React.ReactNode;
-  href: string;
-  active?: boolean;
-}
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { SidebarItem, SidebarCategory, SidebarItemOrCategory, isCategory } from "./admin-sidebar-items";
 
 interface SidebarProps {
-  items: SidebarItem[];
+  items: SidebarItemOrCategory[];
   user: User | null;
   portalType: string;
   portalColor: string;
@@ -42,11 +37,21 @@ export function Sidebar({
   const { logoutMutation } = useAuth();
   const [, navigate] = useLocation();
   const [currentPath, setCurrentPath] = useState("");
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
 
   // Atualizar o caminho atual quando a página mudar
   useEffect(() => {
     setCurrentPath(window.location.pathname);
-  }, []);
+
+    // Inicializar o estado das categorias expandidas com base nas categorias ativas
+    const initialExpandedState: Record<string, boolean> = {};
+    items.forEach(item => {
+      if (isCategory(item)) {
+        initialExpandedState[item.name] = item.expanded || false;
+      }
+    });
+    setExpandedCategories(initialExpandedState);
+  }, [items]);
 
   const handleLogout = () => {
     logoutMutation.mutate();
@@ -69,7 +74,7 @@ export function Sidebar({
       case "student": return "bg-gradient-to-b from-[#f0f9ff] to-[#e0f2fe] border-r border-blue-100";
       case "partner": return "bg-gradient-to-b from-[#f5f3ff] to-[#ede9fe] border-r border-purple-100";
       case "polo": return "bg-gradient-to-b from-[#ecfdf5] to-[#d1fae5] border-r border-green-100";
-      case "admin": return "bg-gradient-to-b from-[#fef2f2] to-[#fee2e2] border-r border-red-100";
+      case "admin": return "bg-gradient-to-b from-[#f0f9ff] to-[#dbeafe] border-r border-blue-100";
       default: return "bg-gradient-to-b from-gray-50 to-gray-100 border-r border-gray-200";
     }
   };
@@ -80,7 +85,7 @@ export function Sidebar({
       case "student": return "text-blue-700 bg-blue-100 hover:bg-blue-200";
       case "partner": return "text-purple-700 bg-purple-100 hover:bg-purple-200";
       case "polo": return "text-green-700 bg-green-100 hover:bg-green-200";
-      case "admin": return "text-red-700 bg-red-100 hover:bg-red-200";
+      case "admin": return "text-blue-700 bg-blue-100 hover:bg-blue-200";
       default: return "text-gray-700 bg-gray-100 hover:bg-gray-200";
     }
   };
@@ -100,16 +105,24 @@ export function Sidebar({
       "Financeiro": "text-emerald-500",
       "Suporte": "text-orange-500",
       
-      // Portal Administrativo
+      // Portal Administrativo - Categorias
+      "Acadêmico": "text-indigo-500",
+      "Institucional": "text-blue-600",
+      "Pessoas": "text-purple-500",
+      "Operacional": "text-teal-500",
+      "Sistema": "text-slate-500",
+      
+      // Portal Administrativo - Itens
       "Disciplinas": "text-indigo-500",
       "Cursos": "text-green-500",
       "Instituições": "text-blue-600",
       "Usuários": "text-purple-500",
       "Parceiros": "text-yellow-600",
       "Polos": "text-teal-500",
+      "Matrículas": "text-orange-500",
+      "Financeiro Empresarial": "text-emerald-500",
       "Relatórios": "text-pink-500",
       "Integrações": "text-violet-500",
-      "Sistema": "text-slate-500",
       "Segurança": "text-red-500",
       "Configurações": "text-gray-500",
     };
@@ -121,6 +134,91 @@ export function Sidebar({
     return React.cloneElement(icon as React.ReactElement, {
       className: `h-5 w-5 ${colorClass} ${isActive ? 'text-primary' : ''}`
     });
+  };
+
+  // Verifica se um item de categoria tem algum item ativo
+  const isCategoryActive = (category: SidebarCategory): boolean => {
+    return category.items.some(item => 
+      item.active || 
+      currentPath === item.href || 
+      (currentPath.includes(item.href) && item.href !== '/admin/dashboard')
+    );
+  };
+
+  // Função para controlar a expansão/redução de uma categoria
+  const toggleCategory = (categoryName: string) => {
+    setExpandedCategories(prev => ({
+      ...prev,
+      [categoryName]: !prev[categoryName]
+    }));
+  };
+
+  // Renderiza um item simples da barra lateral
+  const renderSidebarItem = (item: SidebarItem, closeOnClick = false) => {
+    const isActive = item.active || currentPath === item.href;
+    return (
+      <Link 
+        key={item.name} 
+        href={item.href}
+        className={`flex items-center px-4 py-2.5 rounded-md transition-all duration-150 ${
+          isActive
+            ? getHighlightColor()
+            : `text-gray-600 hover:bg-gray-100 hover:text-gray-800`
+        }`}
+        onClick={closeOnClick ? () => setIsMobileMenuOpen(false) : undefined}
+      >
+        <span className="mr-3">{getColoredIcon(item.name, item.icon, isActive)}</span>
+        {item.name}
+      </Link>
+    );
+  };
+
+  // Renderiza uma categoria com seus itens filhos
+  const renderSidebarCategory = (category: SidebarCategory, closeOnClick = false) => {
+    const isActive = isCategoryActive(category);
+    const isExpanded = expandedCategories[category.name] || false;
+    
+    return (
+      <div key={category.name} className="mb-1">
+        <Collapsible
+          open={isExpanded}
+          onOpenChange={() => toggleCategory(category.name)}
+        >
+          <CollapsibleTrigger asChild>
+            <button
+              className={`flex items-center justify-between w-full px-4 py-2.5 rounded-md transition-all duration-150 ${
+                isActive
+                  ? `${getHighlightColor()} font-medium`
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-800'
+              }`}
+            >
+              <div className="flex items-center">
+                <span className="mr-3">{getColoredIcon(category.name, category.icon, isActive)}</span>
+                {category.name}
+              </div>
+              {isExpanded ? 
+                <ChevronDownIcon className="h-4 w-4 opacity-70" /> : 
+                <ChevronRightIcon className="h-4 w-4 opacity-70" />
+              }
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="pl-6 mt-1 space-y-1">
+              {category.items.map(item => renderSidebarItem(item, closeOnClick))}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      </div>
+    );
+  };
+
+  // Função que renderiza um item da barra lateral, seja um item ou uma categoria
+  const renderSidebarItemOrCategory = (item: SidebarItemOrCategory, closeOnClick = false) => {
+    if (isCategory(item)) {
+      return renderSidebarCategory(item, closeOnClick);
+    } else {
+      return renderSidebarItem(item, closeOnClick);
+    }
   };
 
   return (
@@ -147,23 +245,7 @@ export function Sidebar({
           
           <ScrollArea className="h-[calc(100vh-180px)]">
             <nav className="space-y-1 pr-4">
-              {items.map((item) => {
-                const isActive = item.active || currentPath === item.href;
-                return (
-                  <Link 
-                    key={item.name} 
-                    href={item.href}
-                    className={`flex items-center px-4 py-2.5 rounded-md transition-all duration-150 ${
-                      isActive
-                        ? getHighlightColor()
-                        : `text-gray-600 hover:bg-gray-100 hover:text-gray-800`
-                    }`}
-                  >
-                    <span className="mr-3">{getColoredIcon(item.name, item.icon, isActive)}</span>
-                    {item.name}
-                  </Link>
-                );
-              })}
+              {items.map(item => renderSidebarItemOrCategory(item))}
             </nav>
           </ScrollArea>
         </div>
@@ -237,24 +319,7 @@ export function Sidebar({
             
             <ScrollArea className="h-[calc(100vh-180px)]">
               <nav className="space-y-1 pr-4">
-                {items.map((item) => {
-                  const isActive = item.active || currentPath === item.href;
-                  return (
-                    <Link 
-                      key={item.name} 
-                      href={item.href}
-                      className={`flex items-center px-4 py-2.5 rounded-md transition-all duration-150 ${
-                        isActive
-                          ? getHighlightColor()
-                          : `text-gray-600 hover:bg-gray-100 hover:text-gray-800`
-                      }`}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      <span className="mr-3">{getColoredIcon(item.name, item.icon, isActive)}</span>
-                      {item.name}
-                    </Link>
-                  );
-                })}
+                {items.map(item => renderSidebarItemOrCategory(item, true))}
               </nav>
             </ScrollArea>
             

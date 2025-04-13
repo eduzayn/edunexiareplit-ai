@@ -1,5 +1,17 @@
 // Arquivo de ícones para o sistema
 import React from "react";
+import { 
+  Users,
+  Folder,
+  ChevronDown,
+  ChevronRight 
+} from "lucide-react";
+
+// Ícones de Lucide exportados diretamente
+export const UsersIcon = Users;
+export const FolderIcon = Folder;
+export const ChevronDownIcon = ChevronDown;
+export const ChevronRightIcon = ChevronRight;
 
 // Ícones adicionais para a página de conteúdo da disciplina
 export function VideoIcon(props: React.SVGProps<SVGSVGElement>) {
