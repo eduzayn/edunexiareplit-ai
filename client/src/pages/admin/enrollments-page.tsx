@@ -140,6 +140,10 @@ const newEnrollmentSchema = z.object({
   }).min(0, {
     message: "O valor deve ser maior ou igual a zero",
   }),
+  contractTemplateId: z.number({
+    required_error: "O modelo de contrato é obrigatório",
+  }),
+  observations: z.string().optional(),
 });
 
 type NewEnrollmentValues = z.infer<typeof newEnrollmentSchema>;
@@ -217,6 +221,18 @@ export default function EnrollmentsPage() {
       const response = await fetch("/api/polos");
       if (!response.ok) {
         throw new Error("Erro ao buscar polos");
+      }
+      return response.json();
+    },
+    enabled: isNewEnrollmentDialogOpen,
+  });
+
+  const { data: contractTemplates = [] } = useQuery<{id: number, name: string, type: string, description: string}[]>({
+    queryKey: ["/api/contract-templates"],
+    queryFn: async () => {
+      const response = await fetch("/api/contract-templates");
+      if (!response.ok) {
+        throw new Error("Erro ao buscar modelos de contrato");
       }
       return response.json();
     },
