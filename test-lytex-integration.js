@@ -4,36 +4,80 @@ import axios from 'axios';
 // Configurações do Lytex
 const LYTEX_API_KEY = process.env.LYTEX_API_KEY;
 const LYTEX_CLIENT_ID = process.env.LYTEX_CLIENT_ID;
-const LYTEX_API_URL = 'https://api-pay.lytex.com.br/v2';
+const LYTEX_API_URL = 'https://api-pay.lytex.com.br';
+
+// Autenticação na API da Lytex
+let accessToken = null;
+let refreshToken = null;
+
+// Função para obter token da API Lytex
+async function getAccessToken() {
+  try {
+    console.log('Obtendo token de acesso Lytex...');
+    
+    if (!LYTEX_API_KEY || !LYTEX_CLIENT_ID) {
+      console.error('LYTEX_API_KEY ou LYTEX_CLIENT_ID não configurados');
+      return false;
+    }
+    
+    const response = await axios.post(`${LYTEX_API_URL}/v2/auth/token`, {
+      client_id: LYTEX_CLIENT_ID,
+      client_secret: LYTEX_API_KEY
+    });
+    
+    if (response.data && response.data.access_token) {
+      accessToken = response.data.access_token;
+      refreshToken = response.data.refresh_token;
+      
+      console.log('Token de acesso obtido com sucesso!');
+      console.log(`Expira em: ${response.data.expires_in} segundos`);
+      return true;
+    } else {
+      console.error('Resposta da API não contém access_token');
+      console.log('Resposta:', JSON.stringify(response.data, null, 2));
+      return false;
+    }
+  } catch (error) {
+    console.error('Erro ao obter token de acesso:');
+    if (error.response) {
+      console.error(`Status: ${error.response.status}`);
+      console.error('Resposta:', JSON.stringify(error.response.data, null, 2));
+    } else {
+      console.error('Erro:', error.message);
+    }
+    return false;
+  }
+}
 
 // Função para testar a consulta de clientes
 async function testCustomerLookup() {
   console.log('==== Testando consulta de cliente no Lytex ====');
   
   try {
-    if (!LYTEX_API_KEY) {
-      console.error('LYTEX_API_KEY não está definida no ambiente');
+    if (!LYTEX_API_KEY || !LYTEX_CLIENT_ID) {
+      console.error('LYTEX_API_KEY ou LYTEX_CLIENT_ID não está definida no ambiente');
       return false;
     }
     
-    if (!LYTEX_CLIENT_ID) {
-      console.error('LYTEX_CLIENT_ID não está definida no ambiente');
+    // Obter token de acesso primeiro
+    if (!accessToken && !(await getAccessToken())) {
+      console.error('Não foi possível obter o token de acesso.');
       return false;
     }
     
-    console.log('API Key e Client ID configurados corretamente');
+    console.log('Token de acesso configurado corretamente');
     
     // Parâmetros de teste (email fictício para exemplo)
     const params = new URLSearchParams();
     params.append('email', 'teste@example.com');
     params.append('client_id', LYTEX_CLIENT_ID);
     
-    console.log(`Enviando consulta para ${LYTEX_API_URL}/customers com client_id: ${LYTEX_CLIENT_ID}`);
+    console.log(`Enviando consulta para ${LYTEX_API_URL}/v2/customers com client_id: ${LYTEX_CLIENT_ID}`);
     
     // Realizar a consulta
-    const response = await axios.get(`${LYTEX_API_URL}/customers?${params.toString()}`, {
+    const response = await axios.get(`${LYTEX_API_URL}/v2/customers?${params.toString()}`, {
       headers: {
-        'Authorization': `Bearer ${LYTEX_API_KEY}`
+        'Authorization': `Bearer ${accessToken}`
       }
     });
     
@@ -70,6 +114,12 @@ async function testCustomerCreation() {
       return false;
     }
     
+    // Obter token de acesso primeiro
+    if (!accessToken && !(await getAccessToken())) {
+      console.error('Não foi possível obter o token de acesso.');
+      return false;
+    }
+    
     // Dados do cliente de teste
     const customerData = {
       name: 'Cliente Teste',
@@ -83,9 +133,9 @@ async function testCustomerCreation() {
     console.log('Dados:', customerData);
     
     // Tentar criar o cliente
-    const response = await axios.post(`${LYTEX_API_URL}/customers`, customerData, {
+    const response = await axios.post(`${LYTEX_API_URL}/v2/customers`, customerData, {
       headers: {
-        'Authorization': `Bearer ${LYTEX_API_KEY}`,
+        'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json'
       }
     });
