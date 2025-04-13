@@ -38,8 +38,10 @@ import {
   InfoIcon,
   DocumentIcon,
   CreditCardIcon,
-  FileUploadIcon,
   SaveIcon,
+  FileTextIcon,
+  AlertTriangleIcon,
+  FileUploadIcon,
 } from "@/components/ui/icons";
 import {
   Select,
@@ -56,6 +58,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Textarea } from "@/components/ui/textarea";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
