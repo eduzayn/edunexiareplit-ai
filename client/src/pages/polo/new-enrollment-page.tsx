@@ -708,6 +708,148 @@ export default function NewEnrollmentPage() {
             </Card>
           </div>
         );
+        
+      case 5:
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <h2 className="text-xl font-bold">Contrato</h2>
+              <p className="text-gray-500">Escolha o modelo de contrato para esta matrícula</p>
+            </div>
+            
+            <Alert className="bg-amber-50 text-amber-800 border-amber-200">
+              <AlertTriangleIcon className="h-4 w-4" />
+              <AlertTitle>Atenção</AlertTitle>
+              <AlertDescription>
+                Após a matrícula, o sistema irá gerar automaticamente um contrato vinculado ao aluno 
+                com base no modelo escolhido. O aluno precisará assinar digitalmente o documento 
+                através do Portal do Aluno.
+              </AlertDescription>
+            </Alert>
+            
+            <FormField
+              control={form.control}
+              name="contractTemplateId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Modelo de Contrato</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um modelo de contrato" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="1">Contrato Padrão de Prestação de Serviços Educacionais</SelectItem>
+                      <SelectItem value="2">Contrato de Matrícula em Curso de Graduação</SelectItem>
+                      <SelectItem value="3">Contrato de Matrícula em Curso de Pós-graduação</SelectItem>
+                      <SelectItem value="4">Contrato de Matrícula em Curso Técnico</SelectItem>
+                      <SelectItem value="5">Contrato de Matrícula em Curso de Extensão</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Escolha o modelo de contrato apropriado para o tipo de curso
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            {form.watch("contractTemplateId") && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-md">Detalhes do Modelo de Contrato</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span>Nome do modelo:</span>
+                      <span className="font-medium">
+                        {form.watch("contractTemplateId") === "1" && "Contrato Padrão de Prestação de Serviços Educacionais"}
+                        {form.watch("contractTemplateId") === "2" && "Contrato de Matrícula em Curso de Graduação"}
+                        {form.watch("contractTemplateId") === "3" && "Contrato de Matrícula em Curso de Pós-graduação"}
+                        {form.watch("contractTemplateId") === "4" && "Contrato de Matrícula em Curso Técnico"}
+                        {form.watch("contractTemplateId") === "5" && "Contrato de Matrícula em Curso de Extensão"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Aluno:</span>
+                      <span className="font-medium">{form.watch("studentName")}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Curso:</span>
+                      <span className="font-medium">
+                        {coursesData?.find((c: any) => c.id.toString() === form.watch("courseId"))?.name}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Valor total:</span>
+                      <span className="font-medium">
+                        {formatCurrency(getCoursePrice(form.watch("courseId")))}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Forma de pagamento:</span>
+                      <span className="font-medium">
+                        {form.watch("paymentMethod") === "credit_card" && "Cartão de Crédito"}
+                        {form.watch("paymentMethod") === "bank_slip" && "Boleto Bancário"}
+                        {form.watch("paymentMethod") === "pix" && "PIX"}
+                      </span>
+                    </div>
+                    {form.watch("paymentMethod") === "credit_card" && (
+                      <div className="flex justify-between">
+                        <span>Parcelamento:</span>
+                        <span className="font-medium">
+                          {form.watch("installments")}x de {getInstallmentValue()}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    type="button"
+                    onClick={() => {
+                      toast({
+                        title: "Visualização de contrato",
+                        description: "Funcionalidade de visualização prévia será implementada em breve.",
+                        variant: "default",
+                      });
+                    }}
+                  >
+                    <FileTextIcon className="h-4 w-4 mr-2" />
+                    Visualizar modelo de contrato
+                  </Button>
+                </CardFooter>
+              </Card>
+            )}
+            
+            <div className="space-y-2 mt-4">
+              <h3 className="text-lg font-medium">Observações</h3>
+              <FormField
+                control={form.control}
+                name="additionalNotes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Informações adicionais sobre o contrato ou condições especiais"
+                        className="resize-none"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+        );
       
       default:
         return null;
