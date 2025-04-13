@@ -330,6 +330,11 @@ export class LytexGateway implements PaymentGateway {
         queryParams.append('document', userData.cpf.replace(/[^\d]/g, ''));
       }
       
+      // Adicionar client_id aos parâmetros de busca se disponível
+      if (this.clientId) {
+        queryParams.append('client_id', this.clientId);
+      }
+      
       // Buscar cliente no Lytex
       const response = await axios.get(`${this.apiUrl}/customers?${queryParams.toString()}`, {
         headers: {
@@ -387,6 +392,7 @@ export class LytexGateway implements PaymentGateway {
         name: userData.fullName,
         email: userData.email,
         external_id: `student_${userData.id}`,
+        client_id: this.clientId // Adicionar o client_id nos dados do cliente
       };
       
       // Adicionar CPF se disponível
@@ -461,7 +467,15 @@ export class LytexGateway implements PaymentGateway {
         return this.simulatePaymentStatus(externalId);
       }
       
-      const response = await axios.get(`${this.apiUrl}/payments/${externalId}`, {
+      // Construir URL com os parâmetros necessários
+      let requestUrl = `${this.apiUrl}/payments/${externalId}`;
+      
+      // Adicionar client_id se disponível
+      if (this.clientId) {
+        requestUrl += `?client_id=${this.clientId}`;
+      }
+      
+      const response = await axios.get(requestUrl, {
         headers: {
           'Authorization': `Bearer ${this.apiKey}`
         }
