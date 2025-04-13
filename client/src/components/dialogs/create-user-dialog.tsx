@@ -77,7 +77,7 @@ export function CreateUserDialog({
   // Mutation para criar usuário
   const createUserMutation = useMutation({
     mutationFn: async (userData: CreateUserValues) => {
-      const res = await apiRequest("POST", "/api/users", userData);
+      const res = await apiRequest("POST", "/api/admin/users", userData);
       return await res.json();
     },
     onSuccess: (data) => {
@@ -87,7 +87,8 @@ export function CreateUserDialog({
       });
       
       // Invalidar cache de usuários
-      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] }); // Para compatibilidade com outros componentes
       
       // Fechar diálogo e resetar form
       onOpenChange(false);

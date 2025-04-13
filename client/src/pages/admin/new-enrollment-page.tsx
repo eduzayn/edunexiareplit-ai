@@ -170,9 +170,9 @@ export default function NewEnrollmentPage() {
   
   // Consulta para listar alunos disponíveis
   const { data: studentsData = [], isLoading: isLoadingStudents } = useQuery({
-    queryKey: ["/api/users", "student"],
+    queryKey: ["/api/admin/users", "student"],
     queryFn: async () => {
-      const res = await apiRequest("GET", "/api/users?portalType=student");
+      const res = await apiRequest("GET", "/api/admin/users?portalType=student");
       return await res.json();
     },
   });
