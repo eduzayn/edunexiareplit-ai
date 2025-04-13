@@ -295,7 +295,7 @@ export class LytexGateway implements PaymentGateway {
   constructor() {
     this.apiKey = process.env.LYTEX_API_KEY || '';
     this.clientId = process.env.LYTEX_CLIENT_ID || '';
-    this.apiUrl = process.env.LYTEX_API_URL || 'https://api.lytex.com.br/api/v2';
+    this.apiUrl = process.env.LYTEX_API_URL || 'https://api-pay.lytex.com.br/v2';
     
     if (!this.apiKey) {
       console.warn('LYTEX_API_KEY não configurada. Integração com Lytex funcionará em modo de simulação.');

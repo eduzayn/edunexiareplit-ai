@@ -1,10 +1,10 @@
 // Script para testar a integração com a API do Lytex
-const axios = require('axios');
+import axios from 'axios';
 
 // Configurações do Lytex
 const LYTEX_API_KEY = process.env.LYTEX_API_KEY;
 const LYTEX_CLIENT_ID = process.env.LYTEX_CLIENT_ID;
-const LYTEX_API_URL = 'https://api.lytex.com.br';
+const LYTEX_API_URL = 'https://api-pay.lytex.com.br/v2';
 
 // Função para testar a consulta de clientes
 async function testCustomerLookup() {
