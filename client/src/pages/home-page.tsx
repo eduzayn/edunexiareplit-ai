@@ -16,6 +16,7 @@ import {
   ShieldIcon,
   GraduationCapIcon
 } from "@/components/ui/icons";
+import studentOnlineImage from "@assets/teacher-talking-with-her-students-online (1).jpg";
 
 export default function HomePage() {
   const [, navigate] = useLocation();
@@ -87,46 +88,40 @@ export default function HomePage() {
                 </div>
               </div>
               
-              {/* Stats cards */}
+              {/* Student Image and Stats */}
               <div className="lg:w-1/2 lg:pl-12">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="relative mb-6">
+                  <div className="overflow-hidden rounded-xl shadow-2xl border border-white/10 backdrop-blur-sm">
+                    <img 
+                      src={studentOnlineImage} 
+                      alt="Estudante em aula online" 
+                      className="w-full h-auto rounded-xl object-cover transform hover:scale-105 transition-transform duration-700"
+                    />
+                  </div>
+                  
+                  <div className="absolute -bottom-5 -right-5 bg-primary/90 backdrop-blur-sm py-2 px-4 rounded-lg shadow-lg border border-white/20 text-white">
+                    <p className="text-sm font-medium">Experiência de aprendizado imersiva</p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3 mt-8">
                   <Card className="backdrop-blur-md bg-white/10 border-white/20 shadow-xl">
-                    <CardContent className="p-4 flex flex-col items-center text-center">
-                      <div className="w-12 h-12 rounded-full bg-blue-900/50 flex items-center justify-center mb-3">
-                        <SchoolIcon className="h-6 w-6 text-white" />
+                    <CardContent className="p-3 flex flex-col items-center text-center">
+                      <div className="w-10 h-10 rounded-full bg-blue-900/50 flex items-center justify-center mb-2">
+                        <SchoolIcon className="h-5 w-5 text-white" />
                       </div>
-                      <div className="text-3xl font-bold text-white">{animatedCounter.toLocaleString('pt-BR')}+</div>
-                      <p className="text-white/80 text-sm">Alunos ativos</p>
+                      <div className="text-2xl font-bold text-white">{animatedCounter.toLocaleString('pt-BR')}+</div>
+                      <p className="text-white/80 text-xs">Alunos ativos</p>
                     </CardContent>
                   </Card>
                   
                   <Card className="backdrop-blur-md bg-white/10 border-white/20 shadow-xl">
-                    <CardContent className="p-4 flex flex-col items-center text-center">
-                      <div className="w-12 h-12 rounded-full bg-blue-900/50 flex items-center justify-center mb-3">
-                        <SchoolIcon className="h-6 w-6 text-white" />
+                    <CardContent className="p-3 flex flex-col items-center text-center">
+                      <div className="w-10 h-10 rounded-full bg-blue-900/50 flex items-center justify-center mb-2">
+                        <SchoolIcon className="h-5 w-5 text-white" />
                       </div>
-                      <div className="text-3xl font-bold text-white">100+</div>
-                      <p className="text-white/80 text-sm">Instituições</p>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card className="backdrop-blur-md bg-white/10 border-white/20 shadow-xl">
-                    <CardContent className="p-4 flex flex-col items-center text-center">
-                      <div className="w-12 h-12 rounded-full bg-blue-900/50 flex items-center justify-center mb-3">
-                        <BarChartIcon className="h-6 w-6 text-white" />
-                      </div>
-                      <div className="text-3xl font-bold text-white">97%</div>
-                      <p className="text-white/80 text-sm">Taxa de satisfação</p>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card className="backdrop-blur-md bg-white/10 border-white/20 shadow-xl">
-                    <CardContent className="p-4 flex flex-col items-center text-center">
-                      <div className="w-12 h-12 rounded-full bg-blue-900/50 flex items-center justify-center mb-3">
-                        <ShieldIcon className="h-6 w-6 text-white" />
-                      </div>
-                      <div className="text-3xl font-bold text-white">100%</div>
-                      <p className="text-white/80 text-sm">LGPD Compliant</p>
+                      <div className="text-2xl font-bold text-white">100+</div>
+                      <p className="text-white/80 text-xs">Instituições</p>
                     </CardContent>
                   </Card>
                 </div>
@@ -316,11 +311,18 @@ export default function HomePage() {
                 </div>
               </div>
               <div className="hidden lg:block lg:w-2/5 mt-10 lg:mt-0">
-                <div className="rounded-lg shadow-2xl bg-blue-950/50 border border-blue-700/20 backdrop-blur-sm h-72 flex items-center justify-center">
-                  <div className="text-white text-center">
-                    <SchoolIcon className="h-16 w-16 mx-auto mb-4 text-primary" />
-                    <p className="text-lg font-medium">EdunexIA</p>
-                    <p className="text-sm opacity-80">Transformando a educação a distância</p>
+                <div className="relative rounded-xl overflow-hidden shadow-2xl group">
+                  <div className="absolute inset-0 bg-gradient-to-t from-blue-950 to-transparent z-10"></div>
+                  <img 
+                    src={studentOnlineImage} 
+                    alt="Estudante em aula online" 
+                    className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-700"
+                  />
+                  <div className="absolute bottom-0 left-0 right-0 p-6 z-20 text-white">
+                    <h3 className="text-xl font-bold mb-2">Educação que transforma</h3>
+                    <p className="text-sm text-white/80">
+                      Ofereça uma experiência de aprendizado excepcional para seus alunos com nossa plataforma de ensino a distância.
+                    </p>
                   </div>
                 </div>
               </div>
