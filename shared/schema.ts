@@ -563,3 +563,40 @@ export const insertFinancialCategorySchema = createInsertSchema(financialCategor
 });
 export type InsertFinancialCategory = z.infer<typeof insertFinancialCategorySchema>;
 export type FinancialCategory = typeof financialCategories.$inferSelect;
+
+// Schemas e tipos para Matrículas
+export const insertEnrollmentSchema = createInsertSchema(enrollments).pick({
+  code: true,
+  studentId: true,
+  courseId: true,
+  poloId: true,
+  institutionId: true,
+  partnerId: true,
+  amount: true,
+  paymentGateway: true,
+  paymentExternalId: true,
+  paymentUrl: true,
+  paymentMethod: true,
+  enrollmentDate: true,
+  startDate: true,
+  expectedEndDate: true,
+  actualEndDate: true,
+  status: true,
+  observations: true,
+  createdById: true,
+});
+export type InsertEnrollment = z.infer<typeof insertEnrollmentSchema>;
+export type Enrollment = typeof enrollments.$inferSelect;
+
+// Schemas e tipos para Histórico de Status de Matrículas
+export const insertEnrollmentStatusHistorySchema = createInsertSchema(enrollmentStatusHistory).pick({
+  enrollmentId: true,
+  previousStatus: true,
+  newStatus: true,
+  changeDate: true,
+  changeReason: true,
+  changedById: true,
+  metadata: true,
+});
+export type InsertEnrollmentStatusHistory = z.infer<typeof insertEnrollmentStatusHistorySchema>;
+export type EnrollmentStatusHistory = typeof enrollmentStatusHistory.$inferSelect;

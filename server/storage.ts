@@ -113,6 +113,38 @@ export interface IStorage {
   updateFinancialCategory(id: number, category: Partial<InsertFinancialCategory>): Promise<FinancialCategory | undefined>;
   deleteFinancialCategory(id: number): Promise<boolean>;
   
+  // Matrículas
+  getEnrollment(id: number): Promise<Enrollment | undefined>;
+  getEnrollmentByCode(code: string): Promise<Enrollment | undefined>;
+  getEnrollments(
+    search?: string, 
+    status?: string, 
+    studentId?: number,
+    courseId?: number,
+    poloId?: number,
+    institutionId?: number,
+    partnerId?: number,
+    startDate?: Date,
+    endDate?: Date,
+    paymentGateway?: string,
+    limit?: number, 
+    offset?: number
+  ): Promise<Enrollment[]>;
+  getStudentEnrollments(studentId: number): Promise<Enrollment[]>;
+  getCourseEnrollments(courseId: number): Promise<Enrollment[]>;
+  createEnrollment(enrollment: InsertEnrollment): Promise<Enrollment>;
+  updateEnrollment(id: number, enrollment: Partial<InsertEnrollment>): Promise<Enrollment | undefined>;
+  updateEnrollmentStatus(id: number, status: string, reason?: string, changedById?: number, metadata?: any): Promise<Enrollment | undefined>;
+  deleteEnrollment(id: number): Promise<boolean>;
+  
+  // Histórico de Status de Matrículas
+  getEnrollmentStatusHistory(enrollmentId: number): Promise<EnrollmentStatusHistory[]>;
+  addEnrollmentStatusHistory(historyEntry: InsertEnrollmentStatusHistory): Promise<EnrollmentStatusHistory>;
+  
+  // Gateway de pagamento
+  createPayment(enrollment: Enrollment, gateway: string): Promise<{externalId: string, paymentUrl: string}>;
+  getPaymentStatus(externalId: string, gateway: string): Promise<string>;
+  
   sessionStore: SessionStore;
 }
 
