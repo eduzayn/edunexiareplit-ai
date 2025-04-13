@@ -15,6 +15,7 @@ import CoursesPage from "@/pages/admin/courses-page";
 import CourseFormPage from "@/pages/admin/course-form-page";
 import DisciplineContentPage from "@/pages/admin/discipline-content-page";
 import InstitutionsPage from "@/pages/admin/institutions-page";
+import UsersPage from "@/pages/admin/users-page";
 // Import student pages
 import StudentCoursesPage from "@/pages/student/courses-page";
 import CourseDetailPage from "@/pages/student/course-detail-page";
@@ -123,6 +124,9 @@ function Router() {
       </Route>
       <Route path="/admin/institutions">
         {() => user?.portalType === "admin" ? <InstitutionsPage /> : <Redirect to="/admin" />}
+      </Route>
+      <Route path="/admin/users">
+        {() => user?.portalType === "admin" ? <UsersPage /> : <Redirect to="/admin" />}
       </Route>
       
       <Route component={NotFound} />
