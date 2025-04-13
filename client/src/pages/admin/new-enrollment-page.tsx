@@ -71,6 +71,10 @@ import { Plus, Loader2 } from "lucide-react";
 const enrollmentFormSchema = z.object({
   // Dados do aluno
   studentId: z.string().min(1, { message: "Selecione um aluno" }),
+  // Gateway de pagamento (movido para etapa 1)
+  paymentGateway: z.enum(["asaas", "lytex"], {
+    required_error: "Selecione um gateway de pagamento",
+  }),
   
   // Dados do curso
   courseId: z.string().min(1, { message: "Selecione um curso" }),
@@ -78,9 +82,6 @@ const enrollmentFormSchema = z.object({
   poloId: z.string().min(1, { message: "Selecione um polo" }),
   
   // Dados de pagamento
-  paymentGateway: z.enum(["asaas", "lytex"], {
-    required_error: "Selecione um gateway de pagamento",
-  }),
   paymentMethod: z.enum(["credit_card", "bank_slip", "pix"], {
     required_error: "Selecione uma forma de pagamento",
   }),
@@ -465,6 +466,46 @@ export default function NewEnrollmentPage() {
                           </div>
                         </div>
                       )}
+                      
+                      {/* Gateway de Pagamento (movido da etapa 3 para etapa 1) */}
+                      <div className="mt-6">
+                        <h3 className="font-medium mb-2">Gateway de Pagamento</h3>
+                        <Alert className="mb-4 bg-amber-50 border-amber-300">
+                          <AlertTriangleIcon className="h-4 w-4 text-amber-600" />
+                          <AlertTitle className="text-amber-800">Importante</AlertTitle>
+                          <AlertDescription className="text-amber-800">
+                            Selecione o gateway de pagamento para cadastrar o cliente automaticamente na plataforma.
+                          </AlertDescription>
+                        </Alert>
+                        
+                        <FormField
+                          control={form.control}
+                          name="paymentGateway"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Gateway de Pagamento</FormLabel>
+                              <Select
+                                value={field.value}
+                                onValueChange={field.onChange}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Selecione o gateway" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="asaas">Asaas</SelectItem>
+                                  <SelectItem value="lytex">Lytex</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormDescription>
+                                Este gateway será usado para gerenciar todos os pagamentos do aluno.
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
                     </div>
                   )}
                   
@@ -597,30 +638,17 @@ export default function NewEnrollmentPage() {
                         <h2 className="text-lg font-medium">Dados de Pagamento</h2>
                       </div>
                       
-                      <FormField
-                        control={form.control}
-                        name="paymentGateway"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Gateway de Pagamento</FormLabel>
-                            <Select
-                              value={field.value}
-                              onValueChange={field.onChange}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Selecione o gateway" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="asaas">Asaas</SelectItem>
-                                <SelectItem value="lytex">Lytex</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      {/* Informações sobre o gateway selecionado */}
+                      <div className="mb-4">
+                        <h3 className="font-medium mb-2">Gateway Selecionado</h3>
+                        <div className="inline-flex items-center px-3 py-1 bg-muted rounded-md text-sm">
+                          <CreditCardIcon className="h-4 w-4 mr-2" />
+                          {form.watch("paymentGateway") === "asaas" ? "Asaas" : "Lytex"}
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          O cliente já foi cadastrado automaticamente neste gateway.
+                        </p>
+                      </div>
                       
                       <FormField
                         control={form.control}

@@ -74,6 +74,10 @@ const enrollmentFormSchema = z.object({
   studentCity: z.string().min(2, { message: "Cidade deve ter pelo menos 2 caracteres" }),
   studentState: z.string().min(2, { message: "Estado deve ter pelo menos 2 caracteres" }),
   studentZipCode: z.string().min(8, { message: "CEP inválido" }),
+  // Gateway de pagamento
+  paymentGateway: z.enum(["asaas", "lytex"], {
+    required_error: "Selecione um gateway de pagamento",
+  }),
   
   // Dados do curso
   courseId: z.string().min(1, { message: "Selecione um curso" }),
@@ -138,6 +142,7 @@ export default function NewEnrollmentPage() {
       studentCity: "",
       studentState: "",
       studentZipCode: "",
+      paymentGateway: "asaas", // Valor padrão para gateway
       courseId: "",
       paymentMethod: "bank_slip",
       installments: "1",
