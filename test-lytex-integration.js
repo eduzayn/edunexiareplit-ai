@@ -5,6 +5,7 @@ import axios from 'axios';
 const LYTEX_API_KEY = process.env.LYTEX_API_KEY;
 const LYTEX_CLIENT_ID = process.env.LYTEX_CLIENT_ID;
 const LYTEX_API_URL = 'https://api-pay.lytex.com.br';
+const LYTEX_AUTH_URL = 'https://api-pay.lytex.com.br/v2/auth/obtain_token';
 
 // Autenticação na API da Lytex
 let accessToken = null;
@@ -20,17 +21,27 @@ async function getAccessToken() {
       return false;
     }
     
-    const response = await axios.post(`${LYTEX_API_URL}/v2/auth/token`, {
+    // Tentando novo endpoint do OAuth baseado na documentação
+    console.log(`Tentando autenticação via ${LYTEX_AUTH_URL}`);
+    
+    const response = await axios.post(LYTEX_AUTH_URL, {
+      grant_type: 'client_credentials',
       client_id: LYTEX_CLIENT_ID,
       client_secret: LYTEX_API_KEY
+    }, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
     });
+    
+    console.log('Resposta completa da API:', JSON.stringify(response.data, null, 2));
     
     if (response.data && response.data.access_token) {
       accessToken = response.data.access_token;
       refreshToken = response.data.refresh_token;
       
       console.log('Token de acesso obtido com sucesso!');
-      console.log(`Expira em: ${response.data.expires_in} segundos`);
+      console.log(`Expira em: ${response.data.expires_in || 'desconhecido'} segundos`);
       return true;
     } else {
       console.error('Resposta da API não contém access_token');
@@ -176,15 +187,21 @@ async function testPaymentStatus(paymentId = 'payment_test') {
       return false;
     }
     
+    // Obter token de acesso primeiro
+    if (!accessToken && !(await getAccessToken())) {
+      console.error('Não foi possível obter o token de acesso.');
+      return false;
+    }
+    
     // Construir URL com os parâmetros necessários
-    let requestUrl = `${LYTEX_API_URL}/payments/${paymentId}?client_id=${LYTEX_CLIENT_ID}`;
+    let requestUrl = `${LYTEX_API_URL}/v2/payments/${paymentId}?client_id=${LYTEX_CLIENT_ID}`;
     
     console.log(`Consultando pagamento: ${requestUrl}`);
     
-    // Realizar a consulta
+    // Realizar a consulta com o token de acesso
     const response = await axios.get(requestUrl, {
       headers: {
-        'Authorization': `Bearer ${LYTEX_API_KEY}`
+        'Authorization': `Bearer ${accessToken}`
       }
     });
     
