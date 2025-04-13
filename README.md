@@ -33,4 +33,4 @@ O projeto encontra-se em desenvolvimento ativo, com foco atual na implementaçã
 
 ---
 
-© EdunexIA - Todos os direitos reservados
+© EdunexIA - Todos os direitos reservados# EdunexIA - Plataforma Educacional
