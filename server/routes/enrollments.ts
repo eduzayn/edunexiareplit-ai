@@ -252,7 +252,12 @@ export function registerEnrollmentRoutes(app: Express) {
         undefined, 
         undefined, 
         undefined, 
-        partnerId
+        partnerId,
+        undefined,
+        undefined,
+        undefined,
+        50,
+        0
       );
       
       res.json(enrollments);
@@ -271,7 +276,10 @@ export function registerEnrollmentRoutes(app: Express) {
       const { status, externalId } = gateway.processWebhook(req.body);
       
       // Buscar todas as matrículas
-      const enrollments = await storage.getEnrollments();
+      const enrollments = await storage.getEnrollments(
+        undefined, undefined, undefined, undefined, undefined, 
+        undefined, undefined, undefined, undefined, undefined, 50, 0
+      );
       
       // Encontrar a matrícula com o ID externo correspondente
       const enrollment = enrollments.find(e => e.paymentExternalId === externalId);
@@ -305,7 +313,10 @@ export function registerEnrollmentRoutes(app: Express) {
       const { status, externalId } = gateway.processWebhook(req.body);
       
       // Buscar todas as matrículas
-      const enrollments = await storage.getEnrollments();
+      const enrollments = await storage.getEnrollments(
+        undefined, undefined, undefined, undefined, undefined, 
+        undefined, undefined, undefined, undefined, undefined, 50, 0
+      );
       
       // Encontrar a matrícula com o ID externo correspondente
       const enrollment = enrollments.find(e => e.paymentExternalId === externalId);
