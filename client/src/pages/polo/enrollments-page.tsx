@@ -46,6 +46,10 @@ import {
   AlertCircleIcon,
   FileTextIcon,
   CheckCircleIcon,
+  LinkIcon,
+  CopyIcon,
+  MailIcon,
+  ExternalLinkIcon,
 } from "@/components/ui/icons";
 import {
   Select,
@@ -78,6 +82,7 @@ interface Enrollment {
   paymentMethod: string;
   paymentStatus: "paid" | "pending" | "overdue" | "cancelled";
   paymentDueDate?: string;
+  paymentUrl?: string; // Link para pagamento
   documentsStatus: "pending" | "incomplete" | "complete";
   hasContract: boolean;
 }
