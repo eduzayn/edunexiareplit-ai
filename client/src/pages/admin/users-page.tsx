@@ -158,13 +158,32 @@ export default function UsersPage() {
       const response = await apiRequest("POST", "/api/admin/users", data);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (newUser) => {
       toast({
         title: "Usuário criado com sucesso!",
         description: "O novo usuário foi adicionado ao sistema.",
       });
       setIsCreateDialogOpen(false);
-      refetch();
+      
+      // Verificar se existe redirecionamento salvo
+      const redirectData = sessionStorage.getItem('userRedirect');
+      if (redirectData) {
+        try {
+          const { redirectTo } = JSON.parse(redirectData);
+          if (redirectTo === 'enrollments/new') {
+            // Redirecionar para a página de nova matrícula
+            navigate('/admin/enrollments/new');
+          }
+        } catch (e) {
+          console.error('Erro ao processar redirecionamento:', e);
+        }
+        // Limpar dados de redirecionamento
+        sessionStorage.removeItem('userRedirect');
+      } else {
+        // Comportamento padrão: apenas atualizar a lista
+        refetch();
+      }
+      
       createForm.reset();
     },
     onError: (error) => {
@@ -306,19 +325,20 @@ export default function UsersPage() {
   };
 
   // Efeito para fechar menu mobile quando a tela é redimensionada
-  // Efeito para verificar parâmetros de redirecionamento na URL
+  // Efeito para verificar parâmetros de redirecionamento na URL e abrir modal de criação
   useEffect(() => {
     // Verificar se há parâmetros de redirecionamento na URL
     const params = new URLSearchParams(window.location.search);
     const redirectTo = params.get('redirectTo');
-    const action = params.get('action');
     
-    if (redirectTo && action) {
+    if (redirectTo) {
       // Guardar para uso após a criação do usuário
       sessionStorage.setItem('userRedirect', JSON.stringify({
-        redirectTo,
-        action
+        redirectTo
       }));
+      
+      // Abrir automaticamente o modal de criação quando vier de redirecionamento
+      handleOpenCreateDialog();
     }
   }, []);
 

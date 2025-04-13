@@ -299,7 +299,7 @@ export default function NewEnrollmentPage() {
     <div className="min-h-screen bg-background flex">
       {/* Sidebar */}
       <Sidebar 
-        items={getAdminSidebarItems(location)}
+        items={getAdminSidebarItems(location || "")}
         user={user}
         portalType="admin"
         portalColor="#4CAF50"

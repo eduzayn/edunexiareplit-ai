@@ -117,6 +117,7 @@ export default function EnrollmentsPage() {
   const isMobile = useIsMobile();
   const { user } = useAuth();
   const [, navigate] = useLocation();
+  const [location, setLocation] = useLocation();
   
   // Estados para controle da UI
   const [isLoading, setIsLoading] = useState(true);
@@ -129,6 +130,7 @@ export default function EnrollmentsPage() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [selectedStatus, setSelectedStatus] = useState("");
   const [statusReason, setStatusReason] = useState("");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   // Definir o formulário de filtro
   const filterForm = useForm<FilterFormValues>({
@@ -280,7 +282,7 @@ export default function EnrollmentsPage() {
     <div className="min-h-screen bg-background flex">
       {/* Sidebar */}
       <Sidebar 
-        items={getAdminSidebarItems(location)} 
+        items={getAdminSidebarItems(location || "")} 
         user={user}
         portalType="admin"
         portalColor="#4CAF50"
@@ -300,7 +302,7 @@ export default function EnrollmentsPage() {
                     Gerencie as matrículas da plataforma EdunexIA
                   </CardDescription>
                 </div>
-                <Button onClick={() => window.location.href = "/admin/enrollments/new"}>
+                <Button onClick={() => navigate("/admin/enrollments/new")}>
                   <Plus className="h-4 w-4 mr-2" />
                   Nova Matrícula
                 </Button>
