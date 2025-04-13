@@ -10,6 +10,7 @@ import SobrePage from "@/pages/sobre-page";
 import ContatoPage from "@/pages/contato-page";
 import BlogPage from "@/pages/blog-page";
 import AdminAuthPage from "@/pages/admin-auth-page";
+import PoloAuthPage from "@/pages/polo-auth-page";
 import DisciplinesPage from "@/pages/admin/disciplines-page";
 import CoursesPage from "@/pages/admin/courses-page";
 import CourseFormPage from "@/pages/admin/course-form-page";
@@ -67,6 +68,16 @@ function Router() {
             return null;
           }
           return <AdminAuthPage />;
+        }}
+      </Route>
+      
+      <Route path="/polo">
+        {() => {
+          if (user && user.portalType === "polo") {
+            setLocation("/polo/dashboard");
+            return null;
+          }
+          return <PoloAuthPage />;
         }}
       </Route>
       

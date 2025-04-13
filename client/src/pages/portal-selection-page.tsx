@@ -47,7 +47,14 @@ export default function PortalSelectionPage() {
   const handlePortalSelect = (portalId: string) => {
     setSelectedPortal(portalId);
     setTimeout(() => {
-      navigate(`/auth?portal=${portalId}`);
+      // Direcionar para a rota específica do portal selecionado
+      if (portalId === "admin") {
+        navigate("/admin");
+      } else if (portalId === "polo") {
+        navigate("/polo");
+      } else {
+        navigate(`/auth?portal=${portalId}`);
+      }
     }, 300);
   };
 
