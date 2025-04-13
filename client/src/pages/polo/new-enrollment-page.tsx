@@ -598,11 +598,13 @@ export default function NewEnrollmentPage() {
               <p className="text-gray-500">Escolha do modelo de contrato</p>
             </div>
             
-            <Alert className="bg-blue-50 text-blue-800 border-blue-200">
-              <InfoIcon className="h-4 w-4" />
-              <AlertTitle>Importante</AlertTitle>
+            <Alert className="bg-amber-50 text-amber-800 border-amber-200">
+              <AlertTriangleIcon className="h-4 w-4" />
+              <AlertTitle>Atenção</AlertTitle>
               <AlertDescription>
-                Os documentos necessários para a matrícula (RG/CPF, comprovante de residência e histórico escolar) deverão ser enviados pelo aluno através do Portal do Aluno após a confirmação da matrícula.
+                Após a matrícula, o sistema irá gerar automaticamente um contrato vinculado ao aluno 
+                com base no modelo escolhido. O aluno precisará assinar digitalmente o documento 
+                através do Portal do Aluno.
               </AlertDescription>
             </Alert>
             
@@ -682,158 +684,7 @@ export default function NewEnrollmentPage() {
           </div>
         );
         
-      case 5:
-        return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <h2 className="text-xl font-bold">Contrato</h2>
-              <p className="text-gray-500">Escolha o modelo de contrato para esta matrícula</p>
-            </div>
-            
-            <Alert className="bg-amber-50 text-amber-800 border-amber-200">
-              <AlertTriangleIcon className="h-4 w-4" />
-              <AlertTitle>Atenção</AlertTitle>
-              <AlertDescription>
-                Após a matrícula, o sistema irá gerar automaticamente um contrato vinculado ao aluno 
-                com base no modelo escolhido. O aluno precisará assinar digitalmente o documento 
-                através do Portal do Aluno.
-              </AlertDescription>
-            </Alert>
-            
-            <FormField
-              control={form.control}
-              name="contractTemplateId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Modelo de Contrato</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um modelo de contrato" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {isLoadingContractTemplates ? (
-                        <SelectItem value="loading" disabled>Carregando modelos de contrato...</SelectItem>
-                      ) : contractTemplatesData?.length > 0 ? (
-                        contractTemplatesData?.map((template: any) => (
-                          <SelectItem 
-                            key={template.id} 
-                            value={template.id.toString()}
-                          >
-                            {template.name}
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem value="default">Contrato Padrão de Prestação de Serviços Educacionais</SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    Escolha o modelo de contrato apropriado para o tipo de curso
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            {form.watch("contractTemplateId") && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-md">Detalhes do Modelo de Contrato</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span>Nome do modelo:</span>
-                      <span className="font-medium">
-                        {isLoadingContractTemplates ? (
-                          <span className="text-gray-400">Carregando...</span>
-                        ) : (
-                          contractTemplatesData?.find(
-                            (template: any) => template.id.toString() === form.watch("contractTemplateId")
-                          )?.name || "Contrato Padrão"
-                        )}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Aluno:</span>
-                      <span className="font-medium">{form.watch("studentName")}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Curso:</span>
-                      <span className="font-medium">
-                        {coursesData?.find((c: any) => c.id.toString() === form.watch("courseId"))?.name}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Valor total:</span>
-                      <span className="font-medium">
-                        {formatCurrency(getCoursePrice(form.watch("courseId")))}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Forma de pagamento:</span>
-                      <span className="font-medium">
-                        {form.watch("paymentMethod") === "credit_card" && "Cartão de Crédito"}
-                        {form.watch("paymentMethod") === "bank_slip" && "Boleto Bancário"}
-                        {form.watch("paymentMethod") === "pix" && "PIX"}
-                      </span>
-                    </div>
-                    {form.watch("paymentMethod") === "credit_card" && (
-                      <div className="flex justify-between">
-                        <span>Parcelamento:</span>
-                        <span className="font-medium">
-                          {form.watch("installments")}x de {getInstallmentValue()}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    type="button"
-                    onClick={() => {
-                      toast({
-                        title: "Visualização de contrato",
-                        description: "Funcionalidade de visualização prévia será implementada em breve.",
-                        variant: "default",
-                      });
-                    }}
-                  >
-                    <FileTextIcon className="h-4 w-4 mr-2" />
-                    Visualizar modelo de contrato
-                  </Button>
-                </CardFooter>
-              </Card>
-            )}
-            
-            <div className="space-y-2 mt-4">
-              <h3 className="text-lg font-medium">Observações</h3>
-              <FormField
-                control={form.control}
-                name="additionalNotes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Informações adicionais sobre o contrato ou condições especiais"
-                        className="resize-none"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
-        );
+      // Não temos mais o caso 5, pois agora são apenas 4 etapas
       
       default:
         return null;
@@ -968,14 +819,14 @@ export default function NewEnrollmentPage() {
                 type="button"
                 onClick={form.handleSubmit(onSubmit)}
                 disabled={isCreatingEnrollment}
-                className={`${step < 5 ? "bg-orange-500 hover:bg-orange-600" : "bg-green-600 hover:bg-green-700"}`}
+                className={`${step < 4 ? "bg-orange-500 hover:bg-orange-600" : "bg-green-600 hover:bg-green-700"}`}
               >
                 {isCreatingEnrollment ? (
                   <>
                     <Skeleton className="h-4 w-4 rounded-full mr-2" />
                     Processando...
                   </>
-                ) : step < 5 ? (
+                ) : step < 4 ? (
                   "Continuar"
                 ) : (
                   <>
