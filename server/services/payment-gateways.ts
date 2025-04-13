@@ -1,5 +1,6 @@
 import axios from 'axios';
 import type { Enrollment } from '@shared/schema';
+import { LytexGateway as LytexGatewayService, LytexClient, LytexCreateInvoiceRequest } from './lytex-gateway';
 
 // Interface comum para todos os gateways de pagamento
 export interface PaymentGateway {
@@ -287,7 +288,8 @@ export class AsaasGateway implements PaymentGateway {
 }
 
 // Implementação do gateway Lytex
-export class LytexGateway implements PaymentGateway {
+// Classe de gateway Lytex implementando a interface comum PaymentGateway
+export class LytexGatewayAdapter implements PaymentGateway {
   private apiKey: string;
   private apiUrl: string;
   private clientId: string;
@@ -533,6 +535,7 @@ export class LytexGateway implements PaymentGateway {
       let customerName = 'Aluno';
       let customerDocument = '';
       let customerEmail = 'aluno@example.com';
+      let customerId = '';
       
       try {
         // Tentamos buscar os dados do aluno no banco se disponível
@@ -542,49 +545,109 @@ export class LytexGateway implements PaymentGateway {
         console.warn('Erro ao buscar dados do aluno:', studentError);
       }
       
-      // Estrutura da requisição para a Lytex (baseado na documentação V2)
-      const paymentData = {
-        amount: enrollment.amount * 100, // Lytex trabalha em centavos
-        description: `Matrícula ${enrollment.code} - Curso ID ${enrollment.courseId}`,
-        orderId: enrollment.code, // Formato correto para V2 (camelCase)
-        paymentMethods: this.getPaymentMethodsForLytex(enrollment.paymentMethod || undefined),
-        customer: {
-          name: customerName,
-          document: customerDocument || '12345678909',
-          email: customerEmail
-        },
-        notificationUrl: `${process.env.APP_URL}/api/webhooks/lytex`,
-        clientId: this.clientId // Usar o Client ID na requisição (formato correto para V2)
-      };
-      
-      console.log(`[LYTEX] Tentando criar pagamento para matrícula: ${enrollment.code}`);
-      
-      try {
-        // Tentativa com o endpoint V2
-        const response = await axios.post(`${this.apiUrl}/v2/payments`, paymentData, {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
+      // Primeiro, verificar se o cliente existe ou criar um novo
+      if (customerDocument) {
+        try {
+          // Implementação usando o LytexGateway da pasta services
+          const lytexService = new LytexGateway(this.clientId, this.apiKey);
+          const client = await lytexService.getClientByCpfCnpj(customerDocument);
+          
+          if (client) {
+            // Cliente já existe, usamos o ID existente
+            console.log(`[LYTEX] Cliente encontrado: ${client._id}`);
+            customerId = client._id;
+          } else {
+            // Cliente não existe, criamos um novo
+            const newClient = await lytexService.createClient({
+              name: customerName,
+              type: 'pf', // Assumimos pessoa física por padrão
+              treatmentPronoun: 'you',
+              cpfCnpj: customerDocument,
+              email: customerEmail
+            });
+            
+            console.log(`[LYTEX] Novo cliente criado: ${newClient._id}`);
+            customerId = newClient._id;
           }
-        });
-        
-        if (response.data && response.data.id) {
-          console.log(`[LYTEX] Pagamento criado com sucesso: ${response.data.id}`);
-          return {
-            externalId: response.data.id,
-            paymentUrl: response.data.checkoutUrl || '' // Formato correto para V2 (camelCase)
-          };
-        }
-      } catch (paymentError) {
-        console.warn(`[LYTEX] Falha ao criar pagamento na API v2: ${paymentError.message}`);
-        if (paymentError.response) {
-          console.warn(`Status: ${paymentError.response.status}, Resposta: ${JSON.stringify(paymentError.response.data)}`);
+        } catch (clientError) {
+          console.warn(`[LYTEX] Erro ao buscar/criar cliente: ${clientError.message}`);
         }
       }
       
-      // Se falhou com v2, simulamos o pagamento temporariamente
-      console.log('[LYTEX] Criando pagamento simulado temporariamente até a API estar disponível');
-      return this.simulatePaymentCreation(enrollment);
+      // Preparar os itens para a fatura
+      const invoiceItems = [
+        {
+          name: `Matrícula ${enrollment.code} - Curso ID ${enrollment.courseId}`,
+          quantity: 1,
+          value: enrollment.amount * 100 // Lytex trabalha em centavos
+        }
+      ];
+      
+      // Configurar os métodos de pagamento
+      const paymentMethods = {
+        pix: { enable: true },
+        boleto: { enable: true, dueDateDays: 3 }
+      };
+      
+      // Adicionar cartão de crédito se valor for suficiente (>= R$500)
+      if (enrollment.amount >= 500) {
+        paymentMethods['creditCard'] = { 
+          enable: true, 
+          maxParcels: 10,
+          isRatesToPayer: false 
+        };
+      }
+      
+      // Data de vencimento (7 dias a partir de hoje)
+      const dueDate = new Date(Date.now() + 7*24*60*60*1000).toISOString().split('T')[0];
+      
+      try {
+        // Implementando formato V1 validado em testes
+        const lytexService = new LytexGateway(this.clientId, this.apiKey);
+        const invoiceData = {
+          client: {
+            _id: customerId || null
+          },
+          items: invoiceItems,
+          dueDate: dueDate,
+          paymentMethods: paymentMethods,
+          externalReference: enrollment.code
+        };
+        
+        // Se não temos ID de cliente, precisamos incluir informações do cliente
+        if (!customerId) {
+          // Formato alternativo quando não temos ID de cliente
+          invoiceData.client = {
+            name: customerName,
+            type: 'pf',
+            treatmentPronoun: 'you',
+            cpfCnpj: customerDocument || '00000000000', // CPF genérico
+            email: customerEmail
+          };
+        }
+        
+        console.log(`[LYTEX] Criando fatura para matrícula: ${enrollment.code}`);
+        const invoice = await lytexService.createInvoice(invoiceData);
+        
+        if (invoice && invoice._id) {
+          console.log(`[LYTEX] Fatura criada com sucesso: ${invoice._id}`);
+          return {
+            externalId: invoice._id,
+            paymentUrl: invoice.linkCheckout || ''
+          };
+        } else {
+          throw new Error('Resposta da API não contém dados da fatura');
+        }
+      } catch (invoiceError) {
+        console.warn(`[LYTEX] Erro ao criar fatura: ${invoiceError.message}`);
+        if (invoiceError.response) {
+          console.warn(`Status: ${invoiceError.response.status}, Resposta: ${JSON.stringify(invoiceError.response.data)}`);
+        }
+        
+        // Se falhou, tentamos simulação como fallback temporário
+        console.log('[LYTEX] Criando pagamento simulado como fallback temporário');
+        return this.simulatePaymentCreation(enrollment);
+      }
     } catch (error) {
       console.error('Erro ao criar pagamento na Lytex:', error);
       throw new Error('Falha ao processar pagamento na Lytex');

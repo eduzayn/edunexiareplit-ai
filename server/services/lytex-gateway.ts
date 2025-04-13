@@ -1,4 +1,5 @@
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
+import type { AxiosError } from 'axios';
 
 // Estruturas de tipos para API Lytex
 interface LytexAuthResponse {
