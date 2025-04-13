@@ -40,6 +40,12 @@ const createUserSchema = z.object({
   fullName: z.string().min(3, { message: "Nome completo é obrigatório" }),
   email: z.string().email({ message: "Email inválido" }),
   cpf: z.string().min(11, { message: "CPF inválido" }).optional(),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  zipCode: z.string().optional(),
+  birthDate: z.string().optional(),
   portalType: z.string({ required_error: "Tipo de portal é obrigatório" }),
 });
 
@@ -70,6 +76,12 @@ export function CreateUserDialog({
       fullName: "",
       email: "",
       cpf: "",
+      phone: "",
+      address: "",
+      city: "",
+      state: "",
+      zipCode: "",
+      birthDate: "",
       portalType: defaultPortalType,
     },
   });
