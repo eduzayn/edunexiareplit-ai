@@ -23,10 +23,11 @@ import {
   StorefrontIcon,
   SchoolIcon,
   DownloadIcon,
-  PrintIcon,
+  PrinterIcon,
   RefreshIcon,
   DateRangeIcon,
   FilterIcon,
+  BookIcon as MenuBookIcon
 } from "@/components/ui/icons";
 import {
   Select,
@@ -300,7 +301,7 @@ export default function PoloReportsPage() {
                 className="flex items-center gap-1"
                 onClick={printReport}
               >
-                <PrintIcon className="h-4 w-4" />
+                <PrinterIcon className="h-4 w-4" />
                 Imprimir
               </Button>
               <Button 

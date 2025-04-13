@@ -35,6 +35,13 @@ import LibraryPage from "@/pages/student/library-page";
 import SecretariaPage from "@/pages/student/secretaria-page";
 import CredencialPage from "@/pages/student/credencial-page";
 import LearningPage from "@/pages/student/learning-page";
+// Import polo pages
+import PoloEnrollmentsPage from "@/pages/polo/enrollments-page";
+import PoloNewEnrollmentPage from "@/pages/polo/new-enrollment-page";
+import PoloStudentsPage from "@/pages/polo/students-page";
+import PoloReportsPage from "@/pages/polo/reports-page";
+import PoloSettingsPage from "@/pages/polo/settings-page";
+import PoloSalesLinksPage from "@/pages/polo/sales-links-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { useAuth, AuthProvider } from "./hooks/use-auth";
 
@@ -123,6 +130,24 @@ function Router() {
       </Route>
       <ProtectedRoute path="/partner/dashboard" portalType="partner" />
       <ProtectedRoute path="/polo/dashboard" portalType="polo" />
+      <Route path="/polo/enrollments">
+        {() => user?.portalType === "polo" ? <PoloEnrollmentsPage /> : <Redirect to="/polo" />}
+      </Route>
+      <Route path="/polo/enrollments/new">
+        {() => user?.portalType === "polo" ? <PoloNewEnrollmentPage /> : <Redirect to="/polo" />}
+      </Route>
+      <Route path="/polo/students">
+        {() => user?.portalType === "polo" ? <PoloStudentsPage /> : <Redirect to="/polo" />}
+      </Route>
+      <Route path="/polo/reports">
+        {() => user?.portalType === "polo" ? <PoloReportsPage /> : <Redirect to="/polo" />}
+      </Route>
+      <Route path="/polo/settings">
+        {() => user?.portalType === "polo" ? <PoloSettingsPage /> : <Redirect to="/polo" />}
+      </Route>
+      <Route path="/polo/sales-links">
+        {() => user?.portalType === "polo" ? <PoloSalesLinksPage /> : <Redirect to="/polo" />}
+      </Route>
       <ProtectedRoute path="/admin/dashboard" portalType="admin" />
       <Route path="/admin/disciplines">
         {() => user?.portalType === "admin" ? <DisciplinesPage /> : <Redirect to="/admin" />}

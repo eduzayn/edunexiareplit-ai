@@ -4,7 +4,23 @@ import {
   Users,
   Folder,
   ChevronDown,
-  ChevronRight 
+  ChevronRight,
+  Download,
+  Eye,
+  Printer,
+  Mail,
+  Phone,
+  Copy,
+  RefreshCw,
+  Calendar,
+  Plus,
+  PlusCircle,
+  Info,
+  FileText,
+  CreditCard,
+  Upload,
+  List,
+  Share
 } from "lucide-react";
 
 // Ícones de Lucide exportados diretamente
@@ -12,6 +28,65 @@ export const UsersIcon = Users;
 export const FolderIcon = Folder;
 export const ChevronDownIcon = ChevronDown;
 export const ChevronRightIcon = ChevronRight;
+export const DownloadIcon = Download;
+export const EyeIcon = Eye;
+export const PrinterIcon = Printer;
+export const MailIcon = Mail;
+export const PhoneIcon = Phone;
+export const CopyIcon = Copy;
+export const RefreshIcon = RefreshCw;
+export const DateRangeIcon = Calendar;
+export const PlusIcon = Plus;
+export const PlusCircleIcon = PlusCircle;
+export const InfoIcon = Info;
+export const DocumentIcon = FileText;
+export const CreditCardIcon = CreditCard;
+export const FileUploadIcon = Upload;
+export const ListBulletedIcon = List;
+export const ShareIcon = Share;
+export const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21" />
+    <path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1Z" />
+    <path d="M14 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1Z" />
+    <path d="M9.5 13.5c.5 1 1.5 1 2.5 1s2-.5 2.5-1" />
+  </svg>
+);
+export const QrCodeIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <rect width="5" height="5" x="3" y="3" rx="1" />
+    <rect width="5" height="5" x="16" y="3" rx="1" />
+    <rect width="5" height="5" x="3" y="16" rx="1" />
+    <path d="M21 16h-3a2 2 0 0 0-2 2v3" />
+    <path d="M21 21v.01" />
+    <path d="M12 7v3a2 2 0 0 1-2 2H7" />
+    <path d="M3 12h.01" />
+    <path d="M12 3h.01" />
+    <path d="M12 16v.01" />
+    <path d="M16 12h1" />
+    <path d="M21 12v.01" />
+    <path d="M12 21v-1" />
+  </svg>
+);
+export const FilterAltIcon = FilterIcon;
 
 // Ícones adicionais para a página de conteúdo da disciplina
 export function VideoIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -1086,22 +1161,7 @@ export function TrendingUpIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
-export function PlusIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <path d="M12 5v14M5 12h14" />
-    </svg>
-  );
-}
+// PlusIcon já foi definido acima como exportação do Lucide
 
 export function EditIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
