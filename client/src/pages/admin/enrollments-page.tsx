@@ -77,7 +77,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SearchIcon, FilterIcon, PencilIcon, ChevronLeftIcon } from "@/components/ui/icons";
-import { MoreVertical as MoreVerticalIcon } from "lucide-react";
+import { MoreVertical as MoreVerticalIcon, Plus } from "lucide-react";
 
 type Enrollment = {
   id: number;
@@ -130,6 +130,7 @@ export default function EnrollmentsPage() {
   const [statusHistory, setStatusHistory] = useState<any[]>([]);
   const [selectedStatus, setSelectedStatus] = useState("active");
   const [statusReason, setStatusReason] = useState("");
+  const [isNewEnrollmentDialogOpen, setNewEnrollmentDialogOpen] = useState(false);
   const [filterValues, setFilterValues] = useState<FilterValues>({
     search: "",
     status: "",
@@ -419,11 +420,17 @@ export default function EnrollmentsPage() {
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle>Lista de Matrículas</CardTitle>
-                <CardDescription>
-                  Gerencie as matrículas da plataforma EdunexIA
-                </CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Lista de Matrículas</CardTitle>
+                  <CardDescription>
+                    Gerencie as matrículas da plataforma EdunexIA
+                  </CardDescription>
+                </div>
+                <Button onClick={() => setNewEnrollmentDialogOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nova Matrícula
+                </Button>
               </CardHeader>
               <CardContent>
                 {isLoading ? (
