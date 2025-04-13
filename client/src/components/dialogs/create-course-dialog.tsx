@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { GenerateImageDialog } from "./generate-image-dialog";
 
 import {
   Dialog,
@@ -32,7 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, ImageIcon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -88,6 +89,7 @@ export function CreateCourseDialog({
 }: CreateCourseDialogProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showImageGenerator, setShowImageGenerator] = useState(false);
 
   // Configurar o formulário com validação zod
   const form = useForm<CourseFormValues>({
@@ -143,6 +145,10 @@ export function CreateCourseDialog({
   const onSubmit = (values: CourseFormValues) => {
     setIsSubmitting(true);
     createCourseMutation.mutate(values);
+  };
+
+  const handleImageGenerated = (imageUrl: string) => {
+    form.setValue("thumbnail", imageUrl);
   };
 
   return (
@@ -540,12 +546,32 @@ export function CreateCourseDialog({
                 render={({ field }) => (
                   <FormItem className="col-span-2">
                     <FormLabel>URL da Imagem de Capa</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="https://example.com/imagem-curso.jpg" 
-                        {...field} 
-                      />
-                    </FormControl>
+                    <div className="flex gap-2">
+                      <FormControl className="flex-1">
+                        <Input 
+                          placeholder="https://example.com/imagem-curso.jpg" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <Button 
+                        type="button"
+                        variant="outline"
+                        className="flex items-center gap-1"
+                        onClick={() => setShowImageGenerator(true)}
+                      >
+                        <ImageIcon className="h-4 w-4" />
+                        Gerar com IA
+                      </Button>
+                    </div>
+                    {field.value && (
+                      <div className="mt-2 border rounded-md p-2 overflow-hidden">
+                        <img 
+                          src={field.value} 
+                          alt="Thumbnail do curso" 
+                          className="w-full h-auto max-h-[200px] object-cover rounded"
+                        />
+                      </div>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
