@@ -15,6 +15,7 @@ import { z } from "zod";
 import { registerEnrollmentRoutes } from "./routes/enrollments";
 import integrationsRoutes from "./routes/integrations";
 import poloRoutes from "./routes/polo-routes";
+import poloEnrollmentsRoutes from "./routes/polo-enrollments";
 import { createPaymentGateway } from "./services/payment-gateways";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -29,6 +30,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Registro das rotas do Portal do Polo
   app.use("/api/polo", poloRoutes);
+  
+  // Registro das rotas de matrículas do Portal do Polo
+  app.use("/api/polo", poloEnrollmentsRoutes);
 
   // Middleware para garantir que o usuário esteja autenticado
   const requireAuth = (req: Request, res: Response, next: NextFunction) => {
