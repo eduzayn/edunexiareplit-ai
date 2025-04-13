@@ -4,7 +4,9 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { AdminLayout } from "@/components/layout/admin-layout";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { getAdminSidebarItems } from "@/components/layout/admin-sidebar-items";
+import { Sidebar } from "@/components/layout/sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -316,9 +318,15 @@ export default function IntegrationsPage() {
     );
   }
 
+  const isMobile = useIsMobile();
+  const sidebarItems = getAdminSidebarItems(location);
+  
   return (
-    <AdminLayout currentPath={location}>
-      <div className="p-6">
+    <div className="flex h-screen bg-background">
+      <Sidebar items={sidebarItems} isMobile={isMobile} />
+      
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="p-6">
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Integrações</h1>
@@ -583,6 +591,7 @@ export default function IntegrationsPage() {
           </DialogContent>
         </Dialog>
       </div>
-    </AdminLayout>
+      </div>
+    </div>
   );
 }

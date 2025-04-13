@@ -149,6 +149,9 @@ function Router() {
       <Route path="/admin/reports">
         {() => user?.portalType === "admin" ? <ReportsPage /> : <Redirect to="/admin" />}
       </Route>
+      <Route path="/admin/integrations">
+        {() => user?.portalType === "admin" ? <IntegrationsPage /> : <Redirect to="/admin" />}
+      </Route>
       
       <Route component={NotFound} />
     </Switch>
