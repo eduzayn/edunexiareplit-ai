@@ -855,6 +855,301 @@ export class DatabaseStorage implements IStorage {
       return false;
     }
   }
+  
+  // ==================== Matrículas ====================
+  async getEnrollment(id: number): Promise<Enrollment | undefined> {
+    const [enrollment] = await db.select()
+      .from(enrollments)
+      .where(eq(enrollments.id, id));
+    return enrollment || undefined;
+  }
+  
+  async getEnrollmentByCode(code: string): Promise<Enrollment | undefined> {
+    const [enrollment] = await db.select()
+      .from(enrollments)
+      .where(eq(enrollments.code, code));
+    return enrollment || undefined;
+  }
+  
+  async getEnrollments(
+    search?: string, 
+    status?: string, 
+    studentId?: number,
+    courseId?: number,
+    poloId?: number,
+    institutionId?: number,
+    partnerId?: number,
+    startDate?: Date,
+    endDate?: Date,
+    paymentGateway?: string,
+    limit: number = 50, 
+    offset: number = 0
+  ): Promise<Enrollment[]> {
+    let query = db.select()
+      .from(enrollments)
+      .limit(limit)
+      .offset(offset);
+      
+    if (search) {
+      query = query.where(
+        or(
+          like(enrollments.code, `%${search}%`),
+          like(enrollments.observations, `%${search}%`)
+        )
+      );
+    }
+    
+    if (status) {
+      query = query.where(eq(enrollments.status, status));
+    }
+    
+    if (studentId) {
+      query = query.where(eq(enrollments.studentId, studentId));
+    }
+    
+    if (courseId) {
+      query = query.where(eq(enrollments.courseId, courseId));
+    }
+    
+    if (poloId) {
+      query = query.where(eq(enrollments.poloId, poloId));
+    }
+    
+    if (institutionId) {
+      query = query.where(eq(enrollments.institutionId, institutionId));
+    }
+    
+    if (partnerId) {
+      query = query.where(eq(enrollments.partnerId, partnerId));
+    }
+    
+    if (paymentGateway) {
+      query = query.where(eq(enrollments.paymentGateway, paymentGateway));
+    }
+    
+    if (startDate) {
+      query = query.where(gte(enrollments.enrollmentDate, startDate));
+    }
+    
+    if (endDate) {
+      query = query.where(lte(enrollments.enrollmentDate, endDate));
+    }
+    
+    return await query.orderBy(desc(enrollments.enrollmentDate));
+  }
+  
+  async getStudentEnrollments(studentId: number): Promise<Enrollment[]> {
+    return await db.select()
+      .from(enrollments)
+      .where(eq(enrollments.studentId, studentId))
+      .orderBy(desc(enrollments.enrollmentDate));
+  }
+  
+  async getCourseEnrollments(courseId: number): Promise<Enrollment[]> {
+    return await db.select()
+      .from(enrollments)
+      .where(eq(enrollments.courseId, courseId))
+      .orderBy(desc(enrollments.enrollmentDate));
+  }
+  
+  async createEnrollment(enrollment: InsertEnrollment): Promise<Enrollment> {
+    // Gerar código único para matrícula (formato: MAT-XXXXXX)
+    const uniqueCode = `MAT-${Math.floor(100000 + Math.random() * 900000)}`;
+    
+    const enrollmentWithCode = {
+      ...enrollment,
+      code: uniqueCode
+    };
+    
+    const [newEnrollment] = await db
+      .insert(enrollments)
+      .values(enrollmentWithCode)
+      .returning();
+      
+    // Criar registro de histórico de status
+    await this.addEnrollmentStatusHistory({
+      enrollmentId: newEnrollment.id,
+      previousStatus: null,
+      newStatus: newEnrollment.status,
+      changeReason: 'Matrícula criada',
+      changedById: enrollment.createdById
+    });
+      
+    return newEnrollment;
+  }
+  
+  async updateEnrollment(id: number, enrollmentData: Partial<InsertEnrollment>): Promise<Enrollment | undefined> {
+    // Se houver mudança de status, registrar no histórico
+    const currentEnrollment = await this.getEnrollment(id);
+    if (!currentEnrollment) return undefined;
+    
+    const [updatedEnrollment] = await db
+      .update(enrollments)
+      .set({
+        ...enrollmentData,
+        updatedAt: new Date()
+      })
+      .where(eq(enrollments.id, id))
+      .returning();
+      
+    // Se o status foi alterado, registrar no histórico
+    if (enrollmentData.status && currentEnrollment.status !== enrollmentData.status) {
+      await this.addEnrollmentStatusHistory({
+        enrollmentId: id,
+        previousStatus: currentEnrollment.status,
+        newStatus: enrollmentData.status,
+        changeReason: enrollmentData.observations || 'Atualização manual',
+        changedById: enrollmentData.createdById
+      });
+    }
+      
+    return updatedEnrollment;
+  }
+  
+  async updateEnrollmentStatus(
+    id: number, 
+    status: string, 
+    reason?: string, 
+    changedById?: number,
+    metadata?: any
+  ): Promise<Enrollment | undefined> {
+    const currentEnrollment = await this.getEnrollment(id);
+    if (!currentEnrollment) return undefined;
+    
+    // Atualizar status na matrícula
+    const [updatedEnrollment] = await db
+      .update(enrollments)
+      .set({
+        status: status as any,
+        updatedAt: new Date()
+      })
+      .where(eq(enrollments.id, id))
+      .returning();
+      
+    // Registrar mudança no histórico
+    await this.addEnrollmentStatusHistory({
+      enrollmentId: id,
+      previousStatus: currentEnrollment.status,
+      newStatus: status as any,
+      changeReason: reason || 'Atualização de status',
+      changedById,
+      metadata: metadata ? JSON.stringify(metadata) : null
+    });
+    
+    // Ações específicas por tipo de mudança de status
+    if (status === 'active' && currentEnrollment.status === 'pending_payment') {
+      // Quando uma matrícula é ativada após pagamento
+      // Definir data de início e data prevista de término
+      const startDate = new Date();
+      
+      // Buscar duração do curso para calcular data prevista de término
+      const course = await this.getCourse(currentEnrollment.courseId);
+      let durationMonths = 6; // Padrão: 6 meses
+      
+      if (course && course.durationMonths) {
+        durationMonths = course.durationMonths;
+      }
+      
+      const expectedEndDate = new Date();
+      expectedEndDate.setMonth(expectedEndDate.getMonth() + durationMonths);
+      
+      await db
+        .update(enrollments)
+        .set({
+          startDate,
+          expectedEndDate,
+          updatedAt: new Date()
+        })
+        .where(eq(enrollments.id, id));
+    }
+    
+    return updatedEnrollment;
+  }
+  
+  async deleteEnrollment(id: number): Promise<boolean> {
+    try {
+      // Em vez de excluir permanentemente, podemos marcar como cancelada
+      const [updatedEnrollment] = await db
+        .update(enrollments)
+        .set({ 
+          status: 'cancelled',
+          updatedAt: new Date()
+        })
+        .where(eq(enrollments.id, id))
+        .returning();
+        
+      // Registrar a exclusão no histórico
+      if (updatedEnrollment) {
+        await this.addEnrollmentStatusHistory({
+          enrollmentId: id,
+          previousStatus: updatedEnrollment.status,
+          newStatus: 'cancelled',
+          changeReason: 'Matrícula excluída manualmente',
+        });
+      }
+      
+      return !!updatedEnrollment;
+    } catch (error) {
+      console.error("Error deleting enrollment:", error);
+      return false;
+    }
+  }
+  
+  // ==================== Histórico de Status de Matrículas ====================
+  async getEnrollmentStatusHistory(enrollmentId: number): Promise<EnrollmentStatusHistory[]> {
+    return await db.select()
+      .from(enrollmentStatusHistory)
+      .where(eq(enrollmentStatusHistory.enrollmentId, enrollmentId))
+      .orderBy(desc(enrollmentStatusHistory.changeDate));
+  }
+  
+  async addEnrollmentStatusHistory(historyEntry: InsertEnrollmentStatusHistory): Promise<EnrollmentStatusHistory> {
+    const [newHistoryEntry] = await db
+      .insert(enrollmentStatusHistory)
+      .values({
+        ...historyEntry,
+        changeDate: new Date()
+      })
+      .returning();
+    return newHistoryEntry;
+  }
+  
+  // ==================== Gateway de pagamento ====================
+  async createPayment(enrollment: Enrollment, gateway: string): Promise<{externalId: string, paymentUrl: string}> {
+    const { createPaymentGateway } = await import('./services/payment-gateways');
+    
+    try {
+      const paymentGateway = createPaymentGateway(gateway);
+      const paymentResult = await paymentGateway.createPayment(enrollment);
+      
+      // Atualizar a matrícula com os dados do pagamento
+      await db
+        .update(enrollments)
+        .set({
+          paymentExternalId: paymentResult.externalId,
+          paymentUrl: paymentResult.paymentUrl,
+          updatedAt: new Date()
+        })
+        .where(eq(enrollments.id, enrollment.id));
+      
+      return paymentResult;
+    } catch (error) {
+      console.error(`Erro ao criar pagamento no gateway ${gateway}:`, error);
+      throw new Error(`Falha ao processar pagamento no gateway ${gateway}`);
+    }
+  }
+  
+  async getPaymentStatus(externalId: string, gateway: string): Promise<string> {
+    const { createPaymentGateway } = await import('./services/payment-gateways');
+    
+    try {
+      const paymentGateway = createPaymentGateway(gateway);
+      return await paymentGateway.getPaymentStatus(externalId);
+    } catch (error) {
+      console.error(`Erro ao consultar status do pagamento no gateway ${gateway}:`, error);
+      throw new Error(`Falha ao consultar status do pagamento no gateway ${gateway}`);
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();
