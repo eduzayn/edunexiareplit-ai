@@ -259,7 +259,7 @@ export default function PoloEnrollmentsPage() {
             <div className="mt-4 md:mt-0">
               <Button 
                 className="bg-orange-500 hover:bg-orange-600 flex items-center gap-2"
-                onClick={() => navigate("/polo/new-enrollment")}
+                onClick={() => navigate("/polo/enrollments/new")}
               >
                 <PlusCircleIcon className="h-4 w-4" />
                 Nova Matrícula
@@ -403,7 +403,7 @@ export default function PoloEnrollmentsPage() {
                   <p className="text-gray-600">Nenhuma matrícula encontrada</p>
                   <Button 
                     className="mt-2 bg-orange-500 hover:bg-orange-600"
-                    onClick={() => navigate("/polo/new-enrollment")}
+                    onClick={() => navigate("/polo/enrollments/new")}
                   >
                     Criar Nova Matrícula
                   </Button>
