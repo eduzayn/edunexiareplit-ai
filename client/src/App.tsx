@@ -17,6 +17,7 @@ import DisciplineContentPage from "@/pages/admin/discipline-content-page";
 import InstitutionsPage from "@/pages/admin/institutions-page";
 import UsersPage from "@/pages/admin/users-page";
 import PolosPage from "@/pages/admin/polos-page";
+import PartnersPage from "@/pages/admin/partners-page";
 import FinancialPage from "@/pages/admin/financial-page";
 // Import student pages
 import StudentCoursesPage from "@/pages/student/courses-page";
@@ -132,6 +133,9 @@ function Router() {
       </Route>
       <Route path="/admin/polos">
         {() => user?.portalType === "admin" ? <PolosPage /> : <Redirect to="/admin" />}
+      </Route>
+      <Route path="/admin/partners">
+        {() => user?.portalType === "admin" ? <PartnersPage /> : <Redirect to="/admin" />}
       </Route>
       <Route path="/admin/financial">
         {() => user?.portalType === "admin" ? <FinancialPage /> : <Redirect to="/admin" />}
