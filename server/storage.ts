@@ -4,7 +4,8 @@ import { users, type User, type InsertUser,
   courseDisciplines, type CourseDiscipline, type InsertCourseDiscipline,
   questions, type Question, type InsertQuestion,
   assessments, type Assessment, type InsertAssessment,
-  assessmentQuestions, type AssessmentQuestion, type InsertAssessmentQuestion
+  assessmentQuestions, type AssessmentQuestion, type InsertAssessmentQuestion,
+  institutions, type Institution, type InsertInstitution
 } from "@shared/schema";
 import session from "express-session";
 import { Store as SessionStore } from "express-session";
@@ -520,6 +521,72 @@ export class DatabaseStorage implements IStorage {
       return true;
     } catch (error) {
       console.error("Error reordering assessment questions:", error);
+      return false;
+    }
+  }
+  
+  // ==================== Instituições ====================
+  async getInstitution(id: number): Promise<Institution | undefined> {
+    const [institution] = await db.select().from(institutions).where(eq(institutions.id, id));
+    return institution || undefined;
+  }
+  
+  async getInstitutionByCode(code: string): Promise<Institution | undefined> {
+    const [institution] = await db.select().from(institutions).where(eq(institutions.code, code));
+    return institution || undefined;
+  }
+  
+  async getInstitutionByCNPJ(cnpj: string): Promise<Institution | undefined> {
+    const [institution] = await db.select().from(institutions).where(eq(institutions.cnpj, cnpj));
+    return institution || undefined;
+  }
+  
+  async getInstitutions(search?: string, status?: string, limit: number = 50, offset: number = 0): Promise<Institution[]> {
+    let query = db.select().from(institutions).limit(limit).offset(offset);
+    
+    if (search) {
+      query = query.where(
+        or(
+          like(institutions.name, `%${search}%`),
+          like(institutions.code, `%${search}%`),
+          like(institutions.cnpj, `%${search}%`)
+        )
+      );
+    }
+    
+    if (status) {
+      query = query.where(eq(institutions.status, status as any));
+    }
+    
+    return await query.orderBy(asc(institutions.name));
+  }
+  
+  async createInstitution(institution: InsertInstitution): Promise<Institution> {
+    const [newInstitution] = await db
+      .insert(institutions)
+      .values(institution)
+      .returning();
+    return newInstitution;
+  }
+  
+  async updateInstitution(id: number, institution: Partial<InsertInstitution>): Promise<Institution | undefined> {
+    const [updatedInstitution] = await db
+      .update(institutions)
+      .set(institution)
+      .where(eq(institutions.id, id))
+      .returning();
+    return updatedInstitution;
+  }
+  
+  async deleteInstitution(id: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(institutions)
+        .where(eq(institutions.id, id))
+        .returning({ id: institutions.id });
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting institution:", error);
       return false;
     }
   }

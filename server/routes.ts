@@ -8,7 +8,8 @@ import {
   insertCourseDisciplineSchema,
   insertQuestionSchema,
   insertAssessmentSchema,
-  insertAssessmentQuestionSchema 
+  insertAssessmentQuestionSchema,
+  insertInstitutionSchema
 } from "@shared/schema";
 import { z } from "zod";
 
