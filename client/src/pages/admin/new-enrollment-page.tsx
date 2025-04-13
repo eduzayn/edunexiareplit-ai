@@ -118,7 +118,7 @@ export default function NewEnrollmentPage() {
   // Função para lidar com a criação de um novo usuário
   const handleUserCreated = (newUser: any) => {
     // Atualiza a lista de estudantes
-    queryClient.invalidateQueries({ queryKey: ["/api/users", "student"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/admin/users", "student"] });
     
     // Seleciona automaticamente o usuário recém-criado no formulário
     if (newUser && newUser.id) {
