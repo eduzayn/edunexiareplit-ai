@@ -230,17 +230,19 @@ export default function NewEnrollmentPage() {
   
   // Função para enviar o formulário
   const onSubmit = async (values: EnrollmentFormValues) => {
-    if (step < 4) {
-      await nextStep();
+    // Apenas na última etapa realmente submetemos o formulário
+    if (step === 4) {
+      // Para a última etapa, validamos tudo novamente antes de enviar
+      const isValid = await validateStep();
+      if (isValid) {
+        setIsCreatingEnrollment(true);
+        createEnrollmentMutation.mutate(values);
+      }
       return;
     }
     
-    // Para a última etapa, validamos tudo novamente antes de enviar
-    const isValid = await validateStep();
-    if (isValid) {
-      setIsCreatingEnrollment(true);
-      createEnrollmentMutation.mutate(values);
-    }
+    // Para as outras etapas, apenas avançamos para a próxima
+    await nextStep();
   };
   
   // Gerar preço do curso baseado no ID selecionado (para fins de demonstração)
@@ -989,25 +991,34 @@ export default function NewEnrollmentPage() {
                         Cancelar
                       </Button>
                     )}
-                    <Button
-                      type="submit"
-                      disabled={isCreatingEnrollment}
-                      className={`${step < 4 ? "bg-orange-500 hover:bg-orange-600" : "bg-green-600 hover:bg-green-700"}`}
-                    >
-                      {isCreatingEnrollment ? (
-                        <>
-                          <Skeleton className="h-4 w-4 rounded-full mr-2" />
-                          Processando...
-                        </>
-                      ) : step < 4 ? (
-                        "Continuar"
-                      ) : (
-                        <>
-                          <SaveIcon className="h-4 w-4 mr-2" />
-                          Finalizar Matrícula
-                        </>
-                      )}
-                    </Button>
+                    {step < 4 ? (
+                      <Button
+                        type="button"
+                        onClick={nextStep}
+                        disabled={isCreatingEnrollment}
+                        className="bg-orange-500 hover:bg-orange-600"
+                      >
+                        Continuar
+                      </Button>
+                    ) : (
+                      <Button
+                        type="submit"
+                        disabled={isCreatingEnrollment}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        {isCreatingEnrollment ? (
+                          <>
+                            <Skeleton className="h-4 w-4 rounded-full mr-2" />
+                            Processando...
+                          </>
+                        ) : (
+                          <>
+                            <SaveIcon className="h-4 w-4 mr-2" />
+                            Finalizar Matrícula
+                          </>
+                        )}
+                      </Button>
+                    )}
                   </div>
                 </form>
               </Form>
