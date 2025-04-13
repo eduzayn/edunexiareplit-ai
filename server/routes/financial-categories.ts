@@ -1,11 +1,12 @@
 import { Router } from "express";
 import { storage } from "../storage";
 import { insertFinancialCategorySchema } from "@shared/schema";
+import { authenticateAdmin } from "../middleware/auth";
 
 const router = Router();
 
 // Listar categorias financeiras com filtros opcionais
-router.get("/", async (req, res) => {
+router.get("/", authenticateAdmin, async (req, res) => {
   try {
     const { type, institutionId, limit, offset } = req.query;
     
@@ -24,7 +25,7 @@ router.get("/", async (req, res) => {
 });
 
 // Obter categoria financeira por ID
-router.get("/:id", async (req, res) => {
+router.get("/:id", authenticateAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const category = await storage.getFinancialCategory(id);
@@ -41,7 +42,7 @@ router.get("/:id", async (req, res) => {
 });
 
 // Criar categoria financeira
-router.post("/", async (req, res) => {
+router.post("/", authenticateAdmin, async (req, res) => {
   try {
     const categoryData = insertFinancialCategorySchema.parse(req.body);
     
@@ -62,7 +63,7 @@ router.post("/", async (req, res) => {
 });
 
 // Atualizar categoria financeira
-router.patch("/:id", async (req, res) => {
+router.patch("/:id", authenticateAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     
@@ -86,7 +87,7 @@ router.patch("/:id", async (req, res) => {
 });
 
 // Excluir categoria financeira
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", authenticateAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     
