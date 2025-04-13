@@ -62,260 +62,153 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { SearchIcon, FilterIcon, PencilIcon, ChevronLeftIcon } from "@/components/ui/icons";
-import { MoreVertical as MoreVerticalIcon, Plus, Loader2 } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
-type Enrollment = {
-  id: number;
-  code: string;
-  studentId: number;
-  courseId: number;
-  poloId: number;
-  institutionId: number;
-  partnerId: number | null;
-  status: string;
-  enrollmentDate: string;
-  paymentStatus: string;
-  paymentExternalId: string | null;
-  paymentUrl: string | null;
-  paymentGateway: string;
-  amount: number;
-  metadata: any;
-  createdAt: string;
-  updatedAt: string;
-  // Relações expandidas
-  studentName?: string;
-  courseName?: string;
-  poloName?: string;
-  institutionName?: string;
-  partnerName?: string;
-};
+// Icons
+import { Plus, MoreVertical, InfoIcon, ArrowUpDown, Check, Loader2, Search, AlertTriangle, Filter, FileText, Save } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { FilterMenu } from "@/components/filter-menu";
 
-// Schema para filtragem
-const filterSchema = z.object({
-  search: z.string().optional(),
+// Definir o esquema de validação para o formulário de filtro
+const filterFormSchema = z.object({
   status: z.string().optional(),
-  paymentGateway: z.string().optional(),
+  studentName: z.string().optional(),
+  courseName: z.string().optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
 });
 
-type FilterValues = z.infer<typeof filterSchema>;
-
-// Schema para nova matrícula
-const newEnrollmentSchema = z.object({
+// Definir o esquema de validação para criação de matrícula
+const enrollmentFormSchema = z.object({
   studentId: z.number({
-    required_error: "O aluno é obrigatório",
+    required_error: "Selecione um aluno",
   }),
   courseId: z.number({
-    required_error: "O curso é obrigatório",
-  }),
-  poloId: z.number({
-    required_error: "O polo é obrigatório",
+    required_error: "Selecione um curso",
   }),
   institutionId: z.number({
-    required_error: "A instituição é obrigatória",
+    required_error: "Selecione uma instituição",
   }),
-  partnerId: z.number().optional().nullable(),
-  paymentGateway: z.enum(["asaas", "lytex"], {
-    required_error: "O gateway de pagamento é obrigatório",
+  poloId: z.number({
+    required_error: "Selecione um polo",
+  }),
+  paymentGateway: z.string({
+    required_error: "Selecione um gateway de pagamento",
   }),
   amount: z.number({
-    required_error: "O valor é obrigatório",
-    invalid_type_error: "O valor deve ser um número",
-  }).min(0, {
-    message: "O valor deve ser maior ou igual a zero",
+    required_error: "Informe o valor da matrícula",
   }),
   contractTemplateId: z.number({
-    required_error: "O modelo de contrato é obrigatório",
+    required_error: "Selecione um modelo de contrato",
   }),
   observations: z.string().optional(),
 });
 
-type NewEnrollmentValues = z.infer<typeof newEnrollmentSchema>;
+type FilterFormValues = z.infer<typeof filterFormSchema>;
+type EnrollmentFormValues = z.infer<typeof enrollmentFormSchema>;
 
 export default function EnrollmentsPage() {
-  const [location] = useLocation();
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const { user } = useAuth();
+  const [, navigate] = useLocation();
+  
+  // Estados para controle da UI
+  const [isLoading, setIsLoading] = useState(true);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [statusHistory, setStatusHistory] = useState([]);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
-  const [statusHistory, setStatusHistory] = useState<any[]>([]);
-  const [selectedStatus, setSelectedStatus] = useState("active");
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState("");
   const [statusReason, setStatusReason] = useState("");
-  const [isNewEnrollmentDialogOpen, setNewEnrollmentDialogOpen] = useState(false);
   
-  // Form para nova matrícula
-  const newEnrollmentForm = useForm<NewEnrollmentValues>({
-    resolver: zodResolver(newEnrollmentSchema),
+  // Definir o formulário de filtro
+  const filterForm = useForm<FilterFormValues>({
+    resolver: zodResolver(filterFormSchema),
     defaultValues: {
-      studentId: 0,
-      courseId: 0,
-      poloId: 0,
-      institutionId: 0,
-      partnerId: null,
-      paymentGateway: "asaas",
-      amount: 0,
-      contractTemplateId: 0,
-      observations: "",
-    }
-  });
-
-  // Consultas para o formulário de nova matrícula
-  const { data: students = [] } = useQuery<{id: number, name: string}[]>({
-    queryKey: ["/api/users", "student"],
-    queryFn: async () => {
-      const response = await fetch("/api/users?portalType=student");
-      if (!response.ok) {
-        throw new Error("Erro ao buscar alunos");
-      }
-      return response.json();
-    },
-    enabled: isNewEnrollmentDialogOpen,
-  });
-
-  const { data: courses = [] } = useQuery<{id: number, name: string}[]>({
-    queryKey: ["/api/courses", "published"],
-    queryFn: async () => {
-      const response = await fetch("/api/courses?status=published");
-      if (!response.ok) {
-        throw new Error("Erro ao buscar cursos");
-      }
-      return response.json();
-    },
-    enabled: isNewEnrollmentDialogOpen,
-  });
-
-  const { data: institutions = [] } = useQuery<{id: number, name: string}[]>({
-    queryKey: ["/api/institutions"],
-    queryFn: async () => {
-      const response = await fetch("/api/institutions");
-      if (!response.ok) {
-        throw new Error("Erro ao buscar instituições");
-      }
-      return response.json();
-    },
-    enabled: isNewEnrollmentDialogOpen,
-  });
-
-  const { data: polos = [] } = useQuery<{id: number, name: string}[]>({
-    queryKey: ["/api/polos"],
-    queryFn: async () => {
-      const response = await fetch("/api/polos");
-      if (!response.ok) {
-        throw new Error("Erro ao buscar polos");
-      }
-      return response.json();
-    },
-    enabled: isNewEnrollmentDialogOpen,
-  });
-
-  const { data: contractTemplates = [] } = useQuery<{id: number, name: string, type: string, description: string}[]>({
-    queryKey: ["/api/contract-templates"],
-    queryFn: async () => {
-      const response = await fetch("/api/contract-templates");
-      if (!response.ok) {
-        throw new Error("Erro ao buscar modelos de contrato");
-      }
-      return response.json();
-    },
-    enabled: isNewEnrollmentDialogOpen,
-  });
-
-  // Mutation para criar nova matrícula
-  const createEnrollmentMutation = useMutation({
-    mutationFn: async (data: NewEnrollmentValues) => {
-      const response = await apiRequest("POST", "/api/enrollments", data);
-      return response.json();
-    },
-    onSuccess: (data) => {
-      toast({
-        title: "Matrícula criada",
-        description: `Matrícula ${data.code} criada com sucesso`,
-      });
-      setNewEnrollmentDialogOpen(false);
-      newEnrollmentForm.reset();
-      queryClient.invalidateQueries({ queryKey: ["/api/enrollments"] });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Erro",
-        description: "Não foi possível criar a matrícula: " + error.message,
-        variant: "destructive",
-      });
+      status: "",
+      studentName: "",
+      courseName: "",
+      startDate: "",
+      endDate: "",
     },
   });
   
-  const [filterValues, setFilterValues] = useState<FilterValues>({
-    search: "",
-    status: "",
-    paymentGateway: "",
-    startDate: "",
-    endDate: "",
-  });
-
-  // Form para filtros
-  const filterForm = useForm<FilterValues>({
-    resolver: zodResolver(filterSchema),
-    defaultValues: filterValues,
-  });
-
-  // Query para obter matrículas
+  // Capturar valores do formulário de filtro
+  const filterValues = filterForm.watch();
+  
+  // Lidar com a aplicação do filtro
+  const handleFilterSubmit = (values: FilterFormValues) => {
+    setCurrentPage(1); // Reset para a primeira página quando aplicar o filtro
+    setIsFilterOpen(false);
+  };
+  
+  // Limpar todos os filtros
+  const clearFilters = () => {
+    filterForm.reset({
+      status: "",
+      studentName: "",
+      courseName: "",
+      startDate: "",
+      endDate: "",
+    });
+    setCurrentPage(1);
+    setIsFilterOpen(false);
+  };
+  
+  // Query para obter a lista de matrículas (com filtros)
   const {
     data: enrollments = [],
-    isLoading,
+    isLoading: isLoadingEnrollments,
     refetch,
-  } = useQuery<Enrollment[]>({
+  } = useQuery({
     queryKey: ["/api/enrollments", filterValues, currentPage, itemsPerPage],
     queryFn: async () => {
+      // Construir a URL com parâmetros de consulta
       const queryParams = new URLSearchParams();
-      if (filterValues.search) queryParams.append("search", filterValues.search);
+      
+      // Adicionar os filtros aos parâmetros de consulta
       if (filterValues.status) queryParams.append("status", filterValues.status);
-      if (filterValues.paymentGateway) queryParams.append("paymentGateway", filterValues.paymentGateway);
+      if (filterValues.studentName) queryParams.append("studentName", filterValues.studentName);
+      if (filterValues.courseName) queryParams.append("courseName", filterValues.courseName);
       if (filterValues.startDate) queryParams.append("startDate", filterValues.startDate);
       if (filterValues.endDate) queryParams.append("endDate", filterValues.endDate);
-      queryParams.append("limit", String(itemsPerPage));
-      queryParams.append("offset", String((currentPage - 1) * itemsPerPage));
+      
+      // Adicionar paginação
+      queryParams.append("page", currentPage.toString());
+      queryParams.append("limit", itemsPerPage.toString());
       
       const response = await fetch("/api/enrollments?" + queryParams.toString());
+      
       if (!response.ok) {
         throw new Error("Erro ao buscar matrículas");
       }
-      return await response.json();
-    }
+      
+      return response.json();
+    },
   });
-
-  // Query para obter histórico de status
+  
+  // Função para buscar o histórico de status de uma matrícula
   const fetchStatusHistory = async (enrollmentId: number) => {
     try {
       const response = await fetch("/api/enrollments/" + enrollmentId + "/status-history");
+      
       if (!response.ok) {
         throw new Error("Erro ao buscar histórico de status");
       }
+      
       const data = await response.json();
       setStatusHistory(data);
     } catch (error) {
-      console.error("Erro ao buscar histórico de status:", error);
+      console.error("Erro ao buscar histórico:", error);
       toast({
         title: "Erro",
         description: "Não foi possível carregar o histórico de status",
@@ -323,237 +216,77 @@ export default function EnrollmentsPage() {
       });
     }
   };
-
-  // Mutation para atualizar status da matrícula
+  
+  // Função para mostrar o diálogo de histórico de status
+  const showStatusHistory = async (id: number) => {
+    setSelectedId(id);
+    await fetchStatusHistory(id);
+    setIsDetailsDialogOpen(true);
+  };
+  
+  // Função para mostrar o diálogo de atualização de status
+  const showStatusUpdateDialog = (id: number) => {
+    setSelectedId(id);
+    setIsStatusDialogOpen(true);
+  };
+  
+  // Mutação para atualizar o status da matrícula
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status, reason }: { id: number; status: string; reason: string }) => {
       const response = await apiRequest("POST", "/api/enrollments/" + id + "/status", { status, reason });
       return response.json();
     },
     onSuccess: () => {
-      toast({
-        title: "Status atualizado",
-        description: "O status da matrícula foi atualizado com sucesso",
-      });
       setIsStatusDialogOpen(false);
-      setSelectedStatus("active");
       setStatusReason("");
-      setSelectedId(null);
       queryClient.invalidateQueries({ queryKey: ["/api/enrollments"] });
+      toast({
+        title: "Sucesso",
+        description: "Status da matrícula atualizado com sucesso",
+      });
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
       toast({
         title: "Erro",
-        description: "Não foi possível atualizar o status: " + error.message,
+        description: error.message || "Não foi possível atualizar o status da matrícula",
         variant: "destructive",
       });
     },
   });
-
-  // Aplicar filtros
-  const onFilterSubmit = (values: FilterValues) => {
-    setFilterValues(values);
-    setCurrentPage(1);
-  };
-
-  // Reset de filtros
-  const resetFilters = () => {
-    filterForm.reset({
-      search: "",
-      status: "",
-      paymentGateway: "",
-      startDate: "",
-      endDate: "",
-    });
-    setFilterValues({
-      search: "",
-      status: "",
-      paymentGateway: "",
-      startDate: "",
-      endDate: "",
-    });
-    setCurrentPage(1);
-  };
-
-  // Função para mostrar o histórico de status
-  const showStatusHistory = (id: number) => {
-    setSelectedId(id);
-    fetchStatusHistory(id);
-    setIsDetailsDialogOpen(true);
-  };
-
-  // Função para mostrar diálogo de atualização de status
-  const showStatusUpdateDialog = (id: number) => {
-    setSelectedId(id);
-    setIsStatusDialogOpen(true);
-  };
-
-  // Status da matrícula formatado com cores
+  
+  // Efeito para setar o loading com base na query
+  useEffect(() => {
+    setIsLoading(isLoadingEnrollments);
+  }, [isLoadingEnrollments]);
+  
+  // Função para renderizar o status com badge
   const renderStatus = (status: string) => {
-    let variant: "default" | "secondary" | "destructive" | "outline" = "default";
+    const statusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+      active: { label: "Ativa", variant: "default" },
+      pending_payment: { label: "Aguardando Pagamento", variant: "secondary" },
+      completed: { label: "Concluída", variant: "default" },
+      cancelled: { label: "Cancelada", variant: "destructive" },
+      suspended: { label: "Suspensa", variant: "outline" },
+    };
     
-    switch (status.toLowerCase()) {
-      case "active":
-        variant = "default";
-        return <Badge variant={variant}>Ativa</Badge>;
-      case "pending_payment":
-        variant = "secondary";
-        return <Badge variant={variant}>Aguardando Pagamento</Badge>;
-      case "completed":
-        variant = "outline";
-        return <Badge variant={variant}>Concluída</Badge>;
-      case "cancelled":
-        variant = "destructive";
-        return <Badge variant={variant}>Cancelada</Badge>;
-      case "suspended":
-        variant = "destructive";
-        return <Badge variant={variant}>Suspensa</Badge>;
-      default:
-        return <Badge variant={variant}>{status}</Badge>;
-    }
+    const statusInfo = statusMap[status] || { label: status, variant: "outline" };
+    
+    return (
+      <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+    );
   };
-
+  
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar items={getAdminSidebarItems(location)} isMobile={isMobile} />
+    <div className="min-h-screen bg-background flex">
+      {/* Sidebar */}
+      <Sidebar 
+        items={getAdminSidebarItems()} 
+      />
       
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <main className="flex-1 overflow-y-auto p-4">
-          <div className="mx-auto max-w-7xl">
-            <div className="flex justify-between items-center mb-4">
-              <h1 className="text-2xl font-bold">Matrículas</h1>
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  onClick={resetFilters}
-                  className="flex items-center gap-1"
-                >
-                  <FilterIcon className="h-4 w-4" />
-                  Limpar Filtros
-                </Button>
-              </div>
-            </div>
-
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle>Filtros</CardTitle>
-                <CardDescription>Filtre as matrículas por diferentes critérios</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Form {...filterForm}>
-                  <form onSubmit={filterForm.handleSubmit(onFilterSubmit)} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <FormField
-                        control={filterForm.control}
-                        name="search"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Busca</FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <SearchIcon className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                                <Input placeholder="Código, aluno, curso..." className="pl-8" {...field} />
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={filterForm.control}
-                        name="status"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Status</FormLabel>
-                            <Select
-                              onValueChange={field.onChange}
-                              value={field.value}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Selecione um status" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="todos">Todos</SelectItem>
-                                <SelectItem value="active">Ativa</SelectItem>
-                                <SelectItem value="pending_payment">Aguardando Pagamento</SelectItem>
-                                <SelectItem value="completed">Concluída</SelectItem>
-                                <SelectItem value="cancelled">Cancelada</SelectItem>
-                                <SelectItem value="suspended">Suspensa</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={filterForm.control}
-                        name="paymentGateway"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Gateway de Pagamento</FormLabel>
-                            <Select
-                              onValueChange={field.onChange}
-                              value={field.value}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Selecione um gateway" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="todos">Todos</SelectItem>
-                                <SelectItem value="asaas">Asaas</SelectItem>
-                                <SelectItem value="lytex">Lytex</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={filterForm.control}
-                        name="startDate"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Data Inicial</FormLabel>
-                            <FormControl>
-                              <Input type="date" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={filterForm.control}
-                        name="endDate"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Data Final</FormLabel>
-                            <FormControl>
-                              <Input type="date" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    
-                    <div className="flex justify-end">
-                      <Button type="submit">Aplicar Filtros</Button>
-                    </div>
-                  </form>
-                </Form>
-              </CardContent>
-            </Card>
-
+      {/* Main content */}
+      <div className="flex-1">
+        <main className="flex-1 p-4 md:p-6">
+          <div className="flex flex-col gap-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
@@ -562,7 +295,7 @@ export default function EnrollmentsPage() {
                     Gerencie as matrículas da plataforma EdunexIA
                   </CardDescription>
                 </div>
-                <Button onClick={() => setNewEnrollmentDialogOpen(true)}>
+                <Button onClick={() => window.location.href = "/admin/enrollments/new"}>
                   <Plus className="h-4 w-4 mr-2" />
                   Nova Matrícula
                 </Button>
@@ -606,7 +339,7 @@ export default function EnrollmentsPage() {
                                 <DropdownMenuTrigger asChild>
                                   <Button variant="ghost" className="h-8 w-8 p-0">
                                     <span className="sr-only">Abrir menu</span>
-                                    <MoreVerticalIcon className="h-4 w-4" />
+                                    <MoreVertical className="h-4 w-4" />
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
@@ -632,7 +365,6 @@ export default function EnrollmentsPage() {
                   <PaginationContent>
                     <PaginationPrevious 
                       onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
                     />
                     
                     {/* Lógica de paginação simplificada */}
@@ -758,272 +490,6 @@ export default function EnrollmentsPage() {
               {updateStatusMutation.isPending ? "Atualizando..." : "Atualizar"}
             </Button>
           </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Diálogo para criar nova matrícula */}
-      <Dialog open={isNewEnrollmentDialogOpen} onOpenChange={setNewEnrollmentDialogOpen}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>Nova Matrícula</DialogTitle>
-            <DialogDescription>
-              Preencha os dados para criar uma nova matrícula
-            </DialogDescription>
-          </DialogHeader>
-          
-          <Form {...newEnrollmentForm}>
-            <form onSubmit={newEnrollmentForm.handleSubmit((data) => createEnrollmentMutation.mutate(data))} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={newEnrollmentForm.control}
-                  name="studentId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Aluno</FormLabel>
-                      <div className="space-y-2">
-                        <Select
-                          value={field.value ? field.value.toString() : ""}
-                          onValueChange={(value) => field.onChange(parseInt(value))}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione um aluno" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {students.map((student) => (
-                              <SelectItem key={student.id} value={student.id.toString()}>
-                                {student.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm" 
-                          className="w-full flex items-center gap-1"
-                          onClick={() => {
-                            // Salvar o estado atual do formulário
-                            sessionStorage.setItem('enrollmentFormData', 
-                              JSON.stringify(newEnrollmentForm.getValues())
-                            );
-                            // Navegar para a página de usuários com parâmetro para indicar redirecionamento
-                            window.location.href = "/admin/users?redirectTo=enrollments&action=new";
-                          }}
-                        >
-                          <Plus className="h-3.5 w-3.5" />
-                          Novo Aluno
-                        </Button>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={newEnrollmentForm.control}
-                  name="courseId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Curso</FormLabel>
-                      <Select
-                        value={field.value ? field.value.toString() : ""}
-                        onValueChange={(value) => field.onChange(parseInt(value))}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione um curso" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {courses.map((course) => (
-                            <SelectItem key={course.id} value={course.id.toString()}>
-                              {course.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={newEnrollmentForm.control}
-                  name="institutionId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Instituição</FormLabel>
-                      <Select
-                        value={field.value ? field.value.toString() : ""}
-                        onValueChange={(value) => field.onChange(parseInt(value))}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione uma instituição" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {institutions.map((institution) => (
-                            <SelectItem key={institution.id} value={institution.id.toString()}>
-                              {institution.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={newEnrollmentForm.control}
-                  name="poloId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Polo</FormLabel>
-                      <Select
-                        value={field.value ? field.value.toString() : ""}
-                        onValueChange={(value) => field.onChange(parseInt(value))}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione um polo" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {polos.map((polo) => (
-                            <SelectItem key={polo.id} value={polo.id.toString()}>
-                              {polo.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={newEnrollmentForm.control}
-                  name="paymentGateway"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Gateway de Pagamento</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o gateway" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="asaas">Asaas</SelectItem>
-                          <SelectItem value="lytex">Lytex</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={newEnrollmentForm.control}
-                  name="amount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Valor (R$)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          step="0.01" 
-                          min="0" 
-                          placeholder="0,00"
-                          value={field.value}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                <FormField
-                  control={newEnrollmentForm.control}
-                  name="contractTemplateId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Modelo de Contrato</FormLabel>
-                      <div className="space-y-2">
-                        <Select
-                          value={field.value ? field.value.toString() : ""}
-                          onValueChange={(value) => field.onChange(parseInt(value))}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione um modelo de contrato" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {contractTemplates.map((template) => (
-                              <SelectItem key={template.id} value={template.id.toString()}>
-                                {template.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={newEnrollmentForm.control}
-                  name="observations"
-                  render={({ field }) => (
-                    <FormItem className="md:col-span-2">
-                      <FormLabel>Observações</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Observações adicionais sobre a matrícula"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <DialogFooter>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setNewEnrollmentDialogOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button 
-                  type="submit"
-                  disabled={createEnrollmentMutation.isPending}
-                >
-                  {createEnrollmentMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Criando...
-                    </>
-                  ) : (
-                    "Criar Matrícula"
-                  )}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
         </DialogContent>
       </Dialog>
     </div>

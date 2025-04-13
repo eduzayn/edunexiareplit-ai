@@ -300,8 +300,6 @@ export default function NewEnrollmentPage() {
       {/* Sidebar */}
       <Sidebar 
         items={getAdminSidebarItems()} 
-        // @ts-ignore - isMobile é uma prop válida em outros componentes
-        isMobile={isMobile} 
       />
       
       {/* Conteúdo principal */}
