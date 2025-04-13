@@ -627,63 +627,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         password,
         portalType,
         fullName,
-        email
+        email,
+        cpf: req.body.cpf // Mantemos o CPF, mas não fazemos mais o registro nos gateways
       });
       
-      // Se for um aluno, verificar se já existe e registrar nos gateways de pagamento
-      if (portalType === 'student') {
-        try {
-          console.log(`Verificando e registrando aluno ${fullName} nos gateways de pagamento`);
-          
-          // Verificar CPF obrigatório para alunos
-          if (!req.body.cpf) {
-            return res.status(400).json({ message: "CPF é obrigatório para alunos" });
-          }
-          
-          // Registrar no Asaas
-          const asaasGateway = createPaymentGateway('asaas');
-          
-          // Verificar se o aluno já existe no Asaas primeiro
-          const asaasResponse = await asaasGateway.registerStudent({
-            id: newUser.id,
-            fullName: newUser.fullName,
-            email: newUser.email,
-            cpf: req.body.cpf
-          });
-          
-          if (asaasResponse.alreadyExists) {
-            console.log(`Aluno já existe no Asaas com ID: ${asaasResponse.customerId}`);
-          } else {
-            console.log(`Aluno registrado no Asaas com ID: ${asaasResponse.customerId}`);
-          }
-          
-          // Registrar no Lytex
-          const lytexGateway = createPaymentGateway('lytex');
-          
-          // Verificar se o aluno já existe no Lytex primeiro
-          const lytexResponse = await lytexGateway.registerStudent({
-            id: newUser.id,
-            fullName: newUser.fullName,
-            email: newUser.email,
-            cpf: req.body.cpf
-          });
-          
-          if (lytexResponse.alreadyExists) {
-            console.log(`Aluno já existe no Lytex com ID: ${lytexResponse.customerId}`);
-          } else {
-            console.log(`Aluno registrado no Lytex com ID: ${lytexResponse.customerId}`);
-          }
-          
-          console.log(`Aluno registrado com sucesso. IDs: Asaas=${asaasResponse.customerId}, Lytex=${lytexResponse.customerId}`);
-          
-          // Aqui poderíamos salvar os IDs externos no banco de dados se necessário
-          // await storage.updateUserPaymentIds(newUser.id, { asaasId: asaasCustomerId, lytexId: lytexCustomerId });
-          
-        } catch (integrationError) {
-          // Não falhar a criação do usuário se o registro nos gateways falhar
-          console.error("Erro ao registrar aluno nos gateways de pagamento:", integrationError);
-        }
-      }
+      // Nota: A integração com gateways de pagamento foi removida
+      // Agora o registro nos gateways de pagamento só acontece durante o fluxo de matrícula
       
       res.status(201).json(newUser);
     } catch (error) {
@@ -732,59 +681,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ message: "Erro ao atualizar usuário" });
       }
       
-      // Se o usuário foi alterado para estudante, registrar nos gateways de pagamento
+      // Nota: A integração com gateways de pagamento foi removida
+      // Agora o registro nos gateways de pagamento só acontece durante o fluxo de matrícula
+      
+      // Se o usuário foi alterado para estudante, apenas verificamos se o CPF está preenchido
       if (portalType === 'student' && existingUser.portalType !== 'student') {
-        try {
-          console.log(`Usuário ${fullName} alterado para aluno. Registrando nos gateways de pagamento`);
-          
-          // Verificar CPF obrigatório para alunos
-          if (!req.body.cpf) {
-            return res.status(400).json({ message: "CPF é obrigatório para alunos" });
-          }
-          
-          // Registrar no Asaas
-          const asaasGateway = createPaymentGateway('asaas');
-          
-          // Verificar se o aluno já existe no Asaas primeiro
-          const asaasResponse = await asaasGateway.registerStudent({
-            id: updatedUser.id,
-            fullName: updatedUser.fullName,
-            email: updatedUser.email,
-            cpf: req.body.cpf
-          });
-          
-          if (asaasResponse.alreadyExists) {
-            console.log(`Aluno já existe no Asaas com ID: ${asaasResponse.customerId}`);
-          } else {
-            console.log(`Aluno registrado no Asaas com ID: ${asaasResponse.customerId}`);
-          }
-          
-          // Registrar no Lytex
-          const lytexGateway = createPaymentGateway('lytex');
-          
-          // Verificar se o aluno já existe no Lytex primeiro
-          const lytexResponse = await lytexGateway.registerStudent({
-            id: updatedUser.id,
-            fullName: updatedUser.fullName,
-            email: updatedUser.email,
-            cpf: req.body.cpf
-          });
-          
-          if (lytexResponse.alreadyExists) {
-            console.log(`Aluno já existe no Lytex com ID: ${lytexResponse.customerId}`);
-          } else {
-            console.log(`Aluno registrado no Lytex com ID: ${lytexResponse.customerId}`);
-          }
-          
-          console.log(`Aluno registrado com sucesso. IDs: Asaas=${asaasResponse.customerId}, Lytex=${lytexResponse.customerId}`);
-          
-          // Aqui poderíamos salvar os IDs externos no banco de dados se necessário
-          // await storage.updateUserPaymentIds(updatedUser.id, { asaasId: asaasResponse.customerId, lytexId: lytexResponse.customerId });
-          
-        } catch (integrationError) {
-          // Não falhar a atualização do usuário se o registro nos gateways falhar
-          console.error("Erro ao registrar aluno nos gateways de pagamento:", integrationError);
+        // Verificar CPF obrigatório para alunos
+        if (!req.body.cpf) {
+          return res.status(400).json({ message: "CPF é obrigatório para alunos" });
         }
+        
+        // A partir de agora, o registro nos gateways de pagamento só ocorre no fluxo de matrícula
+        console.log(`Usuário ${fullName} alterado para aluno.`);
       }
       
       res.json(updatedUser);
