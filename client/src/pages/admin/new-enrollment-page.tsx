@@ -114,6 +114,23 @@ export default function NewEnrollmentPage() {
   // Estado para controle do diálogo de criação de usuário
   const [isCreateUserDialogOpen, setIsCreateUserDialogOpen] = useState(false);
   
+  // Função para lidar com a criação de um novo usuário
+  const handleUserCreated = (newUser: any) => {
+    // Atualiza a lista de estudantes
+    queryClient.invalidateQueries({ queryKey: ["/api/users", "student"] });
+    
+    // Seleciona automaticamente o usuário recém-criado no formulário
+    if (newUser && newUser.id) {
+      form.setValue("studentId", newUser.id.toString());
+      
+      // Exibe mensagem de sucesso
+      toast({
+        title: "Usuário criado com sucesso",
+        description: `O aluno ${newUser.fullName} foi adicionado e selecionado.`,
+      });
+    }
+  };
+  
   // Consulta para listar cursos disponíveis
   const { data: coursesData = [], isLoading: isLoadingCourses } = useQuery({
     queryKey: ["/api/courses", "published"],
@@ -417,7 +434,7 @@ export default function NewEnrollmentPage() {
                                 variant="outline"
                                 size="sm"
                                 className="flex items-center gap-1"
-                                onClick={() => navigate("/admin/users/new?redirectTo=enrollments/new")}
+                                onClick={() => setIsCreateUserDialogOpen(true)}
                               >
                                 <Plus className="h-3.5 w-3.5" />
                                 Novo Aluno
@@ -857,6 +874,14 @@ export default function NewEnrollmentPage() {
           </Card>
         </div>
       </div>
+
+      {/* Diálogo para criação de novo usuário */}
+      <CreateUserDialog
+        isOpen={isCreateUserDialogOpen}
+        onOpenChange={setIsCreateUserDialogOpen}
+        onUserCreated={handleUserCreated}
+        defaultPortalType="student"
+      />
     </div>
   );
 }
