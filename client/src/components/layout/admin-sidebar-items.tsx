@@ -125,6 +125,12 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
           href: "/admin/polos",
           active: currentPath === "/admin/polos"
         },
+        { 
+          name: "Parceiros", 
+          icon: <HandshakeIcon />, 
+          href: "/admin/partners",
+          active: currentPath === "/admin/partners"
+        },
       ]
     }, currentPath),
     items: [
@@ -139,6 +145,12 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
         icon: <StorefrontIcon />, 
         href: "/admin/polos",
         active: currentPath === "/admin/polos"
+      },
+      { 
+        name: "Parceiros", 
+        icon: <HandshakeIcon />, 
+        href: "/admin/partners",
+        active: currentPath === "/admin/partners"
       },
     ]
   };
@@ -157,12 +169,6 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
           href: "/admin/users",
           active: currentPath === "/admin/users"
         },
-        { 
-          name: "Parceiros", 
-          icon: <HandshakeIcon />, 
-          href: "/admin/partners",
-          active: currentPath === "/admin/partners"
-        },
       ]
     }, currentPath),
     items: [
@@ -171,12 +177,6 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
         icon: <GroupIcon />, 
         href: "/admin/users",
         active: currentPath === "/admin/users"
-      },
-      { 
-        name: "Parceiros", 
-        icon: <HandshakeIcon />, 
-        href: "/admin/partners",
-        active: currentPath === "/admin/partners"
       },
     ]
   };
