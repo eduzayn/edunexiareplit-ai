@@ -13,7 +13,8 @@ import {
   MapPinIcon,
   ChartIcon,
   BarChartIcon,
-  ShieldIcon
+  ShieldIcon,
+  GraduationCapIcon
 } from "@/components/ui/icons";
 
 export default function HomePage() {
