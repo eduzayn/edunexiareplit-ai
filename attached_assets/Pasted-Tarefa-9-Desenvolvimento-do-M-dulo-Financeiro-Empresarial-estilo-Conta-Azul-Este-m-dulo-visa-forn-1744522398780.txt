@@ -1,0 +1,15 @@
+Tarefa 9: Desenvolvimento do Módulo Financeiro Empresarial (estilo Conta Azul)
+Este módulo visa fornecer ferramentas de gestão financeira interna para a Edunéxia, inspirado em funcionalidades de ERPs focados em pequenas e médias empresas brasileiras como o Conta Azul.   
+
+Controle de Fluxo de Caixa: Rastreamento de Entradas (receitas, principalmente de matrículas) e Saídas (despesas, como pagamentos a conteudistas, custos operacionais).
+Integração com Gateway de Pagamento (Asaas): Utilizar a API do Asaas  para:
+Emitir Boletos bancários para pagamento de matrículas.
+Potencialmente processar pagamentos com cartão de crédito (se aplicável ao modelo de negócio).
+Receber pagamentos via Pix (se o Asaas suportar recebimento via Pix integrado à API).
+Gerenciar chaves de API do Asaas de forma segura.   
+Fundamental: Configurar e consumir Webhooks do Asaas para receber atualizações automáticas e em tempo real sobre o status dos pagamentos (e.g., Boleto Pago, Pagamento Confirmado). Isso evita a prática ineficiente de polling (consultas repetidas). A dependência de webhooks exige um tratamento robusto no lado da Edunéxia para garantir que os eventos sejam processados corretamente, mesmo em caso de falhas temporárias de comunicação (interrupções na fila de webhooks ). É necessário implementar logging de webhooks recebidos e, possivelmente, um mecanismo de reconciliação manual ou semi-automática para casos de falha na entrega do webhook.   
+  
+Conciliação Bancária: Funcionalidades para auxiliar na conciliação de extratos bancários com os registros do sistema (inicialmente pode ser via importação manual de extratos, com possibilidade de integração bancária direta futura).
+Relatórios Financeiros: Geração de relatórios de Fluxo de Caixa por período, e relatórios básicos de desempenho financeiro por categorias de receita/despesa ou centros de custo, similar às capacidades do Conta Azul.   
+A verdadeira força deste módulo reside na sua capacidade de integrar dados de receita (provenientes das matrículas via Asaas) com dados de despesa (pagamentos a conteudistas, custos de polo, etc.) e outros dados operacionais (vendas por polo, comissões de parceiros). Isso permite uma visão holística da saúde financeira da Edunéxia e possibilita análises de rentabilidade por curso, polo ou parceiro, transformando o módulo de um simples processador de pagamentos em uma ferramenta de inteligência de negócios, alinhada ao propósito de sistemas ERP como o Conta Azul. Isso requer um modelo de dados cuidadoso que permita vincular transações financeiras às entidades relevantes (matrículas, alunos, polos, parceiros, etc.).   
+
