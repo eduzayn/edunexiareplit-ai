@@ -194,7 +194,7 @@ export class LytexGateway implements PaymentGateway {
         amount: enrollment.amount * 100, // Lytex trabalha em centavos
         description: `Matrícula ${enrollment.code} - Curso ID ${enrollment.courseId}`,
         order_id: enrollment.code,
-        payment_methods: this.getPaymentMethodsForLytex(enrollment.paymentMethod),
+        payment_methods: this.getPaymentMethodsForLytex(enrollment.paymentMethod || undefined),
         customer: {
           name: 'Nome do Aluno', // Na implementação real, buscaríamos esses dados
           document: '12345678900',

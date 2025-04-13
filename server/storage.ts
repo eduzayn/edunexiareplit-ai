@@ -8,7 +8,9 @@ import { users, type User, type InsertUser,
   institutions, type Institution, type InsertInstitution,
   polos, type Polo, type InsertPolo,
   financialTransactions, type FinancialTransaction, type InsertFinancialTransaction,
-  financialCategories, type FinancialCategory, type InsertFinancialCategory
+  financialCategories, type FinancialCategory, type InsertFinancialCategory,
+  enrollments, type Enrollment, type InsertEnrollment,
+  enrollmentStatusHistory, type EnrollmentStatusHistory, type InsertEnrollmentStatusHistory
 } from "@shared/schema";
 import session from "express-session";
 import { Store as SessionStore } from "express-session";
