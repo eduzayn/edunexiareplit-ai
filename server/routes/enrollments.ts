@@ -46,8 +46,8 @@ export function registerEnrollmentRoutes(app: Express) {
         parsedStartDate,
         parsedEndDate,
         typeof paymentGateway === 'string' ? paymentGateway : undefined,
-        parseInt(limit),
-        parseInt(offset)
+        typeof limit === 'string' ? parseInt(limit) : 50,
+        typeof offset === 'string' ? parseInt(offset) : 0
       );
       
       res.json(enrollments);
@@ -270,11 +270,11 @@ export function registerEnrollmentRoutes(app: Express) {
       const gateway = createPaymentGateway('asaas');
       const { status, externalId } = gateway.processWebhook(req.body);
       
-      // Buscar a matrícula pelo ID externo
-      const [enrollment] = await storage.getEnrollments(
-        undefined, undefined, undefined, undefined, undefined, undefined, undefined,
-        undefined, undefined, undefined, 1, 0
-      );
+      // Buscar todas as matrículas
+      const enrollments = await storage.getEnrollments();
+      
+      // Encontrar a matrícula com o ID externo correspondente
+      const enrollment = enrollments.find(e => e.paymentExternalId === externalId);
       
       if (!enrollment) {
         return res.status(404).json({ error: 'Matrícula não encontrada para este pagamento' });
@@ -304,11 +304,11 @@ export function registerEnrollmentRoutes(app: Express) {
       const gateway = createPaymentGateway('lytex');
       const { status, externalId } = gateway.processWebhook(req.body);
       
-      // Buscar a matrícula pelo ID externo
-      const [enrollment] = await storage.getEnrollments(
-        undefined, undefined, undefined, undefined, undefined, undefined, undefined,
-        undefined, undefined, undefined, 1, 0
-      );
+      // Buscar todas as matrículas
+      const enrollments = await storage.getEnrollments();
+      
+      // Encontrar a matrícula com o ID externo correspondente
+      const enrollment = enrollments.find(e => e.paymentExternalId === externalId);
       
       if (!enrollment) {
         return res.status(404).json({ error: 'Matrícula não encontrada para este pagamento' });

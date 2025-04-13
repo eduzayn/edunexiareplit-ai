@@ -105,8 +105,8 @@ export class AsaasGateway implements PaymentGateway {
         throw new Error('Payload inválido do webhook Asaas');
       }
       
-      // Extrair ID externo do pagamento
-      const externalId = payload.payment.id;
+      // Extrair ID externo do pagamento e garantir que é string
+      const externalId = String(payload.payment.id);
       
       // Mapear o evento para um status em nosso sistema
       let status = 'pending_payment';
@@ -261,8 +261,8 @@ export class LytexGateway implements PaymentGateway {
         throw new Error('Payload inválido do webhook Lytex');
       }
       
-      // Extrair ID externo do pagamento
-      const externalId = payload.id;
+      // Extrair ID externo do pagamento e garantir que é string
+      const externalId = String(payload.id);
       
       // Mapear o status da Lytex para um status em nosso sistema
       let status = 'pending_payment';
