@@ -991,8 +991,8 @@ export default function NewEnrollmentPage() {
                 </Button>
               )}
               <Button
-                type="button"
-                onClick={step < 4 ? nextStep : form.handleSubmit(onSubmit)}
+                type={step < 4 ? "button" : "submit"}
+                onClick={step < 4 ? nextStep : undefined}
                 disabled={isCreatingEnrollment}
                 className={`${step < 4 ? "bg-orange-500 hover:bg-orange-600" : "bg-green-600 hover:bg-green-700"}`}
               >
