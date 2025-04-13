@@ -176,11 +176,50 @@ export default function NewEnrollmentPage() {
     },
   });
   
+  // Função para validar apenas os campos da etapa atual
+  const validateStep = async () => {
+    let fieldsToValidate: string[] = [];
+    
+    // Campos a serem validados em cada etapa
+    switch (step) {
+      case 1:
+        fieldsToValidate = [
+          "studentName", "studentEmail", "studentPhone", "studentDocument", 
+          "studentAddress", "studentCity", "studentState", "studentZipCode",
+          "paymentGateway"
+        ];
+        break;
+      case 2:
+        fieldsToValidate = ["courseId"];
+        break;
+      case 3:
+        fieldsToValidate = ["paymentMethod", "acceptTerms"];
+        // Adicionar installments apenas se for cartão de crédito
+        if (form.getValues("paymentMethod") === "credit_card") {
+          fieldsToValidate.push("installments");
+        }
+        break;
+      case 4:
+        fieldsToValidate = ["contractTemplateId"];
+        break;
+    }
+    
+    // Resetar erros para evitar problema de validação
+    form.clearErrors();
+    
+    // Validar apenas os campos da etapa atual
+    const result = await form.trigger(fieldsToValidate as any);
+    return result;
+  };
+  
   // Função para avançar para o próximo passo
-  const nextStep = () => {
-    const currentValues = form.getValues();
-    form.setValue("currentStep", step + 1);
-    setStep(step + 1);
+  const nextStep = async () => {
+    const isValid = await validateStep();
+    
+    if (isValid) {
+      form.setValue("currentStep", step + 1);
+      setStep(step + 1);
+    }
   };
   
   // Função para voltar para o passo anterior
@@ -190,14 +229,18 @@ export default function NewEnrollmentPage() {
   };
   
   // Função para enviar o formulário
-  const onSubmit = (values: EnrollmentFormValues) => {
+  const onSubmit = async (values: EnrollmentFormValues) => {
     if (step < 4) {
-      nextStep();
+      await nextStep();
       return;
     }
     
-    setIsCreatingEnrollment(true);
-    createEnrollmentMutation.mutate(values);
+    // Para a última etapa, validamos tudo novamente antes de enviar
+    const isValid = await validateStep();
+    if (isValid) {
+      setIsCreatingEnrollment(true);
+      createEnrollmentMutation.mutate(values);
+    }
   };
   
   // Gerar preço do curso baseado no ID selecionado (para fins de demonstração)
@@ -862,7 +905,7 @@ export default function NewEnrollmentPage() {
               )}
               <Button
                 type="button"
-                onClick={form.handleSubmit(onSubmit)}
+                onClick={step < 4 ? nextStep : form.handleSubmit(onSubmit)}
                 disabled={isCreatingEnrollment}
                 className={`${step < 4 ? "bg-orange-500 hover:bg-orange-600" : "bg-green-600 hover:bg-green-700"}`}
               >
