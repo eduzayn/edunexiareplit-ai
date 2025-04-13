@@ -22,6 +22,7 @@ import PartnersPage from "@/pages/admin/partners-page";
 import FinancialPage from "@/pages/admin/financial-page";
 import ReportsPage from "@/pages/admin/reports-page";
 import EnrollmentsPage from "@/pages/admin/enrollments-page";
+import AdminNewEnrollmentPage from "@/pages/admin/new-enrollment-page";
 import IntegrationsPage from "@/pages/admin/integrations-page";
 // Import student pages
 import StudentCoursesPage from "@/pages/student/courses-page";
