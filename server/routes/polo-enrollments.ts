@@ -18,7 +18,10 @@ router.get("/enrollments", async (req, res) => {
     const { search, status, course, date } = req.query;
 
     // Obter o polo atual
-    const userPolo = await storage.getPoloByCode(poloUser?.username || "");
+    if (!poloUser || !poloUser.id) {
+      return res.status(401).json({ message: "Usuário não autenticado" });
+    }
+    const userPolo = await storage.getPoloByUserId(poloUser.id);
     if (!userPolo) {
       return res.status(404).json({ message: "Polo não encontrado para este usuário" });
     }
@@ -112,7 +115,10 @@ router.post("/enrollments", async (req, res) => {
     const enrollmentData = req.body;
 
     // Obter o polo atual
-    const userPolo = await storage.getPoloByCode(poloUser?.username || "");
+    if (!poloUser || !poloUser.id) {
+      return res.status(401).json({ message: "Usuário não autenticado" });
+    }
+    const userPolo = await storage.getPoloByUserId(poloUser.id);
     if (!userPolo) {
       return res.status(404).json({ message: "Polo não encontrado para este usuário" });
     }
@@ -194,7 +200,12 @@ router.post("/documents/generate", async (req, res) => {
     }
 
     // Verificar se a matrícula pertence ao polo do usuário
-    if (enrollment.poloId !== poloUser?.poloId) {
+    if (!poloUser || !poloUser.id) {
+      return res.status(401).json({ message: "Usuário não autenticado" });
+    }
+    
+    const userPolo = await storage.getPoloByUserId(poloUser.id);
+    if (!userPolo || enrollment.poloId !== userPolo.id) {
       return res.status(403).json({ message: "Acesso negado a esta matrícula" });
     }
 
@@ -247,7 +258,12 @@ router.get("/enrollments/:id", async (req, res) => {
     }
 
     // Verificar se a matrícula pertence ao polo do usuário
-    if (enrollment.poloId !== poloUser?.poloId) {
+    if (!poloUser || !poloUser.id) {
+      return res.status(401).json({ message: "Usuário não autenticado" });
+    }
+    
+    const userPolo = await storage.getPoloByUserId(poloUser.id);
+    if (!userPolo || enrollment.poloId !== userPolo.id) {
       return res.status(403).json({ message: "Acesso negado a esta matrícula" });
     }
 
