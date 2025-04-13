@@ -421,6 +421,134 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ================== Rotas para Instituições ==================
+  // Listar instituições
+  app.get("/api/admin/institutions", requireAdmin, async (req, res) => {
+    try {
+      const search = req.query.search?.toString();
+      const status = req.query.status?.toString();
+      const limit = parseInt(req.query.limit?.toString() || "50");
+      const offset = parseInt(req.query.offset?.toString() || "0");
+
+      const institutions = await storage.getInstitutions(search, status, limit, offset);
+      res.json(institutions);
+    } catch (error) {
+      console.error("Error fetching institutions:", error);
+      res.status(500).json({ message: "Erro ao buscar instituições" });
+    }
+  });
+
+  // Obter uma instituição específica
+  app.get("/api/admin/institutions/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const institution = await storage.getInstitution(id);
+      
+      if (!institution) {
+        return res.status(404).json({ message: "Instituição não encontrada" });
+      }
+      
+      res.json(institution);
+    } catch (error) {
+      console.error("Error fetching institution:", error);
+      res.status(500).json({ message: "Erro ao buscar instituição" });
+    }
+  });
+
+  // Criar uma nova instituição
+  app.post("/api/admin/institutions", requireAdmin, async (req, res) => {
+    try {
+      // Validar os dados da instituição
+      const institutionData = insertInstitutionSchema.parse({ 
+        ...req.body,
+        createdById: req.user.id
+      });
+      
+      // Verificar se já existe uma instituição com o mesmo código ou CNPJ
+      const existingByCode = await storage.getInstitutionByCode(institutionData.code);
+      if (existingByCode) {
+        return res.status(400).json({ message: "Já existe uma instituição com este código" });
+      }
+      
+      const existingByCNPJ = await storage.getInstitutionByCNPJ(institutionData.cnpj);
+      if (existingByCNPJ) {
+        return res.status(400).json({ message: "Já existe uma instituição com este CNPJ" });
+      }
+      
+      const institution = await storage.createInstitution(institutionData);
+      res.status(201).json(institution);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Dados inválidos", 
+          errors: error.errors 
+        });
+      }
+      console.error("Error creating institution:", error);
+      res.status(500).json({ message: "Erro ao criar instituição" });
+    }
+  });
+
+  // Atualizar uma instituição
+  app.put("/api/admin/institutions/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const existingInstitution = await storage.getInstitution(id);
+      
+      if (!existingInstitution) {
+        return res.status(404).json({ message: "Instituição não encontrada" });
+      }
+      
+      // Validar os dados da atualização
+      const updateData = insertInstitutionSchema.partial().parse(req.body);
+      
+      // Verificar se já existe outra instituição com o mesmo código
+      if (updateData.code && updateData.code !== existingInstitution.code) {
+        const existingByCode = await storage.getInstitutionByCode(updateData.code);
+        if (existingByCode && existingByCode.id !== id) {
+          return res.status(400).json({ message: "Já existe uma instituição com este código" });
+        }
+      }
+      
+      // Verificar se já existe outra instituição com o mesmo CNPJ
+      if (updateData.cnpj && updateData.cnpj !== existingInstitution.cnpj) {
+        const existingByCNPJ = await storage.getInstitutionByCNPJ(updateData.cnpj);
+        if (existingByCNPJ && existingByCNPJ.id !== id) {
+          return res.status(400).json({ message: "Já existe uma instituição com este CNPJ" });
+        }
+      }
+      
+      const updatedInstitution = await storage.updateInstitution(id, updateData);
+      res.json(updatedInstitution);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Dados inválidos", 
+          errors: error.errors 
+        });
+      }
+      console.error("Error updating institution:", error);
+      res.status(500).json({ message: "Erro ao atualizar instituição" });
+    }
+  });
+
+  // Excluir uma instituição
+  app.delete("/api/admin/institutions/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteInstitution(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Instituição não encontrada ou não pode ser excluída" });
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      console.error("Error deleting institution:", error);
+      res.status(500).json({ message: "Erro ao excluir instituição" });
+    }
+  });
+
   // ================== Rotas para Portal do Aluno ==================
   // Rotas específicas para o Portal do Aluno estão implementadas abaixo usando o middleware requireStudent
 
