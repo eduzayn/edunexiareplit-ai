@@ -37,6 +37,12 @@ export const users = pgTable("users", {
   fullName: text("full_name").notNull(),
   email: text("email").notNull(),
   cpf: text("cpf"), // CPF do usuário (obrigatório para alunos)
+  phone: text("phone"), // Telefone de contato do usuário
+  address: text("address"), // Endereço completo
+  city: text("city"), // Cidade
+  state: text("state"), // Estado (UF)
+  zipCode: text("zip_code"), // CEP
+  birthDate: text("birth_date"), // Data de nascimento
   portalType: text("portal_type").notNull(),
   poloId: integer("polo_id").references(() => polos.id), // Referência ao polo (para usuários do tipo "polo")
 });
@@ -446,6 +452,12 @@ export const insertUserSchema = createInsertSchema(users).pick({
   fullName: true,
   email: true,
   cpf: true,
+  phone: true,
+  address: true,
+  city: true,
+  state: true,
+  zipCode: true,
+  birthDate: true,
   portalType: true,
   poloId: true,
 }).transform(data => {
