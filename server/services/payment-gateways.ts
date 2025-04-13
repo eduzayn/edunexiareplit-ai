@@ -290,13 +290,19 @@ export class AsaasGateway implements PaymentGateway {
 export class LytexGateway implements PaymentGateway {
   private apiKey: string;
   private apiUrl: string;
+  private clientId: string;
   
   constructor() {
     this.apiKey = process.env.LYTEX_API_KEY || '';
+    this.clientId = process.env.LYTEX_CLIENT_ID || '';
     this.apiUrl = process.env.LYTEX_API_URL || 'https://api.lytex.com.br/api/v2';
     
     if (!this.apiKey) {
       console.warn('LYTEX_API_KEY não configurada. Integração com Lytex funcionará em modo de simulação.');
+    }
+    
+    if (!this.clientId) {
+      console.warn('LYTEX_CLIENT_ID não configurada. Algumas funcionalidades da Lytex podem não funcionar corretamente.');
     }
   }
   
@@ -427,7 +433,8 @@ export class LytexGateway implements PaymentGateway {
           document: '12345678900',
           email: 'aluno@example.com'
         },
-        notification_url: `${process.env.APP_URL}/api/webhooks/lytex`
+        notification_url: `${process.env.APP_URL}/api/webhooks/lytex`,
+        client_id: this.clientId // Usar o Client ID na requisição
       };
       
       const response = await axios.post(`${this.apiUrl}/payments`, paymentData, {
