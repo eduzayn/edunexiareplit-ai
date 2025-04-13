@@ -1149,6 +1149,127 @@ export class DatabaseStorage implements IStorage {
     return newHistoryEntry;
   }
   
+  // ==================== Templates de Contratos ====================
+  async getContractTemplate(id: number): Promise<ContractTemplate | undefined> {
+    const [template] = await db.select().from(contractTemplates).where(eq(contractTemplates.id, id));
+    return template || undefined;
+  }
+  
+  async getContractTemplates(institutionId?: number): Promise<ContractTemplate[]> {
+    let query = db.select().from(contractTemplates);
+    
+    if (institutionId) {
+      query = query.where(eq(contractTemplates.institutionId, institutionId));
+    }
+    
+    return await query.orderBy(asc(contractTemplates.name));
+  }
+  
+  async createContractTemplate(template: InsertContractTemplate): Promise<ContractTemplate> {
+    const [newTemplate] = await db
+      .insert(contractTemplates)
+      .values(template)
+      .returning();
+    return newTemplate;
+  }
+  
+  async updateContractTemplate(id: number, template: Partial<InsertContractTemplate>): Promise<ContractTemplate | undefined> {
+    const [updatedTemplate] = await db
+      .update(contractTemplates)
+      .set(template)
+      .where(eq(contractTemplates.id, id))
+      .returning();
+    return updatedTemplate;
+  }
+  
+  async deleteContractTemplate(id: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(contractTemplates)
+        .where(eq(contractTemplates.id, id))
+        .returning({ id: contractTemplates.id });
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting contract template:", error);
+      return false;
+    }
+  }
+  
+  // ==================== Contratos ====================
+  async getContract(id: number): Promise<Contract | undefined> {
+    const [contract] = await db.select().from(contracts).where(eq(contracts.id, id));
+    return contract || undefined;
+  }
+  
+  async getContractByCode(code: string): Promise<Contract | undefined> {
+    const [contract] = await db.select().from(contracts).where(eq(contracts.code, code));
+    return contract || undefined;
+  }
+  
+  async getContractsByEnrollment(enrollmentId: number): Promise<Contract[]> {
+    return await db
+      .select()
+      .from(contracts)
+      .where(eq(contracts.enrollmentId, enrollmentId))
+      .orderBy(desc(contracts.createdAt));
+  }
+  
+  async getContractsByStudent(studentId: number): Promise<Contract[]> {
+    return await db
+      .select()
+      .from(contracts)
+      .where(eq(contracts.studentId, studentId))
+      .orderBy(desc(contracts.createdAt));
+  }
+  
+  async createContract(contract: InsertContract): Promise<Contract> {
+    // Gera um código único para o contrato
+    const code = `CONT${new Date().getFullYear()}${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
+    
+    const [newContract] = await db
+      .insert(contracts)
+      .values({
+        ...contract,
+        code,
+      })
+      .returning();
+    return newContract;
+  }
+  
+  async updateContract(id: number, contract: Partial<InsertContract>): Promise<Contract | undefined> {
+    const [updatedContract] = await db
+      .update(contracts)
+      .set(contract)
+      .where(eq(contracts.id, id))
+      .returning();
+    return updatedContract;
+  }
+  
+  async updateContractStatus(id: number, status: string): Promise<Contract | undefined> {
+    const [updatedContract] = await db
+      .update(contracts)
+      .set({
+        status: status as any, // Permitir qualquer status que esteja no enum
+        updatedAt: new Date(),
+      })
+      .where(eq(contracts.id, id))
+      .returning();
+    return updatedContract;
+  }
+  
+  async deleteContract(id: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(contracts)
+        .where(eq(contracts.id, id))
+        .returning({ id: contracts.id });
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting contract:", error);
+      return false;
+    }
+  }
+  
   // ==================== Gateway de pagamento ====================
   async createPayment(enrollment: Enrollment, gateway: string): Promise<{externalId: string, paymentUrl: string}> {
     const { createPaymentGateway } = await import('./services/payment-gateways');
