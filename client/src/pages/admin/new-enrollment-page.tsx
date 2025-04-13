@@ -453,7 +453,7 @@ export default function NewEnrollmentPage() {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                {institutionsData.map((institution) => (
+                                {institutionsData.map((institution: Institution) => (
                                   <SelectItem key={institution.id} value={institution.id.toString()}>
                                     {institution.name}
                                   </SelectItem>
@@ -481,7 +481,7 @@ export default function NewEnrollmentPage() {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                {polosData.map((polo) => (
+                                {polosData.map((polo: Polo) => (
                                   <SelectItem key={polo.id} value={polo.id.toString()}>
                                     {polo.name}
                                   </SelectItem>
@@ -509,7 +509,7 @@ export default function NewEnrollmentPage() {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                {coursesData.map((course) => (
+                                {coursesData.map((course: Course) => (
                                   <SelectItem key={course.id} value={course.id.toString()}>
                                     {course.name}
                                   </SelectItem>
@@ -747,7 +747,7 @@ export default function NewEnrollmentPage() {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                {contractTemplatesData.map((template) => (
+                                {contractTemplatesData.map((template: ContractTemplate) => (
                                   <SelectItem key={template.id} value={template.id.toString()}>
                                     {template.name}
                                   </SelectItem>
