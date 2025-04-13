@@ -103,7 +103,9 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 export default function ReportsPage() {
   const { user } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [selectedPeriod, setSelectedPeriod] = useState("anual");
+  const [academicPeriod, setAcademicPeriod] = useState("anual");
+  const [financePeriod, setFinancePeriod] = useState("anual");
+  const [partnersPeriod, setPartnersPeriod] = useState("anual");
   const [selectedTab, setSelectedTab] = useState("academico");
 
   // Simulação de carregamento de dados dos módulos
@@ -155,7 +157,7 @@ export default function ReportsPage() {
             </div>
           </CardContent>
           <CardFooter className="flex justify-between">
-            <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+            <Select value={academicPeriod} onValueChange={setAcademicPeriod}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Selecione o período" />
               </SelectTrigger>
@@ -298,7 +300,7 @@ export default function ReportsPage() {
             </div>
           </CardContent>
           <CardFooter className="flex justify-between">
-            <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+            <Select value={financePeriod} onValueChange={setFinancePeriod}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Selecione o período" />
               </SelectTrigger>
@@ -596,7 +598,7 @@ export default function ReportsPage() {
             </div>
           </CardContent>
           <CardFooter className="flex justify-between">
-            <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+            <Select value={partnersPeriod} onValueChange={setPartnersPeriod}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Selecione o período" />
               </SelectTrigger>
