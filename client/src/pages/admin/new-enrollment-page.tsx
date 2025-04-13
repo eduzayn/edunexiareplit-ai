@@ -235,6 +235,14 @@ export default function NewEnrollmentPage() {
     }
   };
   
+  // Definir rótulos para os passos do formulário
+  const stepLabels = [
+    { number: 1, label: "Aluno" },
+    { number: 2, label: "Curso" },
+    { number: 3, label: "Pagamento" },
+    { number: 4, label: "Contrato" },
+  ];
+  
   // Definir tipos para os dados
   type Course = {
     id: number;
@@ -312,49 +320,55 @@ export default function NewEnrollmentPage() {
             <h1 className="text-2xl font-bold">Nova Matrícula</h1>
           </div>
           
-          <Card className="md:max-w-3xl mx-auto">
+          {/* Indicador de progresso */}
+          <div className="max-w-4xl mx-auto mb-6">
+            <div className="flex justify-between items-center">
+              {stepLabels.map((s, index) => (
+                <div key={s.number} className="flex flex-col items-center flex-1">
+                  <div className="flex items-center w-full">
+                    <div
+                      className={`w-10 h-10 rounded-full flex items-center justify-center font-medium ${
+                        step >= s.number
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {s.number}
+                    </div>
+                    {index < stepLabels.length - 1 && (
+                      <div
+                        className={`h-1 flex-1 mx-2 ${
+                          step > s.number ? "bg-primary" : "bg-muted"
+                        }`}
+                      />
+                    )}
+                  </div>
+                  <span
+                    className={`text-sm mt-2 ${
+                      step >= s.number ? "text-primary font-medium" : "text-muted-foreground"
+                    }`}
+                  >
+                    {s.label}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          <Card className="max-w-4xl mx-auto">
             <CardHeader>
-              <CardTitle>Formulário de Matrícula</CardTitle>
-              <CardDescription>Preencha todos os campos obrigatórios</CardDescription>
-              
-              {/* Barra de progresso/Etapas */}
-              <div className="flex justify-between items-center mt-4">
-                <div 
-                  className={`flex flex-col items-center ${step >= 1 ? "text-primary" : "text-muted-foreground"}`}
-                >
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 1 ? "bg-primary text-white" : "bg-muted"}`}>
-                    1
-                  </div>
-                  <span className="text-xs mt-1">Aluno</span>
-                </div>
-                <div className={`h-0.5 flex-1 mx-2 ${step >= 2 ? "bg-primary" : "bg-muted"}`} />
-                <div 
-                  className={`flex flex-col items-center ${step >= 2 ? "text-primary" : "text-muted-foreground"}`}
-                >
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 2 ? "bg-primary text-white" : "bg-muted"}`}>
-                    2
-                  </div>
-                  <span className="text-xs mt-1">Curso</span>
-                </div>
-                <div className={`h-0.5 flex-1 mx-2 ${step >= 3 ? "bg-primary" : "bg-muted"}`} />
-                <div 
-                  className={`flex flex-col items-center ${step >= 3 ? "text-primary" : "text-muted-foreground"}`}
-                >
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 3 ? "bg-primary text-white" : "bg-muted"}`}>
-                    3
-                  </div>
-                  <span className="text-xs mt-1">Pagamento</span>
-                </div>
-                <div className={`h-0.5 flex-1 mx-2 ${step >= 4 ? "bg-primary" : "bg-muted"}`} />
-                <div 
-                  className={`flex flex-col items-center ${step >= 4 ? "text-primary" : "text-muted-foreground"}`}
-                >
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 4 ? "bg-primary text-white" : "bg-muted"}`}>
-                    4
-                  </div>
-                  <span className="text-xs mt-1">Contrato</span>
-                </div>
-              </div>
+              <CardTitle>
+                {step === 1 && "Dados do Aluno"}
+                {step === 2 && "Dados do Curso"}
+                {step === 3 && "Dados de Pagamento"}
+                {step === 4 && "Contrato"}
+              </CardTitle>
+              <CardDescription>
+                {step === 1 && "Selecione o aluno que será matriculado"}
+                {step === 2 && "Escolha o curso, instituição e polo"}
+                {step === 3 && "Configure os dados de pagamento"}
+                {step === 4 && "Escolha o modelo de contrato e confirme a matrícula"}
+              </CardDescription>
             </CardHeader>
             
             <CardContent>
