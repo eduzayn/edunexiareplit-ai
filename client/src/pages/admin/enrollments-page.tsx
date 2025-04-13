@@ -280,7 +280,12 @@ export default function EnrollmentsPage() {
     <div className="min-h-screen bg-background flex">
       {/* Sidebar */}
       <Sidebar 
-        items={getAdminSidebarItems()} 
+        items={getAdminSidebarItems(location)} 
+        user={user}
+        portalType="admin"
+        portalColor="#4CAF50"
+        isMobileMenuOpen={isMobileMenuOpen}
+        setIsMobileMenuOpen={setIsMobileMenuOpen}
       />
       
       {/* Main content */}

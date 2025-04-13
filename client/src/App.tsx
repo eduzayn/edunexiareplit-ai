@@ -171,6 +171,9 @@ function Router() {
       <Route path="/admin/users">
         {() => user?.portalType === "admin" ? <UsersPage /> : <Redirect to="/admin" />}
       </Route>
+      <Route path="/admin/users/new">
+        {() => user?.portalType === "admin" ? <UsersPage /> : <Redirect to="/admin" />}
+      </Route>
       <Route path="/admin/polos">
         {() => user?.portalType === "admin" ? <PolosPage /> : <Redirect to="/admin" />}
       </Route>
