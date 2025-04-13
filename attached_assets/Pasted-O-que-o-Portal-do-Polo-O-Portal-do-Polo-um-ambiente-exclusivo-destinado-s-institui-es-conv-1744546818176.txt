@@ -1,0 +1,88 @@
+O que é o Portal do Polo?
+
+O Portal do Polo é um ambiente exclusivo destinado às instituições conveniadas, franqueadas locais da Edunéxia. Ele representa o ponto de contato entre a plataforma central e as unidades descentralizadas que atuam diretamente no suporte, atendimento, acompanhamento e matriculação de alunos em regiões específicas. 
+
+Esse portal não é voltado ao aluno nem a administração central, mas sim à equipe gestora local do polo, que atua como uma extensão da Edunéxia em nível regional.
+
+Objetivos do Portal do Polo
+
+Descentralizar parte da gestão da operação educacional.
+
+Permitir que cada polo atue com autonomia controlada, dentro dos parâmetros definidos pela Edunéxia.
+
+Aumentar a capilaridade da plataforma em todo o Brasil, sem perder o padrão e a qualidade da operação.
+
+Funcionalidades do Portal do Polo
+Gestão de Matrículas Locais
+
+O polo pode realizar novas matrículas manualmente.
+
+Gerar boletos, contratos e recibos vinculados à sua operação.
+
+Dashboard de Alunos Vinculados
+
+Lista completa de alunos daquele polo.
+
+Acompanhamento do progresso acadêmico e financeiro.
+
+Indicadores de evasão, inadimplência, engajamento.
+
+Relatórios Operacionais
+
+Relatório de desempenho do polo.
+
+Histórico de conversões, inadimplência, taxa de engajamento.
+
+Gerenciamento da Equipe
+
+Cadastro de atendentes, coordenadores, responsáveis acadêmicos do polo.
+
+Ferramentas Comerciais
+
+Criação de links personalizados de venda.
+
+Monitoramento de leads e funis de conversão.
+
+Canal Direto com a Administração Central
+
+Sistema de tickets para suporte.
+
+Mensagens da coordenação geral.
+
+Comissionamento e Pagamentos
+
+Acompanhamento dos valores recebidos por cada matrícula.
+
+Emissão de comprovantes, relatórios e histórico de repasses financeiros.
+
+Relação com o Portal Administrativo
+
+O Portal Administrativo funciona como a sede central, enquanto o Portal do Polo atua como uma filial regional conectada. A relação entre eles é de síncrona e hierárquica:
+
+Portal Administrativo	Portal do Polo
+
+Cria os polos	Recebe acesso ao sistema
+Define permissões e limites	Usa conforme o escopo autorizado
+Acompanha indicadores	Atua diretamente com alunos e matrículas
+Gera os repasses financeiros	Visualiza e administra seus recebimentos
+Garante padronização acadêmica e visual	Aplica os conteúdos e cursos definidos
+
+Regras Técnicas (Backend & Frontend)
+
+Os dados exibidos no Portal do Polo são lidos dinamicamente a partir do banco central (PostgreSQL).
+
+Cada polo terá um ID único, e todos os registros de alunos, matrículas e acessos estarão vinculados a esse ID.
+
+O painel administrativo pode ativar, desativar ou editar os dados de um polo a qualquer momento.
+
+Os portais consomem os mesmos endpoints, mas com filtros de escopo de acesso.
+
+Benefícios da Arquitetura Proposta
+
+Escalabilidade com controle centralizado.
+
+Padronização na comunicação e conteúdo acadêmico.
+
+Flexibilidade para que cada polo acompanhe e atue na sua operação.
+
+Possibilidade de modelo de franquia com gestão automatizada.
