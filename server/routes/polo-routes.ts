@@ -13,9 +13,12 @@ router.use(requirePolo);
 router.get("/dashboard", async (req, res) => {
   try {
     const poloUser = req.user;
+    if (!poloUser || !poloUser.id) {
+      return res.status(401).json({ message: "Usuário não autenticado" });
+    }
 
     // Verificar se o usuário polo tem um polo associado
-    const userPolo = await storage.getPoloByCode(poloUser?.username || "");
+    const userPolo = await storage.getPoloByUserId(poloUser.id);
     if (!userPolo) {
       return res.status(404).json({ message: "Polo não encontrado para este usuário" });
     }
@@ -74,9 +77,12 @@ router.get("/dashboard", async (req, res) => {
 router.get("/settings", async (req, res) => {
   try {
     const poloUser = req.user;
+    if (!poloUser || !poloUser.id) {
+      return res.status(401).json({ message: "Usuário não autenticado" });
+    }
 
-    // Obter dados do polo
-    const userPolo = await storage.getPoloByCode(poloUser?.username || "");
+    // Obter dados do polo associado ao usuário
+    const userPolo = await storage.getPoloByUserId(poloUser.id);
     if (!userPolo) {
       return res.status(404).json({ message: "Polo não encontrado para este usuário" });
     }
@@ -111,10 +117,13 @@ router.get("/settings", async (req, res) => {
 router.patch("/settings", async (req, res) => {
   try {
     const poloUser = req.user;
+    if (!poloUser || !poloUser.id) {
+      return res.status(401).json({ message: "Usuário não autenticado" });
+    }
     const poloData = req.body;
 
     // Obter o polo atual
-    const userPolo = await storage.getPoloByCode(poloUser?.username || "");
+    const userPolo = await storage.getPoloByUserId(poloUser.id);
     if (!userPolo) {
       return res.status(404).json({ message: "Polo não encontrado para este usuário" });
     }
@@ -144,10 +153,13 @@ router.patch("/settings", async (req, res) => {
 router.patch("/sales-link", async (req, res) => {
   try {
     const poloUser = req.user;
+    if (!poloUser || !poloUser.id) {
+      return res.status(401).json({ message: "Usuário não autenticado" });
+    }
     const salesLinkData = req.body;
 
     // Obter o polo atual
-    const userPolo = await storage.getPoloByCode(poloUser?.username || "");
+    const userPolo = await storage.getPoloByUserId(poloUser.id);
     if (!userPolo) {
       return res.status(404).json({ message: "Polo não encontrado para este usuário" });
     }
@@ -172,10 +184,13 @@ router.patch("/sales-link", async (req, res) => {
 router.patch("/course-permissions", async (req, res) => {
   try {
     const poloUser = req.user;
+    if (!poloUser || !poloUser.id) {
+      return res.status(401).json({ message: "Usuário não autenticado" });
+    }
     const permissions = req.body;
 
     // Obter o polo atual
-    const userPolo = await storage.getPoloByCode(poloUser?.username || "");
+    const userPolo = await storage.getPoloByUserId(poloUser.id);
     if (!userPolo) {
       return res.status(404).json({ message: "Polo não encontrado para este usuário" });
     }
@@ -214,10 +229,13 @@ router.get("/available-courses", async (req, res) => {
 router.get("/students", async (req, res) => {
   try {
     const poloUser = req.user;
+    if (!poloUser || !poloUser.id) {
+      return res.status(401).json({ message: "Usuário não autenticado" });
+    }
     const { search, status, course } = req.query;
 
     // Obter o polo atual
-    const userPolo = await storage.getPoloByCode(poloUser?.username || "");
+    const userPolo = await storage.getPoloByUserId(poloUser.id);
     if (!userPolo) {
       return res.status(404).json({ message: "Polo não encontrado para este usuário" });
     }
@@ -274,10 +292,13 @@ router.get("/students", async (req, res) => {
 router.get("/reports", async (req, res) => {
   try {
     const poloUser = req.user;
+    if (!poloUser || !poloUser.id) {
+      return res.status(401).json({ message: "Usuário não autenticado" });
+    }
     const { search, course, status, date, startDate, endDate } = req.query;
 
     // Obter o polo atual
-    const userPolo = await storage.getPoloByCode(poloUser?.username || "");
+    const userPolo = await storage.getPoloByUserId(poloUser.id);
     if (!userPolo) {
       return res.status(404).json({ message: "Polo não encontrado para este usuário" });
     }
@@ -440,9 +461,12 @@ router.get("/reports", async (req, res) => {
 router.get("/sales-links", async (req, res) => {
   try {
     const poloUser = req.user;
+    if (!poloUser || !poloUser.id) {
+      return res.status(401).json({ message: "Usuário não autenticado" });
+    }
 
     // Obter o polo atual
-    const userPolo = await storage.getPoloByCode(poloUser?.username || "");
+    const userPolo = await storage.getPoloByUserId(poloUser.id);
     if (!userPolo) {
       return res.status(404).json({ message: "Polo não encontrado para este usuário" });
     }
