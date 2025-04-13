@@ -14,6 +14,7 @@ import {
 import { z } from "zod";
 import { registerEnrollmentRoutes } from "./routes/enrollments";
 import integrationsRoutes from "./routes/integrations";
+import { createPaymentGateway } from "./services/payment-gateways";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes

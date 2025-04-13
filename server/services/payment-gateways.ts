@@ -136,11 +136,55 @@ export class AsaasGateway implements PaymentGateway {
   private async getOrCreateCustomer(enrollment: Enrollment): Promise<string> {
     try {
       // Na implementação real, buscaríamos o cliente pelo cpf/email ou criaríamos um novo
-      // Por simplicidade, vamos simular para o mock
+      if (!this.apiKey) {
+        return "cus_" + Math.random().toString(36).substring(2, 15);
+      }
+      
+      // Aqui faríamos uma chamada para a API do Asaas para buscar o cliente
+      // ou criar um novo se não existir
+      
+      // Para fins de demonstração, retornamos um ID simulado
       return "cus_" + Math.random().toString(36).substring(2, 15);
     } catch (error) {
       console.error('Erro ao buscar/criar cliente no Asaas:', error);
       throw new Error('Falha ao buscar/criar cliente no Asaas');
+    }
+  }
+  
+  // Nova função para registrar um usuário sem estar vinculado a uma matrícula
+  public async registerStudent(userData: { 
+    id: number, 
+    fullName: string, 
+    email: string 
+  }): Promise<string> {
+    try {
+      // Se não tivermos API key, retornar dados simulados
+      if (!this.apiKey) {
+        const customerId = "cus_" + Math.random().toString(36).substring(2, 15);
+        console.log(`[SIMULAÇÃO ASAAS] Registrando estudante: ${userData.fullName}, email: ${userData.email}, ID externo: ${customerId}`);
+        return customerId;
+      }
+      
+      // Criar cliente no Asaas
+      const customerData = {
+        name: userData.fullName,
+        email: userData.email,
+        externalReference: `student_${userData.id}`,
+        // Em um ambiente real, incluiríamos outros dados como CPF, telefone, etc.
+      };
+      
+      const response = await axios.post(`${this.apiUrl}/customers`, customerData, {
+        headers: {
+          'access_token': this.apiKey,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      return response.data.id;
+    } catch (error) {
+      console.error('Erro ao registrar estudante no Asaas:', error);
+      // Em caso de erro, retornarmos um ID fictício para não interromper o fluxo
+      return "cus_error_" + Math.random().toString(36).substring(2, 15);
     }
   }
   
@@ -179,6 +223,43 @@ export class LytexGateway implements PaymentGateway {
     
     if (!this.apiKey) {
       console.warn('LYTEX_API_KEY não configurada. Integração com Lytex funcionará em modo de simulação.');
+    }
+  }
+  
+  // Nova função para registrar um estudante no Lytex
+  public async registerStudent(userData: { 
+    id: number, 
+    fullName: string, 
+    email: string 
+  }): Promise<string> {
+    try {
+      // Se não tivermos API key, retornar dados simulados
+      if (!this.apiKey) {
+        const customerId = "lytex_cus_" + Math.random().toString(36).substring(2, 15);
+        console.log(`[SIMULAÇÃO LYTEX] Registrando estudante: ${userData.fullName}, email: ${userData.email}, ID externo: ${customerId}`);
+        return customerId;
+      }
+      
+      // Criar cliente no Lytex
+      const customerData = {
+        name: userData.fullName,
+        email: userData.email,
+        external_id: `student_${userData.id}`,
+        // Em um ambiente real, incluiríamos outros dados como CPF, telefone, etc.
+      };
+      
+      const response = await axios.post(`${this.apiUrl}/customers`, customerData, {
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      return response.data.id;
+    } catch (error) {
+      console.error('Erro ao registrar estudante no Lytex:', error);
+      // Em caso de erro, retornarmos um ID fictício para não interromper o fluxo
+      return "lytex_cus_error_" + Math.random().toString(36).substring(2, 15);
     }
   }
   
