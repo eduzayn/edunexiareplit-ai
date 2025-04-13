@@ -6,7 +6,8 @@ export interface PaymentGateway {
   createPayment(enrollment: Enrollment): Promise<{ externalId: string, paymentUrl: string }>;
   getPaymentStatus(externalId: string): Promise<string>;
   processWebhook(payload: any): { status: string, externalId: string };
-  registerStudent(userData: { id: number, fullName: string, email: string }): Promise<string>;
+  registerStudent(userData: { id: number, fullName: string, email: string, cpf?: string }): Promise<{ customerId: string, alreadyExists: boolean }>;
+  checkStudentExists(userData: { email: string, cpf?: string }): Promise<{ exists: boolean, customerId?: string }>;
 }
 
 // Implementação do gateway Asaas
@@ -152,27 +153,93 @@ export class AsaasGateway implements PaymentGateway {
     }
   }
   
-  // Nova função para registrar um usuário sem estar vinculado a uma matrícula
+  // Verifica se o estudante já existe no Asaas
+  public async checkStudentExists(userData: { 
+    email: string, 
+    cpf?: string 
+  }): Promise<{ exists: boolean, customerId?: string }> {
+    try {
+      // Se não tivermos API key, simular verificação
+      if (!this.apiKey) {
+        // Simulamos que 30% das verificações vão retornar que o usuário já existe
+        const exists = Math.random() < 0.3;
+        const customerId = exists ? "cus_" + Math.random().toString(36).substring(2, 15) : undefined;
+        console.log(`[SIMULAÇÃO ASAAS] Verificando estudante existente: email: ${userData.email}${userData.cpf ? ', CPF: ' + userData.cpf : ''}, Resultado: ${exists ? 'Encontrado' : 'Não encontrado'}`);
+        return { exists, customerId };
+      }
+      
+      // Buscar por email
+      const params = { email: userData.email };
+      
+      // Adicionar CPF aos parâmetros de busca se disponível
+      if (userData.cpf) {
+        Object.assign(params, { cpfCnpj: userData.cpf.replace(/[^\d]/g, '') });
+      }
+      
+      // Buscar cliente no Asaas
+      const response = await axios.get(`${this.apiUrl}/customers`, {
+        params,
+        headers: {
+          'access_token': this.apiKey
+        }
+      });
+      
+      // Verificar se encontrou algum cliente
+      if (response.data.data && response.data.data.length > 0) {
+        return { 
+          exists: true, 
+          customerId: response.data.data[0].id 
+        };
+      }
+      
+      return { exists: false };
+    } catch (error) {
+      console.error('Erro ao verificar estudante no Asaas:', error);
+      return { exists: false };
+    }
+  }
+
+  // Registra um usuário sem estar vinculado a uma matrícula
   public async registerStudent(userData: { 
     id: number, 
     fullName: string, 
-    email: string 
-  }): Promise<string> {
+    email: string,
+    cpf?: string 
+  }): Promise<{ customerId: string, alreadyExists: boolean }> {
     try {
+      // Verificar se o estudante já existe
+      const checkResult = await this.checkStudentExists({ 
+        email: userData.email,
+        cpf: userData.cpf
+      });
+      
+      // Se o estudante já existe, retornar o ID existente
+      if (checkResult.exists && checkResult.customerId) {
+        console.log(`Estudante já existe no Asaas: ${userData.email}`);
+        return { 
+          customerId: checkResult.customerId,
+          alreadyExists: true
+        };
+      }
+      
       // Se não tivermos API key, retornar dados simulados
       if (!this.apiKey) {
         const customerId = "cus_" + Math.random().toString(36).substring(2, 15);
         console.log(`[SIMULAÇÃO ASAAS] Registrando estudante: ${userData.fullName}, email: ${userData.email}, ID externo: ${customerId}`);
-        return customerId;
+        return { customerId, alreadyExists: false };
       }
       
       // Criar cliente no Asaas
-      const customerData = {
+      const customerData: any = {
         name: userData.fullName,
         email: userData.email,
         externalReference: `student_${userData.id}`,
-        // Em um ambiente real, incluiríamos outros dados como CPF, telefone, etc.
       };
+      
+      // Adicionar CPF se disponível
+      if (userData.cpf) {
+        customerData.cpfCnpj = userData.cpf.replace(/[^\d]/g, '');
+      }
       
       const response = await axios.post(`${this.apiUrl}/customers`, customerData, {
         headers: {
@@ -181,11 +248,17 @@ export class AsaasGateway implements PaymentGateway {
         }
       });
       
-      return response.data.id;
+      return { 
+        customerId: response.data.id,
+        alreadyExists: false
+      };
     } catch (error) {
       console.error('Erro ao registrar estudante no Asaas:', error);
       // Em caso de erro, retornarmos um ID fictício para não interromper o fluxo
-      return "cus_error_" + Math.random().toString(36).substring(2, 15);
+      return { 
+        customerId: "cus_error_" + Math.random().toString(36).substring(2, 15),
+        alreadyExists: false
+      };
     }
   }
   
@@ -227,27 +300,93 @@ export class LytexGateway implements PaymentGateway {
     }
   }
   
-  // Nova função para registrar um estudante no Lytex
+  // Verifica se o estudante já existe no Lytex
+  public async checkStudentExists(userData: { 
+    email: string, 
+    cpf?: string 
+  }): Promise<{ exists: boolean, customerId?: string }> {
+    try {
+      // Se não tivermos API key, simular verificação
+      if (!this.apiKey) {
+        // Simulamos que 30% das verificações vão retornar que o usuário já existe
+        const exists = Math.random() < 0.3;
+        const customerId = exists ? "lytex_cus_" + Math.random().toString(36).substring(2, 15) : undefined;
+        console.log(`[SIMULAÇÃO LYTEX] Verificando estudante existente: email: ${userData.email}${userData.cpf ? ', CPF: ' + userData.cpf : ''}, Resultado: ${exists ? 'Encontrado' : 'Não encontrado'}`);
+        return { exists, customerId };
+      }
+      
+      // Construir parâmetros de busca
+      let queryParams = new URLSearchParams();
+      queryParams.append('email', userData.email);
+      
+      // Adicionar CPF aos parâmetros de busca se disponível
+      if (userData.cpf) {
+        queryParams.append('document', userData.cpf.replace(/[^\d]/g, ''));
+      }
+      
+      // Buscar cliente no Lytex
+      const response = await axios.get(`${this.apiUrl}/customers?${queryParams.toString()}`, {
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`
+        }
+      });
+      
+      // Verificar se encontrou algum cliente
+      if (response.data.data && response.data.data.length > 0) {
+        return { 
+          exists: true, 
+          customerId: response.data.data[0].id 
+        };
+      }
+      
+      return { exists: false };
+    } catch (error) {
+      console.error('Erro ao verificar estudante no Lytex:', error);
+      return { exists: false };
+    }
+  }
+
+  // Registra um usuário sem estar vinculado a uma matrícula
   public async registerStudent(userData: { 
     id: number, 
     fullName: string, 
-    email: string 
-  }): Promise<string> {
+    email: string,
+    cpf?: string 
+  }): Promise<{ customerId: string, alreadyExists: boolean }> {
     try {
+      // Verificar se o estudante já existe
+      const checkResult = await this.checkStudentExists({ 
+        email: userData.email,
+        cpf: userData.cpf
+      });
+      
+      // Se o estudante já existe, retornar o ID existente
+      if (checkResult.exists && checkResult.customerId) {
+        console.log(`Estudante já existe no Lytex: ${userData.email}`);
+        return { 
+          customerId: checkResult.customerId,
+          alreadyExists: true
+        };
+      }
+      
       // Se não tivermos API key, retornar dados simulados
       if (!this.apiKey) {
         const customerId = "lytex_cus_" + Math.random().toString(36).substring(2, 15);
         console.log(`[SIMULAÇÃO LYTEX] Registrando estudante: ${userData.fullName}, email: ${userData.email}, ID externo: ${customerId}`);
-        return customerId;
+        return { customerId, alreadyExists: false };
       }
       
       // Criar cliente no Lytex
-      const customerData = {
+      const customerData: any = {
         name: userData.fullName,
         email: userData.email,
         external_id: `student_${userData.id}`,
-        // Em um ambiente real, incluiríamos outros dados como CPF, telefone, etc.
       };
+      
+      // Adicionar CPF se disponível
+      if (userData.cpf) {
+        customerData.document = userData.cpf.replace(/[^\d]/g, '');
+      }
       
       const response = await axios.post(`${this.apiUrl}/customers`, customerData, {
         headers: {
@@ -256,11 +395,17 @@ export class LytexGateway implements PaymentGateway {
         }
       });
       
-      return response.data.id;
+      return { 
+        customerId: response.data.id,
+        alreadyExists: false
+      };
     } catch (error) {
       console.error('Erro ao registrar estudante no Lytex:', error);
       // Em caso de erro, retornarmos um ID fictício para não interromper o fluxo
-      return "lytex_cus_error_" + Math.random().toString(36).substring(2, 15);
+      return { 
+        customerId: "lytex_cus_error_" + Math.random().toString(36).substring(2, 15),
+        alreadyExists: false
+      };
     }
   }
   
