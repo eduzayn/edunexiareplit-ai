@@ -5,14 +5,17 @@ import { users, type User, type InsertUser,
   questions, type Question, type InsertQuestion,
   assessments, type Assessment, type InsertAssessment,
   assessmentQuestions, type AssessmentQuestion, type InsertAssessmentQuestion,
-  institutions, type Institution, type InsertInstitution
+  institutions, type Institution, type InsertInstitution,
+  polos, type Polo, type InsertPolo,
+  financialTransactions, type FinancialTransaction, type InsertFinancialTransaction,
+  financialCategories, type FinancialCategory, type InsertFinancialCategory
 } from "@shared/schema";
 import session from "express-session";
 import { Store as SessionStore } from "express-session";
 import connectPg from "connect-pg-simple";
 import { db } from "./db";
 import { pool } from "./db";
-import { eq, and, or, like, asc, desc } from "drizzle-orm";
+import { eq, and, or, like, asc, desc, gte, lte } from "drizzle-orm";
 
 const PostgresSessionStore = connectPg(session);
 
