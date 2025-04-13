@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import { storage } from "../storage";
 import { requirePolo } from "../middleware/auth";
 import { eq, and, like, desc, asc, or, sql } from "drizzle-orm";
-import { polos, users, courses, enrollments } from "@shared/schema";
+import { polos, users, courses, enrollments, contractTemplates } from "@shared/schema";
 
 const router = Router();
 
@@ -501,6 +501,35 @@ router.get("/sales-links", async (req, res) => {
   } catch (error) {
     console.error("Erro ao listar links de vendas:", error);
     return res.status(500).json({ message: "Erro ao carregar links de vendas" });
+  }
+});
+
+// Rota para obter templates de contrato disponíveis
+router.get("/contract-templates", async (req, res) => {
+  try {
+    const poloUser = req.user;
+    if (!poloUser || !poloUser.id) {
+      return res.status(401).json({ message: "Usuário não autenticado" });
+    }
+
+    // Obter o polo atual
+    const userPolo = await storage.getPoloByUserId(poloUser.id);
+    if (!userPolo) {
+      return res.status(404).json({ message: "Polo não encontrado para este usuário" });
+    }
+
+    // Obter todos os templates de contrato ativos
+    const templates = await storage.getContractTemplates();
+    
+    return res.json(templates.map(template => ({
+      id: template.id,
+      name: template.name,
+      type: template.type,
+      description: template.description || ""
+    })));
+  } catch (error) {
+    console.error("Erro ao obter templates de contrato:", error);
+    return res.status(500).json({ message: "Erro ao carregar templates de contrato" });
   }
 });
 
