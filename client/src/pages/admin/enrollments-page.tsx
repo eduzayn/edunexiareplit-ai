@@ -200,6 +200,9 @@ export default function EnrollmentsPage() {
         description: "O status da matrícula foi atualizado com sucesso",
       });
       setIsStatusDialogOpen(false);
+      setSelectedStatus("active");
+      setStatusReason("");
+      setSelectedId(null);
       queryClient.invalidateQueries({ queryKey: ["/api/enrollments"] });
     },
     onError: (error: Error) => {
@@ -337,7 +340,7 @@ export default function EnrollmentsPage() {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="">Todos</SelectItem>
+                                <SelectItem value="todos">Todos</SelectItem>
                                 <SelectItem value="active">Ativa</SelectItem>
                                 <SelectItem value="pending_payment">Aguardando Pagamento</SelectItem>
                                 <SelectItem value="completed">Concluída</SelectItem>
@@ -366,7 +369,7 @@ export default function EnrollmentsPage() {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="">Todos</SelectItem>
+                                <SelectItem value="todos">Todos</SelectItem>
                                 <SelectItem value="asaas">Asaas</SelectItem>
                                 <SelectItem value="lytex">Lytex</SelectItem>
                               </SelectContent>
@@ -570,7 +573,7 @@ export default function EnrollmentsPage() {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <label className="text-sm font-medium" htmlFor="status">Status</label>
-              <Select defaultValue="active" onValueChange={(value) => {}}>
+              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione um status" />
                 </SelectTrigger>
@@ -585,7 +588,12 @@ export default function EnrollmentsPage() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium" htmlFor="reason">Motivo</label>
-              <Input id="reason" placeholder="Informe o motivo da alteração" />
+              <Input 
+                id="reason" 
+                placeholder="Informe o motivo da alteração" 
+                value={statusReason} 
+                onChange={(e) => setStatusReason(e.target.value)} 
+              />
             </div>
           </div>
           <DialogFooter>
@@ -596,20 +604,16 @@ export default function EnrollmentsPage() {
               type="button" 
               onClick={() => {
                 if (selectedId) {
-                  const statusSelect = document.querySelector('select[name="status"]') as HTMLSelectElement;
-                  const reasonInput = document.getElementById('reason') as HTMLInputElement;
-                  
-                  if (statusSelect && reasonInput) {
-                    updateStatusMutation.mutate({
-                      id: selectedId,
-                      status: statusSelect.value,
-                      reason: reasonInput.value
-                    });
-                  }
+                  updateStatusMutation.mutate({
+                    id: selectedId,
+                    status: selectedStatus,
+                    reason: statusReason
+                  });
                 }
               }}
+              disabled={updateStatusMutation.isPending}
             >
-              Atualizar
+              {updateStatusMutation.isPending ? "Atualizando..." : "Atualizar"}
             </Button>
           </DialogFooter>
         </DialogContent>
