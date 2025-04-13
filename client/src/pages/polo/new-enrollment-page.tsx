@@ -89,8 +89,12 @@ const enrollmentFormSchema = z.object({
   hasAddressDocument: z.boolean().optional(),
   hasSchoolRecords: z.boolean().optional(),
   
+  // Contrato
+  contractTemplateId: z.string().min(1, { message: "Selecione um modelo de contrato" }),
+  additionalNotes: z.string().optional(),
+  
   // Campo para controlar o atual "passo" do formulário
-  currentStep: z.number().min(1).max(4)
+  currentStep: z.number().min(1).max(5)
 });
 
 type EnrollmentFormValues = z.infer<typeof enrollmentFormSchema>;
@@ -134,6 +138,8 @@ export default function NewEnrollmentPage() {
       hasIdentificationDocument: false,
       hasAddressDocument: false,
       hasSchoolRecords: false,
+      contractTemplateId: "",
+      additionalNotes: "",
       currentStep: 1
     },
   });
@@ -176,7 +182,7 @@ export default function NewEnrollmentPage() {
   
   // Função para enviar o formulário
   const onSubmit = (values: EnrollmentFormValues) => {
-    if (step < 4) {
+    if (step < 5) {
       nextStep();
       return;
     }
@@ -714,6 +720,7 @@ export default function NewEnrollmentPage() {
     { number: 2, label: "Curso" },
     { number: 3, label: "Pagamento" },
     { number: 4, label: "Documentos" },
+    { number: 5, label: "Contrato" },
   ];
   
   // Sidebar items
@@ -836,14 +843,14 @@ export default function NewEnrollmentPage() {
                 type="button"
                 onClick={form.handleSubmit(onSubmit)}
                 disabled={isCreatingEnrollment}
-                className={`${step < 4 ? "bg-orange-500 hover:bg-orange-600" : "bg-green-600 hover:bg-green-700"}`}
+                className={`${step < 5 ? "bg-orange-500 hover:bg-orange-600" : "bg-green-600 hover:bg-green-700"}`}
               >
                 {isCreatingEnrollment ? (
                   <>
                     <Skeleton className="h-4 w-4 rounded-full mr-2" />
                     Processando...
                   </>
-                ) : step < 4 ? (
+                ) : step < 5 ? (
                   "Continuar"
                 ) : (
                   <>
