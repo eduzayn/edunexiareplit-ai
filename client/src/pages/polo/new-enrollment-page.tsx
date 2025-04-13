@@ -87,17 +87,12 @@ const enrollmentFormSchema = z.object({
     message: "Você deve aceitar os termos antes de prosseguir",
   }),
   
-  // Documentos
-  hasIdentificationDocument: z.boolean().optional(),
-  hasAddressDocument: z.boolean().optional(),
-  hasSchoolRecords: z.boolean().optional(),
-  
   // Contrato
   contractTemplateId: z.string().min(1, { message: "Selecione um modelo de contrato" }),
   additionalNotes: z.string().optional(),
   
   // Campo para controlar o atual "passo" do formulário
-  currentStep: z.number().min(1).max(5)
+  currentStep: z.number().min(1).max(4)
 });
 
 type EnrollmentFormValues = z.infer<typeof enrollmentFormSchema>;
@@ -194,7 +189,7 @@ export default function NewEnrollmentPage() {
   
   // Função para enviar o formulário
   const onSubmit = (values: EnrollmentFormValues) => {
-    if (step < 5) {
+    if (step < 4) {
       nextStep();
       return;
     }
@@ -599,89 +594,55 @@ export default function NewEnrollmentPage() {
         return (
           <div className="space-y-4">
             <div className="space-y-2">
-              <h2 className="text-xl font-bold">Documentação</h2>
-              <p className="text-gray-500">Documentos necessários para a matrícula</p>
+              <h2 className="text-xl font-bold">Contrato</h2>
+              <p className="text-gray-500">Escolha do modelo de contrato</p>
             </div>
             
             <Alert className="bg-blue-50 text-blue-800 border-blue-200">
               <InfoIcon className="h-4 w-4" />
               <AlertTitle>Importante</AlertTitle>
               <AlertDescription>
-                O estudante precisará enviar os documentos obrigatórios para efetivação da matrícula. 
-                Os arquivos podem ser enviados posteriormente através do portal do aluno.
+                Os documentos necessários para a matrícula (RG/CPF, comprovante de residência e histórico escolar) deverão ser enviados pelo aluno através do Portal do Aluno após a confirmação da matrícula.
               </AlertDescription>
             </Alert>
             
-            <div className="space-y-4 mt-4">
-              <FormField
-                control={form.control}
-                name="hasIdentificationDocument"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+            <FormField
+              control={form.control}
+              name="contractTemplateId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Modelo de Contrato</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um modelo de contrato" />
+                      </SelectTrigger>
                     </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel className="font-medium cursor-pointer">
-                        RG e CPF
-                      </FormLabel>
-                      <FormDescription>
-                        Documento de identificação (frente e verso) e CPF
-                      </FormDescription>
-                    </div>
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="hasAddressDocument"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel className="font-medium cursor-pointer">
-                        Comprovante de Residência
-                      </FormLabel>
-                      <FormDescription>
-                        Documento recente (últimos 3 meses)
-                      </FormDescription>
-                    </div>
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="hasSchoolRecords"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel className="font-medium cursor-pointer">
-                        Histórico Escolar
-                      </FormLabel>
-                      <FormDescription>
-                        Documento comprobatório de conclusão de ensino médio ou superior
-                      </FormDescription>
-                    </div>
-                  </FormItem>
-                )}
-              />
-            </div>
+                    <SelectContent>
+                      {isLoadingContractTemplates ? (
+                        <SelectItem value="loading" disabled>Carregando modelos...</SelectItem>
+                      ) : (
+                        contractTemplatesData?.map((template: any) => (
+                          <SelectItem 
+                            key={template.id} 
+                            value={template.id.toString()}
+                          >
+                            {template.name} - v{template.version}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    O modelo de contrato define os termos e condições da prestação de serviços educacionais.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             
             <Card className="mt-6">
               <CardHeader className="pb-2">
@@ -884,8 +845,7 @@ export default function NewEnrollmentPage() {
     { number: 1, label: "Aluno" },
     { number: 2, label: "Curso" },
     { number: 3, label: "Pagamento" },
-    { number: 4, label: "Documentos" },
-    { number: 5, label: "Contrato" },
+    { number: 4, label: "Contrato" },
   ];
   
   // Sidebar items
