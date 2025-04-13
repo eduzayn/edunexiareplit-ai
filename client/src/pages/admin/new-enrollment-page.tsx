@@ -1012,8 +1012,7 @@ export default function NewEnrollmentPage() {
               </Button>
               
               <Button
-                type="button"
-                onClick={form.handleSubmit(onSubmit)}
+                type="submit"
                 disabled={isCreatingEnrollment}
                 className={`${step < 4 ? "bg-green-600 hover:bg-green-700" : "bg-green-600 hover:bg-green-700"}`}
               >
