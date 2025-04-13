@@ -236,45 +236,169 @@ async function exploreApiEndpoints() {
     }
     
     // Lista de caminhos possíveis para verificar
+    // Inclui variações em português e inglês
     const possiblePaths = [
+      // Base e versão
       '',
       'v2',
+      'v3',
+      'api',
+      'api/v2',
+      
+      // Clientes/Customers (em inglês e português)
       'v2/customers',
       'customers',
+      'v2/customer',
+      'customer',
+      'v2/clientes', // PT
+      'clientes', // PT
+      'v2/cliente', // PT
+      'cliente', // PT
+      'v2/sacados', // PT termo financeiro
+      'sacados', // PT
+      
+      // Pagamentos/Payments (em inglês e português)
       'v2/payments',
       'payments',
+      'v2/payment',
+      'payment',
+      'v2/pagamentos', // PT
+      'pagamentos', // PT
+      'v2/pagamento', // PT
+      'pagamento', // PT
+      
+      // Cobranças (termos alternativos)
+      'v2/charges',
+      'charges',
+      'v2/charge',
+      'charge',
+      'v2/cobrancas', // PT
+      'cobrancas', // PT
+      'v2/cobranca', // PT
+      'cobranca', // PT
+      
+      // Faturas/Invoices (já encontrados)
       'v2/invoices',
-      'invoices'
+      'invoices',
+      'v2/invoice',
+      'invoice',
+      'v2/faturas', // PT
+      'faturas', // PT
+      'v2/fatura', // PT
+      'fatura' // PT
     ];
     
-    console.log('Verificando endpoints disponíveis...');
+    console.log('Verificando endpoints disponíveis com métodos HTTP variados...');
+    console.log('Testando primeiro os endpoints significativos com diferentes métodos HTTP...');
+    
+    // Testar os endpoints mais importantes com diferentes métodos HTTP
+    const keyEndpoints = [
+      // v2
+      'v2/customers', 'v2/clientes', 'v2/sacados',
+      'v2/payments', 'v2/pagamentos', 'v2/cobrancas', 'v2/charges',
+      'v2/invoices', 'v2/faturas',
+      
+      // v3
+      'v3/customers', 'v3/clients',
+      'v3/payments', 'v3/invoices',
+      
+      // Sem versão
+      'customers', 'clients', 'clientes',
+      'payments', 'pagamentos', 'faturas'
+    ];
+    
+    const httpMethods = ['get', 'post'];
+    
+    for (const endpoint of keyEndpoints) {
+      for (const method of httpMethods) {
+        try {
+          const url = `${LYTEX_API_URL}/${endpoint}`;
+          console.log(`Testando ${method.toUpperCase()} ${url}`);
+          
+          // Configurar a requisição com timeout e headers adicionais relevantes
+          const config = {
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            timeout: 5000,
+            validateStatus: status => true // Para não rejeitar nenhum status HTTP
+          };
+          
+          // Dados de exemplo para métodos POST
+          const testData = method === 'post' ? {
+            clientId: LYTEX_CLIENT_ID,
+            name: 'Cliente Teste',
+            document: '12345678909',
+            email: `teste_${Date.now()}@example.com`
+          } : null;
+          
+          // Executar a requisição com o método apropriado
+          const response = method === 'get' 
+            ? await axios.get(url, config)
+            : await axios.post(url, testData, config);
+          
+          // Mostrar resultados completos para respostas bem-sucedidas
+          if (response.status < 400) {
+            console.log(`✅ ${method.toUpperCase()} ${url} - Status: ${response.status}`);
+            if (response.data) {
+              console.log('   Resposta:', typeof response.data === 'object' 
+                          ? JSON.stringify(response.data, null, 2).substring(0, 300) + '...' 
+                          : response.data.toString().substring(0, 300) + '...');
+            }
+          } else {
+            console.log(`❌ ${method.toUpperCase()} ${url} - Status: ${response.status} - ${response.statusText || 'Erro'}`);
+            
+            // Examinar o corpo da resposta para mensagens de erro úteis
+            if (response.data) {
+              console.log('   Detalhes:', JSON.stringify(response.data).substring(0, 200));
+            }
+          }
+        } catch (error) {
+          console.log(`❌ ${method.toUpperCase()} ${endpoint} - Erro: ${error.message}`);
+        }
+      }
+    }
+    
+    // Agora verifica os demais endpoints apenas com método GET
+    console.log('\nVerificando endpoints restantes com método GET...');
     
     for (const path of possiblePaths) {
+      // Pular os que já testamos com vários métodos
+      if (keyEndpoints.includes(path)) continue;
+      
       try {
         const url = `${LYTEX_API_URL}/${path}`;
-        console.log(`Testando: ${url}`);
+        console.log(`Testando GET ${url}`);
         
         // Definir timeout curto para não demorar muito em caso de falha
         const response = await axios.get(url, {
           headers: {
-            'Authorization': `Bearer ${accessToken}`
+            'Authorization': `Bearer ${accessToken}`,
+            'Accept': 'application/json'
           },
-          timeout: 5000
+          timeout: 5000,
+          validateStatus: status => true // Para não rejeitar nenhum status HTTP
         });
         
-        console.log(`✅ ${url} - Status: ${response.status}`);
-        if (response.data) {
-          console.log('   Resposta:', typeof response.data === 'object' 
+        if (response.status < 400) {
+          console.log(`✅ GET ${url} - Status: ${response.status}`);
+          if (response.data) {
+            console.log('   Resposta:', typeof response.data === 'object' 
                       ? JSON.stringify(response.data, null, 2).substring(0, 200) + '...' 
                       : response.data.toString().substring(0, 200) + '...');
+          }
+        } else {
+          console.log(`❌ GET ${url} - Status: ${response.status} - ${response.statusText || 'Erro'}`);
         }
       } catch (error) {
         if (error.response) {
-          console.log(`❌ ${path} - Status: ${error.response.status} - ${error.response.statusText || 'Erro'}`);
+          console.log(`❌ GET ${path} - Status: ${error.response.status} - ${error.response.statusText || 'Erro'}`);
         } else if (error.code === 'ECONNABORTED') {
-          console.log(`❌ ${path} - Timeout`);
+          console.log(`❌ GET ${path} - Timeout`);
         } else {
-          console.log(`❌ ${path} - ${error.message}`);
+          console.log(`❌ GET ${path} - ${error.message}`);
         }
       }
     }
