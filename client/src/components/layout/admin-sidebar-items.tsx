@@ -65,7 +65,7 @@ export function getAdminSidebarItems(currentPath: string) {
       active: currentPath === "/admin/polos"
     },
     { 
-      name: "Financeiro", 
+      name: "Financeiro Empresarial", 
       icon: <MonetizationOnIcon />, 
       href: "/admin/financial",
       active: currentPath === "/admin/financial"
