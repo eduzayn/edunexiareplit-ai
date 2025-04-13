@@ -18,6 +18,7 @@ export const institutionStatusEnum = pgEnum("institution_status", ["active", "in
 export const poloStatusEnum = pgEnum("polo_status", ["active", "inactive"]);
 export const enrollmentStatusEnum = pgEnum("enrollment_status", ["pending_payment", "active", "completed", "cancelled", "suspended"]);
 export const paymentGatewayEnum = pgEnum("payment_gateway", ["asaas", "lytex"]);
+export const integrationTypeEnum = pgEnum("integration_type", ["asaas", "lytex", "openai", "elevenlabs", "zapi"]);
 
 // Usuários
 export const users = pgTable("users", {
@@ -218,6 +219,21 @@ export const enrollmentStatusHistory = pgTable("enrollment_status_history", {
   metadata: json("metadata"), // Pode armazenar payloads de webhooks ou informações adicionais
 });
 
+// Integrações com APIs externas
+export const integrations = pgTable("integrations", {
+  id: serial("id").primaryKey(),
+  type: integrationTypeEnum("type").notNull(), // asaas, lytex, openai, elevenlabs, zapi
+  name: text("name").notNull(), // Nome para identificação da integração
+  apiKey: text("api_key").notNull(), // Chave de API (criptografada)
+  apiSecret: text("api_secret"), // Secret opcional (criptografado)
+  additionalConfig: json("additional_config"), // Configurações adicionais específicas da integração
+  isActive: boolean("is_active").default(true).notNull(),
+  institutionId: integer("institution_id").references(() => institutions.id),
+  createdById: integer("created_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const institutions = pgTable("institutions", {
   id: serial("id").primaryKey(),
   code: text("code").notNull().unique(),
@@ -247,6 +263,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   financialCategoriesCreated: many(financialCategories),
   enrollments: many(enrollments, { relationName: "studentEnrollments" }),
   partnerEnrollments: many(enrollments, { relationName: "partnerEnrollments" }),
+  integrationsCreated: many(integrations),
 }));
 
 export const institutionsRelations = relations(institutions, ({ one, many }) => ({
@@ -258,6 +275,7 @@ export const institutionsRelations = relations(institutions, ({ one, many }) => 
   financialTransactions: many(financialTransactions),
   financialCategories: many(financialCategories),
   enrollments: many(enrollments),
+  integrations: many(integrations),
 }));
 
 export const polosRelations = relations(polos, ({ one, many }) => ({
@@ -390,6 +408,18 @@ export const enrollmentStatusHistoryRelations = relations(enrollmentStatusHistor
   }),
   changedBy: one(users, {
     fields: [enrollmentStatusHistory.changedById],
+    references: [users.id],
+  }),
+}));
+
+// Relações de Integrações
+export const integrationsRelations = relations(integrations, ({ one }) => ({
+  institution: one(institutions, {
+    fields: [integrations.institutionId],
+    references: [institutions.id],
+  }),
+  createdBy: one(users, {
+    fields: [integrations.createdById],
     references: [users.id],
   }),
 }));
@@ -600,3 +630,17 @@ export const insertEnrollmentStatusHistorySchema = createInsertSchema(enrollment
 });
 export type InsertEnrollmentStatusHistory = z.infer<typeof insertEnrollmentStatusHistorySchema>;
 export type EnrollmentStatusHistory = typeof enrollmentStatusHistory.$inferSelect;
+
+// Schemas e tipos para Integrações
+export const insertIntegrationSchema = createInsertSchema(integrations).pick({
+  type: true,
+  name: true,
+  apiKey: true,
+  apiSecret: true,
+  additionalConfig: true,
+  isActive: true,
+  institutionId: true,
+  createdById: true,
+});
+export type InsertIntegration = z.infer<typeof insertIntegrationSchema>;
+export type Integration = typeof integrations.$inferSelect;
