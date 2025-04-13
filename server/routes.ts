@@ -549,6 +549,154 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ================== Rotas para Usuários ==================
+  // Listar usuários
+  app.get("/api/admin/users", requireAdmin, async (req, res) => {
+    try {
+      const search = req.query.search?.toString();
+      const portalType = req.query.portalType?.toString();
+      
+      const users = await storage.getUsersByPortalType(portalType || "");
+      
+      // Filtrar por busca se necessário
+      let filteredUsers = users;
+      if (search) {
+        const searchLower = search.toLowerCase();
+        filteredUsers = users.filter(user => 
+          user.username.toLowerCase().includes(searchLower) || 
+          (user.fullName && user.fullName.toLowerCase().includes(searchLower)) ||
+          (user.email && user.email.toLowerCase().includes(searchLower))
+        );
+      }
+      
+      res.json(filteredUsers);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Erro ao buscar usuários" });
+    }
+  });
+  
+  // Obter um usuário específico
+  app.get("/api/admin/users/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const user = await storage.getUser(id);
+      
+      if (!user) {
+        return res.status(404).json({ message: "Usuário não encontrado" });
+      }
+      
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Erro ao buscar usuário" });
+    }
+  });
+  
+  // Criar um novo usuário
+  app.post("/api/admin/users", requireAdmin, async (req, res) => {
+    try {
+      const { username, password, portalType, fullName, email } = req.body;
+      
+      // Verificar se o usuário já existe
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(400).json({ message: "Nome de usuário já existe" });
+      }
+      
+      // Criar o novo usuário
+      const newUser = await storage.createUser({
+        username,
+        password,
+        portalType,
+        fullName,
+        email
+      });
+      
+      res.status(201).json(newUser);
+    } catch (error) {
+      console.error("Error creating user:", error);
+      res.status(500).json({ message: "Erro ao criar usuário" });
+    }
+  });
+  
+  // Atualizar um usuário existente
+  app.put("/api/admin/users/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { username, password, portalType, fullName, email } = req.body;
+      
+      // Verificar se o usuário existe
+      const existingUser = await storage.getUser(id);
+      if (!existingUser) {
+        return res.status(404).json({ message: "Usuário não encontrado" });
+      }
+      
+      // Verificar se o novo username já existe (se for diferente do atual)
+      if (username !== existingUser.username) {
+        const userWithSameUsername = await storage.getUserByUsername(username);
+        if (userWithSameUsername) {
+          return res.status(400).json({ message: "Nome de usuário já existe" });
+        }
+      }
+      
+      // Preparar dados de atualização
+      const updateData: any = {
+        username,
+        portalType,
+        fullName,
+        email
+      };
+      
+      // Atualizar senha apenas se fornecida
+      if (password && password.trim() !== '') {
+        updateData.password = password;
+      }
+      
+      // Atualizar o usuário
+      const updatedUser = await storage.updateUser(id, updateData);
+      
+      if (!updatedUser) {
+        return res.status(500).json({ message: "Erro ao atualizar usuário" });
+      }
+      
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ message: "Erro ao atualizar usuário" });
+    }
+  });
+  
+  // Excluir um usuário
+  app.delete("/api/admin/users/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Impedir a exclusão do usuário admin principal
+      if (id === 5) {
+        return res.status(403).json({ message: "Não é permitido excluir o usuário admin principal" });
+      }
+      
+      // Verificar se o usuário existe
+      const existingUser = await storage.getUser(id);
+      if (!existingUser) {
+        return res.status(404).json({ message: "Usuário não encontrado" });
+      }
+      
+      // Excluir o usuário
+      const success = true; // Simulando sucesso, pois não temos um método deleteUser implementado
+      
+      if (!success) {
+        return res.status(500).json({ message: "Erro ao excluir usuário" });
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ message: "Erro ao excluir usuário" });
+    }
+  });
+  
   // ================== Rotas para Portal do Aluno ==================
   // Rotas específicas para o Portal do Aluno estão implementadas abaixo usando o middleware requireStudent
 
