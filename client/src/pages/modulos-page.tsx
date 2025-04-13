@@ -3,9 +3,19 @@ import Footer from "@/components/layout/footer";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { SchoolIcon, MenuBookIcon } from "@/components/ui/icons";
+import { useState } from "react";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle 
+} from "@/components/ui/dialog";
 
 export default function ModulosPage() {
   const [, navigate] = useLocation();
+  const [openModulo, setOpenModulo] = useState<number | null>(null);
   
   const handleLogin = () => {
     navigate("/portal-selection");
@@ -98,6 +108,82 @@ export default function ModulosPage() {
     },
   ];
 
+  const getModuloDescricaoDetalhada = (index: number) => {
+    const modulo = modulos[index];
+    if (!modulo) return null;
+    
+    // Descrições mais detalhadas para cada módulo
+    const descricoes = {
+      "Portal do Aluno": `O Portal do Aluno da Edunexia oferece uma experiência educacional completa, com interface amigável e adaptada às necessidades de cada estudante. Nele, o aluno encontra:
+
+• Acesso a todos os seus cursos matriculados
+• Acompanhamento detalhado de seu progresso acadêmico
+• Certificados digitais com validação e autenticidade
+• Biblioteca digital completa com materiais complementares
+• Sistema de provas online com correção automática
+• Tutoria especializada com professores qualificados
+
+Este módulo é perfeito para instituições de todos os portes que desejam oferecer uma experiência digital completa para seus alunos.`,
+      
+      "Chat Multicanal": `O módulo de Chat Multicanal da Edunexia integra diversos canais de comunicação em uma única plataforma. Este sistema permite:
+
+• Integração nativa com WhatsApp, possibilitando atendimento via API oficial
+• Sistema de e-mail automatizado para comunicações em massa
+• Kanban de leads para acompanhamento de potenciais alunos
+• Chatbot com Inteligência Artificial para responder dúvidas frequentes
+• Notificações em tempo real para alunos e equipe administrativa
+• Relatórios detalhados de conversão e eficiência no atendimento
+
+Ideal para instituições que desejam centralizar e otimizar sua comunicação com alunos.`,
+      
+      "Financeiro": `O módulo Financeiro da Edunexia é uma solução completa para gestão financeira de instituições educacionais. Com ele, você obtém:
+
+• Sistema de pagamentos online integrado com os principais gateways
+• Geração e gestão de contratos digitais com assinatura eletrônica
+• Relatórios gerenciais detalhados com métricas financeiras
+• Integração nativa com os principais ERPs do mercado
+• Gestão de bolsas e descontos com regras personalizáveis
+• Emissão automática de notas fiscais e documentos contábeis
+
+Uma solução robusta para instituições de qualquer porte que desejam otimizar seus processos financeiros.`,
+      
+      "Polos": `O módulo de Polos da Edunexia permite a gestão completa de unidades descentralizadas. Com este módulo é possível:
+
+• Gerenciar múltiplas unidades educacionais de forma centralizada
+• Configurar comissões automatizadas para parceiros e franqueados
+• Implementar estratégias de captação de alunos específicas por região
+• Monitorar em tempo real o desempenho de cada polo
+• Gerar relatórios comparativos de desempenho entre unidades
+• Manter comunicação centralizada com todas as unidades
+
+Perfeito para redes de ensino, franquias educacionais e instituições com múltiplas unidades.`,
+      
+      "Cursos": `O módulo de Cursos da Edunexia oferece uma plataforma completa para criação e gestão de conteúdo educacional. Com ele, é possível:
+
+• Utilizar um editor de conteúdo intuitivo com recursos avançados
+• Hospedar e gerenciar vídeo-aulas com player otimizado
+• Criar materiais interativos que engajam os estudantes
+• Desenvolver avaliações e quizzes personalizados
+• Emitir certificados personalizados com sua marca
+• Analisar o desempenho dos alunos com métricas detalhadas
+
+Uma solução completa para instituições que desejam criar e gerenciar seu próprio conteúdo educacional.`,
+      
+      "Avaliações": `O módulo de Avaliações da Edunexia é um sistema completo para criação, aplicação e correção de provas online. Ele oferece:
+
+• Banco de questões categorizado e com níveis de dificuldade
+• Sistema para criação de provas personalizadas por turma ou aluno
+• Tecnologia anti-fraude com monitoramento durante as avaliações
+• Correção automática com feedback imediato para o aluno
+• Simulados adaptativos que se ajustam ao nível do estudante
+• Feedback detalhado que auxilia no processo de aprendizagem
+
+Ideal para instituições que valorizam a avaliação como parte essencial do processo educativo.`
+    };
+    
+    return descricoes[modulo.titulo as keyof typeof descricoes] || modulo.descricao;
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       <Header onLogin={handleLogin} />
@@ -142,9 +228,9 @@ export default function ModulosPage() {
                     <Button 
                       variant="outline" 
                       className="w-full text-primary border-primary hover:bg-primary hover:text-white"
-                      onClick={() => navigate('/portal-selection')}
+                      onClick={() => setOpenModulo(index)}
                     >
-                      Começar agora
+                      Saiba mais
                     </Button>
                   </div>
                 </div>
@@ -164,6 +250,40 @@ export default function ModulosPage() {
       </main>
       
       <Footer />
+      
+      {/* Diálogo de detalhes do módulo */}
+      {openModulo !== null && (
+        <Dialog open={openModulo !== null} onOpenChange={() => setOpenModulo(null)}>
+          <DialogContent className="sm:max-w-3xl">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-bold text-center">
+                {modulos[openModulo]?.titulo}
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="mt-4 mb-6 whitespace-pre-wrap">
+              {getModuloDescricaoDetalhada(openModulo)}
+            </div>
+            
+            <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-between sm:space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => setOpenModulo(null)}
+              >
+                Fechar
+              </Button>
+              <div className="flex flex-col sm:flex-row gap-3 mb-3 sm:mb-0">
+                <Button onClick={() => navigate('/planos')}>
+                  Ver planos
+                </Button>
+                <Button onClick={() => navigate('/contato')}>
+                  Fale conosco
+                </Button>
+              </div>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
