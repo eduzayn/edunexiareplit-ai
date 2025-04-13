@@ -99,7 +99,7 @@ export default function HomePage() {
                     />
                   </div>
                   
-                  <div className="absolute bottom-4 right-4 bg-primary/90 backdrop-blur-sm py-2 px-4 rounded-lg shadow-lg border border-white/20 text-white">
+                  <div className="absolute -bottom-5 right-2 bg-primary/90 backdrop-blur-sm py-2 px-4 rounded-lg shadow-lg border border-white/20 text-white">
                     <p className="text-sm font-medium">Experiência de aprendizado imersiva</p>
                   </div>
                 </div>
