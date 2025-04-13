@@ -25,9 +25,9 @@ async function getAccessToken() {
     console.log(`Tentando autenticação via ${LYTEX_AUTH_URL}`);
     
     const response = await axios.post(LYTEX_AUTH_URL, {
-      grant_type: 'client_credentials',
-      client_id: LYTEX_CLIENT_ID,
-      client_secret: LYTEX_API_KEY
+      grantType: 'clientCredentials',
+      clientId: LYTEX_CLIENT_ID,
+      clientSecret: LYTEX_API_KEY
     }, {
       headers: {
         'Content-Type': 'application/json'
@@ -36,15 +36,15 @@ async function getAccessToken() {
     
     console.log('Resposta completa da API:', JSON.stringify(response.data, null, 2));
     
-    if (response.data && response.data.access_token) {
-      accessToken = response.data.access_token;
-      refreshToken = response.data.refresh_token;
+    if (response.data && response.data.accessToken) {
+      accessToken = response.data.accessToken;
+      refreshToken = response.data.refreshToken;
       
       console.log('Token de acesso obtido com sucesso!');
-      console.log(`Expira em: ${response.data.expires_in || 'desconhecido'} segundos`);
+      console.log(`Expira em: ${response.data.expireAt || 'desconhecido'}`);
       return true;
     } else {
-      console.error('Resposta da API não contém access_token');
+      console.error('Resposta da API não contém accessToken');
       console.log('Resposta:', JSON.stringify(response.data, null, 2));
       return false;
     }
