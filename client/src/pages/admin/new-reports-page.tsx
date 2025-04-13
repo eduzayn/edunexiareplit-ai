@@ -55,6 +55,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import AdminLayout from "@/components/layout/admin-layout";
 
 // Dados simulados para os gráficos
 const COLORS = ['#4CAF50', '#8884d8', '#FF8042', '#FFBB28', '#0088FE', '#00C49F', '#708090'];
@@ -663,108 +664,110 @@ export default function ReportsPage() {
   ];
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight mb-1">Relatórios</h1>
-          <p className="text-muted-foreground">
-            Monitore as principais métricas e indicadores da plataforma
-          </p>
+    <AdminLayout>
+      <div className="p-6">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight mb-1">Relatórios</h1>
+            <p className="text-muted-foreground">
+              Monitore as principais métricas e indicadores da plataforma
+            </p>
+          </div>
+          
+          {/* Menu Mobile */}
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" className="lg:hidden">
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="top">
+              <SheetHeader>
+                <SheetTitle>Relatórios</SheetTitle>
+                <SheetDescription>
+                  Selecione a categoria de relatórios que deseja visualizar
+                </SheetDescription>
+              </SheetHeader>
+              <div className="py-4">
+                <Tabs 
+                  defaultValue="academico"
+                  className="w-full" 
+                  onValueChange={setSelectedTab}
+                  value={selectedTab}
+                >
+                  <TabsList className="grid grid-cols-2 gap-2 mb-4">
+                    <TabsTrigger value="academico">Acadêmico</TabsTrigger>
+                    <TabsTrigger value="financeiro">Financeiro</TabsTrigger>
+                    <TabsTrigger value="instituicoes">Instituições</TabsTrigger>
+                    <TabsTrigger value="parceiros">Parceiros</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
-        
-        {/* Menu Mobile */}
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button variant="outline" className="lg:hidden">
-              <ChevronDown className="h-4 w-4" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="top">
-            <SheetHeader>
-              <SheetTitle>Relatórios</SheetTitle>
-              <SheetDescription>
-                Selecione a categoria de relatórios que deseja visualizar
-              </SheetDescription>
-            </SheetHeader>
-            <div className="py-4">
-              <Tabs 
-                defaultValue="academico"
-                className="w-full" 
-                onValueChange={setSelectedTab}
-                value={selectedTab}
-              >
-                <TabsList className="grid grid-cols-2 gap-2 mb-4">
-                  <TabsTrigger value="academico">Acadêmico</TabsTrigger>
-                  <TabsTrigger value="financeiro">Financeiro</TabsTrigger>
-                  <TabsTrigger value="instituicoes">Instituições</TabsTrigger>
-                  <TabsTrigger value="parceiros">Parceiros</TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
-          </SheetContent>
-        </Sheet>
-      </div>
 
-      {/* Cards resumo */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
-        {cardItens.map((card, i) => (
-          <Card key={i}>
-            <CardContent className="flex justify-between items-center p-6">
-              <div>
-                <p className="text-sm font-medium">{card.title}</p>
-                <h3 className="text-2xl font-bold mt-1">{card.value}</h3>
-                <div className="flex items-center mt-1">
-                  {card.aumento ? (
-                    <ChevronUp className="h-4 w-4 text-green-500" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4 text-red-500" />
-                  )}
-                  <span className={card.aumento ? "text-green-500 text-sm" : "text-red-500 text-sm"}>
-                    {card.percentual}
-                  </span>
-                  <span className="text-muted-foreground text-xs ml-1">desde o mês anterior</span>
+        {/* Cards resumo */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+          {cardItens.map((card, i) => (
+            <Card key={i}>
+              <CardContent className="flex justify-between items-center p-6">
+                <div>
+                  <p className="text-sm font-medium">{card.title}</p>
+                  <h3 className="text-2xl font-bold mt-1">{card.value}</h3>
+                  <div className="flex items-center mt-1">
+                    {card.aumento ? (
+                      <ChevronUp className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 text-red-500" />
+                    )}
+                    <span className={card.aumento ? "text-green-500 text-sm" : "text-red-500 text-sm"}>
+                      {card.percentual}
+                    </span>
+                    <span className="text-muted-foreground text-xs ml-1">desde o mês anterior</span>
+                  </div>
                 </div>
-              </div>
-              <div className={`${card.color} p-3 rounded-full`}>
-                {card.icon}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                <div className={`${card.color} p-3 rounded-full`}>
+                  {card.icon}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Tabs e conteúdo principal */}
+        <div className="flex flex-col space-y-6">
+          <Tabs 
+            defaultValue="academico"
+            className="w-full" 
+            onValueChange={setSelectedTab}
+            value={selectedTab}
+          >
+            <TabsList className="hidden lg:inline-flex mb-6">
+              <TabsTrigger value="academico">Acadêmico</TabsTrigger>
+              <TabsTrigger value="financeiro">Financeiro</TabsTrigger>
+              <TabsTrigger value="instituicoes">Instituições</TabsTrigger>
+              <TabsTrigger value="parceiros">Parceiros</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="academico">
+              {renderAcademicoReports()}
+            </TabsContent>
+
+            <TabsContent value="financeiro">
+              {renderFinanceiroReports()}
+            </TabsContent>
+
+            <TabsContent value="instituicoes">
+              {renderInstituicoesReports()}
+            </TabsContent>
+
+            <TabsContent value="parceiros">
+              {renderParceirosReports()}
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
-
-      {/* Tabs e conteúdo principal */}
-      <div className="flex flex-col space-y-6">
-        <Tabs 
-          defaultValue="academico"
-          className="w-full" 
-          onValueChange={setSelectedTab}
-          value={selectedTab}
-        >
-          <TabsList className="hidden lg:inline-flex mb-6">
-            <TabsTrigger value="academico">Acadêmico</TabsTrigger>
-            <TabsTrigger value="financeiro">Financeiro</TabsTrigger>
-            <TabsTrigger value="instituicoes">Instituições</TabsTrigger>
-            <TabsTrigger value="parceiros">Parceiros</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="academico">
-            {renderAcademicoReports()}
-          </TabsContent>
-
-          <TabsContent value="financeiro">
-            {renderFinanceiroReports()}
-          </TabsContent>
-
-          <TabsContent value="instituicoes">
-            {renderInstituicoesReports()}
-          </TabsContent>
-
-          <TabsContent value="parceiros">
-            {renderParceirosReports()}
-          </TabsContent>
-        </Tabs>
-      </div>
-    </div>
+    </AdminLayout>
   );
 }
