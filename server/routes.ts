@@ -729,26 +729,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           console.log(`Usuário ${fullName} alterado para aluno. Registrando nos gateways de pagamento`);
           
+          // Verificar CPF obrigatório para alunos
+          if (!req.body.cpf) {
+            return res.status(400).json({ message: "CPF é obrigatório para alunos" });
+          }
+          
           // Registrar no Asaas
           const asaasGateway = createPaymentGateway('asaas');
-          const asaasCustomerId = await asaasGateway.registerStudent({
+          
+          // Verificar se o aluno já existe no Asaas primeiro
+          const asaasResponse = await asaasGateway.registerStudent({
             id: updatedUser.id,
             fullName: updatedUser.fullName,
-            email: updatedUser.email
+            email: updatedUser.email,
+            cpf: req.body.cpf
           });
+          
+          if (asaasResponse.alreadyExists) {
+            console.log(`Aluno já existe no Asaas com ID: ${asaasResponse.customerId}`);
+          } else {
+            console.log(`Aluno registrado no Asaas com ID: ${asaasResponse.customerId}`);
+          }
           
           // Registrar no Lytex
           const lytexGateway = createPaymentGateway('lytex');
-          const lytexCustomerId = await lytexGateway.registerStudent({
+          
+          // Verificar se o aluno já existe no Lytex primeiro
+          const lytexResponse = await lytexGateway.registerStudent({
             id: updatedUser.id,
             fullName: updatedUser.fullName,
-            email: updatedUser.email
+            email: updatedUser.email,
+            cpf: req.body.cpf
           });
           
-          console.log(`Aluno registrado com sucesso. IDs: Asaas=${asaasCustomerId}, Lytex=${lytexCustomerId}`);
+          if (lytexResponse.alreadyExists) {
+            console.log(`Aluno já existe no Lytex com ID: ${lytexResponse.customerId}`);
+          } else {
+            console.log(`Aluno registrado no Lytex com ID: ${lytexResponse.customerId}`);
+          }
+          
+          console.log(`Aluno registrado com sucesso. IDs: Asaas=${asaasResponse.customerId}, Lytex=${lytexResponse.customerId}`);
           
           // Aqui poderíamos salvar os IDs externos no banco de dados se necessário
-          // await storage.updateUserPaymentIds(updatedUser.id, { asaasId: asaasCustomerId, lytexId: lytexCustomerId });
+          // await storage.updateUserPaymentIds(updatedUser.id, { asaasId: asaasResponse.customerId, lytexId: lytexResponse.customerId });
           
         } catch (integrationError) {
           // Não falhar a atualização do usuário se o registro nos gateways falhar
