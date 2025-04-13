@@ -27,6 +27,7 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   fullName: text("full_name").notNull(),
   email: text("email").notNull(),
+  cpf: text("cpf"), // CPF do usuário (obrigatório para alunos)
   portalType: text("portal_type").notNull(),
 });
 
@@ -430,7 +431,14 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
   fullName: true,
   email: true,
+  cpf: true,
   portalType: true,
+}).transform(data => {
+  // CPF obrigatório apenas para alunos
+  if (data.portalType === 'student' && !data.cpf) {
+    throw new Error('CPF é obrigatório para alunos');
+  }
+  return data;
 });
 
 export const insertDisciplineSchema = createInsertSchema(disciplines).pick({

@@ -78,6 +78,16 @@ const userFormSchema = z.object({
   }),
   fullName: z.string().min(3, "O nome completo deve ter pelo menos 3 caracteres"),
   email: z.string().email("Email inválido"),
+  cpf: z.string().optional(),
+}).superRefine((data, ctx) => {
+  // CPF é obrigatório para alunos
+  if (data.portalType === "student" && (!data.cpf || data.cpf.trim() === "")) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "CPF é obrigatório para alunos",
+      path: ["cpf"],
+    });
+  }
 });
 
 // Tipos para os formulários
@@ -91,6 +101,7 @@ interface User {
   portalType: "student" | "partner" | "polo" | "admin";
   fullName: string;
   email: string;
+  cpf?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -220,6 +231,7 @@ export default function UsersPage() {
       portalType: "student",
       fullName: "",
       email: "",
+      cpf: "",
     },
   });
 
@@ -232,6 +244,7 @@ export default function UsersPage() {
       portalType: "student",
       fullName: "",
       email: "",
+      cpf: "",
     },
   });
 
@@ -249,6 +262,7 @@ export default function UsersPage() {
       portalType: user.portalType,
       fullName: user.fullName,
       email: user.email,
+      cpf: user.cpf || "",
     });
     setIsEditDialogOpen(true);
   };
@@ -598,6 +612,26 @@ export default function UsersPage() {
                   )}
                 />
               </div>
+              
+              <FormField
+                control={createForm.control}
+                name="cpf"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>CPF</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="000.000.000-00" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      O CPF é obrigatório para usuários do tipo Aluno
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <DialogFooter>
                 <Button 
@@ -719,6 +753,26 @@ export default function UsersPage() {
                   )}
                 />
               </div>
+              
+              <FormField
+                control={editForm.control}
+                name="cpf"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>CPF</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="000.000.000-00" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      O CPF é obrigatório para usuários do tipo Aluno
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <DialogFooter>
                 <Button 

@@ -27,14 +27,30 @@ const loginSchema = z.object({
   rememberMe: z.boolean().optional(),
 });
 
-const registerSchema = insertUserSchema.extend({
-  confirmPassword: z.string().min(6, "Password must be at least 6 characters"),
+// Criar um novo schema baseado em insertUserSchema mas com Zod diretamente
+const registerSchema = z.object({
+  username: z.string().min(3, "Nome de usuário é obrigatório"),
+  password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
+  fullName: z.string().min(2, "Nome completo é obrigatório"),
+  email: z.string().email("Email inválido"),
+  cpf: z.string().optional(),
+  portalType: z.enum(["student", "partner", "polo", "admin"]),
+  confirmPassword: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
   terms: z.boolean().refine((val) => val === true, {
-    message: "You must agree to the terms and conditions.",
+    message: "Você deve concordar com os termos e condições.",
   }),
 }).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords do not match",
+  message: "As senhas não coincidem",
   path: ["confirmPassword"],
+}).refine((data) => {
+  // CPF obrigatório apenas para alunos
+  if (data.portalType === 'student' && !data.cpf) {
+    return false;
+  }
+  return true;
+}, {
+  message: "CPF é obrigatório para alunos",
+  path: ["cpf"],
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -92,6 +108,7 @@ export default function AuthPage({ adminOnly = false }: AuthPageProps) {
       fullName: "",
       password: "",
       confirmPassword: "",
+      cpf: "",
       portalType: portalType,
       terms: false,
     },
@@ -273,6 +290,22 @@ export default function AuthPage({ adminOnly = false }: AuthPageProps) {
                         </FormItem>
                       )}
                     />
+                    
+                    {portalType === "student" && (
+                      <FormField
+                        control={registerForm.control}
+                        name="cpf"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>CPF</FormLabel>
+                            <FormControl>
+                              <Input placeholder="000.000.000-00" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
                     
                     <FormField
                       control={registerForm.control}
