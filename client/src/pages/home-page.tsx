@@ -1,11 +1,46 @@
 import { useLocation } from "wouter";
+import { useState, useEffect } from "react";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import { Button } from "@/components/ui/button";
-import { SchoolIcon, PlayCircleIcon, CalendarIcon, ChatIcon, PaymentsIcon, MapPinIcon } from "@/components/ui/icons";
+import { Card, CardContent } from "@/components/ui/card";
+import { 
+  SchoolIcon, 
+  PlayCircleIcon, 
+  CalendarIcon, 
+  ChatIcon, 
+  PaymentsIcon, 
+  MapPinIcon,
+  ChartIcon,
+  BarChartIcon,
+  ShieldIcon
+} from "@/components/ui/icons";
 
 export default function HomePage() {
   const [, navigate] = useLocation();
+  const [animatedCounter, setAnimatedCounter] = useState(0);
+  
+  useEffect(() => {
+    // Simples animação de contador para estatísticas
+    const targetValue = 5000;
+    const duration = 2000; // ms
+    const frameRate = 60;
+    const totalFrames = Math.floor(duration / (1000 / frameRate));
+    const increment = Math.ceil(targetValue / totalFrames);
+    
+    let frame = 0;
+    const counter = setInterval(() => {
+      frame++;
+      const value = Math.min(increment * frame, targetValue);
+      setAnimatedCounter(value);
+      
+      if (frame >= totalFrames) {
+        clearInterval(counter);
+      }
+    }, 1000 / frameRate);
+    
+    return () => clearInterval(counter);
+  }, []);
   
   const handleLogin = () => {
     navigate("/portal-selection");
@@ -17,42 +52,99 @@ export default function HomePage() {
       
       <main className="flex-grow">
         {/* Hero Section */}
-        <section className="relative bg-gradient-to-r from-primary to-primary-dark overflow-hidden">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-24 relative z-10">
-            <div className="text-center">
-              <h1 className="text-3xl md:text-5xl font-bold text-white mb-4">
-                Transforme sua instituição educacional
-              </h1>
-              <p className="text-lg md:text-xl text-white/90 max-w-3xl mx-auto">
-                A plataforma mais moderna do Brasil para instituições EAD, com tecnologia avançada e inteligência artificial.
-              </p>
-              <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-                <Button 
-                  variant="secondary"
-                  size="lg"
-                  className="bg-white text-primary hover:bg-gray-100"
-                  onClick={() => navigate('/modulos')}
-                >
-                  <PlayCircleIcon className="mr-2 h-5 w-5" />
-                  Assistir demonstração
-                </Button>
-                <Button 
-                  size="lg"
-                  className="bg-[#12B76A] hover:bg-[#0E9355] text-white"
-                  onClick={() => navigate('/contato')}
-                >
-                  <CalendarIcon className="mr-2 h-5 w-5" />
-                  Agendar demonstração
-                </Button>
+        <section className="relative bg-gradient-to-br from-primary via-primary-dark to-blue-900 overflow-hidden">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 relative z-10">
+            <div className="lg:flex lg:items-center lg:justify-between">
+              <div className="lg:w-1/2 text-center lg:text-left mb-10 lg:mb-0">
+                <div className="inline-block bg-blue-900/30 text-white px-4 py-2 rounded-full text-sm font-medium mb-4 backdrop-blur-sm border border-white/10">
+                  ✨ A revolução na educação a distância
+                </div>
+                <h1 className="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight">
+                  Transforme sua <span className="text-yellow-300">instituição educacional</span> com tecnologia avançada
+                </h1>
+                <p className="text-lg md:text-xl text-white/90 max-w-2xl mx-auto lg:mx-0 mb-8">
+                  A plataforma mais moderna do Brasil para instituições EAD, com tecnologia avançada e inteligência artificial que potencializa a aprendizagem.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                  <Button 
+                    variant="secondary"
+                    size="lg"
+                    className="bg-white text-primary hover:bg-gray-100 font-medium shadow-lg transition-all hover:scale-105"
+                    onClick={() => navigate('/modulos')}
+                  >
+                    <PlayCircleIcon className="mr-2 h-5 w-5" />
+                    Assistir demonstração
+                  </Button>
+                  <Button 
+                    size="lg"
+                    className="bg-[#12B76A] hover:bg-[#0E9355] text-white font-medium shadow-lg transition-all hover:scale-105"
+                    onClick={() => navigate('/contato')}
+                  >
+                    <CalendarIcon className="mr-2 h-5 w-5" />
+                    Agendar demonstração
+                  </Button>
+                </div>
+              </div>
+              
+              {/* Stats cards */}
+              <div className="lg:w-1/2 lg:pl-12">
+                <div className="grid grid-cols-2 gap-4">
+                  <Card className="backdrop-blur-md bg-white/10 border-white/20 shadow-xl">
+                    <CardContent className="p-4 flex flex-col items-center text-center">
+                      <div className="w-12 h-12 rounded-full bg-blue-900/50 flex items-center justify-center mb-3">
+                        <SchoolIcon className="h-6 w-6 text-white" />
+                      </div>
+                      <div className="text-3xl font-bold text-white">{animatedCounter.toLocaleString('pt-BR')}+</div>
+                      <p className="text-white/80 text-sm">Alunos ativos</p>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="backdrop-blur-md bg-white/10 border-white/20 shadow-xl">
+                    <CardContent className="p-4 flex flex-col items-center text-center">
+                      <div className="w-12 h-12 rounded-full bg-blue-900/50 flex items-center justify-center mb-3">
+                        <SchoolIcon className="h-6 w-6 text-white" />
+                      </div>
+                      <div className="text-3xl font-bold text-white">100+</div>
+                      <p className="text-white/80 text-sm">Instituições</p>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="backdrop-blur-md bg-white/10 border-white/20 shadow-xl">
+                    <CardContent className="p-4 flex flex-col items-center text-center">
+                      <div className="w-12 h-12 rounded-full bg-blue-900/50 flex items-center justify-center mb-3">
+                        <BarChartIcon className="h-6 w-6 text-white" />
+                      </div>
+                      <div className="text-3xl font-bold text-white">97%</div>
+                      <p className="text-white/80 text-sm">Taxa de satisfação</p>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="backdrop-blur-md bg-white/10 border-white/20 shadow-xl">
+                    <CardContent className="p-4 flex flex-col items-center text-center">
+                      <div className="w-12 h-12 rounded-full bg-blue-900/50 flex items-center justify-center mb-3">
+                        <ShieldIcon className="h-6 w-6 text-white" />
+                      </div>
+                      <div className="text-3xl font-bold text-white">100%</div>
+                      <p className="text-white/80 text-sm">LGPD Compliant</p>
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
             </div>
           </div>
           
           {/* Abstract shapes for background */}
-          <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-10">
+          <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-20">
             <div className="absolute -left-24 -top-24 w-96 h-96 rounded-full bg-white/10"></div>
             <div className="absolute right-0 top-1/3 w-64 h-64 rounded-full bg-white/10"></div>
             <div className="absolute left-1/4 bottom-0 w-80 h-80 rounded-full bg-white/10"></div>
+            
+            {/* Animated dots */}
+            <div className="absolute w-full h-full">
+              <div className="absolute top-20 right-40 w-2 h-2 rounded-full bg-yellow-300 animate-pulse"></div>
+              <div className="absolute top-60 left-40 w-3 h-3 rounded-full bg-green-300 animate-pulse" style={{animationDelay: '0.5s'}}></div>
+              <div className="absolute bottom-20 right-1/4 w-2 h-2 rounded-full bg-blue-300 animate-pulse" style={{animationDelay: '1s'}}></div>
+            </div>
           </div>
         </section>
         
