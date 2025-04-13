@@ -13,6 +13,7 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 import { registerEnrollmentRoutes } from "./routes/enrollments";
+import integrationsRoutes from "./routes/integrations";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
@@ -20,6 +21,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Registro das rotas de matrícula
   registerEnrollmentRoutes(app);
+  
+  // Registro das rotas de integrações
+  app.use("/api/integrations", integrationsRoutes);
 
   // Middleware para garantir que o usuário esteja autenticado
   const requireAuth = (req: Request, res: Response, next: NextFunction) => {

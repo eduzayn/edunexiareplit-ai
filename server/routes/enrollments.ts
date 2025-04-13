@@ -1,12 +1,12 @@
 import { Express, Request, Response } from 'express';
 import { storage } from '../storage';
 import { insertEnrollmentSchema } from '@shared/schema';
-import { authenticateAdmin, authenticateStudent, authenticatePartner } from '../middleware/auth';
+import { requireAdmin, requireStudent, requirePartner } from '../middleware/auth';
 import { z } from 'zod';
 
 export function registerEnrollmentRoutes(app: Express) {
   // Listar matrículas (acesso administrativo)
-  app.get('/api/enrollments', authenticateAdmin, async (req: Request, res: Response) => {
+  app.get('/api/enrollments', requireAdmin, async (req: Request, res: Response) => {
     try {
       const {
         search,
@@ -145,7 +145,7 @@ export function registerEnrollmentRoutes(app: Express) {
   });
   
   // Atualizar matrícula (acesso administrativo)
-  app.patch('/api/enrollments/:id', authenticateAdmin, async (req: Request, res: Response) => {
+  app.patch('/api/enrollments/:id', requireAdmin, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       
@@ -169,7 +169,7 @@ export function registerEnrollmentRoutes(app: Express) {
   });
   
   // Atualizar status da matrícula (acesso administrativo)
-  app.post('/api/enrollments/:id/status', authenticateAdmin, async (req: Request, res: Response) => {
+  app.post('/api/enrollments/:id/status', requireAdmin, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       const { status, reason } = req.body;
@@ -200,7 +200,7 @@ export function registerEnrollmentRoutes(app: Express) {
   });
   
   // Excluir matrícula (acesso administrativo)
-  app.delete('/api/enrollments/:id', authenticateAdmin, async (req: Request, res: Response) => {
+  app.delete('/api/enrollments/:id', requireAdmin, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       
@@ -225,7 +225,7 @@ export function registerEnrollmentRoutes(app: Express) {
   });
   
   // Obter matrículas do aluno atual (acesso do aluno)
-  app.get('/api/student/enrollments', authenticateStudent, async (req: Request, res: Response) => {
+  app.get('/api/student/enrollments', requireStudent, async (req: Request, res: Response) => {
     try {
       const studentId = req.user!.id;
       
@@ -241,7 +241,7 @@ export function registerEnrollmentRoutes(app: Express) {
   // Rotas para parceiros
   
   // Obter matrículas vinculadas ao parceiro atual
-  app.get('/api/partner/enrollments', authenticatePartner, async (req: Request, res: Response) => {
+  app.get('/api/partner/enrollments', requirePartner, async (req: Request, res: Response) => {
     try {
       const partnerId = req.user!.id;
       
