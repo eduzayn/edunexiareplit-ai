@@ -292,6 +292,23 @@ export default function UsersPage() {
   };
 
   // Efeito para fechar menu mobile quando a tela é redimensionada
+  // Efeito para verificar parâmetros de redirecionamento na URL
+  useEffect(() => {
+    // Verificar se há parâmetros de redirecionamento na URL
+    const params = new URLSearchParams(window.location.search);
+    const redirectTo = params.get('redirectTo');
+    const action = params.get('action');
+    
+    if (redirectTo && action) {
+      // Guardar para uso após a criação do usuário
+      sessionStorage.setItem('userRedirect', JSON.stringify({
+        redirectTo,
+        action
+      }));
+    }
+  }, []);
+
+  // Efeito para fechar menu mobile quando a tela é redimensionada
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 768) {

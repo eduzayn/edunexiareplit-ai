@@ -761,23 +761,42 @@ export default function EnrollmentsPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Aluno</FormLabel>
-                      <Select
-                        value={field.value ? field.value.toString() : ""}
-                        onValueChange={(value) => field.onChange(parseInt(value))}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione um aluno" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {students.map((student) => (
-                            <SelectItem key={student.id} value={student.id.toString()}>
-                              {student.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <div className="space-y-2">
+                        <Select
+                          value={field.value ? field.value.toString() : ""}
+                          onValueChange={(value) => field.onChange(parseInt(value))}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione um aluno" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {students.map((student) => (
+                              <SelectItem key={student.id} value={student.id.toString()}>
+                                {student.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm" 
+                          className="w-full flex items-center gap-1"
+                          onClick={() => {
+                            // Salvar o estado atual do formulário
+                            sessionStorage.setItem('enrollmentFormData', 
+                              JSON.stringify(newEnrollmentForm.getValues())
+                            );
+                            // Navegar para a página de usuários com parâmetro para indicar redirecionamento
+                            window.location.href = "/admin/users?redirectTo=enrollments&action=new";
+                          }}
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                          Novo Aluno
+                        </Button>
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
