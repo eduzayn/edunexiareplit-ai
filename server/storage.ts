@@ -46,6 +46,8 @@ export interface IStorage {
   getCourse(id: number): Promise<Course | undefined>;
   getCourseByCode(code: string): Promise<Course | undefined>;
   getCourses(search?: string, status?: string, limit?: number, offset?: number): Promise<Course[]>;
+  getAllCourses(): Promise<Course[]>;
+  getPublishedCourses(): Promise<Course[]>;
   createCourse(course: InsertCourse): Promise<Course>;
   updateCourse(id: number, course: Partial<InsertCourse>): Promise<Course | undefined>;
   deleteCourse(id: number): Promise<boolean>;
@@ -400,6 +402,21 @@ export class DatabaseStorage implements IStorage {
       .where(eq(courses.id, id))
       .returning();
     return publishedCourse;
+  }
+  
+  async getAllCourses(): Promise<Course[]> {
+    return await db
+      .select()
+      .from(courses)
+      .orderBy(desc(courses.createdAt));
+  }
+  
+  async getPublishedCourses(): Promise<Course[]> {
+    return await db
+      .select()
+      .from(courses)
+      .where(eq(courses.status, 'published'))
+      .orderBy(desc(courses.createdAt));
   }
 
   // ==================== Disciplinas em Cursos ====================

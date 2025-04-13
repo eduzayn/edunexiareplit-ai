@@ -1099,6 +1099,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // === ROTAS DE CURSOS ===
+  
+  // Rota para obter todos os cursos (Portal Administrativo)
+  app.get("/api/admin/courses", requireAdmin, async (req, res) => {
+    try {
+      const courses = await storage.getAllCourses();
+      res.status(200).json(courses);
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+      res.status(500).json({ message: "Erro ao buscar cursos" });
+    }
+  });
+  
+  // Rota para criar um novo curso (Portal Administrativo)
+  app.post("/api/admin/courses", requireAdmin, async (req, res) => {
+    try {
+      const courseData = req.body;
+      
+      // Adicionar campos de data atual
+      courseData.createdAt = new Date();
+      courseData.updatedAt = new Date();
+      courseData.createdById = req.user?.id;
+      
+      const newCourse = await storage.createCourse(courseData);
+      res.status(201).json(newCourse);
+    } catch (error) {
+      console.error("Error creating course:", error);
+      res.status(500).json({ message: "Erro ao criar curso" });
+    }
+  });
+  
+  // Middleware para autenticar usuários do Polo
+  const requirePolo = (req: Request, res: Response, next: NextFunction) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Não autenticado" });
+    }
+    
+    if (req.user?.portalType !== "polo") {
+      return res.status(403).json({ message: "Acesso permitido apenas para usuários do polo" });
+    }
+    
+    next();
+  };
+  
+  // Rota para obter cursos disponíveis (Portal do Polo)
+  app.get("/api/polo/available-courses", requirePolo, async (req, res) => {
+    try {
+      const courses = await storage.getPublishedCourses();
+      res.status(200).json(courses);
+    } catch (error) {
+      console.error("Error fetching available courses:", error);
+      res.status(500).json({ message: "Erro ao buscar cursos disponíveis" });
+    }
+  });
+
   // === ROTAS DO PORTAL DO ALUNO ===
 
   // Middleware para autenticar estudantes
