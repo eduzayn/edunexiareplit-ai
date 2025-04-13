@@ -122,6 +122,15 @@ export default function NewEnrollmentPage() {
     },
   });
   
+  // Consulta para listar templates de contrato disponíveis
+  const { data: contractTemplatesData, isLoading: isLoadingContractTemplates } = useQuery({
+    queryKey: ["/api/polo/contract-templates"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/polo/contract-templates");
+      return await res.json();
+    },
+  });
+  
   // Inicializando formulário com valores padrão
   const form = useForm<EnrollmentFormValues>({
     resolver: zodResolver(enrollmentFormSchema),
@@ -746,11 +755,20 @@ export default function NewEnrollmentPage() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="1">Contrato Padrão de Prestação de Serviços Educacionais</SelectItem>
-                      <SelectItem value="2">Contrato de Matrícula em Curso de Graduação</SelectItem>
-                      <SelectItem value="3">Contrato de Matrícula em Curso de Pós-graduação</SelectItem>
-                      <SelectItem value="4">Contrato de Matrícula em Curso Técnico</SelectItem>
-                      <SelectItem value="5">Contrato de Matrícula em Curso de Extensão</SelectItem>
+                      {isLoadingContractTemplates ? (
+                        <SelectItem value="loading" disabled>Carregando modelos de contrato...</SelectItem>
+                      ) : contractTemplatesData?.length > 0 ? (
+                        contractTemplatesData?.map((template: any) => (
+                          <SelectItem 
+                            key={template.id} 
+                            value={template.id.toString()}
+                          >
+                            {template.name}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="default">Contrato Padrão de Prestação de Serviços Educacionais</SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                   <FormDescription>
