@@ -196,6 +196,48 @@ export default function NewEnrollmentPage() {
     }
   });
   
+  // Função para calcular valor da parcela com juros quando aplicável
+  const getInstallmentValue = (installments: number): string => {
+    const amountStr = form.watch("amount") || "0";
+    const amountValue = parseFloat(amountStr.replace(',', '.')) || 0;
+    const paymentMethod = form.watch("paymentMethod");
+    let installmentValue = amountValue;
+    
+    // Aplicar juros para parcelas maiores que 6x
+    if (installments > 6) {
+      // Juros diferentes baseados no método de pagamento
+      if (paymentMethod === "credit_card") {
+        // 1.2% de juros ao mês para cartão acima de 6x
+        const monthlyInterest = 0.012;
+        // Cálculo de juros compostos (modelo Price)
+        installmentValue = amountValue * (monthlyInterest * Math.pow(1 + monthlyInterest, installments)) / 
+                         (Math.pow(1 + monthlyInterest, installments) - 1) * installments;
+      } else if (paymentMethod === "bank_slip" || paymentMethod === "pix") {
+        // Juros progressivos para boleto/PIX
+        if (installments > 12) {
+          // 1.5% de juros ao mês para parcelas acima de 12x
+          const monthlyInterest = 0.015;
+          installmentValue = amountValue * (monthlyInterest * Math.pow(1 + monthlyInterest, installments)) / 
+                           (Math.pow(1 + monthlyInterest, installments) - 1) * installments;
+        } else {
+          // 1% de juros ao mês para parcelas entre 7x e 12x
+          const monthlyInterest = 0.01;
+          installmentValue = amountValue * (monthlyInterest * Math.pow(1 + monthlyInterest, installments)) / 
+                           (Math.pow(1 + monthlyInterest, installments) - 1) * installments;
+        }
+      }
+    }
+    
+    // Dividir o valor total pelo número de parcelas
+    installmentValue = installmentValue / installments;
+    
+    // Formatar o valor
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(installmentValue);
+  };
+  
   // Mutation para criar nova matrícula
   const createEnrollmentMutation = useMutation({
     mutationFn: async (data: EnrollmentFormValues) => {
