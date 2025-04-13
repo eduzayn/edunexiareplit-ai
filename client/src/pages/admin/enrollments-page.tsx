@@ -128,6 +128,8 @@ export default function EnrollmentsPage() {
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
   const [statusHistory, setStatusHistory] = useState<any[]>([]);
+  const [selectedStatus, setSelectedStatus] = useState("active");
+  const [statusReason, setStatusReason] = useState("");
   const [filterValues, setFilterValues] = useState<FilterValues>({
     search: "",
     status: "",
@@ -189,7 +191,7 @@ export default function EnrollmentsPage() {
   // Mutation para atualizar status da matrícula
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status, reason }: { id: number; status: string; reason: string }) => {
-      const response = await apiRequest("PATCH", "/api/enrollments/" + id + "/status", { status, reason });
+      const response = await apiRequest("POST", "/api/enrollments/" + id + "/status", { status, reason });
       return response.json();
     },
     onSuccess: () => {
