@@ -16,6 +16,8 @@ export const contentCompletionStatusEnum = pgEnum("content_completion_status", [
 export const assessmentTypeEnum = pgEnum("assessment_type", ["simulado", "avaliacao_final"]);
 export const institutionStatusEnum = pgEnum("institution_status", ["active", "inactive", "pending"]);
 export const poloStatusEnum = pgEnum("polo_status", ["active", "inactive"]);
+export const enrollmentStatusEnum = pgEnum("enrollment_status", ["pending_payment", "active", "completed", "cancelled", "suspended"]);
+export const paymentGatewayEnum = pgEnum("payment_gateway", ["asaas", "lytex"]);
 
 // Usuários
 export const users = pgTable("users", {
@@ -171,6 +173,51 @@ export const financialCategories = pgTable("financial_categories", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Matrículas
+export const enrollments = pgTable("enrollments", {
+  id: serial("id").primaryKey(),
+  code: text("code").notNull().unique(), // Código único da matrícula, ex: MAT2025001
+  studentId: integer("student_id").notNull().references(() => users.id),
+  courseId: integer("course_id").notNull().references(() => courses.id),
+  poloId: integer("polo_id").references(() => polos.id), // Opcional
+  institutionId: integer("institution_id").notNull().references(() => institutions.id),
+  partnerId: integer("partner_id").references(() => users.id), // Opcional, para comissões
+  
+  // Dados financeiros
+  amount: doublePrecision("amount").notNull(), // Valor total da matrícula
+  paymentGateway: paymentGatewayEnum("payment_gateway").notNull(), // Asaas ou Lytex
+  paymentExternalId: text("payment_external_id"), // ID da cobrança no gateway
+  paymentUrl: text("payment_url"), // URL de pagamento
+  paymentMethod: text("payment_method"), // boleto, pix, cartão, etc
+  
+  // Datas importantes
+  enrollmentDate: timestamp("enrollment_date").defaultNow().notNull(), // Data da matrícula
+  startDate: timestamp("start_date"), // Data de início do curso
+  expectedEndDate: timestamp("expected_end_date"), // Data prevista de conclusão
+  actualEndDate: timestamp("actual_end_date"), // Data efetiva de conclusão
+  
+  // Status e informações adicionais
+  status: enrollmentStatusEnum("status").default("pending_payment").notNull(),
+  observations: text("observations"),
+  
+  // Metadados
+  createdById: integer("created_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Histórico de status das matrículas
+export const enrollmentStatusHistory = pgTable("enrollment_status_history", {
+  id: serial("id").primaryKey(),
+  enrollmentId: integer("enrollment_id").notNull().references(() => enrollments.id, { onDelete: 'cascade' }),
+  previousStatus: enrollmentStatusEnum("previous_status"),
+  newStatus: enrollmentStatusEnum("new_status").notNull(),
+  changeDate: timestamp("change_date").defaultNow().notNull(),
+  changeReason: text("change_reason"),
+  changedById: integer("changed_by_id").references(() => users.id),
+  metadata: json("metadata"), // Pode armazenar payloads de webhooks ou informações adicionais
+});
+
 export const institutions = pgTable("institutions", {
   id: serial("id").primaryKey(),
   code: text("code").notNull().unique(),
@@ -198,6 +245,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   polosCreated: many(polos),
   financialTransactionsCreated: many(financialTransactions),
   financialCategoriesCreated: many(financialCategories),
+  enrollments: many(enrollments, { relationName: "studentEnrollments" }),
+  partnerEnrollments: many(enrollments, { relationName: "partnerEnrollments" }),
 }));
 
 export const institutionsRelations = relations(institutions, ({ one, many }) => ({
@@ -208,13 +257,15 @@ export const institutionsRelations = relations(institutions, ({ one, many }) => 
   polos: many(polos),
   financialTransactions: many(financialTransactions),
   financialCategories: many(financialCategories),
+  enrollments: many(enrollments),
 }));
 
-export const polosRelations = relations(polos, ({ one }) => ({
+export const polosRelations = relations(polos, ({ one, many }) => ({
   institution: one(institutions, {
     fields: [polos.institutionId],
     references: [institutions.id],
   }),
+  enrollments: many(enrollments),
   createdBy: one(users, {
     fields: [polos.createdById],
     references: [users.id],
@@ -255,6 +306,7 @@ export const disciplinesRelations = relations(disciplines, ({ many, one }) => ({
 
 export const coursesRelations = relations(courses, ({ many, one }) => ({
   courseDisciplines: many(courseDisciplines),
+  enrollments: many(enrollments),
   createdBy: one(users, {
     fields: [courses.createdById],
     references: [users.id],
@@ -296,6 +348,49 @@ export const assessmentQuestionsRelations = relations(assessmentQuestions, ({ on
   question: one(questions, {
     fields: [assessmentQuestions.questionId],
     references: [questions.id],
+  }),
+}));
+
+// Relações de Matrículas
+export const enrollmentsRelations = relations(enrollments, ({ one, many }) => ({
+  student: one(users, {
+    fields: [enrollments.studentId],
+    references: [users.id],
+    relationName: "studentEnrollments",
+  }),
+  course: one(courses, {
+    fields: [enrollments.courseId],
+    references: [courses.id],
+  }),
+  polo: one(polos, {
+    fields: [enrollments.poloId],
+    references: [polos.id],
+  }),
+  institution: one(institutions, {
+    fields: [enrollments.institutionId],
+    references: [institutions.id],
+  }),
+  partner: one(users, {
+    fields: [enrollments.partnerId],
+    references: [users.id],
+    relationName: "partnerEnrollments",
+  }),
+  createdBy: one(users, {
+    fields: [enrollments.createdById],
+    references: [users.id],
+  }),
+  statusHistory: many(enrollmentStatusHistory),
+}));
+
+// Relações de Histórico de Status de Matrículas
+export const enrollmentStatusHistoryRelations = relations(enrollmentStatusHistory, ({ one }) => ({
+  enrollment: one(enrollments, {
+    fields: [enrollmentStatusHistory.enrollmentId],
+    references: [enrollments.id],
+  }),
+  changedBy: one(users, {
+    fields: [enrollmentStatusHistory.changedById],
+    references: [users.id],
   }),
 }));
 
