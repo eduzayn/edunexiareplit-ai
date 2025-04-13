@@ -214,7 +214,7 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
         name: "Matrículas",
         icon: <AssignmentIcon />,
         href: "/admin/enrollments",
-        active: currentPath === "/admin/enrollments" || currentPath.includes("/admin/enrollments/")
+        active: currentPath === "/admin/enrollments" || (currentPath && currentPath.includes("/admin/enrollments/"))
       },
       { 
         name: "Financeiro Empresarial", 
