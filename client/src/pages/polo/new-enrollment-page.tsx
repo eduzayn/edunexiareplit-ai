@@ -147,9 +147,6 @@ export default function NewEnrollmentPage() {
       paymentMethod: "bank_slip",
       installments: "1",
       acceptTerms: false,
-      hasIdentificationDocument: false,
-      hasAddressDocument: false,
-      hasSchoolRecords: false,
       contractTemplateId: "",
       additionalNotes: "",
       currentStep: 1
@@ -368,6 +365,49 @@ export default function NewEnrollmentPage() {
                     <FormControl>
                       <Input placeholder="00000-000" {...field} />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <Separator className="my-4" />
+            
+            {/* Gateway de Pagamento */}
+            <div className="space-y-3 mt-6">
+              <h3 className="text-lg font-medium">Gateway de Pagamento</h3>
+              
+              <Alert className="bg-amber-50 border-amber-300 mb-4">
+                <AlertTriangleIcon className="h-4 w-4 text-amber-600" />
+                <AlertTitle className="text-amber-800">Importante</AlertTitle>
+                <AlertDescription className="text-amber-800">
+                  Selecione o gateway de pagamento para cadastrar o cliente automaticamente na plataforma.
+                </AlertDescription>
+              </Alert>
+              
+              <FormField
+                control={form.control}
+                name="paymentGateway"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Gateway de Pagamento</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o gateway" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="asaas">Asaas</SelectItem>
+                        <SelectItem value="lytex">Lytex</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Este gateway será usado para gerenciar todos os pagamentos do aluno.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
