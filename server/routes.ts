@@ -16,6 +16,7 @@ import { registerEnrollmentRoutes } from "./routes/enrollments";
 import integrationsRoutes from "./routes/integrations";
 import poloRoutes from "./routes/polo-routes";
 import poloEnrollmentsRoutes from "./routes/polo-enrollments";
+import { aiServicesRouter } from "./routes/ai-services";
 import { createPaymentGateway } from "./services/payment-gateways";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -27,6 +28,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Registro das rotas de integrações
   app.use("/api/integrations", integrationsRoutes);
+  
+  // Registro das rotas de serviços de IA
+  app.use("/api/ai", aiServicesRouter);
   
   // Registro das rotas do Portal do Polo
   app.use("/api/polo", poloRoutes);
