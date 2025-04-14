@@ -346,6 +346,9 @@ export const clients = pgTable("clients", {
   notes: text("notes"),
   isActive: boolean("is_active").default(true).notNull(),
   
+  // Integrações
+  asaasId: text("asaas_id"), // ID do cliente no Asaas
+  
   // Metadados
   createdById: integer("created_by_id").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
