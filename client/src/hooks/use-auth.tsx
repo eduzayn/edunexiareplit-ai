@@ -8,6 +8,7 @@ import { insertUserSchema, User as SelectUser, InsertUser, LoginData } from "@sh
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { getNavigationPath } from "../lib/url-utils";
 
 type AuthContextType = {
   user: SelectUser | null;
