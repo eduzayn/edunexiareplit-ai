@@ -34,7 +34,9 @@ import {
   EyeIcon,
   CheckIcon,
   AlertTriangleIcon,
-  FilterIcon
+  FilterIcon,
+  PlusIcon,
+  TrashIcon
 } from "@/components/ui/icons";
 
 // Página de emissão de certificados
@@ -585,14 +587,48 @@ export default function CertificationIssuePage() {
                           <TableHeader>
                             <TableRow>
                               <TableHead>Nome da Disciplina</TableHead>
+                              <TableHead>Corpo Docente</TableHead>
+                              <TableHead>Titulação</TableHead>
                               <TableHead>Carga Horária</TableHead>
-                              <TableHead className="w-20">Ações</TableHead>
+                              <TableHead>Frequência</TableHead>
+                              <TableHead>Aproveitamento</TableHead>
+                              <TableHead className="w-16">Ações</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             <TableRow>
-                              <TableCell className="font-medium">Disciplina de Exemplo</TableCell>
+                              <TableCell className="font-medium">Formação e Ética do Psi</TableCell>
+                              <TableCell>Marinês Da Consolação</TableCell>
+                              <TableCell>Especialista</TableCell>
+                              <TableCell>30h</TableCell>
+                              <TableCell>100%</TableCell>
+                              <TableCell>Aprovado</TableCell>
+                              <TableCell>
+                                <Button variant="ghost" size="icon">
+                                  <TrashIcon className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell className="font-medium">Narcisismo e a Cultura</TableCell>
+                              <TableCell>Adriana Maria Cancella</TableCell>
+                              <TableCell>Especialista</TableCell>
                               <TableCell>40h</TableCell>
+                              <TableCell>100%</TableCell>
+                              <TableCell>Aprovado</TableCell>
+                              <TableCell>
+                                <Button variant="ghost" size="icon">
+                                  <TrashIcon className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell className="font-medium">O Método Psicanalítico</TableCell>
+                              <TableCell>Marcio Antonio Rodrigues</TableCell>
+                              <TableCell>Mestre</TableCell>
+                              <TableCell>50h</TableCell>
+                              <TableCell>100%</TableCell>
+                              <TableCell>Aprovado</TableCell>
                               <TableCell>
                                 <Button variant="ghost" size="icon">
                                   <TrashIcon className="h-4 w-4" />
@@ -601,6 +637,51 @@ export default function CertificationIssuePage() {
                             </TableRow>
                           </TableBody>
                         </Table>
+                      </div>
+                    </div>
+                    
+                    {/* Formulário para adicionar nova disciplina */}
+                    <div className="mt-4 p-4 border rounded-md bg-gray-50">
+                      <h4 className="text-sm font-semibold mb-3">Adicionar Nova Disciplina</h4>
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="grid gap-2">
+                          <Label htmlFor="new-discipline-name">Nome da Disciplina:</Label>
+                          <Input id="new-discipline-name" placeholder="Nome da disciplina" />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="new-discipline-professor">Corpo Docente:</Label>
+                          <Input id="new-discipline-professor" placeholder="Nome do professor" />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="new-discipline-title">Titulação:</Label>
+                          <select id="new-discipline-title" className="w-full p-2 border rounded-md">
+                            <option value="Especialista">Especialista</option>
+                            <option value="Mestre">Mestre</option>
+                            <option value="Doutor">Doutor</option>
+                            <option value="Pós-Doutor">Pós-Doutor</option>
+                          </select>
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="new-discipline-hours">Carga Horária:</Label>
+                          <Input id="new-discipline-hours" type="number" min="1" placeholder="Em horas" />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="new-discipline-frequency">Frequência:</Label>
+                          <Input id="new-discipline-frequency" placeholder="Ex: 100%" />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="new-discipline-performance">Aproveitamento:</Label>
+                          <select id="new-discipline-performance" className="w-full p-2 border rounded-md">
+                            <option value="Aprovado">Aprovado</option>
+                            <option value="Reprovado">Reprovado</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div className="mt-3 flex justify-end">
+                        <Button size="sm">
+                          <PlusIcon className="w-4 h-4 mr-1" />
+                          Adicionar
+                        </Button>
                       </div>
                     </div>
                   </div>
