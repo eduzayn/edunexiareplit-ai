@@ -28,6 +28,10 @@ import {
   BadgeCheck,
   MessageSquare,
   MessageCircle,
+  Paperclip,
+  MoreVertical,
+  Key,
+  Server,
   Inbox,
   SendHorizonal,
   MessagesSquare
@@ -64,6 +68,10 @@ export const MessageCircleIcon = MessageCircle;
 export const InboxIcon = Inbox;
 export const SendIcon = SendHorizonal;
 export const MessagesSquareIcon = MessagesSquare;
+export const PaperclipIcon = Paperclip;
+export const DotsVerticalIcon = MoreVertical;
+export const KeyIcon = Key;
+export const ServerIcon = Server;
 export const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
