@@ -3,9 +3,11 @@ import { Client, InsertClient } from '../../shared/schema';
 
 // Configurações da API do Asaas
 const ASAAS_API_KEY = process.env.ASAAS_API_KEY;
-const ASAAS_API_URL = process.env.NODE_ENV === 'production'
-  ? 'https://www.asaas.com/api/v3'
-  : 'https://sandbox.asaas.com/api/v3';
+const ASAAS_API_URL = process.env.ASAAS_API_URL || (
+  process.env.NODE_ENV === 'production'
+  ? 'https://api.asaas.com/v3'
+  : 'https://sandbox.asaas.com/api/v3'
+);
 
 // Configuração do cliente Axios para a API do Asaas
 const asaasClient = axios.create({
