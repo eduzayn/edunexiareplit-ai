@@ -615,22 +615,22 @@ export class LytexGatewayAdapter implements PaymentGateway {
         console.log(`[LYTEX] Valor convertido para centavos: ${invoiceItems[0].value} (R$ ${amount})`);
         
         // Configurar os métodos de pagamento conforme documentação V1
+        // Campo creditCard é obrigatório conforme API Lytex
         const paymentMethods = {
           pix: { enable: true },
-          boleto: { enable: true, dueDateDays: 3 }
+          boleto: { enable: true, dueDateDays: 3 },
+          creditCard: { enable: false } // Por padrão, desabilitado
         };
         
-        // Se valor for suficiente para cartão (>= R$500), adicionar
+        // Se valor for suficiente para cartão (>= R$500), habilitar
         if (amount >= 500) {
-          // Adicionar método de cartão de crédito se valor for suficiente
-          const creditCardMethod = { 
+          console.log('[LYTEX] Valor permite pagamento com cartão de crédito');
+          // Atualizar configuração do cartão para habilitado
+          paymentMethods.creditCard = { 
             enable: true, 
             maxParcels: 6, // limite máximo de parcelas
             isRatesToPayer: true // taxas de parcelamento por conta do cliente
           };
-          
-          // Usar tipo com tipagem adequada
-          paymentMethods.creditCard = creditCardMethod;
         }
         
         // Data de vencimento (5 dias a partir de hoje)
