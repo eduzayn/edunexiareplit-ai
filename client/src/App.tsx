@@ -27,14 +27,21 @@ import IntegrationsPage from "@/pages/admin/integrations-page";
 import CertificationTemplatesPage from "@/pages/admin/certification/templates-page";
 import CertificationIssuePage from "@/pages/admin/certification/issue-page";
 import CertificationSignersPage from "@/pages/admin/certification/signers-page";
-// Importação dos novos módulos CRM e Gestão
+// Importação dos módulos CRM e Gestão
 import LeadsPage from "@/pages/admin/crm/leads-page";
+import NewLeadPage from "@/pages/admin/crm/new-lead-page";
 import ClientsPage from "@/pages/admin/crm/clients-page";
+import NewClientPage from "@/pages/admin/crm/new-client-page";
 import ContactsPage from "@/pages/admin/crm/contacts-page";
+import NewContactPage from "@/pages/admin/crm/new-contact-page";
 import ProductsPage from "@/pages/admin/finance/products-page";
+import NewProductPage from "@/pages/admin/finance/new-product-page";
 import InvoicesPage from "@/pages/admin/finance/invoices-page";
+import NewInvoicePage from "@/pages/admin/finance/new-invoice-page";
 import PaymentsPage from "@/pages/admin/finance/payments-page";
+import NewPaymentPage from "@/pages/admin/finance/new-payment-page";
 import ContractsPage from "@/pages/admin/contracts";
+import NewContractPage from "@/pages/admin/contracts/new-contract-page";
 // Import student pages
 import StudentCoursesPage from "@/pages/student/courses-page";
 import CourseDetailPage from "@/pages/student/course-detail-page";
@@ -222,12 +229,24 @@ function Router() {
         {() => user?.portalType === "admin" ? <LeadsPage /> : <Redirect to="/admin" />}
       </Route>
       
+      <Route path="/admin/crm/leads/new">
+        {() => user?.portalType === "admin" ? <NewLeadPage /> : <Redirect to="/admin" />}
+      </Route>
+      
       <Route path="/admin/crm/clients">
         {() => user?.portalType === "admin" ? <ClientsPage /> : <Redirect to="/admin" />}
       </Route>
       
+      <Route path="/admin/crm/clients/new">
+        {() => user?.portalType === "admin" ? <NewClientPage /> : <Redirect to="/admin" />}
+      </Route>
+      
       <Route path="/admin/crm/contacts">
         {() => user?.portalType === "admin" ? <ContactsPage /> : <Redirect to="/admin" />}
+      </Route>
+      
+      <Route path="/admin/crm/contacts/new">
+        {() => user?.portalType === "admin" ? <NewContactPage /> : <Redirect to="/admin" />}
       </Route>
       
       {/* Rotas do Módulo Financeiro */}
@@ -235,17 +254,33 @@ function Router() {
         {() => user?.portalType === "admin" ? <ProductsPage /> : <Redirect to="/admin" />}
       </Route>
       
+      <Route path="/admin/finance/products/new">
+        {() => user?.portalType === "admin" ? <NewProductPage /> : <Redirect to="/admin" />}
+      </Route>
+      
       <Route path="/admin/finance/invoices">
         {() => user?.portalType === "admin" ? <InvoicesPage /> : <Redirect to="/admin" />}
+      </Route>
+      
+      <Route path="/admin/finance/invoices/new">
+        {() => user?.portalType === "admin" ? <NewInvoicePage /> : <Redirect to="/admin" />}
       </Route>
       
       <Route path="/admin/finance/payments">
         {() => user?.portalType === "admin" ? <PaymentsPage /> : <Redirect to="/admin" />}
       </Route>
       
+      <Route path="/admin/finance/payments/new">
+        {() => user?.portalType === "admin" ? <NewPaymentPage /> : <Redirect to="/admin" />}
+      </Route>
+      
       {/* Rotas do Módulo de Contratos */}
       <Route path="/admin/contracts">
         {() => user?.portalType === "admin" ? <ContractsPage /> : <Redirect to="/admin" />}
+      </Route>
+      
+      <Route path="/admin/contracts/new">
+        {() => user?.portalType === "admin" ? <NewContractPage /> : <Redirect to="/admin" />}
       </Route>
       
       <Route component={NotFound} />

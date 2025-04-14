@@ -1,0 +1,549 @@
+import React from "react";
+import { useLocation } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import AdminLayout from "@/components/layout/admin-layout";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { 
+  Tabs, 
+  TabsContent, 
+  TabsList, 
+  TabsTrigger 
+} from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
+import { toast } from "@/hooks/use-toast";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowLeftIcon, BuildingStoreIcon, SaveIcon } from "@/components/ui/icons";
+
+// Schema de validação para criação de cliente
+const formSchema = z.object({
+  // Informações básicas
+  name: z.string().min(3, { message: "Nome deve ter pelo menos 3 caracteres" }),
+  type: z.enum(["pf", "pj"], { 
+    required_error: "Selecione o tipo de cliente" 
+  }),
+  email: z.string().email({ message: "Email inválido" }),
+  phone: z.string().min(10, { message: "Telefone inválido" }),
+  
+  // Documentos
+  cpfCnpj: z.string().min(11, { message: "CPF/CNPJ inválido" }),
+  rgIe: z.string().optional().or(z.literal("")),
+  
+  // Endereço
+  zipCode: z.string().min(8, { message: "CEP inválido" }),
+  street: z.string().min(3, { message: "Endereço é obrigatório" }),
+  number: z.string().min(1, { message: "Número é obrigatório" }),
+  complement: z.string().optional().or(z.literal("")),
+  neighborhood: z.string().min(2, { message: "Bairro é obrigatório" }),
+  city: z.string().min(2, { message: "Cidade é obrigatória" }),
+  state: z.string().length(2, { message: "Estado deve ter 2 caracteres" }),
+  
+  // Outras informações
+  segment: z.string().min(1, { message: "Selecione o segmento" }),
+  website: z.string().optional().or(z.literal("")),
+  notes: z.string().optional().or(z.literal("")),
+  isActive: z.boolean().default(true),
+});
+
+type FormValues = z.infer<typeof formSchema>;
+
+export default function NewClientPage() {
+  const [, navigate] = useLocation();
+  const queryClient = useQueryClient();
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: "",
+      type: "pj",
+      email: "",
+      phone: "",
+      cpfCnpj: "",
+      rgIe: "",
+      zipCode: "",
+      street: "",
+      number: "",
+      complement: "",
+      neighborhood: "",
+      city: "",
+      state: "",
+      segment: "",
+      website: "",
+      notes: "",
+      isActive: true,
+    },
+  });
+
+  const clientType = form.watch("type");
+
+  const onSubmit = async (data: FormValues) => {
+    try {
+      // Quando tivermos a API, enviaremos a requisição para o servidor
+      console.log("Enviando dados do formulário:", data);
+
+      /*
+      // Exemplo de como será a implementação da API
+      await apiRequest({
+        url: "/api/crm/clients",
+        method: "POST",
+        data,
+      });
+      
+      // Invalidar cache para forçar recarregamento dos clientes
+      queryClient.invalidateQueries({ queryKey: ["/api/crm/clients"] });
+      */
+
+      toast({
+        title: "Cliente cadastrado com sucesso",
+        description: `Cliente ${data.name} foi cadastrado com sucesso.`,
+      });
+
+      // Redirecionar para a lista de clientes
+      navigate("/admin/crm/clients");
+    } catch (error) {
+      console.error("Erro ao cadastrar cliente:", error);
+      toast({
+        title: "Erro ao cadastrar cliente",
+        description: "Ocorreu um erro ao cadastrar o cliente. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Função para buscar o endereço pelo CEP
+  const fetchAddressByCep = async (cep: string) => {
+    if (cep.length < 8) return;
+    
+    try {
+      const cleanCep = cep.replace(/\D/g, '');
+      const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+      const data = await response.json();
+      
+      if (!data.erro) {
+        form.setValue('street', data.logradouro);
+        form.setValue('neighborhood', data.bairro);
+        form.setValue('city', data.localidade);
+        form.setValue('state', data.uf);
+        // Focar no campo número após preencher o endereço
+        document.getElementById('number')?.focus();
+      }
+    } catch (error) {
+      console.error('Erro ao buscar CEP:', error);
+    }
+  };
+
+  return (
+    <AdminLayout>
+      <div className="container mx-auto py-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center">
+            <Button 
+              variant="ghost" 
+              className="mr-4" 
+              onClick={() => navigate("/admin/crm/clients")}
+            >
+              <ArrowLeftIcon className="mr-2 h-4 w-4" />
+              Voltar
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Novo Cliente</h1>
+              <p className="text-gray-500">
+                Cadastre um novo cliente no sistema
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <BuildingStoreIcon className="mr-2 h-5 w-5" />
+              Cadastro de Cliente
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <Tabs defaultValue="basic" className="w-full">
+                  <TabsList className="mb-4">
+                    <TabsTrigger value="basic">Informações Básicas</TabsTrigger>
+                    <TabsTrigger value="documents">Documentos</TabsTrigger>
+                    <TabsTrigger value="address">Endereço</TabsTrigger>
+                    <TabsTrigger value="additional">Informações Adicionais</TabsTrigger>
+                  </TabsList>
+
+                  {/* Tab: Informações Básicas */}
+                  <TabsContent value="basic" className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField
+                        control={form.control}
+                        name="type"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Tipo de Cliente*</FormLabel>
+                            <Select 
+                              onValueChange={field.onChange} 
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecione o tipo" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="pj">Pessoa Jurídica</SelectItem>
+                                <SelectItem value="pf">Pessoa Física</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>
+                              {clientType === "pj" 
+                                ? "Nome da Empresa/Instituição*" 
+                                : "Nome Completo*"}
+                            </FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder={
+                                  clientType === "pj" 
+                                    ? "Nome da empresa ou instituição" 
+                                    : "Nome completo"
+                                } 
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Email*</FormLabel>
+                            <FormControl>
+                              <Input placeholder="email@exemplo.com.br" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="phone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Telefone*</FormLabel>
+                            <FormControl>
+                              <Input placeholder="(00) 00000-0000" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="isActive"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md p-4">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                              <FormLabel>Cliente Ativo</FormLabel>
+                              <p className="text-sm text-gray-500">
+                                O cliente estará ativo e disponível no sistema
+                              </p>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </TabsContent>
+
+                  {/* Tab: Documentos */}
+                  <TabsContent value="documents" className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField
+                        control={form.control}
+                        name="cpfCnpj"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>
+                              {clientType === "pj" ? "CNPJ*" : "CPF*"}
+                            </FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder={
+                                  clientType === "pj" 
+                                    ? "00.000.000/0000-00" 
+                                    : "000.000.000-00"
+                                } 
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="rgIe"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>
+                              {clientType === "pj" ? "Inscrição Estadual" : "RG"}
+                            </FormLabel>
+                            <FormControl>
+                              <Input placeholder="Documento de identificação" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </TabsContent>
+
+                  {/* Tab: Endereço */}
+                  <TabsContent value="address" className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                      <FormField
+                        control={form.control}
+                        name="zipCode"
+                        render={({ field }) => (
+                          <FormItem className="md:col-span-3">
+                            <FormLabel>CEP*</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="00000-000" 
+                                {...field} 
+                                onBlur={(e) => {
+                                  field.onBlur();
+                                  fetchAddressByCep(e.target.value);
+                                }}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="street"
+                        render={({ field }) => (
+                          <FormItem className="md:col-span-6">
+                            <FormLabel>Logradouro*</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Rua, Avenida, etc." {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="number"
+                        render={({ field }) => (
+                          <FormItem className="md:col-span-3">
+                            <FormLabel>Número*</FormLabel>
+                            <FormControl>
+                              <Input id="number" placeholder="Número" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="complement"
+                        render={({ field }) => (
+                          <FormItem className="md:col-span-4">
+                            <FormLabel>Complemento</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Apartamento, sala, etc." {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="neighborhood"
+                        render={({ field }) => (
+                          <FormItem className="md:col-span-4">
+                            <FormLabel>Bairro*</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Bairro" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="city"
+                        render={({ field }) => (
+                          <FormItem className="md:col-span-3">
+                            <FormLabel>Cidade*</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Cidade" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="state"
+                        render={({ field }) => (
+                          <FormItem className="md:col-span-1">
+                            <FormLabel>UF*</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="UF" 
+                                maxLength={2} 
+                                {...field} 
+                                onChange={(e) => {
+                                  field.onChange(e.target.value.toUpperCase());
+                                }}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </TabsContent>
+
+                  {/* Tab: Informações Adicionais */}
+                  <TabsContent value="additional" className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField
+                        control={form.control}
+                        name="segment"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Segmento*</FormLabel>
+                            <Select 
+                              onValueChange={field.onChange} 
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecione o segmento" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="educacao">Educação</SelectItem>
+                                <SelectItem value="saude">Saúde</SelectItem>
+                                <SelectItem value="tecnologia">Tecnologia</SelectItem>
+                                <SelectItem value="governo">Governo</SelectItem>
+                                <SelectItem value="financas">Finanças</SelectItem>
+                                <SelectItem value="varejo">Varejo</SelectItem>
+                                <SelectItem value="servicos">Serviços</SelectItem>
+                                <SelectItem value="industria">Indústria</SelectItem>
+                                <SelectItem value="outros">Outros</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="website"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Website</FormLabel>
+                            <FormControl>
+                              <Input placeholder="www.exemplo.com.br" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <FormField
+                      control={form.control}
+                      name="notes"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Observações</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Informações adicionais sobre o cliente"
+                              className="min-h-[120px]" 
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </TabsContent>
+                </Tabs>
+
+                <div className="flex justify-end space-x-4 pt-6 border-t">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => navigate("/admin/crm/clients")}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button type="submit">
+                    <SaveIcon className="mr-2 h-4 w-4" />
+                    Salvar Cliente
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      </div>
+    </AdminLayout>
+  );
+}
