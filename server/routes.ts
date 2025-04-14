@@ -38,7 +38,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registro das rotas de matrículas do Portal do Polo
   app.use("/api/polo", poloEnrollmentsRoutes);
   
-  // (Rota removida)
+  // Rotas públicas para instituições e polos (necessárias para o formulário de matrícula)
+  
+  // Listar instituições (versão pública)
+  app.get("/api/institutions", async (req, res) => {
+    try {
+      const search = req.query.search?.toString();
+      const status = req.query.status?.toString() || "active"; // Por padrão, apenas instituições ativas
+      const limit = parseInt(req.query.limit?.toString() || "50");
+      const offset = parseInt(req.query.offset?.toString() || "0");
+
+      const institutions = await storage.getInstitutions(search, status, limit, offset);
+      res.json(institutions);
+    } catch (error) {
+      console.error("Error fetching public institutions:", error);
+      res.status(500).json({ message: "Erro ao buscar instituições" });
+    }
+  });
+  
+  // Listar polos (versão pública)
+  app.get("/api/polos", async (req, res) => {
+    try {
+      const search = req.query.search?.toString();
+      const status = req.query.status?.toString() || "active"; // Por padrão, apenas polos ativos
+      const institutionId = req.query.institutionId ? parseInt(req.query.institutionId.toString()) : undefined;
+      const limit = parseInt(req.query.limit?.toString() || "50");
+      const offset = parseInt(req.query.offset?.toString() || "0");
+
+      const polos = await storage.getPolos(search, status, institutionId, limit, offset);
+      res.json(polos);
+    } catch (error) {
+      console.error("Error fetching public polos:", error);
+      res.status(500).json({ message: "Erro ao buscar polos" });
+    }
+  });
+  
+  // Listar cursos (versão pública)
+  app.get("/api/courses", async (req, res) => {
+    try {
+      const search = req.query.search?.toString();
+      const status = req.query.status?.toString() || "published"; // Por padrão, apenas cursos publicados
+      const limit = parseInt(req.query.limit?.toString() || "50");
+      const offset = parseInt(req.query.offset?.toString() || "0");
+
+      const courses = await storage.getCourses(search, status, limit, offset);
+      res.json(courses);
+    } catch (error) {
+      console.error("Error fetching public courses:", error);
+      res.status(500).json({ message: "Erro ao buscar cursos" });
+    }
+  });
 
   // Middleware para garantir que o usuário esteja autenticado
   const requireAuth = (req: Request, res: Response, next: NextFunction) => {
