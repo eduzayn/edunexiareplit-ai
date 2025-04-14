@@ -1,0 +1,105 @@
+Plano de Projeto: Sistema Integrado de CRM, Gestão Financeira e Contratos na Plataforma Replit
+
+1. Introdução e Visão Geral do Sistema
+
+Propósito do Sistema: Este documento detalha o plano de projeto para o desenvolvimento de uma aplicação web que fornecerá funcionalidades essenciais para Gestão de Relacionamento com o Cliente (CRM), Gestão Financeira (incluindo Faturamento, Pagamentos e Checkout com múltiplos gateways) e Gestão de Contratos.
+Ambiente de Desenvolvimento: O sistema será desenvolvido, implantado e hospedado exclusivamente na plataforma Replit.com. Serão aproveitados seu ambiente de desenvolvimento integrado, add-ons de banco de dados, gerenciamento de segredos (secrets), recursos de colaboração e capacidades de implantação (deployment).
+Contexto Arquitetural: O sistema é concebido como um módulo destinado a integrar-se com um sistema maior e pré-existente. Um ponto crucial é que a autenticação de usuários e o gerenciamento primário de identidade são tratados por este sistema externo. Nossa aplicação consumirá o contexto de identidade e autorização do usuário fornecido pelo sistema externo através de requisições à API.
+Inspiração e Clarificação do Escopo: Embora conceitualmente inspirado por módulos inferidos de plataformas como Edunext (áreas gerais de funcionalidades mencionadas em documentação geral ), as funcionalidades específicas e a implementação seguirão estritamente a definição do MVP (Produto Mínimo Viável) delineada na Seção 2. A consistente falta de documentação detalhada e acessível das APIs do Edunext  torna inviável basear o design em uma replicação direta. Portanto, a abordagem de design priorizará os requisitos explícitos do usuário e as melhores práticas gerais para sistemas de CRM, Financeiro e Contratos, em vez de tentar mimetizar uma implementação desconhecida do Edunext. A "inspiração" serve apenas como contexto de alto nível.   
+Resumo da Pilha Tecnológica: Frontend: React/Vite (TypeScript). Backend: Node.js/NestJS (TypeScript). Banco de Dados: PostgreSQL (Replit Add-on) com Prisma ORM.
+2. Definição da Funcionalidade do MVP
+
+Esta seção detalha as funcionalidades essenciais requeridas para o Produto Mínimo Viável (MVP), focando exclusivamente na proposição de valor central para CRM, Gestão Financeira e Gestão de Contratos.
+
+2.1. Módulo CRM:
+
+Gestão de Leads:
+Operações CRUD (Create, Read, Update, Delete) para Leads.
+Campos: Nome, Email, Telefone, Fonte (Origem), Status (ex: Novo, Contactado, Qualificado, Perdido, Convertido), externalUserId (proprietário/responsável vindo do sistema externo).
+Visualização simples em estilo Kanban ou lista com filtros/ordenação por status (Funil/Status).
+Funcionalidade para converter um Lead 'Qualificado' em um Client, Contact, e potencialmente um rascunho de Contract ou Invoice.
+Gestão de Clientes:
+Operações CRUD para Clientes (representando organizações ou indivíduos que são clientes).
+Campos: Nome, Email de Contato Principal, Telefone, Endereço, externalUserId (gerente da conta/proprietário vindo do sistema externo), campo básico para histórico/notas.
+Gestão de Contatos:
+Operações CRUD para Contatos (indivíduos associados a Clientes).
+Campos: Nome, Email, Telefone, Cargo/Título, associação com um Client.
+
+2.2. Módulo de Gestão Financeira:
+
+Gestão de Produtos/Serviços e Tabelas de Preços:
+
+CRUD para entidades ProductService simples (representando itens faturáveis).
+Campos: Nome, Descrição, Preço Padrão.
+(Opcional - Pós-MVP ou Stretch Goal) Conceito básico de PriceTable: CRUD para Tabelas de Preços, permitindo associar itens ProductService com preços potencialmente diferentes dentro de uma tabela. Faturas poderiam opcionalmente referenciar uma Tabela de Preços.
+Gestão de Faturas:
+Criação manual de registros de Invoice.
+Associação com um Client (obrigatório) e opcionalmente com um Contract.
+Campos: Número da Fatura (auto-gerado ou manual), Data de Emissão, Data de Vencimento, Status (Rascunho, Enviada, Paga, Vencida, Cancelada), Valor Total, externalUserId (criador/proprietário vindo do sistema externo).
+Capacidade de adicionar/remover InvoiceItems a uma Fatura (vinculando a ProductService, quantidade, preço unitário, preço total da linha).
+Geração básica de PDF ou visualização imprimível de uma fatura.
+Registro de Pagamentos:
+Operações CRUD manuais para registros de Payment.
+Campos: Valor Recebido, Data do Pagamento, Método de Pagamento (ex: Transferência Bancária, Cartão de Crédito Manual, GatewayX), Número de Referência, associação com uma ou mais Invoices.
+Lógica para atualizar o status da Invoice associada com base nos pagamentos recebidos (ex: mover para 'Paga' se totalmente quitada).
+Funcionalidade da API de Checkout:
+Um endpoint de API (/invoices/{id}/checkout) para iniciar o processo de pagamento para uma fatura específica. Este endpoint interagirá com a API do gateway de pagamento escolhido.
+2.3. Integração de Gateway de Pagamento:
+Pesquisa e Seleção: Investigar e selecionar pelo menos um gateway de pagamento popular adequado ao mercado alvo (ex: Stripe, MercadoPago). Fatores: qualidade da API, documentação, taxas, compatibilidade com Replit.
+Implementação: Integrar a API do gateway selecionado para processar pagamentos iniciados via endpoint da API de Checkout (Seção 2.2).
+Tratamento de Webhooks: Implementar um endpoint de webhook básico (/webhooks/payment-gateway) para receber notificações do gateway (ex: sucesso de pagamento, falha). A segurança deste endpoint é crucial, exigindo validação de assinatura.
+Atualizações de Status: Lógica para atualizar o status de Invoice e PaymentTransaction com base nos eventos de webhook recebidos. Armazenar IDs de transação relevantes do gateway.
+
+2.4. Módulo de Gestão de Contratos:
+
+Cadastro de Contratos:
+
+Operações CRUD para registros de Contract.
+Associação com um Client.
+Campos: Título/Identificador do Contrato, Descrição, Valor/Montante, Data de Início, Data de Fim, Status (Rascunho, Ativo, Expirado, Cancelado), externalUserId (criador/proprietário vindo do sistema externo).
+
+3. Arquitetura do Sistema no Replit
+
+Esta seção define a arquitetura técnica de alto nível, escolhas de componentes e padrões de interação, especificamente adaptados para o ambiente Replit.
+
+3.1. Backend:
+Framework: Ambiente de execução Node.js fornecido pelo Replit.
+Linguagem: TypeScript para segurança de tipos e melhor manutenibilidade.
+Web Framework: NestJS (Recomendado). Escolhido por sua arquitetura modular, suporte nativo a TypeScript, injeção de dependência e alinhamento com padrões de aplicações empresariais (estrutura similar a Angular/Spring). Fornece módulos, controladores, serviços, guards, pipes, etc., facilitando o desenvolvimento organizado.
+
+3.2. Frontend:
+
+Framework: React (usando componentes funcionais e Hooks).
+Linguagem: TypeScript (via TSX).
+Build Tool/Dev Server: Vite. Escolhido por seu início de servidor extremamente rápido e Hot Module Replacement (HMR), melhorando significativamente a experiência de desenvolvimento em comparação com configurações tradicionais de Webpack.
+UI Library: MUI ou Chakra UI (Recomendado). Selecionar uma com base na familiaridade da equipe e preferências de design. Fornece componentes pré-construídos e personalizáveis (Tabelas, Formulários, Modais, Layouts) para acelerar o desenvolvimento da UI.
+
+3.3. Estrutura do Projeto:
+
+Monorepo (Recomendado): Utilizar Replit Workspaces para gerenciar os códigos do backend (NestJS) e frontend (React/Vite) dentro de um único repositório.
+Benefícios: Simplifica o gerenciamento de dependências (usando protocolos de workspace, se aplicável via pnpm/yarn workspaces), facilita o compartilhamento de código (ex: tipos compartilhados) e otimiza o processo de build/deploy dentro do Replit.
+Exemplo de Estrutura:
+/ (Raiz do Workspace Replit)
+├── apps/
+│   ├── backend/ (Aplicação NestJS)
+│   └── frontend/ (Aplicação React/Vite)
+├── packages/ (Opcional: para código/tipos compartilhados)
+│   └── types/
+├── package.json (Configuração raiz do workspace)
+├── replit.nix (Configuração do ambiente)
+└──.replit (Configuração específica do Replit)
+
+3.4. Banco de Dados:
+
+Serviço: PostgreSQL, provisionado através do recurso Replit DB Add-on. Isso simplifica a configuração e o gerenciamento do banco de dados dentro do ecossistema Replit.
+ORM: Prisma. Escolhido por sua excelente integração com TypeScript, consultas de banco de dados type-safe, gerenciamento de migrações (Prisma Migrate) e linguagem de definição de esquema amigável ao desenvolvedor. O Prisma Client fornece métodos de acesso ao banco de dados auto-gerados e type-safe.
+3.5. Tratamento de Autenticação e Autorização Externa:
+Mecanismo: O sistema não implementará seu próprio login/signup. Ele depende inteiramente do sistema externo para autenticação. Espera-se que o sistema externo injete o contexto do usuário nas requisições feitas à API desta aplicação.
+Recepção do Contexto do Usuário: Definir um contrato claro para como o contexto do usuário é recebido. Método preferencial: Cabeçalho HTTP padrão Authorization contendo um JWT (JSON Web Token) emitido pelo sistema externo. Alternativa: Cabeçalhos customizados como X-User-ID, X-User-Roles. A abordagem JWT é geralmente mais padrão e segura. Plataformas como Open edX utilizam extensivamente OAuth2 e JWT para comunicação inter-serviços e autenticação de usuários. Adotar uma abordagem similar de token JWT Bearer (Authorization: Bearer <jwt_token> ou Authorization: JWT <jwt_token> como visto em ) é recomendado. O payload do JWT deve conter informações essenciais do usuário como userId e roles/permissions.   
+Lógica de Autorização no Backend:
+Extração: Implementar um middleware ou um guard global no NestJS para interceptar requisições recebidas, extrair o JWT/cabeçalhos, validar a assinatura do JWT (se aplicável, usando a chave pública do sistema externo armazenada de forma segura) e parsear o contexto do usuário (userId, roles).
+Guards: Utilizar NestJS Guards (ex: Guards baseados em Role, Guards de Propriedade) aplicados no nível do controlador ou do handler.
+Lógica: Os Guards usarão o contexto do usuário extraído (userId, roles) para:
+Verificar se o usuário possui a role/permissão necessária para acessar um endpoint específico (ex: apenas a role 'Admin' pode acessar endpoints de gerenciamento de usuários, se existissem).
+Filtrar o acesso a dados com base na propriedade: Garantir que usuários só possam acessar/modificar recursos (Leads, Clientes, Contratos, Faturas) associados ao seu externalUserId ou recursos que eles tenham permissão explícita para ver/editar com base em suas roles (ex: um gerente pode ver todos os leads de sua equipe). As consultas Prisma incorporarão cláusulas where baseadas no externalUserId do contexto da requisição.
+A dependência da autenticação externa desloca a complexidade da implementação da autenticação para o consumo seguro e aplicação da autorização com base no contexto fornecido. A validação robusta do token/cabeçalhos recebidos e a aplicação consistente das regras de autorização (via Guards) são requisitos críticos de segurança. A lógica de autorização encapsulada nos Guards mantém os controladores limpos e garante a aplicação uniforme das regras, enquanto a filtragem de dados deve ocorrer no nível da consulta ao banco de dados (cláusulas where do Prisma) usando o externalUserId.

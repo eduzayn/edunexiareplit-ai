@@ -1,0 +1,364 @@
+5. Design do Schema do Banco de Dados (Prisma/PostgreSQL)
+
+Esta seção detalha a estrutura de banco de dados proposta usando a sintaxe de schema do Prisma para o banco de dados PostgreSQL hospedado no Replit.
+
+5.1. Diagrama de Entidade-Relacionamento (Conceitual): (Um diagrama visual seria incluído no relatório final, mostrando entidades e relacionamentos). Relacionamentos chave:
+
+Client <-> Contact (Um-para-Muitos)
+Client <-> Contract (Um-para-Muitos)
+Client <-> Invoice (Um-para-Muitos)
+Contract <-> Invoice (Um-para-Muitos, Opcional)
+Invoice <-> InvoiceItem (Um-para-Muitos)
+ProductService <-> InvoiceItem (Um-para-Muitos)
+Invoice <-> Payment (Muitos-para-Muitos, potencialmente através de PaymentTransaction ou uma tabela de junção se um único pagamento puder cobrir múltiplas faturas)
+Invoice <-> PaymentTransaction (Um-para-Muitos)
+Payment <-> PaymentTransaction (Um-para-Muitos, se uma única entrada de pagamento manual puder corresponder a múltiplas transações de gateway, embora menos comum. Mais provável 1:1 ou Pagamento linka para Fatura, Transação linka para Fatura). Modelo Refinado: Payment (entrada manual) linka para Invoice. PaymentTransaction (interação com gateway) linka para Invoice.
+5.2. Definição do Schema Prisma:
+
+Tabela: Modelos do Schema Prisma
+
+Propósito: Esta tabela fornece a estrutura definitiva para a camada de persistência de dados da aplicação. Garante clareza para os desenvolvedores sobre nomes de campos, tipos, relacionamentos e restrições, traduzindo diretamente os requisitos de negócios em uma implementação técnica de banco de dados usando Prisma.
+Estrutura: A tabela a seguir define os modelos Prisma para cada entidade do MVP, incluindo campos essenciais, tipos, relacionamentos, índices e o campo externalUserId crucial para a ligação com o sistema de autenticação externo.
+Snippet de código
+
+// Define Enums para status
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  LOST
+  CONVERTED
+}
+
+enum ContractStatus {
+  DRAFT
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+  VOID // Frequentemente melhor que deletar
+}
+
+enum PaymentTransactionStatus {
+  PENDING
+  SUCCESSFUL
+  FAILED
+  REFUNDED
+}
+
+// Define Models
+model Lead {
+  id             String     @id @default(cuid())
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  name           String
+  email          String?    @unique // Opcional se telefone for primário
+  phone          String?
+  source         String?
+  status         LeadStatus @default(NEW)
+  notes          String?    @db.Text
+  externalUserId String     @index // Link para o usuário no sistema externo
+
+  @@map("leads") // Nome explícito da tabela
+}
+
+model Client {
+  id                  String     @id @default(cuid())
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+  name                String
+  primaryContactEmail String?
+  phone               String?
+  address             String?    @db.Text
+  externalUserId      String     @index // Gerente da conta/proprietário do sistema externo
+  notes               String?    @db.Text
+  contacts            Contact  @relation("ClientToContact")
+  contracts           Contract @relation("ClientToContract")
+  invoices            Invoice  @relation("ClientToInvoice")
+
+  @@map("clients")
+}
+
+model Contact {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  name      String
+  email     String?  @unique
+  phone     String?
+  role      String?
+  clientId  String
+  client    Client   @relation("ClientToContact", fields: [clientId], references: [id], onDelete: Cascade) // Exemplo de onDelete
+
+  @@index([clientId])
+  @@map("contacts")
+}
+
+model Contract {
+  id             String         @id @default(cuid())
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  title          String
+  description    String?        @db.Text
+  value          Decimal?       @db.Decimal(10, 2) // Usar Decimal para valores monetários
+  startDate      DateTime?
+  endDate        DateTime?
+  status         ContractStatus @default(DRAFT)
+  externalUserId String         @index // Criador/proprietário do sistema externo
+  clientId       String
+  client         Client         @relation("ClientToContract", fields: [clientId], references: [id])
+  invoices       Invoice      @relation("ContractToInvoice")
+
+  @@index([clientId])
+  @@index([externalUserId])
+  @@map("contracts")
+}
+
+model ProductService {
+  id           String        @id @default(cuid())
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  name         String        @unique
+  description  String?       @db.Text
+  defaultPrice Decimal       @db.Decimal(10, 2)
+  invoiceItems InvoiceItem @relation("ProductToItem")
+
+  @@map("product_services")
+}
+
+// Modelo PriceTable opcional (fora do MVP inicial)
+// model PriceTable {... }
+
+model Invoice {
+  id             String        @id @default(cuid())
+  invoiceNumber  String        @unique // Considerar sequência ou padrão
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  issueDate      DateTime      @default(now())
+  dueDate        DateTime
+  status         InvoiceStatus @default(DRAFT)
+  totalAmount    Decimal       @db.Decimal(10, 2) // Calculado a partir dos itens
+  externalUserId String        @index // Criador/proprietário
+  clientId       String
+  client         Client        @relation("ClientToInvoice", fields: [clientId], references: [id])
+  contractId     String?
+  contract       Contract?     @relation("ContractToInvoice", fields: [contractId], references: [id])
+  items          InvoiceItem @relation("InvoiceToItem")
+  payments       Payment     @relation("InvoiceToPayment")
+  transactions   PaymentTransaction @relation("InvoiceToTransaction")
+
+  @@index([clientId])
+  @@index([contractId])
+  @@index([externalUserId])
+  @@index([status])
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id               String         @id @default(cuid())
+  description      String?        // Pode sobrescrever a descrição do produto
+  quantity         Decimal        @db.Decimal(10, 2) // Ou Int dependendo do produto
+  unitPrice        Decimal        @db.Decimal(10, 2)
+  lineTotal        Decimal        @db.Decimal(10, 2) // (quantity * unitPrice)
+  invoiceId        String
+  invoice          Invoice        @relation("InvoiceToItem", fields: [invoiceId], references: [id], onDelete: Cascade)
+  productServiceId String
+  productService   ProductService @relation("ProductToItem", fields:, references: [id])
+
+  @@index([invoiceId])
+  @@index()
+  @@map("invoice_items")
+}
+
+model Payment { // Representa pagamentos registrados manualmente
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  paymentDate    DateTime
+  amount         Decimal  @db.Decimal(10, 2)
+  paymentMethod  String   // ex: "Bank Transfer", "Cash", "Manual Card Entry"
+  reference      String?
+  notes          String?  @db.Text
+  invoiceId      String
+  invoice        Invoice  @relation("InvoiceToPayment", fields: [invoiceId], references: [id])
+  externalUserId String   @index // Usuário que registrou o pagamento
+
+  @@index([invoiceId])
+  @@map("payments")
+}
+
+model PaymentGatewayConfig { // Armazena config para diferentes gateways
+  id            String   @id @default(cuid())
+  gatewayType   String   @unique // ex: "stripe", "mercadopago"
+  publicKey     String?
+  secretKey     String   // Armazenado criptografado ou referência ao Replit Secret
+  webhookSecret String?  // Armazenado criptografado ou referência ao Replit Secret
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("payment_gateway_configs")
+}
+
+model PaymentTransaction { // Representa interações com gateways de pagamento
+  id                   String                   @id @default(cuid())
+  createdAt            DateTime                 @default(now())
+  updatedAt            DateTime                 @updatedAt
+  gatewayType          String                   // ex: "stripe", "mercadopago"
+  gatewayTransactionId String                   @unique // ID do gateway
+  amount               Decimal                  @db.Decimal(10, 2)
+  currency             String                   // ex: "USD", "BRL"
+  status               PaymentTransactionStatus @default(PENDING)
+  webhookPayload       Json?                    // Armazena dados brutos do webhook para depuração
+  errorMessage         String?
+  invoiceId            String
+  invoice              Invoice                  @relation("InvoiceToTransaction", fields: [invoiceId], references: [id])
+
+  @@index([invoiceId])
+  @@index()
+  @@index([status])
+  @@map("payment_transactions")
+}
+5.3. Relacionamentos e Considerações Chave:
+
+externalUserId: Este campo é crucial para vincular registros ao usuário identificado pelo sistema de autenticação externo. Será indexado para filtragem eficiente na lógica de autorização.
+Fatura-Pagamento-Transação: Uma Invoice pode ter múltiplos registros Payment (entradas manuais) e múltiplos registros PaymentTransaction (interações com gateway). A soma dos valores de Payment e PaymentTransaction bem-sucedidos deve determinar o status da Invoice (Paga/Parcial). Uma PaymentTransaction tipicamente se relaciona a uma Invoice. Um registro Payment manual pode representar fundos recebidos fora do gateway.
+Enums de Status: Usar enums do Prisma para campos de status (LeadStatus, InvoiceStatus, ContractStatus, PaymentTransactionStatus) impõe estados válidos e melhora a legibilidade do código.
+Tipos de Dados: Usar Decimal para valores monetários é recomendado pelo Prisma para precisão. Usar DateTime para timestamps. Usar @db.Text para campos de string potencialmente longos.
+Deleções em Cascata: Considerar cuidadosamente o comportamento de deleção em cascata (onDelete: Cascade) para relacionamentos. Pode ser mais seguro usar soft deletes (ex: uma flag isActive ou timestamp deletedAt) ou restringir deleções com base no status (ex: não pode deletar uma fatura 'Paga'). Para o MVP, o padrão restrict/set null pode ser mais seguro em muitos casos, exceto talvez para InvoiceItem que depende da Invoice.
+6. Design da API (RESTful - NestJS)
+
+Esta seção define a estrutura e os endpoints chave da API RESTful do backend construída com NestJS. A aderência aos princípios REST padrão (verbos HTTP, códigos de status, URLs baseadas em recursos) é esperada. Convenções gerais como substantivos no plural para recursos e estruturas de URL claras podem ser adaptadas.   
+
+6.1. Estrutura do Endpoint da API:
+
+URL Base: /api/v1 (ou caminho versionado similar).
+Autenticação: Todos os endpoints (exceto webhooks públicos, potencialmente) exigirão contexto de autenticação fornecido via cabeçalhos/JWT (conforme definido em 3.5). A autorização será imposta via NestJS Guards.
+Módulos: Endpoints agrupados logicamente por módulo:
+/crm/leads
+/crm/clients
+/crm/contacts
+/contracts
+/finance/products
+/finance/price-tables (Opcional)
+/finance/invoices
+/finance/payments (Pagamentos Manuais)
+/finance/checkout (Ações relacionadas à iniciação de pagamento)
+/webhooks
+6.2. Especificações dos Endpoints:
+
+Tabela: Endpoints Chave da API (MVP)
+
+Propósito: Esta tabela define o contrato específico da API entre o frontend e o backend. Detalha como os clientes devem interagir com o servidor para realizar ações e recuperar dados, permitindo comunicação clara e desenvolvimento paralelo.
+Estrutura: A tabela a seguir lista os endpoints essenciais para o MVP, incluindo operações CRUD para as entidades principais e as ações específicas de checkout e webhook.
+Método	Caminho	Descrição	Corpo da Requisição (Exemplo)	Corpo da Resposta (Exemplo)	Auth Obrigatória	Notas
+GET	/crm/leads	Lista leads (filtrados por proprietário/permissões)	N/A (Query Params para filtro)	[{id, name, email, status,...}]	Sim	Implementar paginação, filtro por status, proprietário
+POST	/crm/leads	Cria um novo lead	{name, email, source,...}	{id, name, email, status,...}	Sim	externalUserId atribuído a partir do contexto
+GET	/crm/leads/{leadId}	Obtém detalhes de um lead específico	N/A	{id, name, email, status,...}	Sim	Guard verifica propriedade (externalUserId)
+PATCH	/crm/leads/{leadId}	Atualiza um lead	{status?, name?,...}	{id, name, email, status,...}	Sim	Guard verifica propriedade
+DELETE	/crm/leads/{leadId}	Deleta um lead (ou marca como inativo)	N/A	204 No Content	Sim	Guard verifica propriedade
+POST	/crm/leads/{leadId}/convert	Converte lead para Cliente/Contato	{clientData?, contactData?}	{clientId, contactId}	Sim	Cria registros de Cliente/Contato
+GET	/crm/clients	Lista clientes	N/A (Query Params)	[{id, name,...}]	Sim	Paginação, filtro por proprietário
+POST	/crm/clients	Cria um novo cliente	{name, primaryContactEmail,...}	{id, name,...}	Sim	externalUserId atribuído
+GET	/crm/clients/{clientId}	Obtém detalhes do cliente (inclui contatos, etc.)	N/A	{id, name,..., contacts:}	Sim	Guard verifica propriedade/permissão
+PATCH	/crm/clients/{clientId}	Atualiza um cliente	{name?, phone?,...}	{id, name,...}	Sim	Guard verifica propriedade
+DELETE	/crm/clients/{clientId}	Deleta um cliente	N/A	204 No Content	Sim	Guard verifica propriedade
+GET	/crm/clients/{clientId}/contacts	Lista contatos de um cliente	N/A	[{id, name, email,...}]	Sim	Guard verifica acesso ao cliente
+POST	/crm/clients/{clientId}/contacts	Cria um novo contato para um cliente	{name, email, phone, role}	{id, name,...}	Sim	Guard verifica acesso ao cliente
+...	/crm/contacts/{contactId}	(Endpoints PATCH, DELETE para Contatos)	...	...	Sim	Guard verifica propriedade do Cliente associado
+...	/contracts	(Endpoints CRUD similares para Contratos)	...	...	Sim	Guards verificam propriedade (externalUserId)
+...	/finance/products	(Endpoints CRUD similares para Produtos/Serviços)	...	...	Sim	Acesso geralmente permitido a todos os usuários autenticados ou roles específicos
+GET	/finance/invoices	Lista faturas	N/A (Query Params: status, client)	[{id, invoiceNumber, status,...}]	Sim	Filtra por externalUserId, status, cliente; Paginação
+POST	/finance/invoices	Cria uma nova fatura (rascunho)	{clientId, dueDate, items: [...]}	{id, invoiceNumber, status,...}	Sim	externalUserId atribuído; items é array de {productId, qty, price}
+GET	/finance/invoices/{id}	Obtém detalhes da fatura (com itens, pagamentos)	N/A	{..., items:, payments:}	Sim	Guard verifica propriedade/permissão
+PATCH	/finance/invoices/{id}	Atualiza uma fatura (ex: status, datas)	{status?, dueDate?}	{id,...}	Sim	Guard verifica propriedade; Restrições de status (ex: não editar 'Paga')
+DELETE	/finance/invoices/{id}	Deleta uma fatura (ou marca como VOID)	N/A	204 No Content	Sim	Guard verifica propriedade; Restrições de status
+POST	/finance/invoices/{id}/items	Adiciona um item a uma fatura (rascunho)	{productId, quantity, unitPrice}	{id,...} (item criado)	Sim	Guard verifica propriedade, status da fatura deve ser 'Draft'
+DELETE	/finance/invoices/{invId}/items/{itemId}	Remove item de uma fatura (rascunho)	N/A	204 No Content	Sim	Guard verifica propriedade, status da fatura deve ser 'Draft'
+...	/finance/payments	(Endpoints CRUD para pagamentos manuais)	...	...	Sim	Guard verifica propriedade da Fatura associada
+POST	/finance/invoices/{id}/checkout	Inicia processo de pagamento via gateway	{ gatewayType: "stripe" }	{ checkoutUrl?, sessionId?,... }	Sim	Interage com API do gateway, retorna URL de redirect ou ID de sessão
+POST	/webhooks/payment-gateway/{gatewayType}	Recebe notificações de webhook do gateway	Formato Específico do Gateway	200 OK ou 204 No Content	Não (Assinatura)	Validar assinatura do webhook (usando segredo dos Secrets do Replit)
+
+Exportar para as Planilhas
+6.3. Tratamento de Autenticação/Autorização na API:
+Extração de Contexto: Um middleware global (ou Guard aplicado globalmente) será responsável por:
+Ler o cabeçalho Authorization (esperando Bearer <JWT> ou JWT <JWT>).
+Validar a assinatura do JWT contra a chave pública do provedor externo (obtida de forma segura e armazenada nos Secrets do Replit).
+Parsear o payload do JWT validado para extrair userId, roles, e potencialmente outras claims relevantes.
+Anexar o contexto do usuário parseado (ex: { id: string, roles: string }) ao objeto Request do NestJS para uso downstream por guards e serviços.
+Implementação de Guards:
+AuthGuard: Um guard básico aplicado à maioria dos endpoints garantindo que um contexto de usuário válido exista na requisição.
+RolesGuard: Guard parametrizado (@Roles('admin', 'manager')) para restringir o acesso com base nas roles extraídas do contexto do usuário.
+OwnershipGuard: Guard customizado para verificar se o externalUserId no contexto da requisição corresponde ao campo externalUserId no recurso sendo acessado/modificado (ex: garantir que um usuário só possa dar PATCH em seus próprios Leads). Isso frequentemente requer buscar o recurso dentro do guard ou passar detalhes do recurso para ele.
+Filtragem de Dados: Serviços responsáveis por buscar listas de recursos (ex: LeadsService.findAll()) devem incorporar o externalUserId do contexto da requisição na consulta Prisma (where: { externalUserId: context.user.id }), a menos que o usuário tenha uma role que conceda acesso mais amplo (ex: 'admin').
+7. Utilização da Plataforma Replit
+
+Esta seção detalha como funcionalidades específicas do Replit serão aproveitadas ao longo do ciclo de vida do projeto.
+
+7.1. Gerenciamento de Segredos (Secrets):
+O recurso nativo de Secrets do Replit será usado exclusivamente para armazenar todas as informações sensíveis.
+Segredos a armazenar: DATABASE_URL (para conexão Prisma), chaves de API para gateway(s) de pagamento (chaves pública e secreta), segredos de assinatura de webhook para gateways de pagamento, potencialmente segredos necessários para validar JWTs do sistema de autenticação externo (ex: URL da chave pública ou a própria chave).
+Acesso: Os segredos são injetados como variáveis de ambiente na aplicação em execução, evitando hardcoding de dados sensíveis no código-fonte.
+7.2. Hospedagem de Banco de Dados:
+O Add-on PostgreSQL do Replit fornecerá a instância do banco de dados.
+Gerenciamento: O gerenciamento básico do banco de dados (criação, informações de conexão) é tratado através da UI/interface do Add-on do Replit.
+Conexão: O Prisma se conectará usando o secret DATABASE_URL.
+7.3. Colaboração:
+Replit Workspaces permitem codificação colaborativa em tempo real, possibilitando que múltiplos desenvolvedores trabalhem na mesma base de código simultaneamente.
+Suporte Git integrado dentro do workspace facilita o controle de versão e fluxos de trabalho de branching.
+Acesso compartilhado ao ambiente do workspace (incluindo terminal, sistema de arquivos, processos em execução) auxilia na programação em par e depuração.
+7.4. Estratégia de Implantação (Deployment):
+Replit Deployments será utilizado para hospedar a aplicação em produção (tanto frontend quanto backend).
+Configuração: Definir passos de build (ex: pnpm --filter backend build, pnpm --filter frontend build) e o comando de execução (ex: pnpm --filter backend start:prod) no arquivo .replit ou nas configurações de deployment.
+Gerenciamento de Processos: O Replit lida com a infraestrutura subjacente, gerenciamento de processos e fornece endpoints HTTPS para a aplicação implantada.
+Considerações de Escalabilidade: Embora o Replit forneça hospedagem básica, necessidades avançadas de escalabilidade (além do MVP) podem exigir a avaliação dos tiers superiores do Replit ou soluções de hospedagem alternativas no futuro. No entanto, para o MVP, a implantação no Replit é a abordagem mandatória. O uso de uma plataforma como Replit simplifica significativamente a cadeia de ferramentas DevOps para o MVP, mas introduz uma dependência da plataforma. Compreender as capacidades e limitações de implantação do Replit é chave.   
+8. Estrutura da Interface do Usuário (UI)
+
+Esta seção descreve o layout de alto nível e os componentes chave da aplicação frontend baseada em React.
+
+8.1. Layout do Dashboard:
+Estrutura Principal: Um layout de dashboard padrão com uma sidebar persistente para navegação, um cabeçalho (potencialmente para exibição de informações do usuário - embora mínimo, já que a autenticação é externa, talvez apenas nome/logo da aplicação) e uma área de conteúdo principal onde diferentes visualizações/páginas são renderizadas.
+Navegação na Sidebar:
+Seção CRM: Links para Leads, Clientes, Contatos.
+Seção Financeiro: Links para Faturas, Pagamentos, Produtos/Serviços, (Opcional: Tabelas de Preços).
+Seção Contratos: Link para lista de Contratos.
+(Futuro: Seções de Configurações, Relatórios).
+8.2. Componentes Centrais da UI (Aproveitando MUI/Chakra UI):
+Tabelas de Dados: Componente reutilizável para exibir listas de registros (Leads, Clientes, Faturas, etc.). Funcionalidades: Ordenação, filtragem no lado do cliente/servidor, paginação, colunas personalizáveis, botões de ação por linha (Ver, Editar, Deletar).
+Formulários: Formulários padronizados para criar/editar registros. Aproveitar componentes da biblioteca de UI (TextField, Select, DatePicker, Checkbox) e potencialmente React Hook Form para validação e gerenciamento de estado.
+Modais: Componente modal reutilizável para diálogos de confirmação (ex: confirmação de deleção), edições rápidas ou exibição de informações simples.
+Visualizações de Detalhe: Layout consistente para exibir os detalhes completos de um único registro (ex: página de detalhes do Cliente mostrando Contatos, Contratos, Faturas associados em abas ou seções separadas).
+Quadro Kanban (para Leads): Interface simples de arrastar e soltar para visualizar e gerenciar o status/funil de Leads.
+Interface de Checkout: Elementos de UI específicos exigidos pelo gateway de pagamento escolhido (ex: campos de cartão embutidos via Stripe Elements) apresentados ao iniciar o pagamento de uma fatura.
+Dashboards/Widgets Básicos: (Baixa prioridade para MVP) Cards ou gráficos simples exibindo métricas chave (ex: Número de Novos Leads, contagem de Faturas Vencidas).
+8.3. Descrições Conceituais das Telas Chave:
+Visualização do Funil de Leads: Quadro Kanban com colunas representando status de Leads (Novo, Contactado, Qualificado, etc.). Cards de Leads são arrastáveis entre colunas. Filtros disponíveis.
+Visualização da Lista de Clientes: Tabela de dados mostrando Clientes, filtrável por proprietário, pesquisável por nome. Linhas clicáveis navegam para a Visualização de Detalhe do Cliente.
+Visualização de Detalhe do Cliente: Exibe informações do cliente, lista Contatos associados (com link), Contratos (com link) e Faturas (com link) em abas ou seções separadas.
+Visualização da Lista de Faturas: Tabela de dados mostrando Faturas, filtrável por status (Rascunho, Enviada, Paga, Vencida), cliente, intervalo de datas. Botões de ação para Ver, Editar, Deletar (condicional), Iniciar Checkout.
+Visualização de Detalhe/Criação de Fatura: Formulário para criar/editar detalhes da fatura (Cliente, Contrato, Datas, Itens). Exibe itens de linha, valor total, status. Inclui funcionalidade "Adicionar Item". Fornece botões "Enviar" (muda status), "Marcar como Paga" (manual) e "Iniciar Pagamento".
+Visualização de Detalhe do Contrato: Exibe informações do contrato, cliente associado, status, datas, valor. Lista faturas associadas.
+Fluxo de Checkout: Disparado a partir da visualização da Fatura. Pode redirecionar para a página do gateway ou exibir elementos do gateway (ex: Stripe Elements) dentro de um modal ou seção dedicada da página. Mostra feedback do status do pagamento ao retornar/concluir.
+9. Recomendações e Próximos Passos
+
+Desenvolvimento Iterativo: Enfatizar uma abordagem ágil, entregando incrementos funcionais das funcionalidades do MVP fase a fase. Coletar feedback cedo e frequentemente.
+Rigor nos Testes: Priorizar testes, especialmente para o módulo financeiro (cálculos de fatura, processamento de pagamento, atualizações de status) e lógica de autorização. Testes automatizados são cruciais para manter a estabilidade.
+Tratamento de Erros e Logging: Implementar tratamento robusto de erros tanto no frontend quanto no backend. Implementar logging estruturado (ex: usando Pino ou Winston no NestJS) para facilitar a depuração e o monitoramento no ambiente Replit.
+Segurança: Além da autorização, considerar práticas padrão de segurança web: validação de entrada (DTOs), proteção contra vulnerabilidades comuns (XSS, CSRF - embora CSRF menos crítico para API-first se usando cabeçalhos JWT), varredura de dependências. Garantir que endpoints de webhook sejam seguros via validação de assinatura.
+Integração com Autenticação Externa: Colaboração próxima com a equipe que gerencia o sistema de autenticação externo é vital para garantir que o mecanismo JWT/header seja implementado corretamente e de forma segura. Definir a estrutura exata do payload/header cedo.
+Limitações do Replit: Estar ciente das potenciais limitações de recursos (CPU, RAM, largura de banda, armazenamento) no plano Replit escolhido, especialmente sob carga. Monitorar o desempenho pós-implantação.   
+Escalabilidade Futura: Embora o MVP seja no Replit, projetar a aplicação com padrões padrão (módulos NestJS, separação de serviços) que facilitariam uma potencial migração futura para outras plataformas de hospedagem se as necessidades de escalabilidade excederem as capacidades do Replit. Projetar consultas de banco de dados eficientemente.   
+Próximos Passos:
+Revisar e aprovar este plano de projeto.
+Montar a equipe de desenvolvimento.
+Iniciar a Fase 1: Configuração do Ambiente.
+Estabelecer canais de comunicação com a equipe do sistema de autenticação externo.
+Selecionar o gateway de pagamento inicial.
+
