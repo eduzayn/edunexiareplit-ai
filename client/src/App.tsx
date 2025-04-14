@@ -196,6 +196,11 @@ function Router() {
         {() => user?.portalType === "admin" ? <IntegrationsPage /> : <Redirect to="/admin" />}
       </Route>
       
+      {/* Rota para acessar matrículas do polo a partir do admin */}
+      <Route path="/admin/polo-enrollments">
+        {() => user?.portalType === "admin" ? <PoloEnrollmentsPage /> : <Redirect to="/admin" />}
+      </Route>
+      
       <Route component={NotFound} />
     </Switch>
   );

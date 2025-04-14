@@ -195,6 +195,12 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
           href: "/admin/enrollments",
           active: currentPath === "/admin/enrollments" || (currentPath && currentPath.includes("/admin/enrollments/"))
         },
+        {
+          name: "Matrículas Polo",
+          icon: <StorefrontIcon />,
+          href: "/admin/polo-enrollments",
+          active: currentPath === "/admin/polo-enrollments"
+        },
         { 
           name: "Financeiro Empresarial", 
           icon: <MonetizationOnIcon />, 
@@ -215,6 +221,12 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
         icon: <AssignmentIcon />,
         href: "/admin/enrollments",
         active: currentPath === "/admin/enrollments" || (currentPath && currentPath.includes("/admin/enrollments/"))
+      },
+      {
+        name: "Matrículas Polo",
+        icon: <StorefrontIcon />,
+        href: "/admin/polo-enrollments",
+        active: currentPath === "/admin/polo-enrollments"
       },
       { 
         name: "Financeiro Empresarial", 
