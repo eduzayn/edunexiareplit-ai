@@ -28,13 +28,16 @@ import {
   BadgeCheck,
   MessageSquare,
   MessageCircle,
+  SendHorizontal,
   Paperclip,
-  MoreVertical,
+  Smile,
+  Image,
+  File,
   Key,
   Server,
   Inbox,
-  SendHorizonal,
-  MessagesSquare
+  MessagesSquare,
+  MoreVertical
 } from "lucide-react";
 
 // Ícones de Lucide exportados diretamente
@@ -66,12 +69,14 @@ export const BadgeCheckIcon = BadgeCheck;
 export const MessageSquareIcon = MessageSquare;
 export const MessageCircleIcon = MessageCircle;
 export const InboxIcon = Inbox;
-export const SendIcon = SendHorizonal;
+export const SendIcon = SendHorizontal;
 export const MessagesSquareIcon = MessagesSquare;
 export const PaperclipIcon = Paperclip;
 export const DotsVerticalIcon = MoreVertical;
 export const KeyIcon = Key;
 export const ServerIcon = Server;
+export const SmileIcon = Smile;
+export const ImageIcon = Image;
 export const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"

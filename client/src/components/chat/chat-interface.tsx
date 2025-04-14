@@ -276,7 +276,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ conversation }) =>
               <SmileIcon className="h-5 w-5" />
             </Button>
             <Button 
-              variant="primary" 
+              variant="default" 
               size="icon" 
               className="rounded-full h-9 w-9"
               onClick={handleSendMessage}

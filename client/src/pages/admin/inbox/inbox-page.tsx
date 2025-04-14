@@ -164,22 +164,34 @@ const InboxPage: React.FC = () => {
         </div>
         
         {/* Container principal do chat */}
-        <div className="flex-1 overflow-hidden">
-          {isConnected ? (
-            <ChatInterface conversation={selectedConversation} />
-          ) : (
-            <div className="flex items-center justify-center h-full">
-              <Card>
-                <CardContent className="p-6 text-center">
-                  <h3 className="text-lg font-medium mb-2">Conexão perdida</h3>
-                  <p className="text-muted-foreground mb-4">
-                    A conexão com o servidor de chat foi perdida. Tentando reconectar...
-                  </p>
-                  <Button>Reconectar manualmente</Button>
-                </CardContent>
-              </Card>
-            </div>
-          )}
+        <div className="flex flex-1 overflow-hidden">
+          {/* Lista de conversas */}
+          <div className="w-80 border-r shrink-0 overflow-y-auto">
+            <ConversationList
+              conversations={filteredConversations}
+              activeConversationId={selectedConversation?.id || null}
+              onSelectConversation={handleSelectConversation}
+            />
+          </div>
+          
+          {/* Interface de chat */}
+          <div className="flex-1 overflow-hidden">
+            {isConnected ? (
+              <ChatInterface conversation={selectedConversation} />
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <Card>
+                  <CardContent className="p-6 text-center">
+                    <h3 className="text-lg font-medium mb-2">Conexão perdida</h3>
+                    <p className="text-muted-foreground mb-4">
+                      A conexão com o servidor de chat foi perdida. Tentando reconectar...
+                    </p>
+                    <Button>Reconectar manualmente</Button>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </InboxLayout>
