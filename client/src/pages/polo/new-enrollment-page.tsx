@@ -65,15 +65,24 @@ import { ptBR } from "date-fns/locale";
 
 // Schema para validação do formulário
 const enrollmentFormSchema = z.object({
-  // Dados do aluno
-  studentName: z.string().min(3, { message: "Nome deve ter pelo menos 3 caracteres" }),
-  studentEmail: z.string().email({ message: "Email inválido" }),
-  studentPhone: z.string().min(10, { message: "Telefone inválido" }),
-  studentDocument: z.string().min(11, { message: "CPF inválido" }),
-  studentAddress: z.string().min(10, { message: "Endereço deve ter pelo menos 10 caracteres" }),
-  studentCity: z.string().min(2, { message: "Cidade deve ter pelo menos 2 caracteres" }),
-  studentState: z.string().min(2, { message: "Estado deve ter pelo menos 2 caracteres" }),
-  studentZipCode: z.string().min(8, { message: "CEP inválido" }),
+  // Opção para escolher entre aluno existente ou novo aluno
+  enrollmentType: z.enum(["existing", "new"], {
+    required_error: "Selecione o tipo de matrícula",
+  }),
+  
+  // Dados do aluno - ID (usado apenas para aluno existente)
+  studentId: z.string().optional(),
+  
+  // Dados do aluno - Novo (usado quando criar novo aluno)
+  studentName: z.string().optional(),
+  studentEmail: z.string().email({ message: "Email inválido" }).optional(),
+  studentPhone: z.string().optional(),
+  studentDocument: z.string().optional(),
+  studentAddress: z.string().optional(),
+  studentCity: z.string().optional(),
+  studentState: z.string().optional(),
+  studentZipCode: z.string().optional(),
+  
   // Gateway de pagamento
   paymentGateway: z.enum(["asaas", "lytex"], {
     required_error: "Selecione um gateway de pagamento",
@@ -97,6 +106,28 @@ const enrollmentFormSchema = z.object({
   
   // Campo para controlar o atual "passo" do formulário
   currentStep: z.number().min(1).max(4)
+}).refine(data => {
+  // Se for aluno existente, studentId é obrigatório
+  if (data.enrollmentType === "existing") {
+    return !!data.studentId;
+  }
+  
+  // Se for novo aluno, todos os campos de aluno são obrigatórios
+  if (data.enrollmentType === "new") {
+    return !!data.studentName && 
+           !!data.studentEmail && 
+           !!data.studentPhone && 
+           !!data.studentDocument && 
+           !!data.studentAddress && 
+           !!data.studentCity && 
+           !!data.studentState && 
+           !!data.studentZipCode;
+  }
+  
+  return false;
+}, {
+  message: "Preencha todos os campos obrigatórios do aluno",
+  path: ["enrollmentType"],
 });
 
 type EnrollmentFormValues = z.infer<typeof enrollmentFormSchema>;
@@ -130,10 +161,21 @@ export default function NewEnrollmentPage() {
     },
   });
   
+  // Consulta para listar alunos cadastrados
+  const { data: studentsData, isLoading: isLoadingStudents } = useQuery({
+    queryKey: ["/api/polo/students"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/polo/students");
+      return await res.json();
+    },
+  });
+  
   // Inicializando formulário com valores padrão
   const form = useForm<EnrollmentFormValues>({
     resolver: zodResolver(enrollmentFormSchema),
     defaultValues: {
+      enrollmentType: "new", // Valor padrão para criar novo aluno
+      studentId: "",
       studentName: "",
       studentEmail: "",
       studentPhone: "",
@@ -155,19 +197,63 @@ export default function NewEnrollmentPage() {
   
   // Função para criar matrícula
   const createEnrollmentMutation = useMutation({
-    mutationFn: async (enrollmentData: EnrollmentFormValues) => {
-      const res = await apiRequest("POST", "/api/polo/enrollments", enrollmentData);
-      return await res.json();
+    mutationFn: async (data: EnrollmentFormValues) => {
+      setIsCreatingEnrollment(true);
+      try {
+        let payload: any;
+        
+        // Se for um aluno existente
+        if (data.enrollmentType === "existing") {
+          payload = {
+            studentId: parseInt(data.studentId || "0"),
+            courseId: parseInt(data.courseId),
+            paymentGateway: data.paymentGateway,
+            paymentMethod: data.paymentMethod,
+            contractTemplateId: parseInt(data.contractTemplateId),
+            additionalNotes: data.additionalNotes || ""
+          };
+        } 
+        // Se for um novo aluno
+        else {
+          payload = {
+            newStudent: {
+              fullName: data.studentName,
+              email: data.studentEmail,
+              phone: data.studentPhone,
+              cpf: data.studentDocument,
+              address: data.studentAddress,
+              city: data.studentCity,
+              state: data.studentState,
+              zipCode: data.studentZipCode
+            },
+            courseId: parseInt(data.courseId),
+            paymentGateway: data.paymentGateway,
+            paymentMethod: data.paymentMethod,
+            contractTemplateId: parseInt(data.contractTemplateId),
+            additionalNotes: data.additionalNotes || ""
+          };
+        }
+        
+        const res = await apiRequest("POST", "/api/polo/enrollments", payload);
+        const result = await res.json();
+        return result;
+      } finally {
+        setIsCreatingEnrollment(false);
+      }
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/polo/enrollments"] });
       setCreatedEnrollmentId(data.id);
       toast({
         title: "Matrícula criada com sucesso",
-        description: "A matrícula foi registrada no sistema",
+        description: `Código da matrícula: ${data.code}`,
       });
+      // Redirect depois de 2 segundos
+      setTimeout(() => {
+        navigate("/polo/enrollments");
+      }, 2000);
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Erro ao criar matrícula",
         description: error.message,
@@ -183,11 +269,30 @@ export default function NewEnrollmentPage() {
     // Campos a serem validados em cada etapa
     switch (step) {
       case 1:
+        // Sempre validar o tipo de matrícula e gateway de pagamento
         fieldsToValidate = [
-          "studentName", "studentEmail", "studentPhone", "studentDocument", 
-          "studentAddress", "studentCity", "studentState", "studentZipCode",
+          "enrollmentType",
           "paymentGateway"
         ];
+        
+        // Se for um aluno existente, valida o ID do aluno
+        if (form.getValues("enrollmentType") === "existing") {
+          fieldsToValidate.push("studentId");
+        } 
+        // Se for um novo aluno, valida os campos de cadastro
+        else {
+          fieldsToValidate = [
+            ...fieldsToValidate,
+            "studentName", 
+            "studentEmail", 
+            "studentPhone", 
+            "studentDocument", 
+            "studentAddress", 
+            "studentCity", 
+            "studentState", 
+            "studentZipCode"
+          ];
+        }
         break;
       case 2:
         fieldsToValidate = ["courseId"];
@@ -323,127 +428,215 @@ export default function NewEnrollmentPage() {
               <p className="text-gray-500">Informações pessoais do estudante</p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="studentName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome Completo</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Nome completo do aluno" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="studentEmail"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Email de contato" type="email" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="studentPhone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Telefone</FormLabel>
-                    <FormControl>
-                      <Input placeholder="(00) 00000-0000" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="studentDocument"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>CPF</FormLabel>
-                    <FormControl>
-                      <Input placeholder="000.000.000-00" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <Separator className="my-4" />
-            
-            <div className="space-y-2">
-              <h3 className="text-lg font-medium">Endereço</h3>
-            </div>
-            
+            {/* Opção para escolher entre aluno existente ou novo aluno */}
             <FormField
               control={form.control}
-              name="studentAddress"
+              name="enrollmentType"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Endereço</FormLabel>
+                <FormItem className="space-y-3">
+                  <FormLabel>Tipo de Matrícula</FormLabel>
                   <FormControl>
-                    <Input placeholder="Endereço completo" {...field} />
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      className="flex flex-col space-y-1"
+                    >
+                      <FormItem className="flex items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value="existing" />
+                        </FormControl>
+                        <FormLabel className="font-normal">
+                          Aluno Existente
+                        </FormLabel>
+                      </FormItem>
+                      <FormItem className="flex items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value="new" />
+                        </FormControl>
+                        <FormLabel className="font-normal">
+                          Novo Aluno
+                        </FormLabel>
+                      </FormItem>
+                    </RadioGroup>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {form.watch("enrollmentType") === "existing" ? (
+              // Formulário para aluno existente
               <FormField
                 control={form.control}
-                name="studentCity"
+                name="studentId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Cidade</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Cidade" {...field} />
-                    </FormControl>
+                    <FormLabel>Selecione o Aluno</FormLabel>
+                    <Select
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        // Limpar campos do novo aluno quando seleciona aluno existente
+                        form.setValue("studentName", "");
+                        form.setValue("studentEmail", "");
+                        form.setValue("studentPhone", "");
+                        form.setValue("studentDocument", "");
+                        form.setValue("studentAddress", "");
+                        form.setValue("studentCity", "");
+                        form.setValue("studentState", "");
+                        form.setValue("studentZipCode", "");
+                      }}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione um aluno" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {isLoadingStudents ? (
+                          <SelectItem value="loading" disabled>Carregando alunos...</SelectItem>
+                        ) : (
+                          studentsData?.map((student: any) => (
+                            <SelectItem key={student.id} value={student.id.toString()}>
+                              {student.fullName} ({student.email})
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Selecione um aluno já cadastrado na plataforma.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              
-              <FormField
-                control={form.control}
-                name="studentState"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Estado</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Estado" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="studentZipCode"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>CEP</FormLabel>
-                    <FormControl>
-                      <Input placeholder="00000-000" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            ) : (
+              // Formulário para novo aluno
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="studentName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nome Completo</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Nome completo do aluno" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="studentEmail"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Email de contato" type="email" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="studentPhone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Telefone</FormLabel>
+                        <FormControl>
+                          <Input placeholder="(00) 00000-0000" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="studentDocument"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>CPF</FormLabel>
+                        <FormControl>
+                          <Input placeholder="000.000.000-00" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <Separator className="my-4" />
+                
+                <div className="space-y-2">
+                  <h3 className="text-lg font-medium">Endereço</h3>
+                </div>
+                
+                <FormField
+                  control={form.control}
+                  name="studentAddress"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Endereço</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Endereço completo" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="studentCity"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Cidade</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Cidade" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="studentState"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Estado</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Estado" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="studentZipCode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>CEP</FormLabel>
+                        <FormControl>
+                          <Input placeholder="00000-000" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </>
+            )}
             
             <Separator className="my-4" />
             
