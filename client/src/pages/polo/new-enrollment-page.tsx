@@ -84,9 +84,7 @@ const enrollmentFormSchema = z.object({
   studentZipCode: z.string().optional(),
   
   // Gateway de pagamento
-  paymentGateway: z.enum(["asaas", "lytex"], {
-    required_error: "Selecione um gateway de pagamento",
-  }),
+  paymentGateway: z.literal("asaas"),
   
   // Dados do curso
   courseId: z.string().min(1, { message: "Selecione um curso" }),
@@ -796,41 +794,24 @@ export default function NewEnrollmentPage() {
             <div className="space-y-3 mt-6">
               <h3 className="text-lg font-medium">Gateway de Pagamento</h3>
               
-              <Alert className="bg-amber-50 border-amber-300 mb-4">
-                <AlertTriangleIcon className="h-4 w-4 text-amber-600" />
-                <AlertTitle className="text-amber-800">Importante</AlertTitle>
-                <AlertDescription className="text-amber-800">
-                  Selecione o gateway de pagamento para cadastrar o cliente automaticamente na plataforma.
+              <Alert className="bg-blue-50 border-blue-300 mb-4">
+                <InfoIcon className="h-4 w-4 text-blue-600" />
+                <AlertTitle className="text-blue-800">Gateway de Pagamento</AlertTitle>
+                <AlertDescription className="text-blue-800">
+                  O aluno será cadastrado automaticamente no Asaas para processamento dos pagamentos.
                 </AlertDescription>
               </Alert>
               
-              <FormField
-                control={form.control}
-                name="paymentGateway"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Gateway de Pagamento</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o gateway" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="asaas">Asaas</SelectItem>
-                        <SelectItem value="lytex">Lytex</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      Este gateway será usado para gerenciar todos os pagamentos do aluno.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <FormItem>
+                <FormLabel>Gateway de Pagamento</FormLabel>
+                <div className="flex items-center space-x-2 border rounded-md p-3 bg-gray-50">
+                  <CreditCardIcon className="w-5 h-5 text-blue-500" />
+                  <div className="font-medium">Asaas</div>
+                </div>
+                <FormDescription>
+                  Este gateway será usado para gerenciar todos os pagamentos do aluno.
+                </FormDescription>
+              </FormItem>
             </div>
           </div>
         );

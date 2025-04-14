@@ -19,9 +19,9 @@ export function registerEnrollmentRoutes(app: Express) {
         return res.status(400).json({ error: 'Gateway e dados do aluno são obrigatórios' });
       }
       
-      // Verificar se o gateway é suportado
-      if (gateway !== 'asaas' && gateway !== 'lytex') {
-        return res.status(400).json({ error: 'Gateway de pagamento não suportado' });
+      // O gateway é sempre Asaas, mas mantemos a verificação como compatibilidade
+      if (gateway !== 'asaas') {
+        return res.status(400).json({ error: 'Apenas o gateway Asaas é suportado' });
       }
       
       // Validar dados mínimos do aluno

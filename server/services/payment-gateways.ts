@@ -869,14 +869,8 @@ export class LytexGatewayAdapter implements PaymentGateway {
   }
 }
 
-// Factory para criar a instância do gateway correto
+// Factory para criar a instância do gateway
 export function createPaymentGateway(gateway: string): PaymentGateway {
-  switch (gateway.toLowerCase()) {
-    case 'asaas':
-      return new AsaasGateway();
-    case 'lytex':
-      return new LytexGatewayAdapter();
-    default:
-      throw new Error(`Gateway de pagamento não suportado: ${gateway}`);
-  }
+  // Ignoramos o parâmetro gateway e sempre retornamos o gateway Asaas
+  return new AsaasGateway();
 }
