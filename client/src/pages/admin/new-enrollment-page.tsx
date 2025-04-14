@@ -27,6 +27,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Separator } from "@/components/ui/separator";
 import {
   ChartIcon,
   GroupIcon,
@@ -58,8 +61,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Textarea } from "@/components/ui/textarea";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -295,13 +296,13 @@ export default function NewEnrollmentPage() {
         // Se for um aluno existente
         if (data.enrollmentType === "existing") {
           payload = {
-            studentId: parseInt(data.studentId),
+            studentId: parseInt(data.studentId || "0"),
             courseId: parseInt(data.courseId),
             institutionId: parseInt(data.institutionId),
             poloId: parseInt(data.poloId),
             paymentGateway: data.paymentGateway,
             paymentMethod: data.paymentMethod,
-            amount: parseFloat(data.amount),
+            amount: parseFloat(data.amount.replace(',', '.')),
             contractTemplateId: parseInt(data.contractTemplateId),
             observations: data.observations || ""
           };
@@ -324,7 +325,7 @@ export default function NewEnrollmentPage() {
             poloId: parseInt(data.poloId),
             paymentGateway: data.paymentGateway,
             paymentMethod: data.paymentMethod,
-            amount: parseFloat(data.amount),
+            amount: parseFloat(data.amount.replace(',', '.')),
             contractTemplateId: parseInt(data.contractTemplateId),
             observations: data.observations || ""
           };
@@ -503,16 +504,15 @@ export default function NewEnrollmentPage() {
                 {step === 1 && "Dados do Aluno"}
                 {step === 2 && "Dados do Curso"}
                 {step === 3 && "Dados de Pagamento"}
-                {step === 4 && "Contrato"}
+                {step === 4 && "Contrato e Documentos"}
               </CardTitle>
               <CardDescription>
-                {step === 1 && "Selecione o aluno que será matriculado"}
-                {step === 2 && "Escolha o curso, instituição e polo"}
-                {step === 3 && "Configure os dados de pagamento"}
-                {step === 4 && "Escolha o modelo de contrato e confirme a matrícula"}
+                {step === 1 && "Preencha os dados do aluno para a matrícula"}
+                {step === 2 && "Selecione o curso e instituição para a matrícula"}
+                {step === 3 && "Configure a forma de pagamento para o curso"}
+                {step === 4 && "Selecione o contrato e documentos necessários"}
               </CardDescription>
             </CardHeader>
-            
             <CardContent>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -865,7 +865,16 @@ export default function NewEnrollmentPage() {
                             <FormLabel>Curso</FormLabel>
                             <Select
                               value={field.value}
-                              onValueChange={field.onChange}
+                              onValueChange={(value) => {
+                                field.onChange(value);
+                                // Define o valor do curso no campo de valor
+                                const selectedCourse = coursesData.find(
+                                  (course: Course) => course.id.toString() === value
+                                );
+                                if (selectedCourse && selectedCourse.price) {
+                                  form.setValue("amount", selectedCourse.price.toString());
+                                }
+                              }}
                             >
                               <FormControl>
                                 <SelectTrigger>
@@ -891,7 +900,7 @@ export default function NewEnrollmentPage() {
                           <h3 className="font-medium mb-2">Detalhes do Curso</h3>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                              <p className="text-sm text-muted-foreground">Curso:</p>
+                              <p className="text-sm text-muted-foreground">Nome:</p>
                               <p>{selectedCourse.name}</p>
                             </div>
                             <div>
@@ -900,16 +909,18 @@ export default function NewEnrollmentPage() {
                             </div>
                             <div>
                               <p className="text-sm text-muted-foreground">Carga Horária:</p>
-                              <p>{selectedCourse.workload} horas</p>
+                              <p>{selectedCourse.workload}h</p>
                             </div>
-                            <div>
-                              <p className="text-sm text-muted-foreground">Preço:</p>
-                              <p>R$ {selectedCourse.price?.toFixed(2)}</p>
-                            </div>
+                            {selectedCourse.price && (
+                              <div>
+                                <p className="text-sm text-muted-foreground">Valor:</p>
+                                <p>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(selectedCourse.price)}</p>
+                              </div>
+                            )}
                           </div>
                           <div className="mt-2">
                             <p className="text-sm text-muted-foreground">Descrição:</p>
-                            <p className="text-sm">{selectedCourse.description}</p>
+                            <p>{selectedCourse.description}</p>
                           </div>
                         </div>
                       )}
@@ -923,40 +934,17 @@ export default function NewEnrollmentPage() {
                         <h2 className="text-lg font-medium">Dados de Pagamento</h2>
                       </div>
                       
-                      {/* Informações sobre o gateway selecionado */}
-                      <div className="mb-4">
-                        <h3 className="font-medium mb-2">Gateway Selecionado</h3>
-                        <div className="inline-flex items-center px-3 py-1 bg-muted rounded-md text-sm">
-                          <CreditCardIcon className="h-4 w-4 mr-2" />
-                          {form.watch("paymentGateway") === "asaas" ? "Asaas" : "Lytex"}
-                        </div>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          O cliente já foi cadastrado automaticamente neste gateway.
-                        </p>
-                      </div>
-                      
-                      
-                      
                       <FormField
                         control={form.control}
                         name="amount"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Valor (R$)</FormLabel>
+                            <FormLabel>Valor do Curso</FormLabel>
                             <FormControl>
-                              <Input
-                                type="text"
-                                placeholder="0,00"
-                                {...field}
-                                onChange={(e) => {
-                                  // Permitir apenas números e vírgula
-                                  const value = e.target.value.replace(/[^0-9,]/g, '');
-                                  field.onChange(value);
-                                }}
-                              />
+                              <Input placeholder="R$ 0,00" {...field} />
                             </FormControl>
                             <FormDescription>
-                              Informe o valor total do curso
+                              Valor total do curso, sem juros.
                             </FormDescription>
                             <FormMessage />
                           </FormItem>
@@ -969,51 +957,34 @@ export default function NewEnrollmentPage() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Forma de Pagamento</FormLabel>
-                            <FormControl>
-                              <RadioGroup
-                                value={field.value}
-                                onValueChange={field.onChange}
-                                className="flex flex-col space-y-1"
-                              >
-                                <FormItem className="flex items-center space-x-3 space-y-0">
-                                  <FormControl>
-                                    <RadioGroupItem value="credit_card" />
-                                  </FormControl>
-                                  <FormLabel className="font-normal">
-                                    Cartão de Crédito
-                                  </FormLabel>
-                                </FormItem>
-                                <FormItem className="flex items-center space-x-3 space-y-0">
-                                  <FormControl>
-                                    <RadioGroupItem value="bank_slip" />
-                                  </FormControl>
-                                  <FormLabel className="font-normal">
-                                    Boleto Bancário
-                                  </FormLabel>
-                                </FormItem>
-                                <FormItem className="flex items-center space-x-3 space-y-0">
-                                  <FormControl>
-                                    <RadioGroupItem value="pix" />
-                                  </FormControl>
-                                  <FormLabel className="font-normal">
-                                    PIX
-                                  </FormLabel>
-                                </FormItem>
-                              </RadioGroup>
-                            </FormControl>
+                            <Select
+                              value={field.value}
+                              onValueChange={field.onChange}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecione a forma de pagamento" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="credit_card">Cartão de Crédito</SelectItem>
+                                <SelectItem value="bank_slip">Boleto Bancário</SelectItem>
+                                <SelectItem value="pix">PIX</SelectItem>
+                              </SelectContent>
+                            </Select>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
                       
-                      {/* Opções de parcelamento baseadas na forma de pagamento */}
-                      {form.watch("paymentMethod") && (
+                      {/* Opções de parcelamento condicionais à forma de pagamento */}
+                      {form.watch("paymentMethod") === "credit_card" && (
                         <FormField
                           control={form.control}
                           name="installments"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Número de Parcelas</FormLabel>
+                              <FormLabel>Parcelamento</FormLabel>
                               <Select
                                 value={field.value}
                                 onValueChange={field.onChange}
@@ -1024,73 +995,57 @@ export default function NewEnrollmentPage() {
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  {/* Opções de parcelas sem juros (até 6x) */}
-                                  <SelectItem value="1">1x de {(() => {
-                                    // Usar a função para calcular o valor da parcela
-                                    return getInstallmentValue(1);
-                                  })()} sem juros</SelectItem>
-                                  <SelectItem value="2">2x de {getInstallmentValue(2)} sem juros</SelectItem>
-                                  <SelectItem value="3">3x de {getInstallmentValue(3)} sem juros</SelectItem>
-                                  <SelectItem value="4">4x de {getInstallmentValue(4)} sem juros</SelectItem>
-                                  <SelectItem value="5">5x de {getInstallmentValue(5)} sem juros</SelectItem>
-                                  <SelectItem value="6">6x de {getInstallmentValue(6)} sem juros</SelectItem>
-                                  
-                                  {/* Opções específicas para cartão de crédito (até 10x) */}
-                                  {form.watch("paymentMethod") === "credit_card" && (
-                                    <>
-                                      <SelectItem value="7">7x de {getInstallmentValue(7)} com juros</SelectItem>
-                                      <SelectItem value="8">8x de {getInstallmentValue(8)} com juros</SelectItem>
-                                      <SelectItem value="9">9x de {getInstallmentValue(9)} com juros</SelectItem>
-                                      <SelectItem value="10">10x de {getInstallmentValue(10)} com juros</SelectItem>
-                                    </>
-                                  )}
-                                  
-                                  {/* Opções específicas para boleto/PIX (até 16x) */}
-                                  {(form.watch("paymentMethod") === "bank_slip" || form.watch("paymentMethod") === "pix") && (
-                                    <>
-                                      <SelectItem value="7">7x de {getInstallmentValue(7)} com juros</SelectItem>
-                                      <SelectItem value="8">8x de {getInstallmentValue(8)} com juros</SelectItem>
-                                      <SelectItem value="9">9x de {getInstallmentValue(9)} com juros</SelectItem>
-                                      <SelectItem value="10">10x de {getInstallmentValue(10)} com juros</SelectItem>
-                                      <SelectItem value="11">11x de {getInstallmentValue(11)} com juros</SelectItem>
-                                      <SelectItem value="12">12x de {getInstallmentValue(12)} com juros</SelectItem>
-                                      <SelectItem value="13">13x de {getInstallmentValue(13)} com juros</SelectItem>
-                                      <SelectItem value="14">14x de {getInstallmentValue(14)} com juros</SelectItem>
-                                      <SelectItem value="15">15x de {getInstallmentValue(15)} com juros</SelectItem>
-                                      <SelectItem value="16">16x de {getInstallmentValue(16)} com juros</SelectItem>
-                                    </>
-                                  )}
+                                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 18, 24].map((installment) => (
+                                    <SelectItem key={installment} value={installment.toString()}>
+                                      {installment}x de {getInstallmentValue(installment)}
+                                      {installment > 6 ? ' (com juros)' : ' (sem juros)'}
+                                    </SelectItem>
+                                  ))}
                                 </SelectContent>
                               </Select>
+                              <FormDescription>
+                                Acima de 6x, juros de 1,2% ao mês.
+                              </FormDescription>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
                       )}
                       
-                      <FormField
-                        control={form.control}
-                        name="acceptTerms"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-start space-x-3 space-y-0 mt-6">
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                            <div className="space-y-1 leading-none">
-                              <FormLabel>
-                                Concordo com os termos de serviço e políticas de privacidade
-                              </FormLabel>
+                      {/* Opções de parcelamento para boleto e PIX */}
+                      {(form.watch("paymentMethod") === "bank_slip" || form.watch("paymentMethod") === "pix") && (
+                        <FormField
+                          control={form.control}
+                          name="installments"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Parcelamento</FormLabel>
+                              <Select
+                                value={field.value}
+                                onValueChange={field.onChange}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Selecione o número de parcelas" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15, 18].map((installment) => (
+                                    <SelectItem key={installment} value={installment.toString()}>
+                                      {installment}x de {getInstallmentValue(installment)}
+                                      {installment > 6 ? ' (com juros)' : ' (sem juros)'}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                               <FormDescription>
-                                Ao concordar, você aceita os termos e condições de pagamento.
+                                Acima de 6x, juros de 1% ao mês até 12x e 1,5% acima disso.
                               </FormDescription>
-                            </div>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
                     </div>
                   )}
                   
@@ -1098,80 +1053,8 @@ export default function NewEnrollmentPage() {
                   {step === 4 && (
                     <div className="space-y-4">
                       <div className="flex items-center mb-2">
-                        <h2 className="text-lg font-medium">Contrato</h2>
+                        <h2 className="text-lg font-medium">Contrato e Documentação</h2>
                       </div>
-                      
-                      <Alert className="bg-amber-50 border-amber-300">
-                        <AlertTriangleIcon className="h-4 w-4 text-amber-600" />
-                        <AlertTitle className="text-amber-800">Importante</AlertTitle>
-                        <AlertDescription className="text-amber-800">
-                          O contrato será gerado após a confirmação da matrícula. O aluno deverá assinar digitalmente o documento pelo Portal do Aluno posteriormente.
-                        </AlertDescription>
-                      </Alert>
-                      
-                      {/* Resumo da Matrícula */}
-                      <Card className="mb-6">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg">Resumo da Matrícula</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-2">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div>
-                                <h4 className="text-sm font-medium mb-1">Dados do Aluno</h4>
-                                <p className="text-sm">
-                                  {selectedStudent?.fullName}<br />
-                                  {selectedStudent?.email}<br />
-                                  CPF: {selectedStudent?.cpf}
-                                </p>
-                              </div>
-                              
-                              <div>
-                                <h4 className="text-sm font-medium mb-1">Curso</h4>
-                                <p className="text-sm">
-                                  {selectedCourse?.name}<br />
-                                  Código: {selectedCourse?.code}<br />
-                                  Carga horária: {selectedCourse?.workload} horas
-                                </p>
-                              </div>
-                            </div>
-                            
-                            <Separator />
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div>
-                                <h4 className="text-sm font-medium mb-1">Dados de Pagamento</h4>
-                                <p className="text-sm">
-                                  Gateway: {form.watch("paymentGateway") === "asaas" ? "Asaas" : "Lytex"}<br />
-                                  Método: {(() => {
-                                    const method = form.watch("paymentMethod");
-                                    if (method === "credit_card") return "Cartão de Crédito";
-                                    if (method === "bank_slip") return "Boleto Bancário";
-                                    if (method === "pix") return "PIX";
-                                    return "";
-                                  })()}<br />
-                                  Valor total: R$ {parseFloat(form.watch("amount")?.replace(',', '.') || "0").toFixed(2)}
-                                </p>
-                              </div>
-                              
-                              <div>
-                                <h4 className="text-sm font-medium mb-1">Parcelamento</h4>
-                                <p className="text-sm">
-                                  {form.watch("installments")} parcela(s) de {(() => {
-                                    return getInstallmentValue(parseInt(form.watch("installments") || "1"));
-                                  })()}
-                                  <br />
-                                  {parseInt(form.watch("installments") || "1") > 6 ? (
-                                    <span className="text-amber-600">Com juros aplicados</span>
-                                  ) : (
-                                    <span className="text-green-600">Sem juros</span>
-                                  )}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
                       
                       <FormField
                         control={form.control}
@@ -1201,10 +1084,24 @@ export default function NewEnrollmentPage() {
                         )}
                       />
                       
+                      {/* Detalhes do template de contrato selecionado */}
                       {selectedContractTemplate && (
-                        <div className="border rounded-md p-4 bg-secondary/10">
-                          <h3 className="font-medium mb-2">Detalhes do Modelo</h3>
-                          <p className="text-sm text-muted-foreground">{selectedContractTemplate.description}</p>
+                        <div className="border rounded-md p-4 bg-secondary/10 mb-4">
+                          <h3 className="font-medium mb-2">Detalhes do Contrato</h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-sm text-muted-foreground">Modelo:</p>
+                              <p>{selectedContractTemplate.name}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground">Tipo:</p>
+                              <p>{selectedContractTemplate.type}</p>
+                            </div>
+                          </div>
+                          <div className="mt-2">
+                            <p className="text-sm text-muted-foreground">Descrição:</p>
+                            <p>{selectedContractTemplate.description}</p>
+                          </div>
                         </div>
                       )}
                       
@@ -1213,80 +1110,75 @@ export default function NewEnrollmentPage() {
                         name="observations"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Observações Adicionais</FormLabel>
+                            <FormLabel>Observações</FormLabel>
                             <FormControl>
-                              <Textarea
-                                placeholder="Informações adicionais para o contrato"
-                                className="resize-none h-24"
+                              <Textarea 
+                                placeholder="Observações adicionais sobre a matrícula"
+                                rows={4}
                                 {...field}
                               />
                             </FormControl>
-                            <FormDescription>
-                              Estas observações serão incluídas no contrato
-                            </FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
                       
-                      {createdEnrollmentId && (
-                        <Alert className="bg-green-50 border-green-200">
-                          <FileTextIcon className="h-4 w-4 text-green-600" />
-                          <AlertTitle className="text-green-800">Matrícula criada com sucesso!</AlertTitle>
-                          <AlertDescription className="text-green-800">
-                            O contrato foi gerado e está disponível para assinatura no Portal do Aluno.
-                            Você será redirecionado em instantes...
-                          </AlertDescription>
-                        </Alert>
-                      )}
+                      <FormField
+                        control={form.control}
+                        name="acceptTerms"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-4 border rounded-md">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                              <FormLabel>
+                                Declaro que li e concordo com os termos do contrato acima e confirmo a veracidade de todas as informações fornecidas.
+                              </FormLabel>
+                              <FormDescription>
+                                Ao aceitar, você confirma que todas as informações do aluno, curso e pagamento estão corretas.
+                              </FormDescription>
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     </div>
                   )}
                   
-                  {/* Footer com botões */}
-                  <div className="flex justify-between pt-4">
+                  {/* Botões de navegação */}
+                  <div className="pt-4 border-t flex justify-between">
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={step === 1 ? () => navigate("/admin/enrollments") : goToPreviousStep}
+                      onClick={goToPreviousStep}
+                      disabled={step === 1}
                     >
-                      {step === 1 ? "Cancelar" : "Voltar"}
+                      Voltar
                     </Button>
                     
-                    <Button
+                    <Button 
                       type="submit"
                       disabled={isCreatingEnrollment}
-                      className={`${step < 4 ? "bg-green-600 hover:bg-green-700" : "bg-green-600 hover:bg-green-700"}`}
                     >
-                      {isCreatingEnrollment ? (
-                        <>
-                          <Skeleton className="h-4 w-4 rounded-full mr-2" />
-                          Processando...
-                        </>
-                      ) : step < 4 ? (
-                        "Continuar"
-                      ) : (
-                        <>
-                          <SaveIcon className="h-4 w-4 mr-2" />
-                          Finalizar Matrícula
-                        </>
-                      )}
+                      {isCreatingEnrollment && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      {step < 4 ? "Próximo" : "Finalizar Matrícula"}
                     </Button>
                   </div>
                 </form>
               </Form>
             </CardContent>
-            
-            <CardFooter className="hidden">
-              {/* Movido para dentro do formulário */}
-            </CardFooter>
           </Card>
         </div>
       </div>
-
-      {/* Diálogo para criação de novo usuário */}
-      <CreateUserDialog
+      
+      {/* Dialog para criar novo usuário */}
+      <CreateUserDialog 
         isOpen={isCreateUserDialogOpen}
-        onOpenChange={setIsCreateUserDialogOpen}
+        onClose={() => setIsCreateUserDialogOpen(false)}
         onUserCreated={handleUserCreated}
         defaultPortalType="student"
       />
