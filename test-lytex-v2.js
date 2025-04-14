@@ -27,73 +27,29 @@ const TEST_STUDENT = {
 };
 
 /**
- * Testa autenticação na API Lytex (V2)
+ * Testa autenticação na API Lytex
  */
 async function testAuthV2() {
-  console.log('\n==== Testando autenticação API V2 ====');
+  console.log('\n==== Testando autenticação API Lytex V2 ====');
   try {
-    // Tentativa 1: Formato padrão - auth/token
-    try {
-      const response = await axios.post(`${BASE_URL}/auth/token`, {
-        grantType: 'client_credentials',
-        clientId: LYTEX_CLIENT_ID,
-        clientSecret: LYTEX_CLIENT_SECRET
-      }, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-
-      console.log('Status:', response.status);
-      console.log('Token obtido com sucesso:', response.data.accessToken ? 'SIM' : 'NÃO');
-      
-      return response.data.accessToken;
-    } catch (authError) {
-      console.log('Tentativa 1 falhou. Erro:', authError.message);
-      
-      // Tentativa 2: Formato com oauth/token
-      try {
-        const response = await axios.post(`${BASE_URL}/oauth/token`, {
-          grant_type: 'client_credentials',
-          client_id: LYTEX_CLIENT_ID,
-          client_secret: LYTEX_CLIENT_SECRET
-        }, {
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-
-        console.log('Status (tentativa 2):', response.status);
-        console.log('Token obtido com sucesso:', response.data.access_token ? 'SIM' : 'NÃO');
-        
-        return response.data.access_token;
-      } catch (authError2) {
-        console.log('Tentativa 2 falhou. Erro:', authError2.message);
-        
-        // Tentativa 3: v2/oauth/token
-        try {
-          const response = await axios.post(`${BASE_URL}/v2/oauth/token`, {
-            grant_type: 'client_credentials',
-            client_id: LYTEX_CLIENT_ID,
-            client_secret: LYTEX_CLIENT_SECRET
-          }, {
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          });
-          
-          console.log('Status (tentativa 3):', response.status);
-          console.log('Token obtido com sucesso:', response.data.access_token ? 'SIM' : 'NÃO');
-          
-          return response.data.access_token;
-        } catch (authError3) {
-          console.log('Tentativa 3 falhou. Erro:', authError3.message);
-          throw authError3;
-        }
+    // Endpoint correto confirmado pelos testes
+    const response = await axios.post(`${BASE_URL}/v2/auth/obtain_token`, {
+      grantType: 'clientCredentials',
+      clientId: LYTEX_CLIENT_ID,
+      clientSecret: LYTEX_CLIENT_SECRET
+    }, {
+      headers: {
+        'Content-Type': 'application/json'
       }
-    }
+    });
+
+    console.log('Status:', response.status);
+    console.log('Token obtido com sucesso:', response.data.accessToken ? 'SIM' : 'NÃO');
+    console.log('Expira em:', response.data.expireAt);
+    
+    return response.data.accessToken;
   } catch (error) {
-    console.error('Erro ao autenticar na API V2:');
+    console.error('Erro ao autenticar na API Lytex V2:');
     if (error.response) {
       console.error('Status:', error.response.status);
       console.error('Dados:', JSON.stringify(error.response.data, null, 2));
@@ -105,53 +61,16 @@ async function testAuthV2() {
 }
 
 /**
- * Testa autenticação na API Lytex (V1)
+ * Função de fallback (não deve ser necessária agora)
  */
 async function testAuthV1() {
-  console.log('\n==== Testando endpoint alternativo ====');
+  console.log('\n==== Fallback: Usando autenticação alternativa se necessário ====');
   try {
-    // Tentativa com o formato diretamente apontando para o token
-    try {
-      const response = await axios.post(`${BASE_URL}/token`, {
-        grant_type: 'client_credentials',
-        client_id: LYTEX_CLIENT_ID,
-        client_secret: LYTEX_CLIENT_SECRET
-      }, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-
-      console.log('Status:', response.status);
-      console.log('Token obtido com sucesso:', response.data.access_token ? 'SIM' : 'NÃO');
-      
-      return response.data.access_token;
-    } catch (authError) {
-      console.log('Tentativa falhou. Erro:', authError.message);
-      
-      // Tentativa com formato v1/oauth/token  
-      try {
-        const response = await axios.post(`${BASE_URL}/v1/oauth/token`, {
-          grant_type: 'client_credentials',
-          client_id: LYTEX_CLIENT_ID,
-          client_secret: LYTEX_CLIENT_SECRET
-        }, {
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-
-        console.log('Status (tentativa v1):', response.status);
-        console.log('Token obtido com sucesso:', response.data.access_token ? 'SIM' : 'NÃO');
-        
-        return response.data.access_token;
-      } catch (authError2) {
-        console.log('Tentativa v1 falhou. Erro:', authError2.message);
-        throw authError2;
-      }
-    }
+    // Note: não é necessário executar esse código já que o método V2 funciona
+    // Mantemos este método apenas por compatibilidade com o código existente
+    return null;
   } catch (error) {
-    console.error('Erro ao autenticar em endpoints alternativos:');
+    console.error('Erro ao tentar método de autenticação alternativo:');
     if (error.response) {
       console.error('Status:', error.response.status);
       console.error('Dados:', JSON.stringify(error.response.data, null, 2));
@@ -242,6 +161,17 @@ async function createTestClient(token) {
 async function createTestInvoice(token, clientId) {
   console.log('\n==== Criando fatura de teste ====');
   try {
+    // Primeiro, obtenha os dados completos do cliente
+    const clientResponse = await axios.get(`${BASE_URL}/v1/clients/${clientId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    const clientData = clientResponse.data;
+    console.log('Dados do cliente recuperados:', clientData.name, clientData.cpfCnpj);
+    
     // Data de vencimento (5 dias a partir de hoje)
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + 5);
@@ -249,7 +179,12 @@ async function createTestInvoice(token, clientId) {
     
     const invoiceData = {
       client: { 
-        _id: clientId
+        _id: clientId,
+        // Incluir campos obrigatórios mesmo com o clientId
+        name: clientData.name,
+        type: clientData.type,
+        cpfCnpj: clientData.cpfCnpj,
+        email: clientData.email || 'teste@example.com'
       },
       items: [{
         name: 'Matrícula - Teste de Integração',
@@ -260,7 +195,8 @@ async function createTestInvoice(token, clientId) {
       dueDate: formattedDueDate,
       paymentMethods: {
         pix: { enable: true },
-        boleto: { enable: true, dueDateDays: 3 }
+        boleto: { enable: true, dueDateDays: 3 },
+        creditCard: { enable: false } // Campo obrigatório conforme erro anterior
       },
       externalReference: `TEST-${Date.now()}`
     };
