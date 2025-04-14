@@ -9,7 +9,7 @@ import { useLocation } from "wouter";
 import { Sidebar } from "@/components/layout/sidebar";
 import { getAdminSidebarItems } from "@/components/layout/admin-sidebar-items";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { CreateUserDialog } from "@/components/dialogs/create-user-dialog";
+// Remoção do import do CreateUserDialog que não é mais necessário
 import {
   Form,
   FormControl,
@@ -151,25 +151,8 @@ export default function NewEnrollmentPage() {
   const [isCreatingEnrollment, setIsCreatingEnrollment] = useState(false);
   const [createdEnrollmentId, setCreatedEnrollmentId] = useState<number | null>(null);
   
-  // Estado para controle do diálogo de criação de usuário
-  const [isCreateUserDialogOpen, setIsCreateUserDialogOpen] = useState(false);
-  
-  // Função para lidar com a criação de um novo usuário
-  const handleUserCreated = (newUser: any) => {
-    // Atualiza a lista de estudantes
-    queryClient.invalidateQueries({ queryKey: ["/api/admin/users", "student"] });
-    
-    // Seleciona automaticamente o usuário recém-criado no formulário
-    if (newUser && newUser.id) {
-      form.setValue("studentId", newUser.id.toString());
-      
-      // Exibe mensagem de sucesso
-      toast({
-        title: "Usuário criado com sucesso",
-        description: `O aluno ${newUser.fullName} foi adicionado e selecionado.`,
-      });
-    }
-  };
+  // Removida a lógica de criação de usuário através do modal
+  // pois agora os novos alunos são criados diretamente no formulário
   
   // Consulta para listar cursos disponíveis
   const { data: coursesData = [], isLoading: isLoadingCourses } = useQuery({
@@ -1175,13 +1158,8 @@ export default function NewEnrollmentPage() {
         </div>
       </div>
       
-      {/* Dialog para criar novo usuário */}
-      <CreateUserDialog 
-        isOpen={isCreateUserDialogOpen}
-        onClose={() => setIsCreateUserDialogOpen(false)}
-        onUserCreated={handleUserCreated}
-        defaultPortalType="student"
-      />
+      {/* Modal de criação de usuário foi removido porque agora temos a funcionalidade
+          integrada diretamente no formulário de matrícula */}
     </div>
   );
 }
