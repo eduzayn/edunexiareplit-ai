@@ -106,28 +106,88 @@ const enrollmentFormSchema = z.object({
   
   // Campo para controlar o atual "passo" do formulário
   currentStep: z.number().min(1).max(4)
-}).refine(data => {
-  // Se for aluno existente, studentId é obrigatório
-  if (data.enrollmentType === "existing") {
-    return !!data.studentId;
-  }
+}).superRefine((data, ctx) => {
+  // Não validar campos específicos para o passo atual durante a transição entre passos
+  const currentStep = data.currentStep;
   
-  // Se for novo aluno, todos os campos de aluno são obrigatórios
-  if (data.enrollmentType === "new") {
-    return !!data.studentName && 
-           !!data.studentEmail && 
-           !!data.studentPhone && 
-           !!data.studentDocument && 
-           !!data.studentAddress && 
-           !!data.studentCity && 
-           !!data.studentState && 
-           !!data.studentZipCode;
+  // Passo 1: Validar apenas tipo de matrícula e tipo de aluno
+  if (currentStep === 1) {
+    // Se for aluno existente, validar ID do aluno
+    if (data.enrollmentType === "existing" && !data.studentId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Selecione um aluno",
+        path: ["studentId"]
+      });
+    }
+    
+    // Se for novo aluno, validar campos pessoais apenas se tentar ir para o próximo passo
+    if (data.enrollmentType === "new") {
+      if (!data.studentName) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Nome é obrigatório",
+          path: ["studentName"]
+        });
+      }
+      
+      if (!data.studentEmail) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Email é obrigatório",
+          path: ["studentEmail"]
+        });
+      }
+      
+      if (!data.studentPhone) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Telefone é obrigatório",
+          path: ["studentPhone"]
+        });
+      }
+      
+      if (!data.studentDocument) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "CPF é obrigatório",
+          path: ["studentDocument"]
+        });
+      }
+      
+      if (!data.studentAddress) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Endereço é obrigatório",
+          path: ["studentAddress"]
+        });
+      }
+      
+      if (!data.studentCity) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Cidade é obrigatória",
+          path: ["studentCity"]
+        });
+      }
+      
+      if (!data.studentState) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Estado é obrigatório",
+          path: ["studentState"]
+        });
+      }
+      
+      if (!data.studentZipCode) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "CEP é obrigatório",
+          path: ["studentZipCode"]
+        });
+      }
+    }
   }
-  
-  return false;
-}, {
-  message: "Preencha todos os campos obrigatórios do aluno",
-  path: ["enrollmentType"],
 });
 
 type EnrollmentFormValues = z.infer<typeof enrollmentFormSchema>;
@@ -264,36 +324,21 @@ export default function NewEnrollmentPage() {
   
   // Função para validar apenas os campos da etapa atual
   const validateStep = async () => {
+    // Vamos simplificar a validação para consertar o botão Próximo
+    // Para o primeiro passo, só validamos o gateway de pagamento
+    if (step === 1) {
+      // Sempre limpamos os erros antes de validar
+      form.clearErrors();
+      
+      // Validamos apenas o gateway de pagamento, que é obrigatório
+      return await form.trigger("paymentGateway");
+    }
+    
+    // Para os outros passos, usamos a validação normal
     let fieldsToValidate: string[] = [];
     
     // Campos a serem validados em cada etapa
     switch (step) {
-      case 1:
-        // Sempre validar o tipo de matrícula e gateway de pagamento
-        fieldsToValidate = [
-          "enrollmentType",
-          "paymentGateway"
-        ];
-        
-        // Se for um aluno existente, valida o ID do aluno
-        if (form.getValues("enrollmentType") === "existing") {
-          fieldsToValidate.push("studentId");
-        } 
-        // Se for um novo aluno, valida os campos de cadastro
-        else {
-          fieldsToValidate = [
-            ...fieldsToValidate,
-            "studentName", 
-            "studentEmail", 
-            "studentPhone", 
-            "studentDocument", 
-            "studentAddress", 
-            "studentCity", 
-            "studentState", 
-            "studentZipCode"
-          ];
-        }
-        break;
       case 2:
         fieldsToValidate = ["courseId"];
         break;
