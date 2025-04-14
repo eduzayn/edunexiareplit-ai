@@ -3,7 +3,6 @@ import {
   DashboardIcon,
   BusinessIcon,
   GroupIcon,
-  SchoolIcon,
   MenuBookIcon,
   HandshakeIcon,
   StorefrontIcon,
@@ -19,6 +18,8 @@ import {
   FolderIcon,
   ChevronDownIcon,
   ChevronRightIcon,
+  GraduationCapIcon,
+  BookIcon,
 } from "@/components/ui/icons";
 
 // Interfaces para definir a estrutura dos itens da barra lateral
@@ -83,7 +84,7 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
         },
         { 
           name: "Cursos", 
-          icon: <SchoolIcon />, 
+          icon: <GraduationCapIcon />, 
           href: "/admin/courses",
           active: currentPath === "/admin/courses" || (currentPath && currentPath.includes("/admin/courses/"))
         },
@@ -98,7 +99,7 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
       },
       { 
         name: "Cursos", 
-        icon: <SchoolIcon />, 
+        icon: <GraduationCapIcon />, 
         href: "/admin/courses",
         active: currentPath === "/admin/courses" || (currentPath && currentPath.includes("/admin/courses/"))
       },
