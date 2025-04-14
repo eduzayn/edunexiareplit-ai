@@ -126,12 +126,12 @@ export default function AdminPoloEnrollmentsPage() {
     isError,
     refetch 
   } = useQuery({
-    queryKey: ["/api/polo/enrollments", searchTerm, statusFilter, courseFilter, dateFilter],
+    queryKey: ["/api/admin/polo-enrollments", searchTerm, statusFilter, courseFilter, dateFilter],
     queryFn: async () => {
       try {
         const res = await apiRequest(
           "GET", 
-          `/api/polo/enrollments?search=${searchTerm}&status=${statusFilter}&course=${courseFilter}&date=${dateFilter}`
+          `/api/admin/polo-enrollments?search=${searchTerm}&status=${statusFilter}&course=${courseFilter}&date=${dateFilter}`
         );
         return await res.json();
       } catch (error) {
@@ -143,9 +143,9 @@ export default function AdminPoloEnrollmentsPage() {
 
   // Consulta para listar cursos disponíveis
   const { data: coursesData } = useQuery({
-    queryKey: ["/api/polo/available-courses"],
+    queryKey: ["/api/admin/available-courses"],
     queryFn: async () => {
-      const res = await apiRequest("GET", "/api/polo/available-courses");
+      const res = await apiRequest("GET", "/api/admin/available-courses");
       return await res.json();
     },
   });
@@ -197,7 +197,7 @@ export default function AdminPoloEnrollmentsPage() {
     }
     
     // Na implementação real, aqui faria a requisição para enviar o email
-    apiRequest("POST", `/api/polo/enrollments/${enrollment.id}/send-payment-link`, {
+    apiRequest("POST", `/api/admin/polo-enrollments/${enrollment.id}/send-payment-link`, {
       studentEmail: enrollment.studentEmail,
       paymentUrl: enrollment.paymentUrl
     })
@@ -284,25 +284,17 @@ export default function AdminPoloEnrollmentsPage() {
     }).format(value);
   };
 
-  // Sidebar items for polo portal
-  const sidebarItems = [
-    { name: "Dashboard", icon: <ChartIcon />, href: "/polo/dashboard" },
-    { name: "Matrículas", icon: <SchoolIcon />, href: "/polo/enrollments", active: true },
-    { name: "Alunos", icon: <GroupIcon />, href: "/polo/students" },
-    { name: "Unidades", icon: <StorefrontIcon />, href: "/polo/units" },
-    { name: "Financeiro", icon: <AccountBalanceIcon />, href: "/polo/financial" },
-    { name: "Relatórios", icon: <ShowChartIcon />, href: "/polo/reports" },
-    { name: "Configurações", icon: <SettingsIcon />, href: "/polo/settings" },
-    { name: "Suporte", icon: <HelpOutlineIcon />, href: "/polo/support" },
-  ];
+  // Sidebar items for admin portal
+  const currentPath = "/admin/polo-enrollments";
+  const sidebarItems = getAdminSidebarItems(currentPath);
 
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar
         items={sidebarItems}
         user={user}
-        portalType="polo"
-        portalColor="#F79009"
+        portalType="admin"
+        portalColor="#006ADC"
         isMobileMenuOpen={isMobileMenuOpen}
         setIsMobileMenuOpen={setIsMobileMenuOpen}
       />
@@ -313,13 +305,13 @@ export default function AdminPoloEnrollmentsPage() {
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Matrículas</h1>
-              <p className="text-gray-600">Gerencie as matrículas de alunos do seu polo</p>
+              <h1 className="text-2xl font-bold text-gray-900">Matrículas Polo</h1>
+              <p className="text-gray-600">Gerencie as matrículas de alunos realizadas pelos polos</p>
             </div>
             <div className="mt-4 md:mt-0">
               <Button 
-                className="bg-orange-500 hover:bg-orange-600 flex items-center gap-2"
-                onClick={() => navigate("/polo/enrollments/new")}
+                className="bg-blue-500 hover:bg-blue-600 flex items-center gap-2"
+                onClick={() => navigate("/admin/polo-enrollments/new")}
               >
                 <PlusCircleIcon className="h-4 w-4" />
                 Nova Matrícula
@@ -406,7 +398,7 @@ export default function AdminPoloEnrollmentsPage() {
                   <Button 
                     size="sm"
                     onClick={() => refetch()}
-                    className="bg-orange-500 hover:bg-orange-600 flex items-center gap-1"
+                    className="bg-blue-500 hover:bg-blue-600 flex items-center gap-1"
                   >
                     <FilterIcon className="h-4 w-4" />
                     Filtrar
@@ -462,8 +454,8 @@ export default function AdminPoloEnrollmentsPage() {
                   <SchoolIcon className="h-10 w-10 text-orange-500 mx-auto mb-2" />
                   <p className="text-gray-600">Nenhuma matrícula encontrada</p>
                   <Button 
-                    className="mt-2 bg-orange-500 hover:bg-orange-600"
-                    onClick={() => navigate("/polo/enrollments/new")}
+                    className="mt-2 bg-blue-500 hover:bg-blue-600"
+                    onClick={() => navigate("/admin/polo-enrollments/new")}
                   >
                     Criar Nova Matrícula
                   </Button>
