@@ -129,23 +129,52 @@ router.post("/enrollments", async (req, res) => {
       return res.status(404).json({ message: "Curso não encontrado" });
     }
 
-    // Verificar se o aluno já existe ou criar um novo
-    let student = await storage.getUserByEmail(enrollmentData.studentEmail);
+    // Verificar se estamos criando matrícula para aluno existente ou novo aluno
+    let student;
     
-    if (!student) {
-      // Gerar senha aleatória para o novo aluno
-      const tempPassword = randomBytes(8).toString('hex');
+    if (enrollmentData.studentId) {
+      // Caso de aluno existente
+      student = await storage.getUser(parseInt(enrollmentData.studentId));
+      if (!student) {
+        return res.status(404).json({ message: "Aluno não encontrado" });
+      }
+    } 
+    else if (enrollmentData.newStudent) {
+      // Caso de novo aluno
+      const newStudentData = enrollmentData.newStudent;
       
-      // Criar novo usuário
-      student = await storage.createUser({
-        username: enrollmentData.studentEmail.split('@')[0],
-        password: tempPassword, // Será alterada no primeiro acesso
-        email: enrollmentData.studentEmail,
-        fullName: enrollmentData.studentName,
-        cpf: enrollmentData.studentCpf || null,
-        portalType: "student",
-        poloId: userPolo.id
-      });
+      // Verificar se já existe aluno com este email
+      const existingStudent = await storage.getUserByEmail(newStudentData.email);
+      
+      if (existingStudent) {
+        // Se aluno já existe, usamos o existente
+        console.log(`Aluno com email ${newStudentData.email} já existe, ID: ${existingStudent.id}`);
+        student = existingStudent;
+      } else {
+        // Gerar senha aleatória para o novo aluno
+        const tempPassword = randomBytes(8).toString('hex');
+        
+        // Criar novo usuário com dados completos
+        console.log(`Criando novo aluno: ${newStudentData.fullName}, email: ${newStudentData.email}`);
+        student = await storage.createUser({
+          username: newStudentData.email.split('@')[0],
+          password: tempPassword, // Será alterada no primeiro acesso
+          email: newStudentData.email,
+          fullName: newStudentData.fullName,
+          cpf: newStudentData.cpf || null,
+          phone: newStudentData.phone || null,
+          address: newStudentData.address || null,
+          city: newStudentData.city || null,
+          state: newStudentData.state || null,
+          zipCode: newStudentData.zipCode || null,
+          portalType: "student",
+          poloId: userPolo.id
+        });
+        
+        console.log(`Novo aluno criado com ID: ${student.id}`);
+      }
+    } else {
+      return res.status(400).json({ message: "Dados do aluno não fornecidos" });
     }
 
     // Gerar código único para a matrícula (formato: MAT + ano + número sequencial)
@@ -156,6 +185,9 @@ router.post("/enrollments", async (req, res) => {
     // Criar a matrícula
     const amount = course.price || 1000; // Valor padrão se o preço não estiver definido
     
+    // Usar o gateway selecionado pelo usuário ou o padrão
+    const paymentGateway = enrollmentData.paymentGateway || "asaas";
+    
     const newEnrollment = await storage.createEnrollment({
       code: enrollmentCode,
       studentId: student.id,
@@ -163,13 +195,14 @@ router.post("/enrollments", async (req, res) => {
       poloId: userPolo.id,
       institutionId: userPolo.institutionId,
       amount,
-      paymentGateway: "asaas", // Gateway padrão para o polo
+      paymentGateway: paymentGateway,
       paymentMethod: enrollmentData.paymentMethod,
       enrollmentDate: new Date(),
       status: "pending_payment",
       paymentStatus: "pending",
       createdById: poloUser.id,
-      observations: enrollmentData.additionalInfo || ""
+      observations: enrollmentData.additionalInfo || "",
+      contractTemplateId: enrollmentData.contractTemplateId ? parseInt(enrollmentData.contractTemplateId) : null
     });
 
     return res.status(201).json({

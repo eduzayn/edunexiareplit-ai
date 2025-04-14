@@ -438,46 +438,64 @@ export default function NewEnrollmentPage() {
     }
     
     // Se estiver finalizando a etapa 1 (dados do aluno),
-    // registrar o aluno no gateway de pagamento
+    // registrar o aluno no gateway de pagamento e aguardar a conclusão
     if (step === 1) {
       const paymentGateway = values.paymentGateway;
       
-      if (values.enrollmentType === "existing" && values.studentId) {
-        // Para aluno existente, registrar com os dados do aluno selecionado
-        const selectedStudent = studentsData.find(
-          (student: any) => student.id.toString() === values.studentId
-        );
+      try {
+        if (values.enrollmentType === "existing" && values.studentId) {
+          // Para aluno existente, registrar com os dados do aluno selecionado
+          const selectedStudent = studentsData.find(
+            (student: any) => student.id.toString() === values.studentId
+          );
+          
+          if (selectedStudent) {
+            console.log("Registrando aluno existente no gateway:", paymentGateway);
+            
+            // Aguardar a conclusão do registro com await
+            await registerStudentMutation.mutateAsync({
+              gateway: paymentGateway,
+              studentData: {
+                id: selectedStudent.id,
+                fullName: selectedStudent.fullName,
+                email: selectedStudent.email,
+                cpf: selectedStudent.cpf || undefined
+              }
+            });
+            
+            console.log("Registro do aluno existente no gateway concluído com sucesso");
+          }
+        } 
+        else if (values.enrollmentType === "new") {
+          // Para novo aluno, verificar se temos todos os dados necessários
+          if (values.studentName && values.studentEmail) {
+            console.log("Registrando novo aluno no gateway:", paymentGateway);
+            
+            // Aguardar a conclusão do registro com await
+            await registerStudentMutation.mutateAsync({
+              gateway: paymentGateway,
+              studentData: {
+                fullName: values.studentName,
+                email: values.studentEmail,
+                cpf: values.studentDocument
+              }
+            });
+            
+            console.log("Registro do novo aluno no gateway concluído com sucesso");
+          }
+        }
         
-        if (selectedStudent) {
-          console.log("Registrando aluno existente no gateway:", paymentGateway);
-          
-          registerStudentMutation.mutate({
-            gateway: paymentGateway,
-            studentData: {
-              id: selectedStudent.id,
-              fullName: selectedStudent.fullName,
-              email: selectedStudent.email,
-              cpf: selectedStudent.cpf || undefined
-            }
-          });
-        }
-      } 
-      else if (values.enrollmentType === "new") {
-        // Para novo aluno, verificar se temos todos os dados necessários
-        if (values.studentName && values.studentEmail) {
-          console.log("Registrando novo aluno no gateway:", paymentGateway);
-          
-          // Chamar a API para registrar o aluno no gateway
-          registerStudentMutation.mutate({
-            gateway: paymentGateway,
-            studentData: {
-              fullName: values.studentName,
-              email: values.studentEmail,
-              cpf: values.studentDocument
-            }
-          });
-        }
+        // Se chegamos aqui, o registro foi bem-sucedido, podemos avançar para a próxima etapa
+        await nextStep();
+      } catch (error) {
+        console.error("Erro ao registrar aluno no gateway:", error);
+        toast({
+          title: "Erro no registro",
+          description: "Houve um problema ao registrar o aluno no gateway de pagamento. Tente novamente.",
+          variant: "destructive",
+        });
       }
+      return;
     }
     
     // Para as outras etapas, apenas avançamos para a próxima
