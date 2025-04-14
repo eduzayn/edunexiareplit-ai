@@ -278,14 +278,19 @@ class LytexGateway {
       if (!clientId) {
         console.log('[LYTEX] Não há ID de cliente, tentando criar um novo cliente...');
         
-        // Certifique-se de que temos todos os dados do cliente
+        // Validar se temos todos os dados obrigatórios do cliente
         if (!invoiceData.client.name || !invoiceData.client.email || !invoiceData.client.cpfCnpj) {
-          // Dados mínimos do cliente
-          console.log('[LYTEX] Preenchendo dados mínimos do cliente');
-          invoiceData.client.name = invoiceData.client.name || 'Cliente';
-          invoiceData.client.email = invoiceData.client.email || 'cliente@example.com';
-          invoiceData.client.cpfCnpj = invoiceData.client.cpfCnpj || '00000000000';
-          invoiceData.client.type = invoiceData.client.type || 'pf';
+          console.error('[LYTEX] Dados obrigatórios do cliente ausentes', {
+            nome: invoiceData.client.name ? 'OK' : 'AUSENTE',
+            email: invoiceData.client.email ? 'OK' : 'AUSENTE',
+            cpfCnpj: invoiceData.client.cpfCnpj ? 'OK' : 'AUSENTE'
+          });
+          throw new Error('Dados incompletos do cliente: nome, email e CPF/CNPJ são obrigatórios para criar fatura');
+        }
+        
+        // Definir tipo padrão se não especificado
+        if (!invoiceData.client.type) {
+          invoiceData.client.type = 'pf';
         }
         
         try {
