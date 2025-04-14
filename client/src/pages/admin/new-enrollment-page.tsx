@@ -69,9 +69,25 @@ import { Plus, Loader2 } from "lucide-react";
 
 // Schema para validação do formulário
 const enrollmentFormSchema = z.object({
-  // Dados do aluno
-  studentId: z.string().min(1, { message: "Selecione um aluno" }),
-  // Gateway de pagamento (movido para etapa 1)
+  // Opção para escolher entre aluno existente ou novo aluno
+  enrollmentType: z.enum(["existing", "new"], {
+    required_error: "Selecione o tipo de matrícula",
+  }),
+  
+  // Dados do aluno - ID (usado apenas para aluno existente)
+  studentId: z.string().optional(),
+  
+  // Dados do aluno - Novo (usado quando criar novo aluno)
+  studentName: z.string().optional(),
+  studentEmail: z.string().email({ message: "Email inválido" }).optional(),
+  studentPhone: z.string().optional(),
+  studentDocument: z.string().optional(),
+  studentAddress: z.string().optional(),
+  studentCity: z.string().optional(),
+  studentState: z.string().optional(),
+  studentZipCode: z.string().optional(),
+  
+  // Gateway de pagamento
   paymentGateway: z.enum(["asaas", "lytex"], {
     required_error: "Selecione um gateway de pagamento",
   }),
@@ -97,6 +113,28 @@ const enrollmentFormSchema = z.object({
   
   // Campo para controlar o atual "passo" do formulário
   currentStep: z.number().min(1).max(4)
+}).refine(data => {
+  // Se for aluno existente, studentId é obrigatório
+  if (data.enrollmentType === "existing") {
+    return !!data.studentId;
+  }
+  
+  // Se for novo aluno, todos os campos de aluno são obrigatórios
+  if (data.enrollmentType === "new") {
+    return !!data.studentName && 
+           !!data.studentEmail && 
+           !!data.studentPhone && 
+           !!data.studentDocument && 
+           !!data.studentAddress && 
+           !!data.studentCity && 
+           !!data.studentState && 
+           !!data.studentZipCode;
+  }
+  
+  return false;
+}, {
+  message: "Preencha todos os campos obrigatórios do aluno",
+  path: ["enrollmentType"],
 });
 
 type EnrollmentFormValues = z.infer<typeof enrollmentFormSchema>;
@@ -181,7 +219,16 @@ export default function NewEnrollmentPage() {
   const form = useForm<EnrollmentFormValues>({
     resolver: zodResolver(enrollmentFormSchema),
     defaultValues: {
+      enrollmentType: "existing",
       studentId: "",
+      studentName: "",
+      studentEmail: "",
+      studentPhone: "",
+      studentDocument: "",
+      studentAddress: "",
+      studentCity: "",
+      studentState: "",
+      studentZipCode: "",
       courseId: "",
       institutionId: "",
       poloId: "",
@@ -243,17 +290,45 @@ export default function NewEnrollmentPage() {
     mutationFn: async (data: EnrollmentFormValues) => {
       setIsCreatingEnrollment(true);
       try {
-        const payload = {
-          studentId: parseInt(data.studentId),
-          courseId: parseInt(data.courseId),
-          institutionId: parseInt(data.institutionId),
-          poloId: parseInt(data.poloId),
-          paymentGateway: data.paymentGateway,
-          paymentMethod: data.paymentMethod,
-          amount: parseFloat(data.amount),
-          contractTemplateId: parseInt(data.contractTemplateId),
-          observations: data.observations || ""
-        };
+        let payload: any;
+        
+        // Se for um aluno existente
+        if (data.enrollmentType === "existing") {
+          payload = {
+            studentId: parseInt(data.studentId),
+            courseId: parseInt(data.courseId),
+            institutionId: parseInt(data.institutionId),
+            poloId: parseInt(data.poloId),
+            paymentGateway: data.paymentGateway,
+            paymentMethod: data.paymentMethod,
+            amount: parseFloat(data.amount),
+            contractTemplateId: parseInt(data.contractTemplateId),
+            observations: data.observations || ""
+          };
+        } 
+        // Se for um novo aluno
+        else {
+          payload = {
+            newStudent: {
+              fullName: data.studentName,
+              email: data.studentEmail,
+              phone: data.studentPhone,
+              cpf: data.studentDocument,
+              address: data.studentAddress,
+              city: data.studentCity,
+              state: data.studentState,
+              zipCode: data.studentZipCode
+            },
+            courseId: parseInt(data.courseId),
+            institutionId: parseInt(data.institutionId),
+            poloId: parseInt(data.poloId),
+            paymentGateway: data.paymentGateway,
+            paymentMethod: data.paymentMethod,
+            amount: parseFloat(data.amount),
+            contractTemplateId: parseInt(data.contractTemplateId),
+            observations: data.observations || ""
+          };
+        }
         
         const res = await apiRequest("POST", "/api/enrollments", payload);
         const result = await res.json();
