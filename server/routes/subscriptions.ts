@@ -3,14 +3,7 @@ import { storage } from '../storage';
 import { eq, and } from 'drizzle-orm';
 import { subscriptions, institutions, subscriptionPlans } from '@shared/schema';
 import { db } from '../db';
-
-// Middleware de autenticação
-const requireAuth = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  if (!req.user) {
-    return res.status(401).json({ error: 'Não autenticado' });
-  }
-  next();
-};
+import { requireAuth } from '../auth';
 
 const router = express.Router();
 

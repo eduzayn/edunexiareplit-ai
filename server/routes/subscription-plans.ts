@@ -8,7 +8,7 @@ import { requireAuth } from '../auth';
 const router = express.Router();
 
 // Obter todos os planos ativos
-router.get('/', async (req, res) => {
+router.get('/', requireAuth, async (req, res) => {
   try {
     const plans = await db.query.subscriptionPlans.findMany({
       where: eq(subscriptionPlans.isActive, true),
@@ -23,7 +23,7 @@ router.get('/', async (req, res) => {
 });
 
 // Obter um plano específico pelo ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', requireAuth, async (req, res) => {
   try {
     const planId = parseInt(req.params.id);
     
@@ -156,7 +156,7 @@ router.put('/:id', requireAuth, isAdmin, async (req, res) => {
 });
 
 // Excluir um plano (apenas admin)
-router.delete('/:id', isAdmin, async (req, res) => {
+router.delete('/:id', requireAuth, isAdmin, async (req, res) => {
   try {
     const planId = parseInt(req.params.id);
     
