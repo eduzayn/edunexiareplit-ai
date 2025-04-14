@@ -7,7 +7,22 @@ import { requireAuth } from '../auth';
 
 const router = express.Router();
 
-// Obter todos os planos ativos
+// Rota pública para obter planos (acessível sem autenticação)
+router.get('/public', async (req, res) => {
+  try {
+    const plans = await db.query.subscriptionPlans.findMany({
+      where: eq(subscriptionPlans.isActive, true),
+      orderBy: (plans) => [plans.displayOrder]
+    });
+    
+    return res.json({ plans });
+  } catch (error) {
+    console.error('Erro ao buscar planos públicos:', error);
+    return res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// Obter todos os planos ativos (requer autenticação)
 router.get('/', requireAuth, async (req, res) => {
   try {
     const plans = await db.query.subscriptionPlans.findMany({
