@@ -3,6 +3,7 @@ import { storage } from '../storage';
 import { eq } from 'drizzle-orm';
 import { subscriptionPlans } from '@shared/schema';
 import { db } from '../db';
+import { requireAuth } from '../auth';
 
 const router = express.Router();
 
@@ -57,7 +58,7 @@ function isAdmin(req: express.Request, res: express.Response, next: express.Next
 }
 
 // Criar um novo plano (apenas admin)
-router.post('/', isAdmin, async (req, res) => {
+router.post('/', requireAuth, isAdmin, async (req, res) => {
   try {
     const newPlan = req.body;
     
@@ -104,7 +105,7 @@ router.post('/', isAdmin, async (req, res) => {
 });
 
 // Atualizar um plano existente (apenas admin)
-router.put('/:id', isAdmin, async (req, res) => {
+router.put('/:id', requireAuth, isAdmin, async (req, res) => {
   try {
     const planId = parseInt(req.params.id);
     const updateData = req.body;

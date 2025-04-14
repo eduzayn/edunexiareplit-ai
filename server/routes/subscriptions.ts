@@ -218,7 +218,7 @@ router.patch('/:id/status', requireAuth, isAdmin, async (req, res) => {
 });
 
 // Obter todas as assinaturas (apenas admin)
-router.get('/admin/all', isAdmin, async (req, res) => {
+router.get('/admin/all', requireAuth, isAdmin, async (req, res) => {
   try {
     const allSubscriptions = await db.query.subscriptions.findMany({
       with: {
