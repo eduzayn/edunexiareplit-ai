@@ -127,6 +127,19 @@ export const AsaasService = {
   },
 
   /**
+   * Exclui um cliente no Asaas
+   */
+  async deleteCustomer(asaasId: string): Promise<boolean> {
+    try {
+      await asaasClient.delete(`/customers/${asaasId}`);
+      return true;
+    } catch (error) {
+      console.error(`Erro ao excluir cliente no Asaas (ID: ${asaasId}):`, error);
+      throw error;
+    }
+  },
+
+  /**
    * Busca um cliente no Asaas pelo ID
    */
   async getCustomerById(asaasId: string): Promise<AsaasCustomerResponse> {

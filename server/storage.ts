@@ -1656,13 +1656,33 @@ export class DatabaseStorage implements IStorage {
 
   async deleteClient(id: number): Promise<boolean> {
     try {
+      // Primeiro verificamos se o cliente existe e tem integração com Asaas
+      const existingClient = await this.getClient(id);
+      if (!existingClient) {
+        return false;
+      }
+      
+      // Se o cliente tem ID do Asaas, removemos ele lá também
+      if (existingClient.asaasId && process.env.ASAAS_API_KEY) {
+        try {
+          const { AsaasService } = await import('./services/asaas-service');
+          await AsaasService.deleteCustomer(existingClient.asaasId);
+          console.log(`Cliente removido no Asaas (ID: ${existingClient.asaasId})`);
+        } catch (error) {
+          console.error(`Erro ao excluir cliente no Asaas (ID: ${existingClient.asaasId}):`, error);
+          // Continuamos mesmo se houver erro na integração
+        }
+      }
+      
+      // Removemos o cliente do banco de dados local
       const result = await db
         .delete(clients)
         .where(eq(clients.id, id))
         .returning({ id: clients.id });
+        
       return result.length > 0;
     } catch (error) {
-      console.error("Error deleting client:", error);
+      console.error("Erro ao excluir cliente:", error);
       return false;
     }
   }
