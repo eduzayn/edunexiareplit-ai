@@ -26,6 +26,7 @@ export const clientTypeEnum = pgEnum("client_type", ["pf", "pj"]);
 export const invoiceStatusEnum = pgEnum("invoice_status", ["draft", "pending", "paid", "overdue", "cancelled", "partial"]);
 export const paymentStatusEnum = pgEnum("payment_status", ["completed", "pending", "failed", "refunded"]);
 export const paymentMethodEnum = pgEnum("payment_method", ["credit_card", "debit_card", "bank_slip", "bank_transfer", "pix", "cash", "other"]);
+export const subscriptionStatusEnum = pgEnum("subscription_status", ["trial", "active", "cancelled", "expired"]);
 
 // Tipos de curso
 export const courseTypes = pgTable("course_types", {
@@ -297,6 +298,15 @@ export const institutions = pgTable("institutions", {
   logo: text("logo"), // URL do logo
   primaryColor: text("primary_color").default("#4CAF50"),
   website: text("website"),
+  
+  // Campos para gerenciamento do trial
+  isOnTrial: boolean("is_on_trial").default(false),
+  trialStartDate: timestamp("trial_start_date"),
+  trialEndDate: timestamp("trial_end_date"),
+  
+  // Plano atual
+  currentPlanId: integer("current_plan_id").references(() => subscriptionPlans.id),
+  
   createdById: integer("created_by_id").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -595,11 +605,83 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   paymentsCreated: many(payments),
 }));
 
+// Declaração adiantada para evitar referência circular
+// Estrutura de planos de assinatura será definida após as tabelas instituições
+export const subscriptionPlans = pgTable("subscription_plans", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  code: text("code").notNull().unique(),
+  description: text("description").notNull(),
+  
+  // Preço e período
+  price: doublePrecision("price").notNull(),
+  billingCycle: text("billing_cycle").notNull(), // monthly, annual
+  trialDays: integer("trial_days").default(0), // Dias de trial (0 = sem trial)
+  
+  // Limites
+  maxStudents: integer("max_students").notNull(), // Número máximo de alunos
+  maxCourses: integer("max_courses"), // Número máximo de cursos
+  maxPolos: integer("max_polos"), // Número máximo de polos
+  
+  // Features disponíveis
+  hasFinanceModule: boolean("has_finance_module").default(false),
+  hasCrmModule: boolean("has_crm_module").default(false),
+  hasMultiChannelChat: boolean("has_multi_channel_chat").default(false),
+  hasAdvancedReports: boolean("has_advanced_reports").default(false),
+  hasApiAccess: boolean("has_api_access").default(false),
+  hasPrioritySupportl: boolean("has_priority_support").default(false),
+  
+  // Status e destaque
+  isActive: boolean("is_active").default(true).notNull(),
+  isFeatured: boolean("is_featured").default(false),
+  displayOrder: integer("display_order").default(0),
+  
+  // Metadados
+  createdById: integer("created_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Declaração adiantada para evitar referência circular
+// A tabela de assinaturas será populada mais tarde
+export const subscriptions = pgTable("subscriptions", {
+  id: serial("id").primaryKey(),
+  institutionId: integer("institution_id"), // Será definido após declaração da tabela institutions
+  planId: integer("plan_id").references(() => subscriptionPlans.id),
+  
+  // Status e datas
+  status: subscriptionStatusEnum("status").default("trial").notNull(),
+  startDate: timestamp("start_date").defaultNow().notNull(),
+  endDate: timestamp("end_date"),
+  trialEndsAt: timestamp("trial_ends_at"),
+  
+  // Pagamentos
+  currentPeriodStart: timestamp("current_period_start"),
+  currentPeriodEnd: timestamp("current_period_end"),
+  canceledAt: timestamp("canceled_at"),
+  
+  // Detalhes financeiros
+  price: doublePrecision("price").notNull(),
+  
+  // Integração com gateway de pagamento
+  asaasId: text("asaas_id"), // ID da assinatura no Asaas
+  
+  // Metadados
+  createdById: integer("created_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const institutionsRelations = relations(institutions, ({ one, many }) => ({
   createdBy: one(users, {
     fields: [institutions.createdById],
     references: [users.id],
   }),
+  currentPlan: one(subscriptionPlans, {
+    fields: [institutions.currentPlanId],
+    references: [subscriptionPlans.id],
+  }),
+  subscriptions: many(subscriptions),
   polos: many(polos),
   financialTransactions: many(financialTransactions),
   financialCategories: many(financialCategories),
