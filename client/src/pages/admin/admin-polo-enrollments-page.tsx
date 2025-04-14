@@ -80,11 +80,11 @@ interface Enrollment {
   enrollmentDate: string;
   amount: number;
   paymentMethod: string;
-  paymentStatus: "paid" | "pending" | "overdue" | "cancelled";
-  paymentDueDate?: string;
   paymentUrl?: string; // Link para pagamento
-  documentsStatus: "pending" | "incomplete" | "complete";
-  hasContract: boolean;
+  studentId: number;
+  courseId: number;
+  poloId?: number;
+  poloName?: string;
 }
 
 // Status formatados em português
@@ -490,8 +490,17 @@ export default function AdminPoloEnrollmentsPage() {
                           <TableCell>{formatDate(enrollment.enrollmentDate)}</TableCell>
                           <TableCell>{formatCurrency(enrollment.amount)}</TableCell>
                           <TableCell>{handleEnrollmentStatus(enrollment.status)}</TableCell>
-                          <TableCell>{handlePaymentStatus(enrollment.paymentStatus)}</TableCell>
-                          <TableCell>{handleDocumentStatus(enrollment.documentsStatus)}</TableCell>
+                          <TableCell>
+                            {/* Status de pagamento baseado no status da matrícula */}
+                            {enrollment.status === 'pending_payment' ? 
+                              <Badge className="bg-yellow-100 text-yellow-800">Pendente</Badge> :
+                              <Badge className="bg-green-100 text-green-800">Pago</Badge>
+                            }
+                          </TableCell>
+                          <TableCell>
+                            {/* Status de documentos simplificado */}
+                            <Badge className="bg-blue-100 text-blue-800">Disponível</Badge>
+                          </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
                               <Button 
