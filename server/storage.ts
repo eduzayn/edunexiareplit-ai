@@ -1564,6 +1564,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createClient(client: InsertClient): Promise<Client> {
+    // Primeiro criamos o cliente no banco de dados
     const [newClient] = await db
       .insert(clients)
       .values({
@@ -1572,7 +1573,30 @@ export class DatabaseStorage implements IStorage {
         updatedAt: new Date()
       })
       .returning();
-    return newClient;
+
+    try {
+      // Importamos e usamos o serviço do Asaas
+      const { AsaasService } = await import('./services/asaas-service');
+      
+      // Criamos o cliente no Asaas
+      const asaasResponse = await AsaasService.createCustomer(client, newClient.id);
+      
+      // Atualizamos o cliente com o ID do Asaas
+      const [updatedClient] = await db
+        .update(clients)
+        .set({
+          asaasId: asaasResponse.id,
+          updatedAt: new Date()
+        })
+        .where(eq(clients.id, newClient.id))
+        .returning();
+      
+      return updatedClient;
+    } catch (error) {
+      console.error('Erro ao integrar cliente com Asaas:', error);
+      // Retornamos o cliente mesmo sem integração com Asaas
+      return newClient;
+    }
   }
 
   async updateClient(id: number, clientData: Partial<InsertClient>): Promise<Client | undefined> {
