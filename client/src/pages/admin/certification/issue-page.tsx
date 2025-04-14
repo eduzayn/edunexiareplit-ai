@@ -210,6 +210,38 @@ export default function CertificationIssuePage() {
     }, 2000);
   };
   
+  // Função para baixar certificado
+  const handleDownloadCertificate = (certificateCode: string) => {
+    toast({
+      title: "Download iniciado",
+      description: `Certificado ${certificateCode} sendo baixado.`,
+    });
+  };
+  
+  // Função para imprimir certificado
+  const handlePrintCertificate = (certificateCode: string) => {
+    toast({
+      title: "Preparando impressão",
+      description: `Certificado ${certificateCode} sendo preparado para impressão.`,
+    });
+  };
+  
+  // Função para enviar certificado por e-mail
+  const handleEmailCertificate = (certificateCode: string) => {
+    toast({
+      title: "Enviando por e-mail",
+      description: `Certificado ${certificateCode} sendo enviado por e-mail.`,
+    });
+  };
+  
+  // Função para remover disciplina
+  const handleRemoveDiscipline = (disciplineName: string) => {
+    toast({
+      title: "Disciplina removida",
+      description: `A disciplina ${disciplineName} foi removida da lista.`,
+    });
+  };
+  
   return (
     <AdminLayout>
       <div className="container mx-auto py-6">
@@ -378,13 +410,28 @@ export default function CertificationIssuePage() {
                         <TableCell>{cert.issueDate}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            <Button variant="ghost" size="icon">
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              onClick={() => handleDownloadCertificate(cert.certificateCode)}
+                              title="Baixar certificado"
+                            >
                               <DownloadIcon className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="icon">
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              onClick={() => handlePrintCertificate(cert.certificateCode)}
+                              title="Imprimir certificado"
+                            >
                               <PrinterIcon className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="icon">
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              onClick={() => handleEmailCertificate(cert.certificateCode)}
+                              title="Enviar por e-mail"
+                            >
                               <MailIcon className="h-4 w-4" />
                             </Button>
                           </div>

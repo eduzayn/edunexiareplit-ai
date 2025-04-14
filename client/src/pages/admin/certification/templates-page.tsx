@@ -151,6 +151,40 @@ export default function CertificationTemplatesPage() {
     );
   };
   
+  // Funções para manipular ações nos templates
+  const handleViewTemplate = (template: any) => {
+    // Por enquanto, apenas mostrar uma mensagem de toast
+    toast({
+      title: "Visualizando template",
+      description: `Template: ${template.name}`,
+    });
+    
+    // Futuramente, abrir visualização do template em uma modal ou nova página
+    console.log("Visualizando template:", template);
+  };
+  
+  const handleEditTemplate = (template: any) => {
+    // Por enquanto, apenas mostrar uma mensagem de toast
+    toast({
+      title: "Editando template",
+      description: `Template: ${template.name}`,
+    });
+    
+    // Futuramente, abrir formulário de edição em uma modal
+    console.log("Editando template:", template);
+  };
+  
+  const handleDownloadTemplate = (template: any) => {
+    // Por enquanto, apenas mostrar uma mensagem de toast
+    toast({
+      title: "Baixando template",
+      description: `Template: ${template.name}`,
+    });
+    
+    // Futuramente, iniciar download do arquivo de template
+    console.log("Baixando template:", template);
+  };
+
   // Componente de card para exibir um template
   const TemplateCard = ({ template }: { template: any }) => {
     return (
@@ -180,15 +214,27 @@ export default function CertificationTemplatesPage() {
           </div>
         </CardContent>
         <CardFooter className="pt-1 gap-2 flex">
-          <Button size="sm" variant="outline">
+          <Button 
+            size="sm" 
+            variant="outline"
+            onClick={() => handleViewTemplate(template)}
+          >
             <EyeIcon className="mr-1 h-4 w-4" />
             Visualizar
           </Button>
-          <Button size="sm" variant="outline">
+          <Button 
+            size="sm" 
+            variant="outline"
+            onClick={() => handleEditTemplate(template)}
+          >
             <PencilIcon className="mr-1 h-4 w-4" />
             Editar
           </Button>
-          <Button size="sm" variant="outline">
+          <Button 
+            size="sm" 
+            variant="outline"
+            onClick={() => handleDownloadTemplate(template)}
+          >
             <DownloadIcon className="mr-1 h-4 w-4" />
             Baixar
           </Button>
