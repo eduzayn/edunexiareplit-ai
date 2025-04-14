@@ -525,61 +525,229 @@ export default function NewEnrollmentPage() {
                       
                       <FormField
                         control={form.control}
-                        name="studentId"
+                        name="enrollmentType"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Aluno</FormLabel>
-                            <div className="flex gap-2">
-                              <Select
-                                value={field.value}
-                                onValueChange={field.onChange}
-                              >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Selecione um aluno" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {studentsData.map((student: Student) => (
-                                    <SelectItem key={student.id} value={student.id.toString()}>
-                                      {student.fullName}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="flex items-center gap-1"
-                                onClick={() => setIsCreateUserDialogOpen(true)}
-                              >
-                                <Plus className="h-3.5 w-3.5" />
-                                Novo Aluno
-                              </Button>
-                            </div>
+                            <FormLabel>Tipo de Matrícula</FormLabel>
+                            <RadioGroup
+                              onValueChange={(value) => {
+                                field.onChange(value);
+                                // Resetar campos do aluno quando mudar o tipo de matrícula
+                                if (value === "existing") {
+                                  form.setValue("studentName", "");
+                                  form.setValue("studentEmail", "");
+                                  form.setValue("studentPhone", "");
+                                  form.setValue("studentDocument", "");
+                                  form.setValue("studentAddress", "");
+                                  form.setValue("studentCity", "");
+                                  form.setValue("studentState", "");
+                                  form.setValue("studentZipCode", "");
+                                } else {
+                                  form.setValue("studentId", "");
+                                }
+                              }}
+                              defaultValue={field.value}
+                              className="flex space-x-4"
+                            >
+                              <FormControl>
+                                <div className="flex items-center space-x-2">
+                                  <RadioGroupItem value="existing" id="enrollment-existing" />
+                                  <Label htmlFor="enrollment-existing">Aluno Existente</Label>
+                                </div>
+                              </FormControl>
+                              <FormControl>
+                                <div className="flex items-center space-x-2">
+                                  <RadioGroupItem value="new" id="enrollment-new" />
+                                  <Label htmlFor="enrollment-new">Novo Aluno</Label>
+                                </div>
+                              </FormControl>
+                            </RadioGroup>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
                       
-                      {/* Detalhes do aluno selecionado */}
-                      {selectedStudent && (
-                        <div className="border rounded-md p-4 bg-secondary/10">
-                          <h3 className="font-medium mb-2">Dados do Aluno</h3>
+                      {/* Seleção de aluno existente */}
+                      {form.watch("enrollmentType") === "existing" && (
+                        <>
+                          <FormField
+                            control={form.control}
+                            name="studentId"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Aluno</FormLabel>
+                                <div className="flex gap-2">
+                                  <Select
+                                    value={field.value}
+                                    onValueChange={field.onChange}
+                                  >
+                                    <FormControl>
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Selecione um aluno" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      {studentsData.map((student: Student) => (
+                                        <SelectItem key={student.id} value={student.id.toString()}>
+                                          {student.fullName}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          {/* Detalhes do aluno selecionado */}
+                          {selectedStudent && (
+                            <div className="border rounded-md p-4 bg-secondary/10">
+                              <h3 className="font-medium mb-2">Dados do Aluno</h3>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <p className="text-sm text-muted-foreground">Nome:</p>
+                                  <p>{selectedStudent.fullName}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm text-muted-foreground">Email:</p>
+                                  <p>{selectedStudent.email}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm text-muted-foreground">CPF:</p>
+                                  <p>{selectedStudent.cpf}</p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
+
+                      {/* Campos para novo aluno */}
+                      {form.watch("enrollmentType") === "new" && (
+                        <div className="space-y-4 border rounded-md p-4">
+                          <h3 className="font-medium">Cadastro de Novo Aluno</h3>
+                          
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <p className="text-sm text-muted-foreground">Nome:</p>
-                              <p>{selectedStudent.fullName}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm text-muted-foreground">Email:</p>
-                              <p>{selectedStudent.email}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm text-muted-foreground">CPF:</p>
-                              <p>{selectedStudent.cpf}</p>
-                            </div>
+                            <FormField
+                              control={form.control}
+                              name="studentName"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Nome Completo</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="Nome completo do aluno" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={form.control}
+                              name="studentEmail"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Email</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="Email de contato" type="email" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={form.control}
+                              name="studentPhone"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Telefone</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="(00) 00000-0000" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={form.control}
+                              name="studentDocument"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>CPF</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="000.000.000-00" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                          
+                          <Separator className="my-4" />
+                          
+                          <div className="space-y-2">
+                            <h3 className="text-sm font-medium">Endereço</h3>
+                          </div>
+                          
+                          <FormField
+                            control={form.control}
+                            name="studentAddress"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Endereço</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Endereço completo" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <FormField
+                              control={form.control}
+                              name="studentCity"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Cidade</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="Cidade" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={form.control}
+                              name="studentState"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Estado</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="Estado" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={form.control}
+                              name="studentZipCode"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>CEP</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="00000-000" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
                           </div>
                         </div>
                       )}
