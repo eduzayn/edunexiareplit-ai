@@ -218,8 +218,13 @@ export const enrollments = pgTable("enrollments", {
   status: enrollmentStatusEnum("status").default("pending_payment").notNull(),
   observations: text("observations"),
   
+  // Rastreamento e Auditoria
+  sourceChannel: text("source_channel"), // Canal de origem: admin, polo_portal, website, app, etc.
+  referenceCode: text("reference_code"), // Código de referência para rastreamento de campanhas  
+  
   // Metadados
-  createdById: integer("created_by_id").references(() => users.id),
+  createdById: integer("created_by_id").references(() => users.id), // Quem criou a matrícula
+  updatedById: integer("updated_by_id").references(() => users.id), // Quem atualizou por último
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -234,6 +239,26 @@ export const enrollmentStatusHistory = pgTable("enrollment_status_history", {
   changeReason: text("change_reason"),
   changedById: integer("changed_by_id").references(() => users.id),
   metadata: json("metadata"), // Pode armazenar payloads de webhooks ou informações adicionais
+  poloId: integer("polo_id").references(() => polos.id), // Qual polo realizou a operação (se aplicável)
+  sourceChannel: text("source_channel"), // Canal de origem da operação (admin, polo, website)
+  ipAddress: text("ip_address"), // Endereço IP de onde veio a requisição
+  userAgent: text("user_agent"), // Informações do navegador/dispositivo
+});
+
+// Auditoria de matrículas (mais abrangente que o histórico de status)
+export const enrollmentAudits = pgTable("enrollment_audits", {
+  id: serial("id").primaryKey(),
+  enrollmentId: integer("enrollment_id").notNull().references(() => enrollments.id, { onDelete: 'cascade' }),
+  actionType: text("action_type").notNull(), // create, update, status_change, payment_update
+  performedById: integer("performed_by_id").references(() => users.id),
+  performedByType: text("performed_by_type").notNull(), // admin, polo, system, student
+  poloId: integer("polo_id").references(() => polos.id),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  details: json("details"), // Detalhes específicos da ação
+  beforeState: json("before_state"), // Estado antes da alteração
+  afterState: json("after_state"), // Estado após a alteração
 });
 
 // Integrações com APIs externas
@@ -284,6 +309,8 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   financialCategoriesCreated: many(financialCategories),
   enrollments: many(enrollments, { relationName: "studentEnrollments" }),
   partnerEnrollments: many(enrollments, { relationName: "partnerEnrollments" }),
+  createdEnrollments: many(enrollments, { relationName: "createdEnrollments" }),
+  updatedEnrollments: many(enrollments, { relationName: "updatedEnrollments" }),
   integrationsCreated: many(integrations),
 }));
 
@@ -418,7 +445,13 @@ export const enrollmentsRelations = relations(enrollments, ({ one, many }) => ({
     fields: [enrollments.createdById],
     references: [users.id],
   }),
+  updatedBy: one(users, {
+    fields: [enrollments.updatedById],
+    references: [users.id],
+    relationName: "updatedEnrollments",
+  }),
   statusHistory: many(enrollmentStatusHistory),
+  audits: many(enrollmentAudits),
 }));
 
 // Relações de Histórico de Status de Matrículas
@@ -430,6 +463,26 @@ export const enrollmentStatusHistoryRelations = relations(enrollmentStatusHistor
   changedBy: one(users, {
     fields: [enrollmentStatusHistory.changedById],
     references: [users.id],
+  }),
+  polo: one(polos, {
+    fields: [enrollmentStatusHistory.poloId],
+    references: [polos.id],
+  }),
+}));
+
+// Relações de Auditoria de Matrículas
+export const enrollmentAuditsRelations = relations(enrollmentAudits, ({ one }) => ({
+  enrollment: one(enrollments, {
+    fields: [enrollmentAudits.enrollmentId],
+    references: [enrollments.id],
+  }),
+  performedBy: one(users, {
+    fields: [enrollmentAudits.performedById],
+    references: [users.id],
+  }),
+  polo: one(polos, {
+    fields: [enrollmentAudits.poloId],
+    references: [polos.id],
   }),
 }));
 
@@ -668,9 +721,30 @@ export const insertEnrollmentStatusHistorySchema = createInsertSchema(enrollment
   changeReason: true,
   changedById: true,
   metadata: true,
+  poloId: true,
+  sourceChannel: true,
+  ipAddress: true,
+  userAgent: true,
 });
 export type InsertEnrollmentStatusHistory = z.infer<typeof insertEnrollmentStatusHistorySchema>;
 export type EnrollmentStatusHistory = typeof enrollmentStatusHistory.$inferSelect;
+
+// Schemas e tipos para Auditoria de Matrículas
+export const insertEnrollmentAuditSchema = createInsertSchema(enrollmentAudits).pick({
+  enrollmentId: true,
+  actionType: true,
+  performedById: true,
+  performedByType: true,
+  poloId: true,
+  timestamp: true,
+  ipAddress: true,
+  userAgent: true,
+  details: true,
+  beforeState: true,
+  afterState: true,
+});
+export type InsertEnrollmentAudit = z.infer<typeof insertEnrollmentAuditSchema>;
+export type EnrollmentAudit = typeof enrollmentAudits.$inferSelect;
 
 // Schemas e tipos para Integrações
 export const insertIntegrationSchema = createInsertSchema(integrations).pick({
