@@ -1976,6 +1976,147 @@ export class DatabaseStorage implements IStorage {
       return false;
     }
   }
+  
+  /**
+   * Cria um pagamento para uma fatura usando o gateway Asaas
+   */
+  async createAsaasPayment(
+    invoiceId: number, 
+    method: string, 
+    autoProcess: boolean = true
+  ): Promise<Payment | undefined> {
+    try {
+      // Importar serviço do Asaas
+      const { AsaasPaymentService } = require('./services/asaas-payment-service');
+      
+      // Buscar a fatura
+      const invoice = await this.getInvoice(invoiceId);
+      if (!invoice) {
+        throw new Error(`Fatura não encontrada: ${invoiceId}`);
+      }
+      
+      // Buscar os itens da fatura
+      const invoiceItems = await this.getInvoiceItems(invoiceId);
+      
+      // Buscar o cliente
+      const client = await this.getClient(invoice.clientId);
+      if (!client) {
+        throw new Error(`Cliente não encontrado: ${invoice.clientId}`);
+      }
+      
+      // Verificar se o cliente tem asaasId
+      if (!client.asaasId) {
+        throw new Error(`Cliente não possui ID do Asaas: ${client.name}`);
+      }
+      
+      // Criar pagamento no Asaas
+      const asaasPayment = await AsaasPaymentService.createPayment(
+        client.asaasId,
+        invoice,
+        invoiceItems,
+        method
+      );
+      
+      // Criar registro de pagamento no sistema
+      const payment = await this.createPayment({
+        invoiceId,
+        amount: invoice.total,
+        method,
+        paymentDate: new Date(),
+        status: 'pending',
+        asaasId: asaasPayment.id,
+        paymentUrl: asaasPayment.invoiceUrl,
+        bankSlipUrl: asaasPayment.bankSlipUrl,
+        pixQrCodeUrl: asaasPayment.pixQrCodeUrl
+      });
+      
+      // Se o método for PIX, gerar o QR Code
+      if (method === 'pix') {
+        try {
+          const pixData = await AsaasPaymentService.generatePixQrCode(asaasPayment.id);
+          
+          // Atualizar o pagamento com os dados do PIX
+          await this.updatePayment(payment.id, {
+            pixCodeText: pixData.payload
+          });
+        } catch (pixError) {
+          console.error('Erro ao gerar QR Code PIX:', pixError);
+        }
+      }
+      
+      // Se autoProcess for true, atualizar o status da fatura
+      if (autoProcess) {
+        await this.updateInvoiceAfterPayment(invoiceId);
+      }
+      
+      return payment;
+    } catch (error) {
+      console.error('Erro ao criar pagamento via Asaas:', error);
+      return undefined;
+    }
+  }
+  
+  /**
+   * Atualiza o status de um pagamento via Asaas
+   */
+  async updateAsaasPaymentStatus(paymentId: number): Promise<Payment | undefined> {
+    try {
+      // Importar serviço do Asaas
+      const { AsaasPaymentService } = require('./services/asaas-payment-service');
+      
+      // Buscar o pagamento
+      const payment = await this.getPayment(paymentId);
+      if (!payment || !payment.asaasId) {
+        throw new Error(`Pagamento não encontrado ou sem ID do Asaas: ${paymentId}`);
+      }
+      
+      // Buscar status atualizado no Asaas
+      const { status } = await AsaasPaymentService.updatePaymentStatus(payment.asaasId);
+      
+      // Atualizar status do pagamento
+      const updatedPayment = await this.updatePayment(paymentId, { status });
+      
+      // Atualizar status da fatura
+      if (updatedPayment) {
+        await this.updateInvoiceAfterPayment(updatedPayment.invoiceId);
+      }
+      
+      return updatedPayment;
+    } catch (error) {
+      console.error('Erro ao atualizar status do pagamento via Asaas:', error);
+      return undefined;
+    }
+  }
+  
+  /**
+   * Cancela um pagamento via Asaas
+   */
+  async cancelAsaasPayment(paymentId: number): Promise<boolean> {
+    try {
+      // Importar serviço do Asaas
+      const { AsaasPaymentService } = require('./services/asaas-payment-service');
+      
+      // Buscar o pagamento
+      const payment = await this.getPayment(paymentId);
+      if (!payment || !payment.asaasId) {
+        throw new Error(`Pagamento não encontrado ou sem ID do Asaas: ${paymentId}`);
+      }
+      
+      // Cancelar no Asaas
+      await AsaasPaymentService.cancelPayment(payment.asaasId);
+      
+      // Atualizar status do pagamento
+      await this.updatePayment(paymentId, { status: 'failed' });
+      
+      // Atualizar status da fatura
+      await this.updateInvoiceAfterPayment(payment.invoiceId);
+      
+      return true;
+    } catch (error) {
+      console.error('Erro ao cancelar pagamento via Asaas:', error);
+      return false;
+    }
+  }
 
   async updateInvoiceAfterPayment(invoiceId: number): Promise<Invoice | undefined> {
     // Obter todos os pagamentos da fatura
