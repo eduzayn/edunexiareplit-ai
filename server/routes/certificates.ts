@@ -2,19 +2,15 @@ import express from "express";
 import { db } from "../db";
 import { 
   certificates, 
-  certificateDisciplines, 
-  certificateHistory, 
-  certificateSigners, 
-  certificateTemplates,
-  users, 
-  courses, 
-  enrollments,
-  institutions,
   insertCertificateSchema,
+  certificateDisciplines,
   insertCertificateDisciplineSchema,
-  insertCertificateHistorySchema
+  certificateHistory,
+  insertCertificateHistorySchema,
+  enrollments,
+  users
 } from "@shared/schema";
-import { eq, and, desc, inArray, like, isNull, isNotNull } from "drizzle-orm";
+import { eq, and, desc, inArray, like, isNull, sql } from "drizzle-orm";
 import { requireAuth } from "../middleware/auth";
 import { validateBody } from "../middleware/validate";
 import { generateUniqueCode } from "../utils";
@@ -27,18 +23,68 @@ router.use(requireAuth);
 // Listar todos os certificados
 router.get("/", async (req, res) => {
   try {
-    const allCertificates = await db.query.certificates.findMany({
-      with: {
-        student: true,
-        course: true,
-        institution: true,
-        template: true,
-        signer: true,
-      },
-      orderBy: [desc(certificates.createdAt)],
-    });
+    const status = req.query.status?.toString();
+    const studentName = req.query.studentName?.toString();
+    const courseId = req.query.courseId ? parseInt(req.query.courseId.toString()) : undefined;
+    const page = parseInt(req.query.page?.toString() || "1");
+    const pageSize = parseInt(req.query.pageSize?.toString() || "20");
+    const offset = (page - 1) * pageSize;
     
-    return res.json(allCertificates);
+    let query = db.select({
+      certificates: certificates,
+      studentName: users.fullName,
+      courseName: sql<string>`certificates.course_name`,
+      templateName: sql<string>`certificate_templates.name`,
+      issueDate: certificates.issuedAt,
+      status: certificates.status,
+    })
+    .from(certificates)
+    .leftJoin(users, eq(certificates.studentId, users.id))
+    .leftJoin("certificate_templates", eq(certificates.templateId, sql<number>`certificate_templates.id`));
+    
+    // Aplicar filtros
+    const conditions = [];
+    
+    if (status) {
+      conditions.push(eq(certificates.status, status));
+    }
+    
+    if (studentName) {
+      conditions.push(like(users.fullName, `%${studentName}%`));
+    }
+    
+    if (courseId) {
+      conditions.push(eq(certificates.courseId, courseId));
+    }
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    // Executar a consulta com paginação
+    const totalQuery = db.select({ count: sql<number>`count(*)` })
+      .from(certificates);
+    
+    if (conditions.length > 0) {
+      totalQuery.where(and(...conditions));
+    }
+    
+    const [{ count }] = await totalQuery;
+    
+    const results = await query
+      .orderBy(desc(certificates.createdAt))
+      .limit(pageSize)
+      .offset(offset);
+    
+    return res.json({
+      data: results,
+      pagination: {
+        totalItems: Number(count),
+        totalPages: Math.ceil(Number(count) / pageSize),
+        currentPage: page,
+        pageSize,
+      },
+    });
   } catch (error) {
     console.error("Erro ao buscar certificados:", error);
     return res.status(500).json({
@@ -58,15 +104,16 @@ router.get("/:id", async (req, res) => {
       with: {
         student: true,
         course: true,
-        institution: true,
         template: true,
         signer: true,
-        disciplines: true,
-        history: {
+        createdBy: true,
+        disciplines: {
           with: {
-            performedBy: true,
+            discipline: true,
           },
-          orderBy: [desc(certificateHistory.timestamp)],
+        },
+        history: {
+          orderBy: [desc(certificateHistory.createdAt)],
         },
       },
     });
@@ -91,50 +138,54 @@ router.post("/", validateBody(insertCertificateSchema), async (req, res) => {
     const data = req.body;
     const userId = req.user?.id;
     
-    // Validações adicionais
-    const enrollment = await db.query.enrollments.findFirst({
-      where: eq(enrollments.id, data.enrollmentId),
+    // Verificar se o aluno existe
+    const student = await db.query.users.findFirst({
+      where: eq(users.id, data.studentId),
     });
     
-    if (!enrollment) {
-      return res.status(404).json({ message: "Matrícula não encontrada" });
+    if (!student) {
+      return res.status(404).json({ message: "Aluno não encontrado" });
     }
     
-    // Verificar se o certificado já existe para esta matrícula
-    const existingCertificate = await db.query.certificates.findFirst({
-      where: eq(certificates.enrollmentId, data.enrollmentId),
-    });
-    
-    if (existingCertificate) {
-      return res.status(400).json({ 
-        message: "Já existe um certificado emitido para esta matrícula" 
+    // Verificar se a matrícula existe e está ativa/concluída
+    if (data.enrollmentId) {
+      const enrollment = await db.query.enrollments.findFirst({
+        where: eq(enrollments.id, data.enrollmentId),
       });
+      
+      if (!enrollment) {
+        return res.status(404).json({ message: "Matrícula não encontrada" });
+      }
+      
+      if (!["active", "completed"].includes(enrollment.status)) {
+        return res.status(400).json({ 
+          message: "Não é possível emitir certificado para uma matrícula que não está ativa ou concluída" 
+        });
+      }
     }
     
     // Gerar código único para o certificado
-    const certificateCode = await generateUniqueCode("CERT", async (code) => {
-      const exists = await db.query.certificates.findFirst({
+    const code = await generateUniqueCode("CERT", async (code) => {
+      const existingCert = await db.query.certificates.findFirst({
         where: eq(certificates.code, code),
       });
-      return !exists;
+      return !existingCert;
     });
     
     // Criar o certificado
     const [newCertificate] = await db.insert(certificates).values({
       ...data,
-      code: certificateCode,
+      code,
       createdById: userId || null,
-      status: "draft", // Sempre começa como rascunho
+      status: data.status || "draft",
     }).returning();
     
-    // Registrar histórico
+    // Registrar histórico de criação
     await db.insert(certificateHistory).values({
       certificateId: newCertificate.id,
-      action: "create",
+      action: "created",
+      description: "Certificado criado",
       performedById: userId || null,
-      performedByType: "admin",
-      timestamp: new Date(),
-      details: { message: "Certificado criado com sucesso" },
     });
     
     return res.status(201).json(newCertificate);
@@ -148,7 +199,7 @@ router.post("/", validateBody(insertCertificateSchema), async (req, res) => {
 });
 
 // Atualizar certificado
-router.put("/:id", validateBody(insertCertificateSchema), async (req, res) => {
+router.put("/:id", validateBody(insertCertificateSchema.partial()), async (req, res) => {
   try {
     const { id } = req.params;
     const data = req.body;
@@ -162,10 +213,11 @@ router.put("/:id", validateBody(insertCertificateSchema), async (req, res) => {
       return res.status(404).json({ message: "Certificado não encontrado" });
     }
     
-    // Não permitir atualização de certificados já emitidos
-    if (certificate.status === "issued") {
+    // Verificar se o certificado já foi emitido e se está tentando alterar algo crítico
+    if (certificate.status === "issued" && 
+        (data.studentId || data.courseId || data.enrollmentId)) {
       return res.status(400).json({ 
-        message: "Não é possível editar certificados já emitidos" 
+        message: "Não é possível alterar informações críticas de um certificado já emitido" 
       });
     }
     
@@ -178,17 +230,12 @@ router.put("/:id", validateBody(insertCertificateSchema), async (req, res) => {
       .where(eq(certificates.id, parseInt(id)))
       .returning();
     
-    // Registrar histórico
+    // Registrar histórico de atualização
     await db.insert(certificateHistory).values({
       certificateId: parseInt(id),
-      action: "update",
+      action: "updated",
+      description: "Certificado atualizado",
       performedById: userId || null,
-      performedByType: "admin",
-      timestamp: new Date(),
-      details: { 
-        message: "Certificado atualizado",
-        changedFields: Object.keys(data),
-      },
     });
     
     return res.json(updatedCertificate);
@@ -201,7 +248,7 @@ router.put("/:id", validateBody(insertCertificateSchema), async (req, res) => {
   }
 });
 
-// Emitir certificado (mudar status para issued)
+// Emitir certificado
 router.post("/:id/issue", async (req, res) => {
   try {
     const { id } = req.params;
@@ -216,30 +263,32 @@ router.post("/:id/issue", async (req, res) => {
     }
     
     if (certificate.status === "issued") {
-      return res.status(400).json({ message: "Certificado já foi emitido" });
+      return res.status(400).json({ message: "Certificado já está emitido" });
     }
     
-    // Atualizar status do certificado
-    const [updatedCertificate] = await db.update(certificates)
+    if (certificate.status === "revoked") {
+      return res.status(400).json({ message: "Não é possível emitir um certificado revogado" });
+    }
+    
+    // Emitir o certificado
+    const [issuedCertificate] = await db.update(certificates)
       .set({
         status: "issued",
-        issueDate: new Date(),
+        issuedAt: new Date(),
         updatedAt: new Date(),
       })
       .where(eq(certificates.id, parseInt(id)))
       .returning();
     
-    // Registrar histórico
+    // Registrar histórico de emissão
     await db.insert(certificateHistory).values({
       certificateId: parseInt(id),
-      action: "issue",
+      action: "issued",
+      description: "Certificado emitido",
       performedById: userId || null,
-      performedByType: "admin",
-      timestamp: new Date(),
-      details: { message: "Certificado emitido oficialmente" },
     });
     
-    return res.json(updatedCertificate);
+    return res.json(issuedCertificate);
   } catch (error) {
     console.error("Erro ao emitir certificado:", error);
     return res.status(500).json({
@@ -256,6 +305,10 @@ router.post("/:id/revoke", async (req, res) => {
     const { reason } = req.body;
     const userId = req.user?.id;
     
+    if (!reason) {
+      return res.status(400).json({ message: "É necessário informar o motivo da revogação" });
+    }
+    
     const certificate = await db.query.certificates.findFirst({
       where: eq(certificates.id, parseInt(id)),
     });
@@ -264,14 +317,18 @@ router.post("/:id/revoke", async (req, res) => {
       return res.status(404).json({ message: "Certificado não encontrado" });
     }
     
-    if (certificate.status !== "issued") {
+    if (certificate.status === "draft") {
       return res.status(400).json({ 
-        message: "Apenas certificados emitidos podem ser revogados" 
+        message: "Não é possível revogar um certificado que ainda não foi emitido" 
       });
     }
     
-    // Atualizar status do certificado
-    const [updatedCertificate] = await db.update(certificates)
+    if (certificate.status === "revoked") {
+      return res.status(400).json({ message: "Certificado já está revogado" });
+    }
+    
+    // Revogar o certificado
+    const [revokedCertificate] = await db.update(certificates)
       .set({
         status: "revoked",
         updatedAt: new Date(),
@@ -279,20 +336,15 @@ router.post("/:id/revoke", async (req, res) => {
       .where(eq(certificates.id, parseInt(id)))
       .returning();
     
-    // Registrar histórico
+    // Registrar histórico de revogação
     await db.insert(certificateHistory).values({
       certificateId: parseInt(id),
-      action: "revoke",
+      action: "revoked",
+      description: `Certificado revogado. Motivo: ${reason}`,
       performedById: userId || null,
-      performedByType: "admin",
-      timestamp: new Date(),
-      details: { 
-        message: "Certificado revogado",
-        reason: reason || "Não especificado" 
-      },
     });
     
-    return res.json(updatedCertificate);
+    return res.json(revokedCertificate);
   } catch (error) {
     console.error("Erro ao revogar certificado:", error);
     return res.status(500).json({
@@ -302,35 +354,100 @@ router.post("/:id/revoke", async (req, res) => {
   }
 });
 
-// Gerenciar disciplinas do certificado
+// ============== Rotas para disciplinas do certificado ==============
 
-// Adicionar disciplina ao certificado
-router.post("/:id/disciplines", validateBody(insertCertificateDisciplineSchema), async (req, res) => {
+// Listar disciplinas de um certificado
+router.get("/:certificateId/disciplines", async (req, res) => {
   try {
-    const { id } = req.params;
-    const data = req.body;
+    const { certificateId } = req.params;
     
     const certificate = await db.query.certificates.findFirst({
-      where: eq(certificates.id, parseInt(id)),
+      where: eq(certificates.id, parseInt(certificateId)),
     });
     
     if (!certificate) {
       return res.status(404).json({ message: "Certificado não encontrado" });
     }
     
+    const disciplines = await db.query.certificateDisciplines.findMany({
+      where: eq(certificateDisciplines.certificateId, parseInt(certificateId)),
+      with: {
+        discipline: true,
+      },
+    });
+    
+    return res.json(disciplines);
+  } catch (error) {
+    console.error("Erro ao buscar disciplinas do certificado:", error);
+    return res.status(500).json({
+      message: "Erro ao buscar disciplinas do certificado",
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
+
+// Adicionar disciplina ao certificado
+router.post("/:certificateId/disciplines", validateBody(insertCertificateDisciplineSchema), async (req, res) => {
+  try {
+    const { certificateId } = req.params;
+    const data = req.body;
+    const userId = req.user?.id;
+    
+    const certificate = await db.query.certificates.findFirst({
+      where: eq(certificates.id, parseInt(certificateId)),
+    });
+    
+    if (!certificate) {
+      return res.status(404).json({ message: "Certificado não encontrado" });
+    }
+    
+    // Verificar se o certificado já foi emitido
     if (certificate.status === "issued") {
       return res.status(400).json({ 
-        message: "Não é possível editar disciplinas de certificados já emitidos" 
+        message: "Não é possível adicionar disciplinas a um certificado já emitido" 
       });
     }
     
-    // Adicionar disciplina
-    const [newDiscipline] = await db.insert(certificateDisciplines).values({
-      ...data,
-      certificateId: parseInt(id),
+    // Verificar se a disciplina já existe no certificado
+    const existingDiscipline = await db.query.certificateDisciplines.findFirst({
+      where: and(
+        eq(certificateDisciplines.certificateId, parseInt(certificateId)),
+        eq(certificateDisciplines.disciplineId, data.disciplineId)
+      ),
+    });
+    
+    if (existingDiscipline) {
+      return res.status(400).json({ message: "Disciplina já adicionada ao certificado" });
+    }
+    
+    // Adicionar disciplina ao certificado
+    const [newCertificateDiscipline] = await db.insert(certificateDisciplines).values({
+      certificateId: parseInt(certificateId),
+      disciplineId: data.disciplineId,
+      professorName: data.professorName,
+      professorTitle: data.professorTitle,
+      workload: data.workload,
+      attendance: data.attendance,
+      performance: data.performance,
     }).returning();
     
-    return res.status(201).json(newDiscipline);
+    // Registrar histórico
+    await db.insert(certificateHistory).values({
+      certificateId: parseInt(certificateId),
+      action: "discipline_added",
+      description: `Disciplina adicionada: ${data.disciplineId}`,
+      performedById: userId || null,
+    });
+    
+    // Buscar disciplina com dados completos
+    const disciplineWithDetails = await db.query.certificateDisciplines.findFirst({
+      where: eq(certificateDisciplines.id, newCertificateDiscipline.id),
+      with: {
+        discipline: true,
+      },
+    });
+    
+    return res.status(201).json(disciplineWithDetails);
   } catch (error) {
     console.error("Erro ao adicionar disciplina ao certificado:", error);
     return res.status(500).json({
@@ -341,35 +458,70 @@ router.post("/:id/disciplines", validateBody(insertCertificateDisciplineSchema),
 });
 
 // Atualizar disciplina do certificado
-router.put("/disciplines/:disciplineId", validateBody(insertCertificateDisciplineSchema), async (req, res) => {
+router.put("/:certificateId/disciplines/:disciplineId", validateBody(insertCertificateDisciplineSchema.partial()), async (req, res) => {
   try {
-    const { disciplineId } = req.params;
+    const { certificateId, disciplineId } = req.params;
     const data = req.body;
+    const userId = req.user?.id;
     
-    const discipline = await db.query.certificateDisciplines.findFirst({
-      where: eq(certificateDisciplines.id, parseInt(disciplineId)),
-      with: {
-        certificate: true,
-      },
+    const certificate = await db.query.certificates.findFirst({
+      where: eq(certificates.id, parseInt(certificateId)),
     });
     
-    if (!discipline) {
-      return res.status(404).json({ message: "Disciplina não encontrada" });
+    if (!certificate) {
+      return res.status(404).json({ message: "Certificado não encontrado" });
     }
     
-    if (discipline.certificate.status === "issued") {
+    // Verificar se o certificado já foi emitido
+    if (certificate.status === "issued") {
       return res.status(400).json({ 
-        message: "Não é possível editar disciplinas de certificados já emitidos" 
+        message: "Não é possível modificar disciplinas de um certificado já emitido" 
       });
     }
     
+    // Verificar se a disciplina existe no certificado
+    const certificateDiscipline = await db.query.certificateDisciplines.findFirst({
+      where: and(
+        eq(certificateDisciplines.certificateId, parseInt(certificateId)),
+        eq(certificateDisciplines.disciplineId, parseInt(disciplineId))
+      ),
+    });
+    
+    if (!certificateDiscipline) {
+      return res.status(404).json({ message: "Disciplina não encontrada no certificado" });
+    }
+    
     // Atualizar disciplina
-    const [updatedDiscipline] = await db.update(certificateDisciplines)
-      .set(data)
-      .where(eq(certificateDisciplines.id, parseInt(disciplineId)))
+    const [updatedCertificateDiscipline] = await db.update(certificateDisciplines)
+      .set({
+        ...data,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(certificateDisciplines.certificateId, parseInt(certificateId)),
+          eq(certificateDisciplines.disciplineId, parseInt(disciplineId))
+        )
+      )
       .returning();
     
-    return res.json(updatedDiscipline);
+    // Registrar histórico
+    await db.insert(certificateHistory).values({
+      certificateId: parseInt(certificateId),
+      action: "discipline_updated",
+      description: `Disciplina atualizada: ${disciplineId}`,
+      performedById: userId || null,
+    });
+    
+    // Buscar disciplina com dados completos
+    const disciplineWithDetails = await db.query.certificateDisciplines.findFirst({
+      where: eq(certificateDisciplines.id, updatedCertificateDiscipline.id),
+      with: {
+        discipline: true,
+      },
+    });
+    
+    return res.json(disciplineWithDetails);
   } catch (error) {
     console.error("Erro ao atualizar disciplina do certificado:", error);
     return res.status(500).json({
@@ -380,32 +532,56 @@ router.put("/disciplines/:disciplineId", validateBody(insertCertificateDisciplin
 });
 
 // Remover disciplina do certificado
-router.delete("/disciplines/:disciplineId", async (req, res) => {
+router.delete("/:certificateId/disciplines/:disciplineId", async (req, res) => {
   try {
-    const { disciplineId } = req.params;
+    const { certificateId, disciplineId } = req.params;
+    const userId = req.user?.id;
     
-    const discipline = await db.query.certificateDisciplines.findFirst({
-      where: eq(certificateDisciplines.id, parseInt(disciplineId)),
-      with: {
-        certificate: true,
-      },
+    const certificate = await db.query.certificates.findFirst({
+      where: eq(certificates.id, parseInt(certificateId)),
     });
     
-    if (!discipline) {
-      return res.status(404).json({ message: "Disciplina não encontrada" });
+    if (!certificate) {
+      return res.status(404).json({ message: "Certificado não encontrado" });
     }
     
-    if (discipline.certificate.status === "issued") {
+    // Verificar se o certificado já foi emitido
+    if (certificate.status === "issued") {
       return res.status(400).json({ 
-        message: "Não é possível remover disciplinas de certificados já emitidos" 
+        message: "Não é possível remover disciplinas de um certificado já emitido" 
       });
+    }
+    
+    // Verificar se a disciplina existe no certificado
+    const certificateDiscipline = await db.query.certificateDisciplines.findFirst({
+      where: and(
+        eq(certificateDisciplines.certificateId, parseInt(certificateId)),
+        eq(certificateDisciplines.disciplineId, parseInt(disciplineId))
+      ),
+    });
+    
+    if (!certificateDiscipline) {
+      return res.status(404).json({ message: "Disciplina não encontrada no certificado" });
     }
     
     // Remover disciplina
     await db.delete(certificateDisciplines)
-      .where(eq(certificateDisciplines.id, parseInt(disciplineId)));
+      .where(
+        and(
+          eq(certificateDisciplines.certificateId, parseInt(certificateId)),
+          eq(certificateDisciplines.disciplineId, parseInt(disciplineId))
+        )
+      );
     
-    return res.json({ message: "Disciplina removida com sucesso" });
+    // Registrar histórico
+    await db.insert(certificateHistory).values({
+      certificateId: parseInt(certificateId),
+      action: "discipline_removed",
+      description: `Disciplina removida: ${disciplineId}`,
+      performedById: userId || null,
+    });
+    
+    return res.status(204).end();
   } catch (error) {
     console.error("Erro ao remover disciplina do certificado:", error);
     return res.status(500).json({
@@ -415,48 +591,12 @@ router.delete("/disciplines/:disciplineId", async (req, res) => {
   }
 });
 
-// Buscar alunos elegíveis para certificação
-router.get("/eligible-students", async (req, res) => {
-  try {
-    // Obter matrículas concluídas
-    const completedEnrollments = await db.query.enrollments.findMany({
-      where: eq(enrollments.status, "completed"),
-      with: {
-        student: true,
-        course: true,
-        institution: true,
-        polo: true,
-      },
-    });
-    
-    // Verificar quais matrículas ainda não possuem certificados
-    const certificatedEnrollmentIds = await db.select({ 
-      enrollmentId: certificates.enrollmentId 
-    })
-    .from(certificates);
-    
-    const enrollmentIdsWithCertificates = certificatedEnrollmentIds.map(c => c.enrollmentId);
-    
-    // Filtrar matrículas que ainda não possuem certificados
-    const eligibleStudents = completedEnrollments.filter(
-      enrollment => !enrollmentIdsWithCertificates.includes(enrollment.id)
-    );
-    
-    return res.json(eligibleStudents);
-  } catch (error) {
-    console.error("Erro ao buscar alunos elegíveis para certificação:", error);
-    return res.status(500).json({
-      message: "Erro ao buscar alunos elegíveis para certificação",
-      error: error instanceof Error ? error.message : String(error),
-    });
-  }
-});
-
-// Verificar certificado (acesso público)
+// Endpoint para verificação pública de certificado
 router.get("/verify/:code", async (req, res) => {
   try {
     const { code } = req.params;
     
+    // Esta rota deve ser pública (sem autenticação)
     const certificate = await db.query.certificates.findFirst({
       where: eq(certificates.code, code),
       with: {
@@ -465,12 +605,15 @@ router.get("/verify/:code", async (req, res) => {
             id: true,
             fullName: true,
             cpf: true,
-            email: true,
           }
         },
-        course: true,
-        institution: true,
-        disciplines: true,
+        disciplines: {
+          with: {
+            discipline: true,
+          },
+        },
+        template: true,
+        signer: true,
       },
     });
     
@@ -481,29 +624,31 @@ router.get("/verify/:code", async (req, res) => {
       });
     }
     
-    // Registrar verificação no histórico (opcional)
-    await db.insert(certificateHistory).values({
-      certificateId: certificate.id,
-      action: "verify",
-      performedByType: "system",
-      timestamp: new Date(),
-      details: { 
-        message: "Certificado verificado publicamente",
-        ipAddress: req.ip
-      },
-    });
+    // Verificar se o certificado está emitido
+    if (certificate.status !== "issued") {
+      return res.json({
+        valid: false,
+        status: certificate.status,
+        message: certificate.status === "revoked" 
+          ? "Este certificado foi revogado" 
+          : "Este certificado ainda não foi emitido"
+      });
+    }
     
+    // Retornar informações verificáveis do certificado
     return res.json({
-      valid: certificate.status === "issued",
-      status: certificate.status,
-      certificate: {
-        code: certificate.code,
-        student: certificate.student,
-        course: certificate.course,
-        institution: certificate.institution,
-        issueDate: certificate.issueDate,
-        expirationDate: certificate.expirationDate,
-      }
+      valid: true,
+      code: certificate.code,
+      title: certificate.title,
+      studentName: certificate.student.fullName,
+      courseName: certificate.courseName,
+      issueDate: certificate.issuedAt,
+      disciplines: certificate.disciplines.map(d => ({
+        name: d.discipline.name,
+        professorName: d.professorName,
+        workload: d.workload,
+      })),
+      totalWorkload: certificate.totalWorkload,
     });
   } catch (error) {
     console.error("Erro ao verificar certificado:", error);

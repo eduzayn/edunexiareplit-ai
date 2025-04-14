@@ -18,6 +18,9 @@ import poloRoutes from "./routes/polo-routes";
 import poloEnrollmentsRoutes from "./routes/polo-enrollments";
 import { aiServicesRouter } from "./routes/ai-services";
 import { createPaymentGateway } from "./services/payment-gateways";
+import certificatesRoutes from "./routes/certificates";
+import certificateTemplatesRoutes from "./routes/certificate-templates";
+import certificateSignersRoutes from "./routes/certificate-signers";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
@@ -37,6 +40,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Registro das rotas de matrículas do Portal do Polo
   app.use("/api/polo", poloEnrollmentsRoutes);
+  
+  // Registro das rotas do sistema de certificação
+  app.use("/api/admin/certificates", certificatesRoutes);
+  app.use("/api/admin/certificate-templates", certificateTemplatesRoutes);
+  app.use("/api/admin/certificate-signers", certificateSignersRoutes);
   
   // Rotas públicas para instituições e polos (necessárias para o formulário de matrícula)
   
@@ -99,6 +107,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching public contract templates:", error);
       res.status(500).json({ message: "Erro ao buscar modelos de contrato" });
+    }
+  });
+  
+  // Rota pública para verificação de certificados
+  app.get("/api/certificates/verify/:code", async (req, res) => {
+    try {
+      const { code } = req.params;
+      
+      if (!code) {
+        return res.status(400).json({ 
+          valid: false,
+          message: "É necessário fornecer o código do certificado" 
+        });
+      }
+      
+      // Utiliza a rota específica para verificação 
+      return certificatesRoutes.handle(req, res);
+    } catch (error) {
+      console.error("Erro ao verificar certificado:", error);
+      return res.status(500).json({
+        valid: false,
+        message: "Erro ao verificar certificado",
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   });
 
