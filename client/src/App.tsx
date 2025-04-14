@@ -24,6 +24,7 @@ import ReportsPage from "@/pages/admin/reports-page";
 import EnrollmentsPage from "@/pages/admin/enrollments-page";
 import AdminNewEnrollmentPage from "@/pages/admin/new-enrollment-page";
 import IntegrationsPage from "@/pages/admin/integrations-page";
+import AdminPoloEnrollmentsPage from "@/pages/admin/polo-enrollments-page";
 // Import student pages
 import StudentCoursesPage from "@/pages/student/courses-page";
 import CourseDetailPage from "@/pages/student/course-detail-page";
@@ -198,7 +199,7 @@ function Router() {
       
       {/* Rota para acessar matrículas do polo a partir do admin */}
       <Route path="/admin/polo-enrollments">
-        {() => user?.portalType === "admin" ? <PoloEnrollmentsPage /> : <Redirect to="/admin" />}
+        {() => user?.portalType === "admin" ? <AdminPoloEnrollmentsPage /> : <Redirect to="/admin" />}
       </Route>
       
       <Route component={NotFound} />
