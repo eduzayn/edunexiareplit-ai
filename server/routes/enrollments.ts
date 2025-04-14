@@ -111,8 +111,32 @@ export function registerEnrollmentRoutes(app: Express) {
         partnerId: req.user.portalType === 'partner' ? req.user.id : enrollmentData.partnerId
       };
       
+      // Adicionar informações de rastreamento
+      const sourceChannel = getSourceChannel(req);
+      const enrollmentWithTracking = {
+        ...enrollmentWithCreator,
+        sourceChannel,
+        updatedById: req.user.id
+      };
+      
       // Criar a matrícula
-      const newEnrollment = await storage.createEnrollment(enrollmentWithCreator);
+      const newEnrollment = await storage.createEnrollment(enrollmentWithTracking);
+      
+      // Registrar auditoria de criação
+      await logEnrollmentAudit(
+        req,
+        newEnrollment.id,
+        "create",
+        req.user.portalType,
+        { 
+          courseId: newEnrollment.courseId,
+          studentId: newEnrollment.studentId,
+          poloId: newEnrollment.poloId
+        },
+        null,
+        newEnrollment,
+        newEnrollment.poloId
+      );
       
       // Se tiver gateway de pagamento, criar o pagamento
       if (newEnrollment.paymentGateway) {
@@ -159,8 +183,28 @@ export function registerEnrollmentRoutes(app: Express) {
       // Validar dados parciais da matrícula
       const updateData = req.body;
       
+      // Adicionar informações de rastreamento
+      const sourceChannel = getSourceChannel(req);
+      const updateWithTracking = {
+        ...updateData,
+        sourceChannel,
+        updatedById: req.user.id
+      };
+      
       // Atualizar a matrícula
-      const updatedEnrollment = await storage.updateEnrollment(id, updateData);
+      const updatedEnrollment = await storage.updateEnrollment(id, updateWithTracking);
+      
+      // Registrar auditoria de atualização
+      await logEnrollmentAudit(
+        req,
+        id,
+        "update",
+        req.user.portalType,
+        { fieldsUpdated: Object.keys(updateData) },
+        enrollment,
+        updatedEnrollment,
+        enrollment.poloId
+      );
       
       res.json(updatedEnrollment);
     } catch (error) {
@@ -185,12 +229,29 @@ export function registerEnrollmentRoutes(app: Express) {
         return res.status(404).json({ error: 'Matrícula não encontrada' });
       }
       
-      // Atualizar o status da matrícula
+      // Adicionar informações de rastreamento
+      const sourceChannel = getSourceChannel(req);
+      
+      // Utilizar o serviço de registro de mudança de status
+      await logStatusChange(
+        req,
+        id,
+        enrollment.status,
+        status,
+        reason || `Status alterado manualmente para ${status}`,
+        { userTriggered: true },
+        enrollment.poloId,
+        sourceChannel
+      );
+      
+      // Atualizar o status da matrícula incluindo o canal de origem
       const updatedEnrollment = await storage.updateEnrollmentStatus(
         id,
         status,
         reason || `Status alterado manualmente para ${status}`,
-        req.user?.id
+        req.user?.id,
+        undefined,  // metadata
+        sourceChannel
       );
       
       res.json(updatedEnrollment);
@@ -211,8 +272,23 @@ export function registerEnrollmentRoutes(app: Express) {
         return res.status(404).json({ error: 'Matrícula não encontrada' });
       }
       
+      // Adicionar informações de rastreamento
+      const sourceChannel = getSourceChannel(req);
+      
+      // Registrar auditoria de exclusão (antes da operação)
+      await logEnrollmentAudit(
+        req,
+        id,
+        "delete",
+        req.user?.portalType || "admin",
+        { reason: "Matrícula excluída pelo administrador" },
+        enrollment,
+        null,
+        enrollment.poloId
+      );
+      
       // Excluir a matrícula (na prática, marca como cancelada)
-      const deleted = await storage.deleteEnrollment(id);
+      const deleted = await storage.deleteEnrollment(id, req.user?.id, sourceChannel);
       
       if (deleted) {
         res.status(204).end();
@@ -289,13 +365,30 @@ export function registerEnrollmentRoutes(app: Express) {
         return res.status(404).json({ error: 'Matrícula não encontrada para este pagamento' });
       }
       
+      // Registrar auditoria de webhook
+      await logEnrollmentAudit(
+        req,
+        enrollment.id,
+        "payment_update",
+        "system",
+        { 
+          gateway: "asaas", 
+          event: req.body.event || 'evento desconhecido',
+          newStatus: status
+        },
+        { status: enrollment.status },
+        { status: status, webhookData: req.body },
+        enrollment.poloId
+      );
+      
       // Atualizar o status da matrícula
       await storage.updateEnrollmentStatus(
         enrollment.id,
         status,
         `Status atualizado pelo webhook Asaas: ${req.body.event || 'evento desconhecido'}`,
         undefined,
-        req.body
+        req.body,
+        "asaas_webhook"
       );
       
       res.status(200).json({ success: true });
@@ -326,13 +419,30 @@ export function registerEnrollmentRoutes(app: Express) {
         return res.status(404).json({ error: 'Matrícula não encontrada para este pagamento' });
       }
       
+      // Registrar auditoria de webhook
+      await logEnrollmentAudit(
+        req,
+        enrollment.id,
+        "payment_update",
+        "system",
+        { 
+          gateway: "lytex", 
+          event: req.body.status || 'status desconhecido',
+          newStatus: status
+        },
+        { status: enrollment.status },
+        { status: status, webhookData: req.body },
+        enrollment.poloId
+      );
+      
       // Atualizar o status da matrícula
       await storage.updateEnrollmentStatus(
         enrollment.id,
         status,
         `Status atualizado pelo webhook Lytex: ${req.body.status || 'status desconhecido'}`,
         undefined,
-        req.body
+        req.body,
+        "lytex_webhook"
       );
       
       res.status(200).json({ success: true });

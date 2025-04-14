@@ -1068,7 +1068,8 @@ export class DatabaseStorage implements IStorage {
     status: string, 
     reason?: string, 
     changedById?: number,
-    metadata?: any
+    metadata?: any,
+    sourceChannel?: string
   ): Promise<Enrollment | undefined> {
     const currentEnrollment = await this.getEnrollment(id);
     if (!currentEnrollment) return undefined;
@@ -1078,7 +1079,9 @@ export class DatabaseStorage implements IStorage {
       .update(enrollments)
       .set({
         status: status as any,
-        updatedAt: new Date()
+        updatedAt: new Date(),
+        updatedById: changedById,
+        sourceChannel: sourceChannel || 'system'
       })
       .where(eq(enrollments.id, id))
       .returning();
@@ -1090,7 +1093,9 @@ export class DatabaseStorage implements IStorage {
       newStatus: status as any,
       changeReason: reason || 'Atualização de status',
       changedById,
-      metadata: metadata ? JSON.stringify(metadata) : null
+      metadata: metadata ? JSON.stringify(metadata) : null,
+      sourceChannel: sourceChannel || 'system',
+      poloId: currentEnrollment.poloId
     });
     
     // Ações específicas por tipo de mudança de status
@@ -1123,14 +1128,16 @@ export class DatabaseStorage implements IStorage {
     return updatedEnrollment;
   }
   
-  async deleteEnrollment(id: number): Promise<boolean> {
+  async deleteEnrollment(id: number, deletedById?: number, sourceChannel?: string): Promise<boolean> {
     try {
       // Em vez de excluir permanentemente, podemos marcar como cancelada
       const [updatedEnrollment] = await db
         .update(enrollments)
         .set({ 
           status: 'cancelled',
-          updatedAt: new Date()
+          updatedAt: new Date(),
+          updatedById: deletedById,
+          sourceChannel: sourceChannel || 'admin_portal'
         })
         .where(eq(enrollments.id, id))
         .returning();
@@ -1142,6 +1149,8 @@ export class DatabaseStorage implements IStorage {
           previousStatus: updatedEnrollment.status,
           newStatus: 'cancelled',
           changeReason: 'Matrícula excluída manualmente',
+          changedById: deletedById,
+          sourceChannel: sourceChannel || 'admin_portal'
         });
       }
       
