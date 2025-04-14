@@ -387,7 +387,7 @@ export default function NewEnrollmentPage() {
       toast({
         title: "Aviso",
         description: "Não foi possível registrar o aluno no gateway de pagamento. O processo continuará, mas pode haver problemas na geração do pagamento.",
-        variant: "warning",
+        variant: "destructive",
       });
     }
   });
