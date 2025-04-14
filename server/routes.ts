@@ -31,6 +31,8 @@ import certificatesRoutes from "./routes/certificates";
 import certificateTemplatesRoutes from "./routes/certificate-templates";
 import certificateSignersRoutes from "./routes/certificate-signers";
 import { WebhookController } from "./controllers/webhook-controller";
+import subscriptionPlansRoutes from "./routes/subscription-plans";
+import subscriptionsRoutes from "./routes/subscriptions";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
@@ -47,6 +49,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Registro das rotas do Portal do Polo
   app.use("/api/polo", poloRoutes);
+  
+  // Registro das rotas de planos e assinaturas
+  app.use("/api/subscription-plans", subscriptionPlansRoutes);
+  app.use("/api/subscriptions", subscriptionsRoutes);
   
   // Registro das rotas de matrículas do Portal do Polo
   app.use("/api/polo", poloEnrollmentsRoutes);
