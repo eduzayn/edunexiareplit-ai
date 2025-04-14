@@ -342,31 +342,31 @@ export default function NewEnrollmentPage() {
     }
   });
   
-  // Função para avançar para o próximo passo
+  // Função para avançar para o próximo passo - simplificada
   const goToNextStep = () => {
     console.log("Função goToNextStep chamada");
     console.log("Passo atual:", step);
-    console.log("Tentando avançar para o passo:", step + 1);
+    console.log("Avançando para:", step + 1);
     
-    try {
-      // Atualizando o estado diretamente sem validação
-      const newStep = step + 1;
-      setStep(newStep);
-      console.log("Estado atualizado para o passo:", newStep);
-    } catch (error) {
-      console.error("Erro ao atualizar o passo:", error);
-    }
+    // Sem validações ou verificações adicionais - apenas avançar
+    setStep(prevStep => {
+      const newStep = prevStep + 1;
+      console.log("Novo passo:", newStep);
+      return newStep;
+    });
   };
 
   // Lidar com a submissão do formulário em cada etapa
   const onSubmit = (values: EnrollmentFormValues) => {
     console.log("Formulário submetido na etapa:", step);
     if (step < 4) {
-      // Usar a função goToNextStep em vez de setStep diretamente
+      // Simplesmente avançar para o próximo passo
       goToNextStep();
-    } else {
-      createEnrollmentMutation.mutate(values);
-    }
+      return;
+    } 
+    
+    // Na última etapa, enviar os dados
+    createEnrollmentMutation.mutate(values);
   };
   
   // Função para retornar para a etapa anterior
