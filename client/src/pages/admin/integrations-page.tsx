@@ -50,7 +50,9 @@ const IntegrationCard: React.FC<{
   onEdit: (integration: Integration) => void;
   onDelete: (id: number) => void;
   onTest: (id: number) => void;
-}> = ({ integration, onEdit, onDelete, onTest }) => {
+  onSetDefault?: (id: number) => void;
+  isDefault?: boolean;
+}> = ({ integration, onEdit, onDelete, onTest, onSetDefault, isDefault }) => {
   const typeLabels = {
     asaas: "Asaas - Pagamentos",
     lytex: "Lytex - Pagamentos",
@@ -60,20 +62,34 @@ const IntegrationCard: React.FC<{
   };
 
   const typeColor = {
-    asaas: "bg-blue-100 text-blue-700",
-    lytex: "bg-indigo-100 text-indigo-700",
-    openai: "bg-green-100 text-green-700",
-    elevenlabs: "bg-purple-100 text-purple-700",
-    zapi: "bg-yellow-100 text-yellow-700",
+    asaas: "bg-blue-100 text-blue-700 border-blue-200",
+    lytex: "bg-indigo-100 text-indigo-700 border-indigo-200",
+    openai: "bg-green-100 text-green-700 border-green-200",
+    elevenlabs: "bg-purple-100 text-purple-700 border-purple-200",
+    zapi: "bg-yellow-100 text-yellow-700 border-yellow-200",
+  };
+  
+  const typeDescriptions = {
+    asaas: "Gateway de pagamento para boletos, cartões e PIX",
+    lytex: "Plataforma de pagamentos para cobrança de mensalidades",
+    openai: "Inteligência artificial para geração de conteúdo",
+    elevenlabs: "Conversão de texto em áudio com voz natural",
+    zapi: "Integração com WhatsApp para comunicação",
   };
 
   return (
-    <Card className="mb-4 relative">
+    <Card className={`mb-4 relative ${isDefault ? `border-2 ${typeColor[integration.type].split(' ')[2]}` : ''}`}>
+      {isDefault && (
+        <div className="absolute -top-3 left-3 bg-white border border-primary text-primary text-xs px-2 py-0.5 rounded-full font-medium">
+          Padrão
+        </div>
+      )}
+      
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
           <div>
             <CardTitle className="text-lg">{integration.name}</CardTitle>
-            <span className={`inline-block px-2 py-1 rounded-md text-xs font-medium mt-1 ${typeColor[integration.type]}`}>
+            <span className={`inline-block px-2 py-1 rounded-md text-xs font-medium mt-1 ${typeColor[integration.type].split(' ').slice(0, 2).join(' ')}`}>
               {typeLabels[integration.type]}
             </span>
           </div>
@@ -93,6 +109,12 @@ const IntegrationCard: React.FC<{
                   <Edit className="h-4 w-4 mr-2" />
                   Editar
                 </DropdownMenuItem>
+                {onSetDefault && !isDefault && (
+                  <DropdownMenuItem onClick={() => onSetDefault(integration.id)}>
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Definir como Padrão
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem className="text-red-600" onClick={() => onDelete(integration.id)}>
                   <Trash2 className="h-4 w-4 mr-2" />
                   Excluir
@@ -103,15 +125,16 @@ const IntegrationCard: React.FC<{
         </div>
       </CardHeader>
       <CardContent>
-        <div className="text-sm text-muted-foreground mb-2">
+        <p className="text-sm text-muted-foreground mb-3">
+          {typeDescriptions[integration.type]}
+        </p>
+        <div className="text-sm text-muted-foreground mb-3 mt-3 border-t pt-3 border-dashed">
           <span className="block">Chave de API: {integration.apiKey}</span>
           {integration.apiSecret && <span className="block">Chave Secreta: {integration.apiSecret}</span>}
         </div>
-        {!integration.isActive && (
-          <div className="absolute top-2 right-2 bg-red-100 text-red-800 text-xs px-2 py-1 rounded">
-            Inativo
-          </div>
-        )}
+        <div className={`absolute top-2 right-2 ${integration.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'} text-xs px-2 py-1 rounded-full font-medium`}>
+          {integration.isActive ? 'Ativo' : 'Inativo'}
+        </div>
       </CardContent>
     </Card>
   );
