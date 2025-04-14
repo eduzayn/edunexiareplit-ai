@@ -142,6 +142,18 @@ export default function CertificationIssuePage() {
     );
   };
   
+  // Lista de modelos de certificado disponíveis
+  const certificateTemplates = [
+    { id: 1, name: "Modelo Padrão" },
+    { id: 2, name: "Modelo Alternativo" }
+  ];
+  
+  // Signatários disponíveis para assinatura do certificado
+  const availableSigners = [
+    { id: 1, name: "Ana Lúcia", role: "Diretora Acadêmica" },
+    { id: 2, name: "Carlos Alberto", role: "Coordenador de Pós-Graduação" }
+  ];
+  
   // Função para verificar se todos estão selecionados
   const areAllSelected = selectedStudents.length === eligibleStudents.length && eligibleStudents.length > 0;
   
@@ -395,34 +407,218 @@ export default function CertificationIssuePage() {
       
       {/* Diálogo de pré-visualização de certificado */}
       <Dialog open={openPreviewDialog} onOpenChange={setOpenPreviewDialog}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-5xl">
           <DialogHeader>
             <DialogTitle>Pré-visualização do Certificado</DialogTitle>
             <DialogDescription>
-              {selectedCertificate?.student?.name} - {selectedCertificate?.student?.course}
+              Configure os detalhes do certificado antes da emissão
             </DialogDescription>
           </DialogHeader>
           
-          <div className="bg-gray-100 rounded-md p-4 h-[400px] flex justify-center items-center">
-            <div className="text-center">
-              <AwardIcon className="mx-auto h-16 w-16 text-gray-400 mb-4" />
-              <p className="text-lg font-medium mb-2">Preview do Certificado</p>
-              <p className="text-sm text-gray-500">
-                Aqui será exibida uma prévia do certificado que será gerado.
-              </p>
-            </div>
-          </div>
+          <Tabs defaultValue="preview">
+            <TabsList className="mb-4">
+              <TabsTrigger value="preview">Pré-visualização</TabsTrigger>
+              <TabsTrigger value="details">Detalhes do Certificado</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="preview">
+              <div className="bg-gray-100 rounded-md p-4 h-[400px] flex justify-center items-center">
+                <div className="text-center">
+                  <AwardIcon className="mx-auto h-16 w-16 text-gray-400 mb-4" />
+                  <p className="text-lg font-medium mb-2">Preview do Certificado</p>
+                  <p className="text-sm text-gray-500">
+                    Aqui será exibida uma prévia do certificado que será gerado.
+                  </p>
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="details">
+              <ScrollArea className="h-[400px] rounded-md border p-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h3 className="text-lg font-medium mb-4">Configurações do Certificado</h3>
+                    
+                    <div className="space-y-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="certificate-model">Modelo:</Label>
+                        <select 
+                          id="certificate-model" 
+                          className="w-full p-2 border rounded-md"
+                          defaultValue={certificateTemplates[0].id}
+                        >
+                          {certificateTemplates.map(template => (
+                            <option key={template.id} value={template.id}>
+                              {template.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      
+                      <div className="grid gap-2">
+                        <Label htmlFor="certificate-title">Título:</Label>
+                        <select 
+                          id="certificate-title" 
+                          className="w-full p-2 border rounded-md"
+                        >
+                          <option value="certificado">Certificado</option>
+                          <option value="diploma">Diploma</option>
+                        </select>
+                      </div>
+                      
+                      <div className="grid gap-2">
+                        <Label htmlFor="certificate-signature">Assinatura:</Label>
+                        <select 
+                          id="certificate-signature" 
+                          className="w-full p-2 border rounded-md"
+                          defaultValue={availableSigners[0].id}
+                        >
+                          {availableSigners.map(signer => (
+                            <option key={signer.id} value={signer.id}>
+                              {signer.name} - {signer.role}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-lg font-medium mb-4">Dados do Aluno</h3>
+                    
+                    <div className="space-y-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="student-name">Nome do Aluno:</Label>
+                        <Input 
+                          id="student-name" 
+                          defaultValue={selectedCertificate?.student?.name || ""} 
+                          readOnly 
+                        />
+                      </div>
+                      
+                      <div className="grid gap-2">
+                        <Label htmlFor="student-document">Documento (CPF):</Label>
+                        <Input 
+                          id="student-document" 
+                          defaultValue={selectedCertificate?.student?.cpf || ""} 
+                          readOnly 
+                        />
+                      </div>
+                      
+                      <div className="grid gap-2">
+                        <Label htmlFor="student-naturalidade">Naturalidade:</Label>
+                        <Input 
+                          id="student-naturalidade" 
+                          placeholder="Cidade de nascimento" 
+                        />
+                      </div>
+                      
+                      <div className="grid gap-2">
+                        <Label htmlFor="student-birth-date">Data de Nascimento:</Label>
+                        <Input 
+                          id="student-birth-date" 
+                          type="date" 
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="col-span-2">
+                    <h3 className="text-lg font-medium mb-4">Dados do Curso</h3>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="course-name">Nome do Curso:</Label>
+                        <Input 
+                          id="course-name" 
+                          defaultValue={selectedCertificate?.student?.course || ""} 
+                          readOnly 
+                        />
+                      </div>
+                      
+                      <div className="grid gap-2">
+                        <Label htmlFor="course-area">Área de Conhecimento:</Label>
+                        <Input 
+                          id="course-area" 
+                          placeholder="Ex: Ciências Humanas" 
+                        />
+                      </div>
+                      
+                      <div className="grid gap-2">
+                        <Label htmlFor="course-start">Início do Período:</Label>
+                        <Input 
+                          id="course-start" 
+                          type="date" 
+                        />
+                      </div>
+                      
+                      <div className="grid gap-2">
+                        <Label htmlFor="course-end">Fim do Período:</Label>
+                        <Input 
+                          id="course-end" 
+                          type="date" 
+                          defaultValue={selectedCertificate?.student?.completionDate || ""}
+                        />
+                      </div>
+                      
+                      <div className="grid gap-2">
+                        <Label htmlFor="course-hours">Total de Horas:</Label>
+                        <Input 
+                          id="course-hours" 
+                          type="number" 
+                          defaultValue={selectedCertificate?.student?.completedHours || ""}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="mt-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <Label>Disciplinas:</Label>
+                        <Button variant="outline" size="sm">
+                          <PlusIcon className="w-4 h-4 mr-1" />
+                          Adicionar Disciplina
+                        </Button>
+                      </div>
+                      
+                      <div className="border rounded-md">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Nome da Disciplina</TableHead>
+                              <TableHead>Carga Horária</TableHead>
+                              <TableHead className="w-20">Ações</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            <TableRow>
+                              <TableCell className="font-medium">Disciplina de Exemplo</TableCell>
+                              <TableCell>40h</TableCell>
+                              <TableCell>
+                                <Button variant="ghost" size="icon">
+                                  <TrashIcon className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </ScrollArea>
+            </TabsContent>
+          </Tabs>
           
-          <DialogFooter className="flex justify-between">
+          <DialogFooter className="flex justify-between pt-4">
             <div>
               <Button variant="outline" onClick={() => setOpenPreviewDialog(false)}>
-                Fechar
+                Cancelar
               </Button>
             </div>
             <div className="flex gap-2">
               <Button variant="outline">
                 <PrinterIcon className="mr-2 h-4 w-4" />
-                Imprimir
+                Imprimir Pré-visualização
               </Button>
               <Button onClick={() => {
                 setOpenPreviewDialog(false);
