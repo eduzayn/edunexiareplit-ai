@@ -185,6 +185,29 @@ export default function IntegrationsPage() {
     },
   });
 
+  // Consulta para buscar integrações padrão
+  const {
+    data: defaultIntegrationsData,
+    isLoading: isLoadingDefaults,
+  } = useQuery({
+    queryKey: ["/api/integrations/defaults"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/integrations/defaults");
+      return await res.json();
+    },
+  });
+  
+  // Atualiza o estado quando os dados de integrações padrão são carregados
+  useEffect(() => {
+    if (defaultIntegrationsData) {
+      const defaultMap: Record<string, number> = {};
+      Object.entries(defaultIntegrationsData).forEach(([type, integration]: [string, any]) => {
+        defaultMap[type] = integration.id;
+      });
+      setDefaultIntegrations(defaultMap);
+    }
+  }, [defaultIntegrationsData]);
+
   // Mutação para criar integração
   const createMutation = useMutation({
     mutationFn: async (data: IntegrationFormData) => {
@@ -323,7 +346,9 @@ export default function IntegrationsPage() {
       return await res.json();
     },
     onSuccess: (data) => {
+      // Invalidar todas as consultas relacionadas
       queryClient.invalidateQueries({ queryKey: ["/api/integrations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/integrations/defaults"] });
       
       // Atualiza o estado de integrações padrão
       setDefaultIntegrations(prev => ({
@@ -385,12 +410,19 @@ export default function IntegrationsPage() {
     );
   }
 
-  const isMobile = useIsMobile();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const sidebarItems = getAdminSidebarItems(location);
   
   return (
     <div className="flex h-screen bg-background">
-      <Sidebar items={sidebarItems} />
+      <Sidebar 
+        items={sidebarItems} 
+        user={user}
+        portalType="admin"
+        portalColor="blue"
+        isMobileMenuOpen={isMobileMenuOpen}
+        setIsMobileMenuOpen={setIsMobileMenuOpen}
+      />
       
       <div className="flex-1 flex flex-col overflow-hidden">
         <div className="p-6">

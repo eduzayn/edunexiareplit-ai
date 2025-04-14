@@ -1,7 +1,7 @@
 import { Request, Response, Router } from "express";
 import { db } from "../db";
 import { integrations } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { requireAdmin } from "../middleware/auth";
 import { InsertIntegration } from "@shared/schema";
 import { z } from "zod";
@@ -244,6 +244,147 @@ router.delete('/:id', requireAdmin, async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Erro ao excluir integração:", error);
     res.status(500).json({ error: "Erro ao excluir integração" });
+  }
+});
+
+// Definir integração como padrão para seu tipo
+router.put('/:id/set-default', requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id);
+    
+    // Verificar se a integração existe
+    const [integration] = await db.select().from(integrations).where(eq(integrations.id, id));
+    
+    if (!integration) {
+      return res.status(404).json({ error: "Integração não encontrada" });
+    }
+    
+    // Obtendo o tipo da integração que será definida como padrão
+    const { type } = integration;
+    
+    // Primeiro, limpar a configuração existente para o tipo 
+    // (adiciona {isDefault: false} no additionalConfig de todas as integrações do mesmo tipo)
+    await db.update(integrations)
+      .set({
+        additionalConfig: sql`jsonb_set(COALESCE("additional_config", '{}'::jsonb), '{isDefault}', 'false'::jsonb)`
+      })
+      .where(eq(integrations.type, type));
+    
+    // Em seguida, definir a integração selecionada como padrão
+    await db.update(integrations)
+      .set({
+        additionalConfig: sql`jsonb_set(COALESCE("additional_config", '{}'::jsonb), '{isDefault}', 'true'::jsonb)`
+      })
+      .where(eq(integrations.id, id));
+    
+    // Buscar a integração atualizada
+    const [updatedIntegration] = await db.select().from(integrations).where(eq(integrations.id, id));
+    
+    // Mascararar as chaves da API
+    const maskedApiKey = maskApiKey(decryptApiKey(updatedIntegration.apiKey));
+    const maskedApiSecret = updatedIntegration.apiSecret 
+      ? maskApiKey(decryptApiKey(updatedIntegration.apiSecret)) 
+      : null;
+    
+    const maskedResult = {
+      ...updatedIntegration,
+      apiKey: maskedApiKey,
+      apiSecret: maskedApiSecret
+    };
+    
+    res.json({
+      ...maskedResult,
+      type: type, // Retornamos o tipo explicitamente para uso pelo cliente
+      message: `Integração definida como padrão para ${type}`
+    });
+  } catch (error) {
+    console.error("Erro ao definir integração como padrão:", error);
+    res.status(500).json({ 
+      error: "Erro ao definir integração como padrão", 
+      details: error instanceof Error ? error.message : "Erro desconhecido" 
+    });
+  }
+});
+
+// Obter a integração padrão para um tipo específico
+router.get('/default/:type', requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const type = req.params.type as any;
+    
+    // Verificar se o tipo é válido
+    if (!['asaas', 'lytex', 'openai', 'elevenlabs', 'zapi'].includes(type)) {
+      return res.status(400).json({ error: "Tipo de integração inválido" });
+    }
+    
+    // Buscar a integração padrão para o tipo
+    const [defaultIntegration] = await db.select()
+      .from(integrations)
+      .where(
+        eq(integrations.type, type),
+        sql`additional_config->>'isDefault' = 'true'`
+      );
+    
+    if (!defaultIntegration) {
+      return res.status(404).json({ 
+        error: "Nenhuma integração padrão encontrada para este tipo",
+        type
+      });
+    }
+    
+    // Mascarar as chaves de API para exibição
+    const maskedApiKey = maskApiKey(decryptApiKey(defaultIntegration.apiKey));
+    const maskedApiSecret = defaultIntegration.apiSecret 
+      ? maskApiKey(decryptApiKey(defaultIntegration.apiSecret)) 
+      : null;
+    
+    const maskedResult = {
+      ...defaultIntegration,
+      apiKey: maskedApiKey,
+      apiSecret: maskedApiSecret
+    };
+    
+    res.json(maskedResult);
+  } catch (error) {
+    console.error("Erro ao buscar integração padrão:", error);
+    res.status(500).json({ 
+      error: "Erro ao buscar integração padrão", 
+      details: error instanceof Error ? error.message : "Erro desconhecido" 
+    });
+  }
+});
+
+// Obter todas as integrações padrão
+router.get('/defaults', requireAdmin, async (req: Request, res: Response) => {
+  try {
+    // Buscar todas as integrações definidas como padrão
+    const defaultIntegrations = await db.select()
+      .from(integrations)
+      .where(sql`additional_config->>'isDefault' = 'true'`);
+    
+    // Converter para um objeto mapeado por tipo
+    const defaultMap: Record<string, any> = {};
+    
+    for (const integration of defaultIntegrations) {
+      // Mascarar as chaves de API para exibição
+      const maskedApiKey = maskApiKey(decryptApiKey(integration.apiKey));
+      const maskedApiSecret = integration.apiSecret 
+        ? maskApiKey(decryptApiKey(integration.apiSecret)) 
+        : null;
+      
+      defaultMap[integration.type] = {
+        ...integration,
+        apiKey: maskedApiKey,
+        apiSecret: maskedApiSecret
+      };
+    }
+    
+    res.json(defaultMap);
+  } catch (error) {
+    console.error("Erro ao buscar integrações padrão:", error);
+    res.status(500).json({ 
+      error: "Erro ao buscar integrações padrão", 
+      details: error instanceof Error ? error.message : "Erro desconhecido" 
+    });
   }
 });
 
