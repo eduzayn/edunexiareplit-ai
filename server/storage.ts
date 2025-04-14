@@ -1600,6 +1600,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateClient(id: number, clientData: Partial<InsertClient>): Promise<Client | undefined> {
+    // Primeiro verificamos se o cliente existe e já tem integração com Asaas
+    const existingClient = await this.getClient(id);
+    if (!existingClient) {
+      return undefined;
+    }
+
+    // Atualizamos o cliente no banco de dados
     const [updatedClient] = await db
       .update(clients)
       .set({
@@ -1608,6 +1615,42 @@ export class DatabaseStorage implements IStorage {
       })
       .where(eq(clients.id, id))
       .returning();
+
+    try {
+      // Importamos e usamos o serviço do Asaas
+      const { AsaasService } = await import('./services/asaas-service');
+      
+      if (existingClient.asaasId) {
+        // Se já existe ID do Asaas, atualizamos o cliente
+        await AsaasService.updateCustomer(existingClient.asaasId, {
+          ...existingClient,
+          ...clientData
+        });
+        console.log(`Cliente atualizado no Asaas (ID: ${existingClient.asaasId})`);
+      } else {
+        // Se não existe ID do Asaas, criamos o cliente
+        const asaasResponse = await AsaasService.createCustomer(
+          { ...existingClient, ...clientData },
+          existingClient.id
+        );
+        
+        // Atualizamos o cliente com o ID do Asaas
+        const [clientWithAsaasId] = await db
+          .update(clients)
+          .set({
+            asaasId: asaasResponse.id,
+            updatedAt: new Date()
+          })
+          .where(eq(clients.id, id))
+          .returning();
+          
+        return clientWithAsaasId;
+      }
+    } catch (error) {
+      console.error('Erro ao integrar cliente com Asaas na atualização:', error);
+      // Continuamos mesmo se houver erro na integração
+    }
+    
     return updatedClient;
   }
 

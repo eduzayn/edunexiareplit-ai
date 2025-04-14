@@ -2152,6 +2152,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdById: req.user.id
       });
       
+      // Verificar integração com Asaas - tentar buscar cliente pelo CPF/CNPJ
+      try {
+        const { AsaasService } = await import('./services/asaas-service');
+        const existingAsaasCustomer = await AsaasService.getCustomerByCpfCnpj(clientData.cpfCnpj);
+        
+        if (existingAsaasCustomer) {
+          console.log(`Cliente já existe no Asaas com o CPF/CNPJ ${clientData.cpfCnpj}. ID Asaas: ${existingAsaasCustomer.id}`);
+          
+          // Incluir o ID do Asaas nos dados do cliente
+          clientData.asaasId = existingAsaasCustomer.id;
+        }
+      } catch (asaasError) {
+        console.warn('Erro ao verificar cliente no Asaas:', asaasError);
+        // Continuamos mesmo se não conseguirmos verificar o cliente no Asaas
+      }
+      
       const client = await storage.createClient(clientData);
       res.status(201).json(client);
     } catch (error) {
@@ -2178,6 +2194,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Validar os dados da atualização
       const updateData = insertClientSchema.partial().parse(req.body);
+      
+      // Verificar se o CPF/CNPJ está sendo alterado e se precisamos verificar no Asaas
+      if (updateData.cpfCnpj && updateData.cpfCnpj !== existingClient.cpfCnpj && !existingClient.asaasId) {
+        try {
+          const { AsaasService } = await import('./services/asaas-service');
+          const existingAsaasCustomer = await AsaasService.getCustomerByCpfCnpj(updateData.cpfCnpj);
+          
+          if (existingAsaasCustomer) {
+            console.log(`Cliente já existe no Asaas com o CPF/CNPJ ${updateData.cpfCnpj}. ID Asaas: ${existingAsaasCustomer.id}`);
+            
+            // Incluir o ID do Asaas nos dados da atualização
+            updateData.asaasId = existingAsaasCustomer.id;
+          }
+        } catch (asaasError) {
+          console.warn('Erro ao verificar cliente no Asaas:', asaasError);
+          // Continuamos mesmo se não conseguirmos verificar o cliente no Asaas
+        }
+      }
       
       const updatedClient = await storage.updateClient(id, updateData);
       res.json(updatedClient);
