@@ -21,8 +21,7 @@ import PolosPage from "@/pages/admin/polos-page";
 import PartnersPage from "@/pages/admin/partners-page";
 import FinancialPage from "@/pages/admin/financial-page";
 import ReportsPage from "@/pages/admin/reports-page";
-import EnrollmentsPage from "@/pages/admin/enrollments-page";
-import AdminNewEnrollmentPage from "@/pages/admin/new-enrollment-page";
+// Módulo de Matrículas removido (substituído pelo CRM e Gestão Financeira)
 import IntegrationsPage from "@/pages/admin/integrations-page";
 import CertificationTemplatesPage from "@/pages/admin/certification/templates-page";
 import CertificationIssuePage from "@/pages/admin/certification/issue-page";
@@ -198,12 +197,7 @@ function Router() {
       <Route path="/admin/financial">
         {() => user?.portalType === "admin" ? <FinancialPage /> : <Redirect to="/admin" />}
       </Route>
-      <Route path="/admin/enrollments">
-        {() => user?.portalType === "admin" ? <EnrollmentsPage /> : <Redirect to="/admin" />}
-      </Route>
-      <Route path="/admin/enrollments/new">
-        {() => user?.portalType === "admin" ? <AdminNewEnrollmentPage /> : <Redirect to="/admin" />}
-      </Route>
+      {/* Rotas de matrículas removidas (substituídas pelo módulo CRM e Gestão) */}
       <Route path="/admin/reports">
         {() => user?.portalType === "admin" ? <ReportsPage /> : <Redirect to="/admin" />}
       </Route>

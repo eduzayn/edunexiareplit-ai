@@ -204,12 +204,6 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
       name: "Operacional",
       icon: <FolderIcon />,
       items: [
-        {
-          name: "Matrículas",
-          icon: <AssignmentIcon />,
-          href: "/admin/enrollments",
-          active: currentPath === "/admin/enrollments" || (currentPath && currentPath.includes("/admin/enrollments/"))
-        },
         { 
           name: "Financeiro Empresarial", 
           icon: <MonetizationOnIcon />, 
@@ -225,13 +219,6 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
       ]
     }, currentPath),
     items: [
-      {
-        name: "Matrículas",
-        icon: <AssignmentIcon />,
-        href: "/admin/enrollments",
-        active: currentPath === "/admin/enrollments" || (currentPath && currentPath.includes("/admin/enrollments/"))
-      },
-
       { 
         name: "Financeiro Empresarial", 
         icon: <MonetizationOnIcon />, 
