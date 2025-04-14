@@ -25,7 +25,10 @@ import {
   PlusIcon, 
   SearchIcon, 
   FilterIcon,
-  BuildingStoreIcon
+  EyeIcon,
+  MailIcon,
+  PhoneIcon,
+  BuildingIcon
 } from "@/components/ui/icons";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -39,6 +42,18 @@ export default function ContactsPage() {
     queryKey: ["/api/crm/contacts"],
     enabled: false, // Desabilitado até termos a API real
   });
+
+  const getContactRoleBadge = (role: string) => {
+    const roleMap: Record<string, React.ReactNode> = {
+      decision_maker: <Badge className="bg-blue-500">Decisor</Badge>,
+      influencer: <Badge className="bg-purple-500">Influenciador</Badge>,
+      technical: <Badge className="bg-green-500">Técnico</Badge>,
+      financial: <Badge className="bg-yellow-500">Financeiro</Badge>,
+      admin: <Badge className="bg-gray-500">Administrativo</Badge>,
+    };
+
+    return roleMap[role] || <Badge>{role}</Badge>;
+  };
 
   return (
     <AdminLayout>
@@ -60,14 +75,14 @@ export default function ContactsPage() {
           <CardHeader className="pb-3">
             <CardTitle>Listagem de Contatos</CardTitle>
             <CardDescription>
-              Visualize e gerencie todos os contatos registrados no sistema.
+              Visualize e gerencie todas as pessoas de contato.
             </CardDescription>
             <div className="flex items-center space-x-2 pt-2">
               <div className="relative flex-1">
                 <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
                 <Input
                   type="search"
-                  placeholder="Buscar por nome, email ou cargo..."
+                  placeholder="Buscar por nome, cargo ou empresa..."
                   className="pl-8"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -101,57 +116,133 @@ export default function ContactsPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Nome</TableHead>
+                    <TableHead>Empresa</TableHead>
+                    <TableHead>Cargo</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Telefone</TableHead>
-                    <TableHead>Cargo</TableHead>
-                    <TableHead>Cliente</TableHead>
-                    <TableHead>Departamento</TableHead>
+                    <TableHead>Função</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {/* Dados de exemplo - serão substituídos por dados da API */}
                   <TableRow>
-                    <TableCell className="font-medium">Ana Carolina Ferreira</TableCell>
-                    <TableCell>ana.carolina@alpha.com.br</TableCell>
-                    <TableCell>(11) 98765-4321</TableCell>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center">
+                        <ContactIcon className="mr-2 h-4 w-4" />
+                        Ana Luiza Mendes
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center">
+                        <BuildingIcon className="mr-2 h-4 w-4 text-gray-500" />
+                        Empresa ABC Ltda
+                      </div>
+                    </TableCell>
                     <TableCell>Diretora Financeira</TableCell>
                     <TableCell>
                       <div className="flex items-center">
-                        <BuildingStoreIcon className="mr-2 h-4 w-4" />
-                        Empresa Alpha Ltda.
+                        <MailIcon className="mr-2 h-4 w-4 text-gray-500" />
+                        ana.mendes@empresaabc.com.br
                       </div>
                     </TableCell>
-                    <TableCell>Financeiro</TableCell>
+                    <TableCell>
+                      <div className="flex items-center">
+                        <PhoneIcon className="mr-2 h-4 w-4 text-gray-500" />
+                        (11) 98765-4321
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {getContactRoleBadge('decision_maker')}
+                    </TableCell>
                     <TableCell className="text-right">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => navigate("/admin/crm/contacts/1")}
                       >
-                        Ver detalhes
+                        <EyeIcon className="mr-2 h-4 w-4" />
+                        Detalhes
                       </Button>
                     </TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="font-medium">Roberto Almeida</TableCell>
-                    <TableCell>roberto.almeida@alpha.com.br</TableCell>
-                    <TableCell>(11) 97654-3210</TableCell>
-                    <TableCell>Gerente de Compras</TableCell>
-                    <TableCell>
+                    <TableCell className="font-medium">
                       <div className="flex items-center">
-                        <BuildingStoreIcon className="mr-2 h-4 w-4" />
-                        Empresa Alpha Ltda.
+                        <ContactIcon className="mr-2 h-4 w-4" />
+                        Ricardo Santos
                       </div>
                     </TableCell>
-                    <TableCell>Compras</TableCell>
+                    <TableCell>
+                      <div className="flex items-center">
+                        <BuildingIcon className="mr-2 h-4 w-4 text-gray-500" />
+                        Instituto Educacional XYZ
+                      </div>
+                    </TableCell>
+                    <TableCell>Diretor Acadêmico</TableCell>
+                    <TableCell>
+                      <div className="flex items-center">
+                        <MailIcon className="mr-2 h-4 w-4 text-gray-500" />
+                        ricardo.santos@institutoxyz.edu.br
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center">
+                        <PhoneIcon className="mr-2 h-4 w-4 text-gray-500" />
+                        (21) 99876-5432
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {getContactRoleBadge('technical')}
+                    </TableCell>
                     <TableCell className="text-right">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => navigate("/admin/crm/contacts/2")}
                       >
-                        Ver detalhes
+                        <EyeIcon className="mr-2 h-4 w-4" />
+                        Detalhes
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center">
+                        <ContactIcon className="mr-2 h-4 w-4" />
+                        Patrícia Oliveira
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center">
+                        <BuildingIcon className="mr-2 h-4 w-4 text-gray-500" />
+                        Faculdade Metropolitana
+                      </div>
+                    </TableCell>
+                    <TableCell>Coordenadora de Compras</TableCell>
+                    <TableCell>
+                      <div className="flex items-center">
+                        <MailIcon className="mr-2 h-4 w-4 text-gray-500" />
+                        patricia.oliveira@facmetro.edu.br
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center">
+                        <PhoneIcon className="mr-2 h-4 w-4 text-gray-500" />
+                        (31) 97654-3210
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {getContactRoleBadge('financial')}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate("/admin/crm/contacts/3")}
+                      >
+                        <EyeIcon className="mr-2 h-4 w-4" />
+                        Detalhes
                       </Button>
                     </TableCell>
                   </TableRow>

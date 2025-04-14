@@ -21,10 +21,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { 
-  UserPlusIcon, 
+  LeadIcon, 
   PlusIcon, 
   SearchIcon, 
-  FilterIcon 
+  FilterIcon,
+  EyeIcon,
+  UserIcon
 } from "@/components/ui/icons";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -39,6 +41,19 @@ export default function LeadsPage() {
     enabled: false, // Desabilitado até termos a API real
   });
 
+  const getStatusBadge = (status: string) => {
+    const statusMap: Record<string, React.ReactNode> = {
+      new: <Badge className="bg-blue-500">Novo</Badge>,
+      contacted: <Badge className="bg-yellow-500">Contatado</Badge>,
+      qualified: <Badge className="bg-green-500">Qualificado</Badge>,
+      negotiating: <Badge className="bg-purple-500">Em Negociação</Badge>,
+      won: <Badge className="bg-emerald-500">Convertido</Badge>,
+      lost: <Badge className="bg-red-500">Perdido</Badge>,
+    };
+
+    return statusMap[status] || <Badge>{status}</Badge>;
+  };
+
   return (
     <AdminLayout>
       <div className="container mx-auto py-6">
@@ -46,7 +61,7 @@ export default function LeadsPage() {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Leads</h1>
             <p className="text-gray-500">
-              Gerencie seus leads e oportunidades comerciais.
+              Gerenciamento de leads e prospecção de clientes.
             </p>
           </div>
           <Button onClick={() => navigate("/admin/crm/leads/new")}>
@@ -59,14 +74,14 @@ export default function LeadsPage() {
           <CardHeader className="pb-3">
             <CardTitle>Listagem de Leads</CardTitle>
             <CardDescription>
-              Visualize e gerencie todos os leads registrados no sistema.
+              Visualize e gerencie todos os leads registrados.
             </CardDescription>
             <div className="flex items-center space-x-2 pt-2">
               <div className="relative flex-1">
                 <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
                 <Input
                   type="search"
-                  placeholder="Buscar por nome, email ou empresa..."
+                  placeholder="Buscar por nome, email ou origem..."
                   className="pl-8"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -101,50 +116,87 @@ export default function LeadsPage() {
                   <TableRow>
                     <TableHead>Nome</TableHead>
                     <TableHead>Email</TableHead>
-                    <TableHead>Empresa</TableHead>
+                    <TableHead>Telefone</TableHead>
                     <TableHead>Origem</TableHead>
+                    <TableHead>Interesse</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Última Interação</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {/* Dados de exemplo - serão substituídos por dados da API */}
                   <TableRow>
-                    <TableCell className="font-medium">João Silva</TableCell>
-                    <TableCell>joao.silva@empresa.com.br</TableCell>
-                    <TableCell>Empresa A Ltda</TableCell>
-                    <TableCell>Site</TableCell>
-                    <TableCell>
-                      <Badge className="bg-yellow-500">Em Contato</Badge>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center">
+                        <UserIcon className="mr-2 h-4 w-4" />
+                        Marcela Oliveira
+                      </div>
                     </TableCell>
-                    <TableCell>10/04/2025 10:30</TableCell>
+                    <TableCell>marcela.oliveira@email.com</TableCell>
+                    <TableCell>(11) 99876-5432</TableCell>
+                    <TableCell>Site</TableCell>
+                    <TableCell>MBA em Gestão Empresarial</TableCell>
+                    <TableCell>
+                      {getStatusBadge('new')}
+                    </TableCell>
                     <TableCell className="text-right">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => navigate("/admin/crm/leads/1")}
                       >
-                        Ver detalhes
+                        <EyeIcon className="mr-2 h-4 w-4" />
+                        Detalhes
                       </Button>
                     </TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="font-medium">Maria Santos</TableCell>
-                    <TableCell>maria@contato.com.br</TableCell>
-                    <TableCell>Empresa B S.A.</TableCell>
-                    <TableCell>Indicação</TableCell>
-                    <TableCell>
-                      <Badge className="bg-green-500">Qualificado</Badge>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center">
+                        <UserIcon className="mr-2 h-4 w-4" />
+                        Roberto Mendes
+                      </div>
                     </TableCell>
-                    <TableCell>12/04/2025 14:15</TableCell>
+                    <TableCell>roberto.mendes@empresa.com.br</TableCell>
+                    <TableCell>(21) 98765-4321</TableCell>
+                    <TableCell>Indicação</TableCell>
+                    <TableCell>Especialização em Marketing Digital</TableCell>
+                    <TableCell>
+                      {getStatusBadge('contacted')}
+                    </TableCell>
                     <TableCell className="text-right">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => navigate("/admin/crm/leads/2")}
                       >
-                        Ver detalhes
+                        <EyeIcon className="mr-2 h-4 w-4" />
+                        Detalhes
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center">
+                        <UserIcon className="mr-2 h-4 w-4" />
+                        Carolina Souza
+                      </div>
+                    </TableCell>
+                    <TableCell>carolina.souza@outlook.com</TableCell>
+                    <TableCell>(31) 97654-3210</TableCell>
+                    <TableCell>Redes Sociais</TableCell>
+                    <TableCell>Graduação em Pedagogia</TableCell>
+                    <TableCell>
+                      {getStatusBadge('qualified')}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate("/admin/crm/leads/3")}
+                      >
+                        <EyeIcon className="mr-2 h-4 w-4" />
+                        Detalhes
                       </Button>
                     </TableCell>
                   </TableRow>

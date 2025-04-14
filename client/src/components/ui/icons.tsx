@@ -519,6 +519,47 @@ export function CRMIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
+export function LeadIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <circle cx="12" cy="8" r="5" />
+      <polyline points="10 16 10 22" />
+      <polyline points="14 16 14 22" />
+      <line x1="16" y1="19" x2="8" y2="19" />
+      <line x1="18" y1="12" x2="20" y2="12" />
+      <line x1="18" y1="8" x2="20" y2="8" />
+      <line x1="18" y1="4" x2="20" y2="4" />
+    </svg>
+  );
+}
+
+export function UserIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
+  );
+}
+
 // Dashboard e navegação
 export function DashboardIcon(props: React.SVGProps<SVGSVGElement>) {
   return (

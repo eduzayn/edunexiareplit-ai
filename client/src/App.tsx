@@ -217,6 +217,37 @@ function Router() {
         {() => user?.portalType === "admin" ? <CertificationSignersPage /> : <Redirect to="/admin" />}
       </Route>
       
+      {/* Rotas do Módulo CRM */}
+      <Route path="/admin/crm/leads">
+        {() => user?.portalType === "admin" ? <LeadsPage /> : <Redirect to="/admin" />}
+      </Route>
+      
+      <Route path="/admin/crm/clients">
+        {() => user?.portalType === "admin" ? <ClientsPage /> : <Redirect to="/admin" />}
+      </Route>
+      
+      <Route path="/admin/crm/contacts">
+        {() => user?.portalType === "admin" ? <ContactsPage /> : <Redirect to="/admin" />}
+      </Route>
+      
+      {/* Rotas do Módulo Financeiro */}
+      <Route path="/admin/finance/products">
+        {() => user?.portalType === "admin" ? <ProductsPage /> : <Redirect to="/admin" />}
+      </Route>
+      
+      <Route path="/admin/finance/invoices">
+        {() => user?.portalType === "admin" ? <InvoicesPage /> : <Redirect to="/admin" />}
+      </Route>
+      
+      <Route path="/admin/finance/payments">
+        {() => user?.portalType === "admin" ? <PaymentsPage /> : <Redirect to="/admin" />}
+      </Route>
+      
+      {/* Rotas do Módulo de Contratos */}
+      <Route path="/admin/contracts">
+        {() => user?.portalType === "admin" ? <ContractsPage /> : <Redirect to="/admin" />}
+      </Route>
+      
       <Route component={NotFound} />
     </Switch>
   );
