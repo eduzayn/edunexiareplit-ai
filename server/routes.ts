@@ -88,6 +88,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Erro ao buscar cursos" });
     }
   });
+  
+  // Listar modelos de contrato (versão pública)
+  app.get("/api/contract-templates", async (req, res) => {
+    try {
+      const institutionId = req.query.institutionId ? parseInt(req.query.institutionId.toString()) : undefined;
+
+      const contractTemplates = await storage.getContractTemplates(institutionId);
+      res.json(contractTemplates);
+    } catch (error) {
+      console.error("Error fetching public contract templates:", error);
+      res.status(500).json({ message: "Erro ao buscar modelos de contrato" });
+    }
+  });
 
   // Middleware para garantir que o usuário esteja autenticado
   const requireAuth = (req: Request, res: Response, next: NextFunction) => {
