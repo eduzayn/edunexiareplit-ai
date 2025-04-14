@@ -98,8 +98,42 @@ class LytexGateway {
     }
 
     try {
-      const response = await axios.post(`${this.baseUrl}/v2/auth/obtain_token`, {
-        grantType: 'clientCredentials',
+      console.log('[LYTEX] Tentando obter token de acesso...');
+      
+      // Primeiro, tente com a API V2
+      try {
+        console.log('[LYTEX] Tentando autenticação com API V2...');
+        const responseV2 = await axios.post(`${this.baseUrl}/v2/auth/obtain_token`, {
+          grantType: 'clientCredentials',
+          clientId: this.clientId,
+          clientSecret: this.clientSecret
+        }, {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (responseV2.data && responseV2.data.accessToken) {
+          console.log('[LYTEX] Token obtido com sucesso via API V2');
+          this.accessToken = responseV2.data.accessToken;
+          
+          // Definir data de expiração (se disponível)
+          if (responseV2.data.expireAt) {
+            this.tokenExpiry = new Date(responseV2.data.expireAt);
+          } else {
+            // Padrão: 1 hora
+            this.tokenExpiry = new Date(Date.now() + 60 * 60 * 1000);
+          }
+
+          return this.accessToken;
+        }
+      } catch (v2Error) {
+        console.log(`[LYTEX] Falha na autenticação V2: ${(v2Error as Error).message}. Tentando V1...`);
+      }
+      
+      // Se V2 falhar, tente com a API V1
+      console.log('[LYTEX] Tentando autenticação com API V1...');
+      const responseV1 = await axios.post(`${this.baseUrl}/v1/auth/obtain_token`, {
         clientId: this.clientId,
         clientSecret: this.clientSecret
       }, {
@@ -108,12 +142,13 @@ class LytexGateway {
         }
       });
 
-      if (response.data && response.data.accessToken) {
-        this.accessToken = response.data.accessToken;
+      if (responseV1.data && responseV1.data.accessToken) {
+        console.log('[LYTEX] Token obtido com sucesso via API V1');
+        this.accessToken = responseV1.data.accessToken;
         
         // Definir data de expiração (se disponível)
-        if (response.data.expireAt) {
-          this.tokenExpiry = new Date(response.data.expireAt);
+        if (responseV1.data.expireAt) {
+          this.tokenExpiry = new Date(responseV1.data.expireAt);
         } else {
           // Padrão: 1 hora
           this.tokenExpiry = new Date(Date.now() + 60 * 60 * 1000);
@@ -124,11 +159,13 @@ class LytexGateway {
         throw new Error('Resposta da API Lytex não contém token');
       }
     } catch (error) {
+      console.error('[LYTEX] Erro detalhado na autenticação:', error);
       const axiosError = error as AxiosError;
       if (axiosError.response) {
+        console.error(`[LYTEX] Resposta de erro: Status ${axiosError.response.status}, Dados: ${JSON.stringify(axiosError.response.data)}`);
         throw new Error(`Erro na autenticação Lytex: ${axiosError.response.status} - ${JSON.stringify(axiosError.response.data)}`);
       }
-      throw new Error(`Falha ao obter token de acesso: ${error.message}`);
+      throw new Error(`Falha ao obter token de acesso: ${(error as Error).message}`);
     }
   }
 
@@ -222,35 +259,52 @@ class LytexGateway {
       // Validações básicas
       this.validateInvoiceData(invoiceData);
 
-      // Verificar campos obrigatórios para o cliente
-      if (!invoiceData.client._id) {
-        // Se não tem ID de cliente, precisamos preencher todos os dados obrigatórios
-        if (typeof invoiceData.client === 'object') {
-          // Garantir que o cliente tenha todos os campos obrigatórios
-          if (!invoiceData.client.name) {
-            invoiceData.client.name = 'Cliente';
-          }
-          if (!invoiceData.client.type) {
-            invoiceData.client.type = 'pf';
-          }
-          if (!invoiceData.client.cpfCnpj) {
-            invoiceData.client.cpfCnpj = '00000000000'; // CPF genérico para teste
-          }
-          if (!invoiceData.client.email) {
-            invoiceData.client.email = 'cliente@example.com'; // Email genérico para teste
-          }
-        } else {
-          // Se não tiver objeto cliente, criar um
-          invoiceData.client = {
-            _id: null,
-            name: 'Cliente',
-            type: 'pf',
-            cpfCnpj: '00000000000',
-            email: 'cliente@example.com'
-          };
+      // Tentar primeiro criar um cliente se necessário
+      let clientId = invoiceData.client._id;
+      
+      // Se não temos ID de cliente, tentamos criar um novo
+      if (!clientId) {
+        console.log('[LYTEX] Não há ID de cliente, tentando criar um novo cliente...');
+        
+        // Certifique-se de que temos todos os dados do cliente
+        if (!invoiceData.client.name || !invoiceData.client.email || !invoiceData.client.cpfCnpj) {
+          // Dados mínimos do cliente
+          console.log('[LYTEX] Preenchendo dados mínimos do cliente');
+          invoiceData.client.name = invoiceData.client.name || 'Cliente';
+          invoiceData.client.email = invoiceData.client.email || 'cliente@example.com';
+          invoiceData.client.cpfCnpj = invoiceData.client.cpfCnpj || '00000000000';
+          invoiceData.client.type = invoiceData.client.type || 'pf';
+        }
+        
+        try {
+          // Criar cliente
+          const newClient = await this.createClient({
+            name: invoiceData.client.name,
+            type: invoiceData.client.type,
+            cpfCnpj: invoiceData.client.cpfCnpj,
+            email: invoiceData.client.email,
+            cellphone: invoiceData.client.cellphone
+          });
+          
+          console.log(`[LYTEX] Cliente criado com sucesso, ID: ${newClient._id}`);
+          
+          // Agora usamos o ID do cliente criado
+          clientId = newClient._id;
+          
+          // Atualizar o objeto de requisição
+          invoiceData.client = { _id: clientId };
+        } catch (clientError) {
+          console.error('[LYTEX] Erro ao criar cliente:', clientError);
+          
+          // Se falhar ao criar cliente, preenchemos apenas o ID como null (API vai validar)
+          // Mas mantemos todos os dados do cliente para que a API possa criar implicitamente
+          invoiceData.client._id = null;
         }
       }
 
+      // Garantir que todos os campos obrigatórios estão presentes de acordo com a documentação v1
+      // https://docs-pay.lytex.com.br/documentacao/v1#tag/Fatura/operation/InvoiceController_create
+      
       console.log(`[LYTEX] Enviando dados para API: ${JSON.stringify(invoiceData, null, 2)}`);
       
       const response = await axios.post(`${this.baseUrl}/v1/invoices`, invoiceData, {
@@ -261,17 +315,19 @@ class LytexGateway {
       });
 
       if (response.data && response.data._id) {
+        console.log(`[LYTEX] Fatura criada com sucesso, ID: ${response.data._id}`);
         return response.data;
       }
 
       throw new Error('Resposta da API não contém dados da fatura criada');
     } catch (error) {
+      console.error('[LYTEX] Erro detalhado ao criar fatura:', error);
       const axiosError = error as AxiosError;
       if (axiosError.response) {
-        console.error(`Erro na API Lytex: Status ${axiosError.response.status}, Resposta: ${JSON.stringify(axiosError.response.data)}`);
+        console.error(`[LYTEX] Erro na API: Status ${axiosError.response.status}, Resposta: ${JSON.stringify(axiosError.response.data)}`);
         throw new Error(`Erro ao criar fatura: ${axiosError.response.status} - ${JSON.stringify(axiosError.response.data)}`);
       }
-      throw new Error(`Falha ao criar fatura: ${error.message}`);
+      throw new Error(`Falha ao criar fatura: ${(error as Error).message}`);
     }
   }
 
