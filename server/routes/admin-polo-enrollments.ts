@@ -32,12 +32,12 @@ router.get("/polo-enrollments", async (req: Request, res: Response) => {
 
     // Filtro de status
     if (status && status !== "all") {
-      whereConditions.push(eq(enrollments.status, status as string));
+      whereConditions.push(`${enrollments.status.name} = '${status}'`);
     }
 
     // Filtro de curso
     if (course && course !== "all") {
-      whereConditions.push(eq(enrollments.courseId, parseInt(course as string)));
+      whereConditions.push(`${enrollments.courseId.name} = ${parseInt(course as string)}`);
     }
 
     // Filtro de data
@@ -61,8 +61,8 @@ router.get("/polo-enrollments", async (req: Request, res: Response) => {
       }
 
       whereConditions.push(
-        gte(enrollments.enrollmentDate, startDate.toISOString()),
-        lte(enrollments.enrollmentDate, now.toISOString())
+        `${enrollments.enrollmentDate.name} >= '${startDate.toISOString()}'`,
+        `${enrollments.enrollmentDate.name} <= '${now.toISOString()}'`
       );
     }
 
@@ -75,11 +75,7 @@ router.get("/polo-enrollments", async (req: Request, res: Response) => {
         enrollmentDate: enrollments.enrollmentDate,
         amount: enrollments.amount,
         paymentMethod: enrollments.paymentMethod,
-        paymentStatus: enrollments.paymentStatus,
-        paymentDueDate: enrollments.paymentDueDate,
         paymentUrl: enrollments.paymentUrl,
-        documentsStatus: enrollments.documentsStatus,
-        hasContract: enrollments.hasContract,
         studentId: enrollments.studentId,
         studentName: users.name,
         studentEmail: users.email,
@@ -134,12 +130,9 @@ router.get("/available-courses", async (req: Request, res: Response) => {
         id: courses.id,
         name: courses.name,
         code: courses.code,
-        institutionId: courses.institutionId,
-        institutionName: institutions.name,
       })
       .from(courses)
-      .leftJoin(institutions, eq(courses.institutionId, institutions.id))
-      .where(eq(courses.isActive, true));
+      .where(`${courses.status.name} = 'published'`);
 
     return res.status(200).json(availableCourses);
   } catch (error) {
