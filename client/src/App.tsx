@@ -26,6 +26,7 @@ import AdminNewEnrollmentPage from "@/pages/admin/new-enrollment-page";
 import IntegrationsPage from "@/pages/admin/integrations-page";
 import CertificationTemplatesPage from "@/pages/admin/certification/templates-page";
 import CertificationIssuePage from "@/pages/admin/certification/issue-page";
+import CertificationSignersPage from "@/pages/admin/certification/signers-page";
 // Import student pages
 import StudentCoursesPage from "@/pages/student/courses-page";
 import CourseDetailPage from "@/pages/student/course-detail-page";
@@ -202,6 +203,10 @@ function Router() {
       
       <Route path="/admin/certification/issue">
         {() => user?.portalType === "admin" ? <CertificationIssuePage /> : <Redirect to="/admin" />}
+      </Route>
+      
+      <Route path="/admin/certification/signers">
+        {() => user?.portalType === "admin" ? <CertificationSignersPage /> : <Redirect to="/admin" />}
       </Route>
       
       <Route component={NotFound} />

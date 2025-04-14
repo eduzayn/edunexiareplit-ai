@@ -254,6 +254,12 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
           active: currentPath === "/admin/certification/templates" || (currentPath && currentPath.includes("/admin/certification/templates/"))
         },
         { 
+          name: "Signatários", 
+          icon: <FileCheckIcon />, 
+          href: "/admin/certification/signers",
+          active: currentPath === "/admin/certification/signers" || (currentPath && currentPath.includes("/admin/certification/signers/"))
+        },
+        { 
           name: "Emissão de Certificados", 
           icon: <BadgeCheckIcon />, 
           href: "/admin/certification/issue",
@@ -267,6 +273,12 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
         icon: <ScrollTextIcon />, 
         href: "/admin/certification/templates",
         active: currentPath === "/admin/certification/templates" || (currentPath && currentPath.includes("/admin/certification/templates/"))
+      },
+      { 
+        name: "Signatários", 
+        icon: <FileCheckIcon />, 
+        href: "/admin/certification/signers",
+        active: currentPath === "/admin/certification/signers" || (currentPath && currentPath.includes("/admin/certification/signers/"))
       },
       { 
         name: "Emissão de Certificados", 
