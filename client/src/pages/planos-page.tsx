@@ -60,8 +60,14 @@ export default function PlanosPage() {
   const { data: planosData, isLoading, error } = useQuery({
     queryKey: ['subscription-plans'],
     queryFn: async () => {
-      const response = await axios.get('/api/public/subscription-plans');
-      return response.data.plans;
+      try {
+        const response = await axios.get('/api/public/subscription-plans/public');
+        console.log('API response:', response.data);
+        return response.data.plans || [];
+      } catch (error) {
+        console.error('Erro ao buscar planos:', error);
+        return [];  // Retornar array vazio em caso de erro para evitar undefined
+      }
     }
   });
 
