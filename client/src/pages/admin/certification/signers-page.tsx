@@ -45,6 +45,7 @@ const signerFormSchema = z.object({
   name: z.string().min(3, {
     message: "Nome deve ter pelo menos 3 caracteres.",
   }),
+  // Título acadêmico e cargo serão combinados no campo 'role'
   title: z.string().min(2, {
     message: "Título deve ter pelo menos 2 caracteres.",
   }),
@@ -54,7 +55,7 @@ const signerFormSchema = z.object({
   institution: z.string().min(2, {
     message: "Instituição deve ter pelo menos 2 caracteres.",
   }),
-  signatureUrl: z.string().optional(),
+  signatureImageUrl: z.string().optional(),
 });
 
 type SignerFormValues = z.infer<typeof signerFormSchema>;
@@ -66,7 +67,7 @@ function SignerForm({
     title: "",
     position: "",
     institution: "",
-    signatureUrl: ""
+    signatureImageUrl: ""
   },
   onSubmit,
   isEditing = false
@@ -153,7 +154,7 @@ function SignerForm({
         
         <FormField
           control={form.control}
-          name="signatureUrl"
+          name="signatureImageUrl"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Assinatura Digital</FormLabel>
@@ -198,7 +199,15 @@ export default function CertificationSignersPage() {
   // Mutation para criar signatário
   const createSignerMutation = useMutation({
     mutationFn: async (newSigner: SignerFormValues) => {
-      const response = await apiRequest('/api/admin/certificate-signers', { method: 'POST', data: newSigner });
+      // Mapeia os campos do frontend para os campos esperados pelo backend
+      const signerData = {
+        name: newSigner.name,
+        role: `${newSigner.title}, ${newSigner.position}`, // Combina título e cargo no campo 'role'
+        signatureImageUrl: newSigner.signatureImageUrl,
+        isActive: true, // Por padrão, o signatário é ativo
+        institutionId: null // A escolha da instituição pode ser implementada em uma versão futura
+      };
+      const response = await apiRequest('/api/admin/certificate-signers', { method: 'POST', data: signerData });
       return response;
     },
     onSuccess: () => {
