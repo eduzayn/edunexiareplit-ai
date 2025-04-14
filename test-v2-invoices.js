@@ -1,3 +1,13 @@
+/**
+ * !!! IMPORTANTE: NÃO EXCLUIR ESTE ARQUIVO !!!
+ * 
+ * Este script é essencial para testar a integração com a API do Lytex v2.
+ * Ele contém testes específicos para o endpoint v2/invoices que é utilizado 
+ * para consultar faturas e sua integração com o sistema de pagamentos.
+ * 
+ * Mantenha este arquivo para referência e testes futuros da integração.
+ */
+
 // Script para testar o único endpoint v2 encontrado: /v2/invoices
 import axios from 'axios';
 

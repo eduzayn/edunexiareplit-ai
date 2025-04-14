@@ -1,3 +1,13 @@
+/**
+ * !!! IMPORTANTE: NÃO EXCLUIR ESTE ARQUIVO !!!
+ * 
+ * Este script é essencial para testar o adaptador do gateway de pagamento Lytex.
+ * Ele contém testes que validam o funcionamento correto da integração do 
+ * sistema com o gateway, incluindo registro de alunos e geração de cobranças.
+ * 
+ * Mantenha este arquivo para referência e testes futuros da integração.
+ */
+
 // Usando formato ESM (import)
 import { LytexGatewayAdapter } from './server/services/payment-gateways.js';
 
