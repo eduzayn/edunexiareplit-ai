@@ -12,7 +12,16 @@ import { users, type User, type InsertUser,
   enrollments, type Enrollment, type InsertEnrollment,
   enrollmentStatusHistory, type EnrollmentStatusHistory, type InsertEnrollmentStatusHistory,
   contractTemplates, type ContractTemplate, type InsertContractTemplate,
-  contracts, type Contract, type InsertContract
+  contracts, type Contract, type InsertContract,
+  // CRM
+  leads, type Lead, type InsertLead,
+  clients, type Client, type InsertClient,
+  contacts, type Contact, type InsertContact,
+  // Finanças
+  products, type Product, type InsertProduct,
+  invoices, type Invoice, type InsertInvoice,
+  invoiceItems, type InvoiceItem, type InsertInvoiceItem,
+  payments, type Payment, type InsertPayment
 } from "@shared/schema";
 import session from "express-session";
 import { Store as SessionStore } from "express-session";
@@ -168,6 +177,55 @@ export interface IStorage {
   // Gateway de pagamento
   createPayment(enrollment: Enrollment, gateway: string): Promise<{externalId: string, paymentUrl: string}>;
   getPaymentStatus(externalId: string, gateway: string): Promise<string>;
+  
+  // CRM - Leads
+  getLead(id: number): Promise<Lead | undefined>;
+  getLeads(search?: string, status?: string, limit?: number, offset?: number): Promise<Lead[]>;
+  createLead(lead: InsertLead): Promise<Lead>;
+  updateLead(id: number, lead: Partial<InsertLead>): Promise<Lead | undefined>;
+  deleteLead(id: number): Promise<boolean>;
+  convertLeadToClient(leadId: number, additionalData: any, createdById: number): Promise<Client>;
+  
+  // CRM - Clientes
+  getClient(id: number): Promise<Client | undefined>;
+  getClientByCPFCNPJ(cpfCnpj: string): Promise<Client | undefined>;
+  getClients(search?: string, status?: string, limit?: number, offset?: number): Promise<Client[]>;
+  createClient(client: InsertClient): Promise<Client>;
+  updateClient(id: number, client: Partial<InsertClient>): Promise<Client | undefined>;
+  deleteClient(id: number): Promise<boolean>;
+  
+  // CRM - Contatos
+  getContact(id: number): Promise<Contact | undefined>;
+  getContactsByClient(clientId: number): Promise<Contact[]>;
+  createContact(contact: InsertContact): Promise<Contact>;
+  updateContact(id: number, contact: Partial<InsertContact>): Promise<Contact | undefined>;
+  deleteContact(id: number): Promise<boolean>;
+  
+  // Finanças - Produtos/Serviços
+  getProduct(id: number): Promise<Product | undefined>;
+  getProducts(search?: string, type?: string, category?: string, limit?: number, offset?: number): Promise<Product[]>;
+  createProduct(product: InsertProduct): Promise<Product>;
+  updateProduct(id: number, product: Partial<InsertProduct>): Promise<Product | undefined>;
+  deleteProduct(id: number): Promise<boolean>;
+  
+  // Finanças - Faturas
+  getInvoice(id: number): Promise<Invoice | undefined>;
+  getInvoicesByClient(clientId: number): Promise<Invoice[]>;
+  getInvoices(search?: string, status?: string, clientId?: number, limit?: number, offset?: number): Promise<Invoice[]>;
+  createInvoiceWithItems(invoice: InsertInvoice, items: InsertInvoiceItem[]): Promise<Invoice>;
+  updateInvoiceStatus(id: number, status: string): Promise<Invoice | undefined>;
+  deleteInvoice(id: number): Promise<boolean>;
+  
+  // Finanças - Itens de Fatura
+  getInvoiceItems(invoiceId: number): Promise<InvoiceItem[]>;
+  
+  // Finanças - Pagamentos
+  getPayment(id: number): Promise<Payment | undefined>;
+  getPayments(invoiceId?: number, status?: string, method?: string, limit?: number, offset?: number): Promise<Payment[]>;
+  createPayment(payment: InsertPayment): Promise<Payment>;
+  updatePayment(id: number, payment: Partial<InsertPayment>): Promise<Payment | undefined>;
+  deletePayment(id: number): Promise<boolean>;
+  updateInvoiceAfterPayment(invoiceId: number): Promise<Invoice | undefined>;
   
   sessionStore: SessionStore;
 }
@@ -1372,6 +1430,492 @@ export class DatabaseStorage implements IStorage {
       console.error(`Erro ao consultar status do pagamento no gateway ${gateway}:`, error);
       throw new Error(`Falha ao consultar status do pagamento no gateway ${gateway}`);
     }
+  }
+
+  // ==================== CRM - Leads ====================
+  async getLead(id: number): Promise<Lead | undefined> {
+    const [lead] = await db.select().from(leads).where(eq(leads.id, id));
+    return lead || undefined;
+  }
+
+  async getLeads(search?: string, status?: string, limit: number = 50, offset: number = 0): Promise<Lead[]> {
+    let query = db.select().from(leads).limit(limit).offset(offset);
+    
+    if (search) {
+      query = query.where(
+        or(
+          like(leads.name, `%${search}%`),
+          like(leads.email, `%${search}%`),
+          like(leads.phone, `%${search}%`)
+        )
+      );
+    }
+    
+    if (status) {
+      query = query.where(eq(leads.status, status));
+    }
+    
+    return await query.orderBy(desc(leads.createdAt));
+  }
+
+  async createLead(lead: InsertLead): Promise<Lead> {
+    const [newLead] = await db
+      .insert(leads)
+      .values({
+        ...lead,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+    return newLead;
+  }
+
+  async updateLead(id: number, leadData: Partial<InsertLead>): Promise<Lead | undefined> {
+    const [updatedLead] = await db
+      .update(leads)
+      .set({
+        ...leadData,
+        updatedAt: new Date()
+      })
+      .where(eq(leads.id, id))
+      .returning();
+    return updatedLead;
+  }
+
+  async deleteLead(id: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(leads)
+        .where(eq(leads.id, id))
+        .returning({ id: leads.id });
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting lead:", error);
+      return false;
+    }
+  }
+
+  async convertLeadToClient(leadId: number, additionalData: any, createdById: number): Promise<Client> {
+    // Iniciar transação
+    return await db.transaction(async (tx) => {
+      // Obter o lead
+      const [lead] = await tx.select().from(leads).where(eq(leads.id, leadId));
+      
+      if (!lead) {
+        throw new Error("Lead não encontrado");
+      }
+      
+      // Criar o cliente a partir do lead
+      const [client] = await tx.insert(clients).values({
+        name: lead.name,
+        email: lead.email,
+        phone: lead.phone,
+        type: additionalData.type || 'pf', // Tipo de cliente (PF ou PJ)
+        cpfCnpj: additionalData.cpfCnpj || '',
+        address: additionalData.address || lead.address || '',
+        city: additionalData.city || lead.city || '',
+        state: additionalData.state || lead.state || '',
+        zipCode: additionalData.zipCode || lead.zipCode || '',
+        notes: lead.notes,
+        createdById,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }).returning();
+      
+      // Atualizar o lead para status "convertido"
+      await tx.update(leads)
+        .set({ 
+          status: 'convertido',
+          updatedAt: new Date(),
+          convertedToClientId: client.id
+        })
+        .where(eq(leads.id, leadId));
+      
+      return client;
+    });
+  }
+
+  // ==================== CRM - Clientes ====================
+  async getClient(id: number): Promise<Client | undefined> {
+    const [client] = await db.select().from(clients).where(eq(clients.id, id));
+    return client || undefined;
+  }
+
+  async getClientByCPFCNPJ(cpfCnpj: string): Promise<Client | undefined> {
+    const [client] = await db.select().from(clients).where(eq(clients.cpfCnpj, cpfCnpj));
+    return client || undefined;
+  }
+
+  async getClients(search?: string, status?: string, limit: number = 50, offset: number = 0): Promise<Client[]> {
+    let query = db.select().from(clients).limit(limit).offset(offset);
+    
+    if (search) {
+      query = query.where(
+        or(
+          like(clients.name, `%${search}%`),
+          like(clients.email, `%${search}%`),
+          like(clients.phone, `%${search}%`),
+          like(clients.cpfCnpj, `%${search}%`)
+        )
+      );
+    }
+    
+    return await query.orderBy(desc(clients.createdAt));
+  }
+
+  async createClient(client: InsertClient): Promise<Client> {
+    const [newClient] = await db
+      .insert(clients)
+      .values({
+        ...client,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+    return newClient;
+  }
+
+  async updateClient(id: number, clientData: Partial<InsertClient>): Promise<Client | undefined> {
+    const [updatedClient] = await db
+      .update(clients)
+      .set({
+        ...clientData,
+        updatedAt: new Date()
+      })
+      .where(eq(clients.id, id))
+      .returning();
+    return updatedClient;
+  }
+
+  async deleteClient(id: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(clients)
+        .where(eq(clients.id, id))
+        .returning({ id: clients.id });
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting client:", error);
+      return false;
+    }
+  }
+
+  // ==================== CRM - Contatos ====================
+  async getContact(id: number): Promise<Contact | undefined> {
+    const [contact] = await db.select().from(contacts).where(eq(contacts.id, id));
+    return contact || undefined;
+  }
+
+  async getContactsByClient(clientId: number): Promise<Contact[]> {
+    return await db
+      .select()
+      .from(contacts)
+      .where(eq(contacts.clientId, clientId))
+      .orderBy(desc(contacts.createdAt));
+  }
+
+  async createContact(contact: InsertContact): Promise<Contact> {
+    const [newContact] = await db
+      .insert(contacts)
+      .values({
+        ...contact,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+    return newContact;
+  }
+
+  async updateContact(id: number, contactData: Partial<InsertContact>): Promise<Contact | undefined> {
+    const [updatedContact] = await db
+      .update(contacts)
+      .set({
+        ...contactData,
+        updatedAt: new Date()
+      })
+      .where(eq(contacts.id, id))
+      .returning();
+    return updatedContact;
+  }
+
+  async deleteContact(id: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(contacts)
+        .where(eq(contacts.id, id))
+        .returning({ id: contacts.id });
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting contact:", error);
+      return false;
+    }
+  }
+
+  // ==================== Finanças - Produtos/Serviços ====================
+  async getProduct(id: number): Promise<Product | undefined> {
+    const [product] = await db.select().from(products).where(eq(products.id, id));
+    return product || undefined;
+  }
+
+  async getProducts(search?: string, type?: string, category?: string, limit: number = 50, offset: number = 0): Promise<Product[]> {
+    let query = db.select().from(products).limit(limit).offset(offset);
+    
+    if (search) {
+      query = query.where(
+        or(
+          like(products.name, `%${search}%`),
+          like(products.code, `%${search}%`),
+          like(products.description, `%${search}%`)
+        )
+      );
+    }
+    
+    if (type) {
+      query = query.where(eq(products.type, type));
+    }
+    
+    if (category) {
+      query = query.where(eq(products.category, category));
+    }
+    
+    return await query.orderBy(desc(products.createdAt));
+  }
+
+  async createProduct(product: InsertProduct): Promise<Product> {
+    const [newProduct] = await db
+      .insert(products)
+      .values({
+        ...product,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+    return newProduct;
+  }
+
+  async updateProduct(id: number, productData: Partial<InsertProduct>): Promise<Product | undefined> {
+    const [updatedProduct] = await db
+      .update(products)
+      .set({
+        ...productData,
+        updatedAt: new Date()
+      })
+      .where(eq(products.id, id))
+      .returning();
+    return updatedProduct;
+  }
+
+  async deleteProduct(id: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(products)
+        .where(eq(products.id, id))
+        .returning({ id: products.id });
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      return false;
+    }
+  }
+
+  // ==================== Finanças - Faturas ====================
+  async getInvoice(id: number): Promise<Invoice | undefined> {
+    const [invoice] = await db.select().from(invoices).where(eq(invoices.id, id));
+    return invoice || undefined;
+  }
+
+  async getInvoicesByClient(clientId: number): Promise<Invoice[]> {
+    return await db
+      .select()
+      .from(invoices)
+      .where(eq(invoices.clientId, clientId))
+      .orderBy(desc(invoices.createdAt));
+  }
+
+  async getInvoices(search?: string, status?: string, clientId?: number, limit: number = 50, offset: number = 0): Promise<Invoice[]> {
+    let query = db.select().from(invoices).limit(limit).offset(offset);
+    
+    if (search) {
+      query = query.where(
+        or(
+          like(invoices.number, `%${search}%`),
+          like(invoices.description, `%${search}%`)
+        )
+      );
+    }
+    
+    if (status) {
+      query = query.where(eq(invoices.status, status));
+    }
+    
+    if (clientId) {
+      query = query.where(eq(invoices.clientId, clientId));
+    }
+    
+    return await query.orderBy(desc(invoices.createdAt));
+  }
+
+  async getInvoiceItems(invoiceId: number): Promise<InvoiceItem[]> {
+    return await db
+      .select()
+      .from(invoiceItems)
+      .where(eq(invoiceItems.invoiceId, invoiceId))
+      .orderBy(asc(invoiceItems.id));
+  }
+
+  async createInvoiceWithItems(invoice: InsertInvoice, items: InsertInvoiceItem[]): Promise<Invoice> {
+    // Iniciar transação
+    return await db.transaction(async (tx) => {
+      // Inserir a fatura
+      const [newInvoice] = await tx
+        .insert(invoices)
+        .values({
+          ...invoice,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .returning();
+      
+      // Inserir os itens da fatura
+      if (items && items.length > 0) {
+        for (const item of items) {
+          await tx
+            .insert(invoiceItems)
+            .values({
+              ...item,
+              invoiceId: newInvoice.id,
+              createdAt: new Date(),
+              updatedAt: new Date()
+            });
+        }
+      }
+      
+      return newInvoice;
+    });
+  }
+
+  async updateInvoiceStatus(id: number, status: string): Promise<Invoice | undefined> {
+    const [updatedInvoice] = await db
+      .update(invoices)
+      .set({
+        status,
+        updatedAt: new Date()
+      })
+      .where(eq(invoices.id, id))
+      .returning();
+    return updatedInvoice;
+  }
+
+  async deleteInvoice(id: number): Promise<boolean> {
+    try {
+      // Excluir em transação para garantir integridade
+      return await db.transaction(async (tx) => {
+        // Primeiro exclui os itens
+        await tx
+          .delete(invoiceItems)
+          .where(eq(invoiceItems.invoiceId, id));
+        
+        // Depois exclui a fatura
+        const result = await tx
+          .delete(invoices)
+          .where(eq(invoices.id, id))
+          .returning({ id: invoices.id });
+        
+        return result.length > 0;
+      });
+    } catch (error) {
+      console.error("Error deleting invoice:", error);
+      return false;
+    }
+  }
+
+  // ==================== Finanças - Pagamentos ====================
+  async getPayment(id: number): Promise<Payment | undefined> {
+    const [payment] = await db.select().from(payments).where(eq(payments.id, id));
+    return payment || undefined;
+  }
+
+  async getPayments(invoiceId?: number, status?: string, method?: string, limit: number = 50, offset: number = 0): Promise<Payment[]> {
+    let query = db.select().from(payments).limit(limit).offset(offset);
+    
+    if (invoiceId) {
+      query = query.where(eq(payments.invoiceId, invoiceId));
+    }
+    
+    if (status) {
+      query = query.where(eq(payments.status, status));
+    }
+    
+    if (method) {
+      query = query.where(eq(payments.method, method));
+    }
+    
+    return await query.orderBy(desc(payments.createdAt));
+  }
+
+  async createPayment(payment: InsertPayment): Promise<Payment> {
+    const [newPayment] = await db
+      .insert(payments)
+      .values({
+        ...payment,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+    return newPayment;
+  }
+
+  async updatePayment(id: number, paymentData: Partial<InsertPayment>): Promise<Payment | undefined> {
+    const [updatedPayment] = await db
+      .update(payments)
+      .set({
+        ...paymentData,
+        updatedAt: new Date()
+      })
+      .where(eq(payments.id, id))
+      .returning();
+    return updatedPayment;
+  }
+
+  async deletePayment(id: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(payments)
+        .where(eq(payments.id, id))
+        .returning({ id: payments.id });
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting payment:", error);
+      return false;
+    }
+  }
+
+  async updateInvoiceAfterPayment(invoiceId: number): Promise<Invoice | undefined> {
+    // Obter todos os pagamentos da fatura
+    const invoicePayments = await this.getPayments(invoiceId, "completed");
+    
+    // Obter a fatura
+    const invoice = await this.getInvoice(invoiceId);
+    
+    if (!invoice) {
+      return undefined;
+    }
+    
+    // Calcular o total pago
+    const totalPaid = invoicePayments.reduce((sum, payment) => sum + payment.amount, 0);
+    
+    // Verificar se o valor total foi pago
+    let newStatus;
+    if (totalPaid >= invoice.total) {
+      newStatus = "paid";
+    } else if (totalPaid > 0) {
+      newStatus = "partial";
+    } else {
+      newStatus = "pending";
+    }
+    
+    // Atualizar o status da fatura
+    return await this.updateInvoiceStatus(invoiceId, newStatus);
   }
 }
 
