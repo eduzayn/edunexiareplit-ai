@@ -27,6 +27,14 @@ import IntegrationsPage from "@/pages/admin/integrations-page";
 import CertificationTemplatesPage from "@/pages/admin/certification/templates-page";
 import CertificationIssuePage from "@/pages/admin/certification/issue-page";
 import CertificationSignersPage from "@/pages/admin/certification/signers-page";
+// Importação dos novos módulos CRM e Gestão
+import LeadsPage from "@/pages/admin/crm/leads-page";
+import ClientsPage from "@/pages/admin/crm/clients-page";
+import ContactsPage from "@/pages/admin/crm/contacts-page";
+import ProductsPage from "@/pages/admin/finance/products-page";
+import InvoicesPage from "@/pages/admin/finance/invoices-page";
+import PaymentsPage from "@/pages/admin/finance/payments-page";
+import ContractsPage from "@/pages/admin/contracts";
 // Import student pages
 import StudentCoursesPage from "@/pages/student/courses-page";
 import CourseDetailPage from "@/pages/student/course-detail-page";
