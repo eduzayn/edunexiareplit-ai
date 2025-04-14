@@ -445,57 +445,5 @@ export function registerEnrollmentRoutes(app: Express) {
     }
   });
   
-  // Webhook para receber notificações de pagamento da Lytex
-  app.post('/api/webhooks/lytex', async (req: Request, res: Response) => {
-    try {
-      const { createPaymentGateway } = await import('../services/payment-gateways');
-      
-      const gateway = createPaymentGateway('lytex');
-      const { status, externalId } = gateway.processWebhook(req.body);
-      
-      // Buscar todas as matrículas
-      const enrollments = await storage.getEnrollments(
-        undefined, undefined, undefined, undefined, undefined, 
-        undefined, undefined, undefined, undefined, undefined, 50, 0
-      );
-      
-      // Encontrar a matrícula com o ID externo correspondente
-      const enrollment = enrollments.find(e => e.paymentExternalId === externalId);
-      
-      if (!enrollment) {
-        return res.status(404).json({ error: 'Matrícula não encontrada para este pagamento' });
-      }
-      
-      // Registrar auditoria de webhook
-      await logEnrollmentAudit(
-        req,
-        enrollment.id,
-        "payment_update",
-        "system",
-        { 
-          gateway: "lytex", 
-          event: req.body.status || 'status desconhecido',
-          newStatus: status
-        },
-        { status: enrollment.status },
-        { status: status, webhookData: req.body },
-        enrollment.poloId
-      );
-      
-      // Atualizar o status da matrícula
-      await storage.updateEnrollmentStatus(
-        enrollment.id,
-        status,
-        `Status atualizado pelo webhook Lytex: ${req.body.status || 'status desconhecido'}`,
-        undefined,
-        req.body,
-        "lytex_webhook"
-      );
-      
-      res.status(200).json({ success: true });
-    } catch (error) {
-      console.error('Erro ao processar webhook Lytex:', error);
-      res.status(500).json({ error: 'Erro interno ao processar webhook' });
-    }
-  });
+  // Comentário: webhook da Lytex removido pois agora utilizamos exclusivamente o Asaas
 }
