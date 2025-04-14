@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import { db } from "../db";
-import { courses, users, enrollments, institutions, polos } from "../../shared/schema";
-import { and, eq, like, desc, gte, lte } from "drizzle-orm";
+import { courses, users, enrollments, polos } from "../../shared/schema";
+import { eq, sql } from "drizzle-orm";
 
 const router = Router();
 
@@ -18,56 +18,8 @@ router.get("/polo-enrollments", async (req: Request, res: Response) => {
     const limit = parseInt(req.query.limit as string) || 10;
     const offset = (page - 1) * limit;
 
-    // Construir a condição de consulta com base nos filtros
-    let whereConditions = [];
-
-    // Filtro de busca (nome do aluno, código ou email)
-    if (search) {
-      whereConditions.push(
-        like(users.name, `%${search}%`),
-        like(enrollments.code, `%${search}%`),
-        like(users.email, `%${search}%`)
-      );
-    }
-
-    // Filtro de status
-    if (status && status !== "all") {
-      whereConditions.push(`${enrollments.status.name} = '${status}'`);
-    }
-
-    // Filtro de curso
-    if (course && course !== "all") {
-      whereConditions.push(`${enrollments.courseId.name} = ${parseInt(course as string)}`);
-    }
-
-    // Filtro de data
-    if (date && date !== "all") {
-      const now = new Date();
-      let startDate = new Date();
-
-      switch (date) {
-        case "last30days":
-          startDate.setDate(now.getDate() - 30);
-          break;
-        case "last3months":
-          startDate.setMonth(now.getMonth() - 3);
-          break;
-        case "last6months":
-          startDate.setMonth(now.getMonth() - 6);
-          break;
-        case "last12months":
-          startDate.setMonth(now.getMonth() - 12);
-          break;
-      }
-
-      whereConditions.push(
-        `${enrollments.enrollmentDate.name} >= '${startDate.toISOString()}'`,
-        `${enrollments.enrollmentDate.name} <= '${now.toISOString()}'`
-      );
-    }
-
-    // Consulta para obter matrículas com join em outras tabelas
-    const enrollmentsData = await db
+    // Construir a consulta SQL com os filtros
+    let query = db
       .select({
         id: enrollments.id,
         code: enrollments.code,
@@ -87,21 +39,77 @@ router.get("/polo-enrollments", async (req: Request, res: Response) => {
       .from(enrollments)
       .leftJoin(users, eq(enrollments.studentId, users.id))
       .leftJoin(courses, eq(enrollments.courseId, courses.id))
-      .leftJoin(polos, eq(enrollments.poloId, polos.id))
-      .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
-      .orderBy(desc(enrollments.enrollmentDate))
+      .leftJoin(polos, eq(enrollments.poloId, polos.id));
+    
+    // Adicionar filtros à consulta
+    const conditions = [];
+    
+    // Filtro de busca
+    if (search) {
+      conditions.push(sql`(${users.name} LIKE ${'%' + search + '%'} OR ${enrollments.code} LIKE ${'%' + search + '%'} OR ${users.email} LIKE ${'%' + search + '%'})`);
+    }
+    
+    // Filtro de status
+    if (status && status !== "all") {
+      conditions.push(sql`${enrollments.status} = ${status}`);
+    }
+    
+    // Filtro de curso
+    if (course && course !== "all") {
+      conditions.push(sql`${enrollments.courseId} = ${parseInt(course as string)}`);
+    }
+    
+    // Filtro de data
+    if (date && date !== "all") {
+      const now = new Date();
+      let startDate = new Date();
+
+      switch (date) {
+        case "last30days":
+          startDate.setDate(now.getDate() - 30);
+          break;
+        case "last3months":
+          startDate.setMonth(now.getMonth() - 3);
+          break;
+        case "last6months":
+          startDate.setMonth(now.getMonth() - 6);
+          break;
+        case "last12months":
+          startDate.setMonth(now.getMonth() - 12);
+          break;
+      }
+      
+      conditions.push(sql`${enrollments.enrollmentDate} >= ${startDate.toISOString()} AND ${enrollments.enrollmentDate} <= ${now.toISOString()}`);
+    }
+    
+    // Adicionar as condições à consulta
+    if (conditions.length > 0) {
+      const whereClause = sql.join(conditions, sql` AND `);
+      query = query.where(whereClause);
+    }
+    
+    // Ordenar e limitar resultados
+    const enrollmentsData = await query
+      .orderBy(sql`${enrollments.enrollmentDate} DESC`)
       .limit(limit)
       .offset(offset);
-
-    // Obter o total de registros para paginação
-    const totalCount = await db
-      .select({ count: enrollments.id })
+    
+    // Consulta para contar o total de registros
+    let countQuery = db
+      .select({ count: sql`count(*)` })
       .from(enrollments)
       .leftJoin(users, eq(enrollments.studentId, users.id))
-      .leftJoin(courses, eq(enrollments.courseId, courses.id))
-      .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
-      .then((result) => result.length);
-
+      .leftJoin(courses, eq(enrollments.courseId, courses.id));
+    
+    // Adicionar as mesmas condições à consulta de contagem
+    if (conditions.length > 0) {
+      const whereClause = sql.join(conditions, sql` AND `);
+      countQuery = countQuery.where(whereClause);
+    }
+    
+    const countResult = await countQuery;
+    const totalCount = countResult.length > 0 ? Number(countResult[0].count) : 0;
+    
     return res.status(200).json({
       enrollments: enrollmentsData,
       total: totalCount,
@@ -132,7 +140,7 @@ router.get("/available-courses", async (req: Request, res: Response) => {
         code: courses.code,
       })
       .from(courses)
-      .where(`${courses.status.name} = 'published'`);
+      .where(sql`${courses.status} = 'published'`);
 
     return res.status(200).json(availableCourses);
   } catch (error) {
