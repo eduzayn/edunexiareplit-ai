@@ -2667,6 +2667,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ================== Rotas para Integração com Gateway de Pagamento (Asaas) ==================
+  // Criar um pagamento via gateway Asaas
+  app.post("/api/admin/finance/invoices/:id/create-payment", requireAdmin, async (req, res) => {
+    try {
+      const invoiceId = parseInt(req.params.id);
+      const { method } = req.body;
+      
+      if (!method) {
+        return res.status(400).json({ message: "Método de pagamento é obrigatório" });
+      }
+      
+      // Verificar se a fatura existe
+      const invoice = await storage.getInvoice(invoiceId);
+      if (!invoice) {
+        return res.status(404).json({ message: "Fatura não encontrada" });
+      }
+      
+      // Criar pagamento usando o gateway Asaas
+      const payment = await storage.createAsaasPayment(invoiceId, method);
+      
+      if (!payment) {
+        return res.status(500).json({ 
+          message: "Erro ao criar pagamento via gateway",
+          details: "Verifique se o cliente possui ID do Asaas cadastrado"
+        });
+      }
+      
+      res.status(201).json(payment);
+    } catch (error) {
+      console.error("Error creating payment via gateway:", error);
+      res.status(500).json({ 
+        message: "Erro ao criar pagamento via gateway",
+        details: error.message
+      });
+    }
+  });
+  
+  // Atualizar status de um pagamento via gateway
+  app.post("/api/admin/finance/payments/:id/update-status", requireAdmin, async (req, res) => {
+    try {
+      const paymentId = parseInt(req.params.id);
+      
+      // Buscar o pagamento
+      const payment = await storage.getPayment(paymentId);
+      if (!payment) {
+        return res.status(404).json({ message: "Pagamento não encontrado" });
+      }
+      
+      // Atualizar status via Asaas
+      const updatedPayment = await storage.updateAsaasPaymentStatus(paymentId);
+      
+      if (!updatedPayment) {
+        return res.status(500).json({ 
+          message: "Erro ao atualizar status do pagamento",
+          details: "Verifique se o pagamento possui ID do Asaas" 
+        });
+      }
+      
+      res.json(updatedPayment);
+    } catch (error) {
+      console.error("Error updating payment status:", error);
+      res.status(500).json({ 
+        message: "Erro ao atualizar status do pagamento", 
+        details: error.message 
+      });
+    }
+  });
+  
+  // Cancelar um pagamento via gateway
+  app.post("/api/admin/finance/payments/:id/cancel", requireAdmin, async (req, res) => {
+    try {
+      const paymentId = parseInt(req.params.id);
+      
+      // Buscar o pagamento
+      const payment = await storage.getPayment(paymentId);
+      if (!payment) {
+        return res.status(404).json({ message: "Pagamento não encontrado" });
+      }
+      
+      // Cancelar pagamento via Asaas
+      const success = await storage.cancelAsaasPayment(paymentId);
+      
+      if (!success) {
+        return res.status(500).json({ 
+          message: "Erro ao cancelar pagamento",
+          details: "Verifique se o pagamento possui ID do Asaas ou se já está concluído"
+        });
+      }
+      
+      res.json({ message: "Pagamento cancelado com sucesso" });
+    } catch (error) {
+      console.error("Error canceling payment:", error);
+      res.status(500).json({ 
+        message: "Erro ao cancelar pagamento", 
+        details: error.message 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
