@@ -26,6 +26,14 @@ import {
   ScrollTextIcon,
   Settings2Icon,
   BadgeCheckIcon,
+  CRMIcon,
+  UserPlusIcon,
+  ContactIcon,
+  BuildingStoreIcon,
+  ContractIcon,
+  InvoiceIcon,
+  ShoppingBagIcon,
+  PaymentsIcon,
 } from "@/components/ui/icons";
 
 // Interfaces para definir a estrutura dos itens da barra lateral
@@ -289,6 +297,110 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
     ]
   };
 
+  // Categoria: CRM & Gestão
+  const crmCategory: SidebarCategory = {
+    name: "CRM & Gestão",
+    icon: <CRMIcon />,
+    expanded: hasCategoryActiveItem({
+      name: "CRM & Gestão",
+      icon: <CRMIcon />,
+      items: [
+        // Submódulo CRM
+        { 
+          name: "Leads", 
+          icon: <UserPlusIcon />, 
+          href: "/admin/crm/leads",
+          active: currentPath === "/admin/crm/leads" || (currentPath && currentPath.includes("/admin/crm/leads/"))
+        },
+        { 
+          name: "Clientes", 
+          icon: <BuildingStoreIcon />, 
+          href: "/admin/crm/clients",
+          active: currentPath === "/admin/crm/clients" || (currentPath && currentPath.includes("/admin/crm/clients/"))
+        },
+        { 
+          name: "Contatos", 
+          icon: <ContactIcon />, 
+          href: "/admin/crm/contacts",
+          active: currentPath === "/admin/crm/contacts" || (currentPath && currentPath.includes("/admin/crm/contacts/"))
+        },
+        // Submódulo Financeiro
+        { 
+          name: "Produtos/Serviços", 
+          icon: <ShoppingBagIcon />, 
+          href: "/admin/finance/products",
+          active: currentPath === "/admin/finance/products" || (currentPath && currentPath.includes("/admin/finance/products/"))
+        },
+        { 
+          name: "Faturas", 
+          icon: <InvoiceIcon />, 
+          href: "/admin/finance/invoices",
+          active: currentPath === "/admin/finance/invoices" || (currentPath && currentPath.includes("/admin/finance/invoices/"))
+        },
+        { 
+          name: "Pagamentos", 
+          icon: <PaymentsIcon />, 
+          href: "/admin/finance/payments",
+          active: currentPath === "/admin/finance/payments" || (currentPath && currentPath.includes("/admin/finance/payments/"))
+        },
+        // Submódulo Contratos
+        { 
+          name: "Contratos", 
+          icon: <ContractIcon />, 
+          href: "/admin/contracts",
+          active: currentPath === "/admin/contracts" || (currentPath && currentPath.includes("/admin/contracts/"))
+        },
+      ]
+    }, currentPath),
+    items: [
+      // Submódulo CRM
+      { 
+        name: "Leads", 
+        icon: <UserPlusIcon />, 
+        href: "/admin/crm/leads",
+        active: currentPath === "/admin/crm/leads" || (currentPath && currentPath.includes("/admin/crm/leads/"))
+      },
+      { 
+        name: "Clientes", 
+        icon: <BuildingStoreIcon />, 
+        href: "/admin/crm/clients",
+        active: currentPath === "/admin/crm/clients" || (currentPath && currentPath.includes("/admin/crm/clients/"))
+      },
+      { 
+        name: "Contatos", 
+        icon: <ContactIcon />, 
+        href: "/admin/crm/contacts",
+        active: currentPath === "/admin/crm/contacts" || (currentPath && currentPath.includes("/admin/crm/contacts/"))
+      },
+      // Submódulo Financeiro
+      { 
+        name: "Produtos/Serviços", 
+        icon: <ShoppingBagIcon />, 
+        href: "/admin/finance/products",
+        active: currentPath === "/admin/finance/products" || (currentPath && currentPath.includes("/admin/finance/products/"))
+      },
+      { 
+        name: "Faturas", 
+        icon: <InvoiceIcon />, 
+        href: "/admin/finance/invoices",
+        active: currentPath === "/admin/finance/invoices" || (currentPath && currentPath.includes("/admin/finance/invoices/"))
+      },
+      { 
+        name: "Pagamentos", 
+        icon: <PaymentsIcon />, 
+        href: "/admin/finance/payments",
+        active: currentPath === "/admin/finance/payments" || (currentPath && currentPath.includes("/admin/finance/payments/"))
+      },
+      // Submódulo Contratos
+      { 
+        name: "Contratos", 
+        icon: <ContractIcon />, 
+        href: "/admin/contracts",
+        active: currentPath === "/admin/contracts" || (currentPath && currentPath.includes("/admin/contracts/"))
+      },
+    ]
+  };
+
   // Categoria: Sistema
   const systemCategory: SidebarCategory = {
     name: "Sistema",
@@ -346,6 +458,7 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
     institutionalCategory,
     peopleCategory,
     operationalCategory,
+    crmCategory,
     certificationCategory,
     systemCategory,
   ];
