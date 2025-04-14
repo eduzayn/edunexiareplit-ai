@@ -213,12 +213,22 @@ export default function NewEnrollmentPage() {
   };
   
   // Função para avançar para o próximo passo
-  const nextStep = async () => {
-    const isValid = await validateStep();
+  function nextStep() {
+    // Log para depuração
+    console.log("Função nextStep chamada diretamente");
+    console.log("Passo atual:", step);
+    console.log("Tentando avançar para o passo:", step + 1);
     
-    if (isValid) {
-      form.setValue("currentStep", step + 1);
-      setStep(step + 1);
+    try {
+      // Atualizando o estado diretamente
+      const newStep = step + 1;
+      setStep(newStep);
+      form.setValue("currentStep", newStep);
+      
+      // Log após a atualização
+      console.log("Estado atualizado para o passo:", newStep);
+    } catch (error) {
+      console.error("Erro ao atualizar o passo:", error);
     }
   };
   
@@ -242,7 +252,7 @@ export default function NewEnrollmentPage() {
     }
     
     // Para as outras etapas, apenas avançamos para a próxima
-    await nextStep();
+    nextStep();
   };
   
   // Gerar preço do curso baseado no ID selecionado (para fins de demonstração)
