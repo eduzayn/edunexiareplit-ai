@@ -114,7 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Redirect to the appropriate dashboard usando setLocation ao invés de window.location
       if (user.portalType) {
-        setLocation(`/${user.portalType}/dashboard`);
+        setLocation(getNavigationPath(`/${user.portalType}/dashboard`));
       }
     },
     onError: (error: Error) => {
@@ -140,7 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Redirect to the appropriate dashboard usando setLocation
       if (user.portalType) {
-        setLocation(`/${user.portalType}/dashboard`);
+        setLocation(getNavigationPath(`/${user.portalType}/dashboard`));
       }
     },
     onError: (error: Error) => {
@@ -158,7 +158,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);
-      setLocation("/");
+      setLocation(getNavigationPath("/"));
       toast({
         title: "Logout bem-sucedido",
         description: "Você foi desconectado com sucesso.",
