@@ -230,7 +230,15 @@ export default function CertificationSignersPage() {
   // Mutation para atualizar signatário
   const updateSignerMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number, data: SignerFormValues }) => {
-      const response = await apiRequest(`/api/admin/certificate-signers/${id}`, { method: 'PUT', data });
+      // Mapeia os campos do frontend para os campos esperados pelo backend
+      const signerData = {
+        name: data.name,
+        role: `${data.title}, ${data.position}`, // Combina título e cargo no campo 'role'
+        signatureImageUrl: data.signatureImageUrl,
+        isActive: true,
+        institutionId: null
+      };
+      const response = await apiRequest(`/api/admin/certificate-signers/${id}`, { method: 'PUT', data: signerData });
       return response;
     },
     onSuccess: () => {
@@ -286,7 +294,22 @@ export default function CertificationSignersPage() {
   
   // Função para abrir o diálogo de edição
   const handleEditSigner = (signer: any) => {
-    setEditingSigner(signer);
+    // Processar o campo 'role' para separar em título e cargo
+    const roleComponents = signer.role ? signer.role.split(',') : ['', ''];
+    const title = roleComponents[0]?.trim() || '';
+    const position = roleComponents.length > 1 ? roleComponents[1]?.trim() : '';
+    
+    // Criar um objeto com os campos esperados pelo formulário
+    const formattedSigner = {
+      id: signer.id,
+      name: signer.name,
+      title: title,
+      position: position,
+      institution: signer.institution?.name || '',
+      signatureImageUrl: signer.signatureImageUrl
+    };
+    
+    setEditingSigner(formattedSigner);
   };
   
   // Função para excluir um signatário
@@ -386,31 +409,38 @@ export default function CertificationSignersPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  Array.isArray(signers) && signers.map((signer: any) => (
-                    <TableRow key={signer.id}>
-                      <TableCell>{signer.name}</TableCell>
-                      <TableCell>{signer.title}</TableCell>
-                      <TableCell>{signer.position}</TableCell>
-                      <TableCell>{signer.institution}</TableCell>
-                      <TableCell className="flex justify-end space-x-2">
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          onClick={() => handleEditSigner(signer)}
-                        >
-                          <EditIcon className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          className="text-destructive" 
-                          onClick={() => handleDeleteSigner(signer.id)}
-                        >
-                          <Trash2Icon className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                  Array.isArray(signers) && signers.map((signer: any) => {
+                    // Processar o campo 'role' para a tabela
+                    const roleComponents = signer.role ? signer.role.split(',') : ['', ''];
+                    const title = roleComponents[0]?.trim() || '';
+                    const position = roleComponents.length > 1 ? roleComponents[1]?.trim() : '';
+                    
+                    return (
+                      <TableRow key={signer.id}>
+                        <TableCell>{signer.name}</TableCell>
+                        <TableCell>{title}</TableCell>
+                        <TableCell>{position}</TableCell>
+                        <TableCell>{signer.institution?.name || ''}</TableCell>
+                        <TableCell className="flex justify-end space-x-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => handleEditSigner(signer)}
+                          >
+                            <EditIcon className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="text-destructive" 
+                            onClick={() => handleDeleteSigner(signer.id)}
+                          >
+                            <Trash2Icon className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 )}
               </TableBody>
             </Table>
