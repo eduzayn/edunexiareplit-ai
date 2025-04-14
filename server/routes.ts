@@ -54,6 +54,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/subscription-plans", subscriptionPlansRoutes);
   app.use("/api/subscriptions", subscriptionsRoutes);
   
+  // Rota pública para obter planos de assinatura
+  app.use("/api/public/subscription-plans", subscriptionPlansRoutes);
+  
   // Registro das rotas de matrículas do Portal do Polo
   app.use("/api/polo", poloEnrollmentsRoutes);
   
