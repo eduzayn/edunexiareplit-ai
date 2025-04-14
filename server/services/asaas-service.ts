@@ -66,6 +66,11 @@ interface AsaasCustomerResponse {
  * Converte um cliente do nosso sistema para o formato da API do Asaas
  */
 function mapClientToAsaasCustomer(client: Partial<Client> | InsertClient, clientId?: number): AsaasCustomerRequest {
+  // Validação para garantir que os campos obrigatórios existam
+  if (!client.name || !client.cpfCnpj) {
+    throw new Error('Nome e CPF/CNPJ são campos obrigatórios para criar um cliente no Asaas');
+  }
+
   // Criando objeto de cliente do Asaas com dados obrigatórios
   const customerData: AsaasCustomerRequest = {
     name: client.name,
@@ -75,16 +80,17 @@ function mapClientToAsaasCustomer(client: Partial<Client> | InsertClient, client
   // Adicionando campos opcionais se existirem
   if (client.email) customerData.email = client.email;
   if (client.phone) customerData.mobilePhone = client.phone;
+  
+  // Campos de endereço
   if (client.zipCode) customerData.postalCode = client.zipCode;
   if (client.street) customerData.address = client.street;
-  if (client.streetNumber) customerData.addressNumber = client.streetNumber;
+  if (client.number) customerData.addressNumber = client.number;
   if (client.complement) customerData.complement = client.complement;
   if (client.neighborhood) customerData.province = client.neighborhood;
   
   // Adicionando informações extras
   if (client.notes) customerData.observations = client.notes;
   if (client.website) customerData.additionalEmails = client.website; // Não é o uso correto, mas para armazenar a informação
-  if (client.company) customerData.company = client.company;
   
   // Adicionando referência externa
   if (clientId) {
