@@ -24,7 +24,8 @@ import ReportsPage from "@/pages/admin/reports-page";
 import EnrollmentsPage from "@/pages/admin/enrollments-page";
 import AdminNewEnrollmentPage from "@/pages/admin/new-enrollment-page";
 import IntegrationsPage from "@/pages/admin/integrations-page";
-// Página removida
+import CertificationTemplatesPage from "@/pages/admin/certification/templates-page";
+import CertificationIssuePage from "@/pages/admin/certification/issue-page";
 // Import student pages
 import StudentCoursesPage from "@/pages/student/courses-page";
 import CourseDetailPage from "@/pages/student/course-detail-page";
@@ -194,7 +195,14 @@ function Router() {
         {() => user?.portalType === "admin" ? <IntegrationsPage /> : <Redirect to="/admin" />}
       </Route>
       
-      {/* Rota removida */}
+      {/* Rotas de Certificação */}
+      <Route path="/admin/certification/templates">
+        {() => user?.portalType === "admin" ? <CertificationTemplatesPage /> : <Redirect to="/admin" />}
+      </Route>
+      
+      <Route path="/admin/certification/issue">
+        {() => user?.portalType === "admin" ? <CertificationIssuePage /> : <Redirect to="/admin" />}
+      </Route>
       
       <Route component={NotFound} />
     </Switch>
