@@ -582,12 +582,22 @@ export class LytexGatewayAdapter implements PaymentGateway {
         if (!customerId && customerDocument) {
           try {
             console.log(`[LYTEX] Criando novo cliente: ${customerName}`);
+            // Verificar dados obrigatórios
+            if (!customerName || !customerDocument || !customerEmail) {
+              console.error('[LYTEX] Dados obrigatórios do cliente ausentes para criação:', {
+                nome: customerName ? 'OK' : 'AUSENTE',
+                cpf: customerDocument ? 'OK' : 'AUSENTE',
+                email: customerEmail ? 'OK' : 'AUSENTE'
+              });
+              throw new Error('Dados incompletos do cliente: nome, CPF/CNPJ e email são obrigatórios');
+            }
+            
             const clientData = {
               name: customerName,
               type: 'pf', // pessoa física
               treatmentPronoun: 'you',
               cpfCnpj: customerDocument,
-              email: customerEmail || `aluno${Math.random().toString(36).substring(2, 7)}@example.com`
+              email: customerEmail // Sem emails falsos, exigir dados reais
             };
             
             const newClient = await lytexService.createClient(clientData);
@@ -637,6 +647,16 @@ export class LytexGatewayAdapter implements PaymentGateway {
         dueDate.setDate(dueDate.getDate() + 5);
         const formattedDueDate = dueDate.toISOString().split('T')[0]; // Formato YYYY-MM-DD
         
+        // Verificar dados obrigatórios antes de criar a fatura
+        if (!customerId && (!customerName || !customerDocument || !customerEmail)) {
+          console.error('[LYTEX] Dados obrigatórios do cliente ausentes:', {
+            nome: customerName ? 'OK' : 'AUSENTE',
+            cpf: customerDocument ? 'OK' : 'AUSENTE',
+            email: customerEmail ? 'OK' : 'AUSENTE'
+          });
+          throw new Error('Dados incompletos do cliente: nome, CPF/CNPJ e email são obrigatórios');
+        }
+        
         // Preparar os dados da fatura conforme a documentação V1
         const invoiceData: LytexCreateInvoiceRequest = {
           client: customerId ? 
@@ -646,8 +666,8 @@ export class LytexGatewayAdapter implements PaymentGateway {
               name: customerName,
               type: 'pf',
               treatmentPronoun: 'you',
-              cpfCnpj: customerDocument || '', // Deixamos vazio para API validar corretamente
-              email: customerEmail || ''  // Deixamos vazio para API validar corretamente
+              cpfCnpj: customerDocument,
+              email: customerEmail
             },
           items: invoiceItems,
           dueDate: formattedDueDate,
