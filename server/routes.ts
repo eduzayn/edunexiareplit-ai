@@ -30,6 +30,7 @@ import { createPaymentGateway } from "./services/payment-gateways";
 import certificatesRoutes from "./routes/certificates";
 import certificateTemplatesRoutes from "./routes/certificate-templates";
 import certificateSignersRoutes from "./routes/certificate-signers";
+import { WebhookController } from "./controllers/webhook-controller";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
@@ -2764,6 +2765,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         details: error.message 
       });
     }
+  });
+
+  // ================= Rotas para Webhooks =================
+  // Webhook do Asaas - não requer autenticação pois é chamado pelo serviço externo
+  app.post("/api/webhooks/asaas", async (req, res) => {
+    await WebhookController.handleAsaasWebhook(req, res);
   });
 
   const httpServer = createServer(app);

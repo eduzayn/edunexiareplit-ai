@@ -448,6 +448,14 @@ export const payments = pgTable("payments", {
   transactionId: text("transaction_id"), // ID da transação (para métodos eletrônicos)
   notes: text("notes"),
   
+  // Campos de integração com Asaas
+  asaasId: text("asaas_id"), // ID do pagamento no Asaas
+  paymentUrl: text("payment_url"), // URL para pagamento
+  paymentLinkUrl: text("payment_link_url"), // URL do link de pagamento
+  bankSlipUrl: text("bank_slip_url"), // URL do boleto bancário
+  pixQrCodeUrl: text("pix_qr_code_url"), // URL da imagem do QR Code PIX
+  pixCodeText: text("pix_code_text"), // Código PIX para copia e cola
+  
   // Metadados
   createdById: integer("created_by_id").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
