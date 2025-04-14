@@ -1381,3 +1381,115 @@ export const insertCertificateHistorySchema = createInsertSchema(certificateHist
 });
 export type InsertCertificateHistory = z.infer<typeof insertCertificateHistorySchema>;
 export type CertificateHistory = typeof certificateHistory.$inferSelect;
+
+// Schemas para o módulo CRM
+export const insertLeadSchema = createInsertSchema(leads).pick({
+  name: true,
+  email: true,
+  phone: true,
+  company: true,
+  source: true,
+  interest: true,
+  status: true,
+  notes: true,
+  createdById: true,
+});
+export type InsertLead = z.infer<typeof insertLeadSchema>;
+export type Lead = typeof leads.$inferSelect;
+
+export const insertClientSchema = createInsertSchema(clients).pick({
+  name: true,
+  type: true,
+  email: true,
+  phone: true,
+  cpfCnpj: true,
+  rgIe: true,
+  zipCode: true,
+  street: true,
+  number: true,
+  complement: true,
+  neighborhood: true,
+  city: true,
+  state: true,
+  segment: true,
+  website: true,
+  notes: true,
+  isActive: true,
+  createdById: true,
+});
+export type InsertClient = z.infer<typeof insertClientSchema>;
+export type Client = typeof clients.$inferSelect;
+
+export const insertContactSchema = createInsertSchema(contacts).pick({
+  name: true,
+  email: true,
+  phone: true,
+  position: true,
+  clientId: true,
+  role: true,
+  department: true,
+  notes: true,
+});
+export type InsertContact = z.infer<typeof insertContactSchema>;
+export type Contact = typeof contacts.$inferSelect;
+
+// Schemas para o módulo Financeiro
+export const insertProductSchema = createInsertSchema(products).pick({
+  name: true,
+  code: true,
+  type: true,
+  category: true,
+  description: true,
+  workload: true,
+  duration: true,
+  durationUnit: true,
+  tags: true,
+  price: true,
+  costPrice: true,
+  taxRate: true,
+  isActive: true,
+  isFeatured: true,
+  isDigital: true,
+  createdById: true,
+});
+export type InsertProduct = z.infer<typeof insertProductSchema>;
+export type Product = typeof products.$inferSelect;
+
+export const insertInvoiceSchema = createInsertSchema(invoices).pick({
+  invoiceNumber: true,
+  clientId: true,
+  contractId: true,
+  issueDate: true,
+  dueDate: true,
+  status: true,
+  totalAmount: true,
+  notes: true,
+  createdById: true,
+});
+export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
+export type Invoice = typeof invoices.$inferSelect;
+
+export const insertInvoiceItemSchema = createInsertSchema(invoiceItems).pick({
+  invoiceId: true,
+  productId: true,
+  description: true,
+  quantity: true,
+  unitPrice: true,
+  discount: true,
+  tax: true,
+});
+export type InsertInvoiceItem = z.infer<typeof insertInvoiceItemSchema>;
+export type InvoiceItem = typeof invoiceItems.$inferSelect;
+
+export const insertPaymentSchema = createInsertSchema(payments).pick({
+  invoiceId: true,
+  amount: true,
+  method: true,
+  paymentDate: true,
+  status: true,
+  transactionId: true,
+  notes: true,
+  createdById: true,
+});
+export type InsertPayment = z.infer<typeof insertPaymentSchema>;
+export type Payment = typeof payments.$inferSelect;

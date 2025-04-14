@@ -9,7 +9,16 @@ import {
   insertQuestionSchema,
   insertAssessmentSchema,
   insertAssessmentQuestionSchema,
-  insertInstitutionSchema
+  insertInstitutionSchema,
+  // Schemas para CRM
+  insertLeadSchema,
+  insertClientSchema,
+  insertContactSchema,
+  // Schemas para Finanças
+  insertProductSchema,
+  insertInvoiceSchema,
+  insertInvoiceItemSchema,
+  insertPaymentSchema
 } from "@shared/schema";
 import { z } from "zod";
 import { registerEnrollmentRoutes } from "./routes/enrollments";
@@ -1974,6 +1983,653 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching student discipline:", error);
       res.status(500).json({ message: "Erro ao buscar detalhes da disciplina" });
+    }
+  });
+
+  // ================== Rotas para CRM - Leads ==================
+  // Listar leads
+  app.get("/api/admin/crm/leads", requireAdmin, async (req, res) => {
+    try {
+      const search = req.query.search?.toString();
+      const status = req.query.status?.toString();
+      const limit = parseInt(req.query.limit?.toString() || "50");
+      const offset = parseInt(req.query.offset?.toString() || "0");
+
+      const leads = await storage.getLeads(search, status, limit, offset);
+      res.json(leads);
+    } catch (error) {
+      console.error("Error fetching leads:", error);
+      res.status(500).json({ message: "Erro ao buscar leads" });
+    }
+  });
+
+  // Obter um lead específico
+  app.get("/api/admin/crm/leads/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const lead = await storage.getLead(id);
+      
+      if (!lead) {
+        return res.status(404).json({ message: "Lead não encontrado" });
+      }
+      
+      res.json(lead);
+    } catch (error) {
+      console.error("Error fetching lead:", error);
+      res.status(500).json({ message: "Erro ao buscar lead" });
+    }
+  });
+
+  // Criar um novo lead
+  app.post("/api/admin/crm/leads", requireAdmin, async (req, res) => {
+    try {
+      // Validar os dados do lead
+      const leadData = insertLeadSchema.parse({ 
+        ...req.body,
+        createdById: req.user.id
+      });
+      
+      const lead = await storage.createLead(leadData);
+      res.status(201).json(lead);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Dados inválidos", 
+          errors: error.errors 
+        });
+      }
+      console.error("Error creating lead:", error);
+      res.status(500).json({ message: "Erro ao criar lead" });
+    }
+  });
+
+  // Atualizar um lead
+  app.put("/api/admin/crm/leads/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const existingLead = await storage.getLead(id);
+      
+      if (!existingLead) {
+        return res.status(404).json({ message: "Lead não encontrado" });
+      }
+      
+      // Validar os dados da atualização
+      const updateData = insertLeadSchema.partial().parse(req.body);
+      
+      const updatedLead = await storage.updateLead(id, updateData);
+      res.json(updatedLead);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Dados inválidos", 
+          errors: error.errors 
+        });
+      }
+      console.error("Error updating lead:", error);
+      res.status(500).json({ message: "Erro ao atualizar lead" });
+    }
+  });
+
+  // Excluir um lead
+  app.delete("/api/admin/crm/leads/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteLead(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Lead não encontrado ou não pode ser excluído" });
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      console.error("Error deleting lead:", error);
+      res.status(500).json({ message: "Erro ao excluir lead" });
+    }
+  });
+  
+  // Converter lead para cliente
+  app.post("/api/admin/crm/leads/:id/convert", requireAdmin, async (req, res) => {
+    try {
+      const leadId = parseInt(req.params.id);
+      const lead = await storage.getLead(leadId);
+      
+      if (!lead) {
+        return res.status(404).json({ message: "Lead não encontrado" });
+      }
+      
+      // Dados adicionais necessários para criar o cliente
+      const additionalData = req.body;
+      
+      // Converter o lead em cliente
+      const client = await storage.convertLeadToClient(leadId, additionalData, req.user.id);
+      res.status(201).json(client);
+    } catch (error) {
+      console.error("Error converting lead to client:", error);
+      res.status(500).json({ message: "Erro ao converter lead para cliente" });
+    }
+  });
+
+  // ================== Rotas para CRM - Clientes ==================
+  // Listar clientes
+  app.get("/api/admin/crm/clients", requireAdmin, async (req, res) => {
+    try {
+      const search = req.query.search?.toString();
+      const status = req.query.status?.toString();
+      const limit = parseInt(req.query.limit?.toString() || "50");
+      const offset = parseInt(req.query.offset?.toString() || "0");
+
+      const clients = await storage.getClients(search, status, limit, offset);
+      res.json(clients);
+    } catch (error) {
+      console.error("Error fetching clients:", error);
+      res.status(500).json({ message: "Erro ao buscar clientes" });
+    }
+  });
+
+  // Obter um cliente específico
+  app.get("/api/admin/crm/clients/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const client = await storage.getClient(id);
+      
+      if (!client) {
+        return res.status(404).json({ message: "Cliente não encontrado" });
+      }
+      
+      res.json(client);
+    } catch (error) {
+      console.error("Error fetching client:", error);
+      res.status(500).json({ message: "Erro ao buscar cliente" });
+    }
+  });
+
+  // Criar um novo cliente
+  app.post("/api/admin/crm/clients", requireAdmin, async (req, res) => {
+    try {
+      // Validar os dados do cliente
+      const clientData = insertClientSchema.parse({ 
+        ...req.body,
+        createdById: req.user.id
+      });
+      
+      const client = await storage.createClient(clientData);
+      res.status(201).json(client);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Dados inválidos", 
+          errors: error.errors 
+        });
+      }
+      console.error("Error creating client:", error);
+      res.status(500).json({ message: "Erro ao criar cliente" });
+    }
+  });
+
+  // Atualizar um cliente
+  app.put("/api/admin/crm/clients/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const existingClient = await storage.getClient(id);
+      
+      if (!existingClient) {
+        return res.status(404).json({ message: "Cliente não encontrado" });
+      }
+      
+      // Validar os dados da atualização
+      const updateData = insertClientSchema.partial().parse(req.body);
+      
+      const updatedClient = await storage.updateClient(id, updateData);
+      res.json(updatedClient);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Dados inválidos", 
+          errors: error.errors 
+        });
+      }
+      console.error("Error updating client:", error);
+      res.status(500).json({ message: "Erro ao atualizar cliente" });
+    }
+  });
+
+  // Excluir um cliente
+  app.delete("/api/admin/crm/clients/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteClient(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Cliente não encontrado ou não pode ser excluído" });
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      console.error("Error deleting client:", error);
+      res.status(500).json({ message: "Erro ao excluir cliente" });
+    }
+  });
+
+  // ================== Rotas para CRM - Contatos ==================
+  // Listar contatos de um cliente
+  app.get("/api/admin/crm/clients/:clientId/contacts", requireAdmin, async (req, res) => {
+    try {
+      const clientId = parseInt(req.params.clientId);
+      const contacts = await storage.getContactsByClient(clientId);
+      res.json(contacts);
+    } catch (error) {
+      console.error("Error fetching client contacts:", error);
+      res.status(500).json({ message: "Erro ao buscar contatos do cliente" });
+    }
+  });
+
+  // Obter um contato específico
+  app.get("/api/admin/crm/contacts/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const contact = await storage.getContact(id);
+      
+      if (!contact) {
+        return res.status(404).json({ message: "Contato não encontrado" });
+      }
+      
+      res.json(contact);
+    } catch (error) {
+      console.error("Error fetching contact:", error);
+      res.status(500).json({ message: "Erro ao buscar contato" });
+    }
+  });
+
+  // Criar um novo contato
+  app.post("/api/admin/crm/contacts", requireAdmin, async (req, res) => {
+    try {
+      // Validar os dados do contato
+      const contactData = insertContactSchema.parse(req.body);
+      
+      const contact = await storage.createContact(contactData);
+      res.status(201).json(contact);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Dados inválidos", 
+          errors: error.errors 
+        });
+      }
+      console.error("Error creating contact:", error);
+      res.status(500).json({ message: "Erro ao criar contato" });
+    }
+  });
+
+  // Atualizar um contato
+  app.put("/api/admin/crm/contacts/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const existingContact = await storage.getContact(id);
+      
+      if (!existingContact) {
+        return res.status(404).json({ message: "Contato não encontrado" });
+      }
+      
+      // Validar os dados da atualização
+      const updateData = insertContactSchema.partial().parse(req.body);
+      
+      const updatedContact = await storage.updateContact(id, updateData);
+      res.json(updatedContact);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Dados inválidos", 
+          errors: error.errors 
+        });
+      }
+      console.error("Error updating contact:", error);
+      res.status(500).json({ message: "Erro ao atualizar contato" });
+    }
+  });
+
+  // Excluir um contato
+  app.delete("/api/admin/crm/contacts/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteContact(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Contato não encontrado ou não pode ser excluído" });
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      console.error("Error deleting contact:", error);
+      res.status(500).json({ message: "Erro ao excluir contato" });
+    }
+  });
+
+  // ================== Rotas para Finanças - Produtos/Serviços ==================
+  // Listar produtos/serviços
+  app.get("/api/admin/finance/products", requireAdmin, async (req, res) => {
+    try {
+      const search = req.query.search?.toString();
+      const type = req.query.type?.toString();
+      const category = req.query.category?.toString();
+      const limit = parseInt(req.query.limit?.toString() || "50");
+      const offset = parseInt(req.query.offset?.toString() || "0");
+
+      const products = await storage.getProducts(search, type, category, limit, offset);
+      res.json(products);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      res.status(500).json({ message: "Erro ao buscar produtos/serviços" });
+    }
+  });
+
+  // Obter um produto/serviço específico
+  app.get("/api/admin/finance/products/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const product = await storage.getProduct(id);
+      
+      if (!product) {
+        return res.status(404).json({ message: "Produto/serviço não encontrado" });
+      }
+      
+      res.json(product);
+    } catch (error) {
+      console.error("Error fetching product:", error);
+      res.status(500).json({ message: "Erro ao buscar produto/serviço" });
+    }
+  });
+
+  // Criar um novo produto/serviço
+  app.post("/api/admin/finance/products", requireAdmin, async (req, res) => {
+    try {
+      // Validar os dados do produto
+      const productData = insertProductSchema.parse({ 
+        ...req.body,
+        createdById: req.user.id
+      });
+      
+      const product = await storage.createProduct(productData);
+      res.status(201).json(product);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Dados inválidos", 
+          errors: error.errors 
+        });
+      }
+      console.error("Error creating product:", error);
+      res.status(500).json({ message: "Erro ao criar produto/serviço" });
+    }
+  });
+
+  // Atualizar um produto/serviço
+  app.put("/api/admin/finance/products/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const existingProduct = await storage.getProduct(id);
+      
+      if (!existingProduct) {
+        return res.status(404).json({ message: "Produto/serviço não encontrado" });
+      }
+      
+      // Validar os dados da atualização
+      const updateData = insertProductSchema.partial().parse(req.body);
+      
+      const updatedProduct = await storage.updateProduct(id, updateData);
+      res.json(updatedProduct);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Dados inválidos", 
+          errors: error.errors 
+        });
+      }
+      console.error("Error updating product:", error);
+      res.status(500).json({ message: "Erro ao atualizar produto/serviço" });
+    }
+  });
+
+  // Excluir um produto/serviço
+  app.delete("/api/admin/finance/products/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteProduct(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Produto/serviço não encontrado ou não pode ser excluído" });
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      res.status(500).json({ message: "Erro ao excluir produto/serviço" });
+    }
+  });
+
+  // ================== Rotas para Finanças - Faturas ==================
+  // Listar faturas
+  app.get("/api/admin/finance/invoices", requireAdmin, async (req, res) => {
+    try {
+      const search = req.query.search?.toString();
+      const status = req.query.status?.toString();
+      const clientId = req.query.clientId ? parseInt(req.query.clientId.toString()) : undefined;
+      const limit = parseInt(req.query.limit?.toString() || "50");
+      const offset = parseInt(req.query.offset?.toString() || "0");
+
+      const invoices = await storage.getInvoices(search, status, clientId, limit, offset);
+      res.json(invoices);
+    } catch (error) {
+      console.error("Error fetching invoices:", error);
+      res.status(500).json({ message: "Erro ao buscar faturas" });
+    }
+  });
+
+  // Obter uma fatura específica
+  app.get("/api/admin/finance/invoices/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const invoice = await storage.getInvoice(id);
+      
+      if (!invoice) {
+        return res.status(404).json({ message: "Fatura não encontrada" });
+      }
+      
+      // Incluir itens da fatura
+      const invoiceItems = await storage.getInvoiceItems(id);
+      
+      res.json({
+        ...invoice,
+        items: invoiceItems
+      });
+    } catch (error) {
+      console.error("Error fetching invoice:", error);
+      res.status(500).json({ message: "Erro ao buscar fatura" });
+    }
+  });
+
+  // Criar uma nova fatura
+  app.post("/api/admin/finance/invoices", requireAdmin, async (req, res) => {
+    try {
+      // Validar os dados da fatura
+      const { items, ...invoiceData } = req.body;
+      
+      const validatedInvoiceData = insertInvoiceSchema.parse({ 
+        ...invoiceData,
+        createdById: req.user.id
+      });
+      
+      // Criar a fatura com seus itens
+      const invoice = await storage.createInvoiceWithItems(validatedInvoiceData, items);
+      res.status(201).json(invoice);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Dados inválidos", 
+          errors: error.errors 
+        });
+      }
+      console.error("Error creating invoice:", error);
+      res.status(500).json({ message: "Erro ao criar fatura" });
+    }
+  });
+
+  // Atualizar status de uma fatura
+  app.patch("/api/admin/finance/invoices/:id/status", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { status } = req.body;
+      
+      if (!status) {
+        return res.status(400).json({ message: "Status é obrigatório" });
+      }
+      
+      const updatedInvoice = await storage.updateInvoiceStatus(id, status);
+      
+      if (!updatedInvoice) {
+        return res.status(404).json({ message: "Fatura não encontrada" });
+      }
+      
+      res.json(updatedInvoice);
+    } catch (error) {
+      console.error("Error updating invoice status:", error);
+      res.status(500).json({ message: "Erro ao atualizar status da fatura" });
+    }
+  });
+
+  // Excluir uma fatura
+  app.delete("/api/admin/finance/invoices/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteInvoice(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Fatura não encontrada ou não pode ser excluída" });
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      console.error("Error deleting invoice:", error);
+      res.status(500).json({ message: "Erro ao excluir fatura" });
+    }
+  });
+
+  // ================== Rotas para Finanças - Pagamentos ==================
+  // Listar pagamentos
+  app.get("/api/admin/finance/payments", requireAdmin, async (req, res) => {
+    try {
+      const invoiceId = req.query.invoiceId ? parseInt(req.query.invoiceId.toString()) : undefined;
+      const status = req.query.status?.toString();
+      const method = req.query.method?.toString();
+      const limit = parseInt(req.query.limit?.toString() || "50");
+      const offset = parseInt(req.query.offset?.toString() || "0");
+
+      const payments = await storage.getPayments(invoiceId, status, method, limit, offset);
+      res.json(payments);
+    } catch (error) {
+      console.error("Error fetching payments:", error);
+      res.status(500).json({ message: "Erro ao buscar pagamentos" });
+    }
+  });
+
+  // Obter um pagamento específico
+  app.get("/api/admin/finance/payments/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const payment = await storage.getPayment(id);
+      
+      if (!payment) {
+        return res.status(404).json({ message: "Pagamento não encontrado" });
+      }
+      
+      res.json(payment);
+    } catch (error) {
+      console.error("Error fetching payment:", error);
+      res.status(500).json({ message: "Erro ao buscar pagamento" });
+    }
+  });
+
+  // Registrar um novo pagamento
+  app.post("/api/admin/finance/payments", requireAdmin, async (req, res) => {
+    try {
+      // Validar os dados do pagamento
+      const paymentData = insertPaymentSchema.parse({ 
+        ...req.body,
+        createdById: req.user.id
+      });
+      
+      const payment = await storage.createPayment(paymentData);
+      
+      // Atualizar o status da fatura se necessário
+      await storage.updateInvoiceAfterPayment(paymentData.invoiceId);
+      
+      res.status(201).json(payment);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Dados inválidos", 
+          errors: error.errors 
+        });
+      }
+      console.error("Error creating payment:", error);
+      res.status(500).json({ message: "Erro ao registrar pagamento" });
+    }
+  });
+
+  // Atualizar um pagamento
+  app.put("/api/admin/finance/payments/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const existingPayment = await storage.getPayment(id);
+      
+      if (!existingPayment) {
+        return res.status(404).json({ message: "Pagamento não encontrado" });
+      }
+      
+      // Validar os dados da atualização
+      const updateData = insertPaymentSchema.partial().parse(req.body);
+      
+      const updatedPayment = await storage.updatePayment(id, updateData);
+      
+      // Atualizar o status da fatura se o status do pagamento for alterado
+      if (updateData.status) {
+        await storage.updateInvoiceAfterPayment(existingPayment.invoiceId);
+      }
+      
+      res.json(updatedPayment);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Dados inválidos", 
+          errors: error.errors 
+        });
+      }
+      console.error("Error updating payment:", error);
+      res.status(500).json({ message: "Erro ao atualizar pagamento" });
+    }
+  });
+
+  // Excluir um pagamento
+  app.delete("/api/admin/finance/payments/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const payment = await storage.getPayment(id);
+      
+      if (!payment) {
+        return res.status(404).json({ message: "Pagamento não encontrado" });
+      }
+      
+      const success = await storage.deletePayment(id);
+      
+      if (success) {
+        // Atualizar o status da fatura após excluir o pagamento
+        await storage.updateInvoiceAfterPayment(payment.invoiceId);
+        res.status(204).end();
+      } else {
+        res.status(500).json({ message: "Erro ao excluir pagamento" });
+      }
+    } catch (error) {
+      console.error("Error deleting payment:", error);
+      res.status(500).json({ message: "Erro ao excluir pagamento" });
     }
   });
 
