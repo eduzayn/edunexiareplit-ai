@@ -34,6 +34,14 @@ import {
   InvoiceIcon,
   ShoppingBagIcon,
   PaymentsIcon,
+  InboxIcon,
+  MessageSquareIcon,
+  WhatsAppIcon,
+  MailIcon,
+  InstagramIcon,
+  FacebookIcon,
+  TelegramIcon,
+  WidgetIcon,
 } from "@/components/ui/icons";
 
 // Interfaces para definir a estrutura dos itens da barra lateral
@@ -387,6 +395,56 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
       },
     ]
   };
+  
+  // Categoria: Comunicação
+  const communicationCategory: SidebarCategory = {
+    name: "Comunicação",
+    icon: <MessageSquareIcon />,
+    expanded: hasCategoryActiveItem({
+      name: "Comunicação",
+      icon: <MessageSquareIcon />,
+      items: [
+        { 
+          name: "Caixa de Entrada", 
+          icon: <InboxIcon />, 
+          href: "/admin/inbox",
+          active: currentPath === "/admin/inbox" || (currentPath && currentPath.includes("/admin/inbox/"))
+        },
+        { 
+          name: "WhatsApp", 
+          icon: <WhatsAppIcon />, 
+          href: "/admin/whatsapp",
+          active: currentPath === "/admin/whatsapp" || (currentPath && currentPath.includes("/admin/whatsapp/"))
+        },
+        { 
+          name: "Email", 
+          icon: <MailIcon />, 
+          href: "/admin/email",
+          active: currentPath === "/admin/email" || (currentPath && currentPath.includes("/admin/email/"))
+        },
+      ]
+    }, currentPath),
+    items: [
+      { 
+        name: "Caixa de Entrada", 
+        icon: <InboxIcon />, 
+        href: "/admin/inbox",
+        active: currentPath === "/admin/inbox" || (currentPath && currentPath.includes("/admin/inbox/"))
+      },
+      { 
+        name: "WhatsApp", 
+        icon: <WhatsAppIcon />, 
+        href: "/admin/whatsapp",
+        active: currentPath === "/admin/whatsapp" || (currentPath && currentPath.includes("/admin/whatsapp/"))
+      },
+      { 
+        name: "Email", 
+        icon: <MailIcon />, 
+        href: "/admin/email",
+        active: currentPath === "/admin/email" || (currentPath && currentPath.includes("/admin/email/"))
+      },
+    ]
+  };
 
   // Categoria: Sistema
   const systemCategory: SidebarCategory = {
@@ -446,6 +504,7 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
     peopleCategory,
     operationalCategory,
     crmCategory,
+    communicationCategory,
     certificationCategory,
     systemCategory,
   ];
