@@ -405,7 +405,7 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
       icon: <MessageSquareIcon />,
       items: [
         { 
-          name: "Caixa de Entrada", 
+          name: "CANAIS", 
           icon: <InboxIcon />, 
           href: "/admin/inbox",
           active: currentPath === "/admin/inbox" || (currentPath && currentPath.includes("/admin/inbox/"))
@@ -426,7 +426,7 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
     }, currentPath),
     items: [
       { 
-        name: "Caixa de Entrada", 
+        name: "CANAIS", 
         icon: <InboxIcon />, 
         href: "/admin/inbox",
         active: currentPath === "/admin/inbox" || (currentPath && currentPath.includes("/admin/inbox/"))
