@@ -676,7 +676,7 @@ export default function PoloSalesLinksPage() {
                           <Input placeholder="Ex: promo-instagram" {...field} />
                         </FormControl>
                         <FormDescription>
-                          Será usado no link: {window.location.origin}/inscrever?polo={field.value || "[slug]"}
+                          Será usado no link: {new URL(`/inscrever?polo=${field.value || "[slug]"}`, window.location.origin).href}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -821,7 +821,7 @@ export default function PoloSalesLinksPage() {
                           <Input placeholder="Ex: promo-instagram" {...field} />
                         </FormControl>
                         <FormDescription>
-                          Será usado no link: {window.location.origin}/inscrever?polo={field.value || "[slug]"}
+                          Será usado no link: {new URL(`/inscrever?polo=${field.value || "[slug]"}`, window.location.origin).href}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
