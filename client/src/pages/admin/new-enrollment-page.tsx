@@ -1161,13 +1161,34 @@ export default function NewEnrollmentPage() {
                       Voltar
                     </Button>
                     
-                    <Button 
-                      type="submit"
-                      disabled={isCreatingEnrollment}
-                    >
-                      {isCreatingEnrollment && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      {step < 4 ? "Próximo" : "Finalizar Matrícula"}
-                    </Button>
+                    {step < 4 ? (
+                      <div className="flex space-x-2">
+                        <Button 
+                          type="button"
+                          onClick={goToNextStep}
+                          disabled={isCreatingEnrollment}
+                          className="bg-orange-500 hover:bg-orange-600"
+                        >
+                          Avançar
+                        </Button>
+                        
+                        <Button 
+                          type="submit"
+                          disabled={isCreatingEnrollment}
+                        >
+                          {isCreatingEnrollment && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          Próximo
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button 
+                        type="submit"
+                        disabled={isCreatingEnrollment}
+                      >
+                        {isCreatingEnrollment && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Finalizar Matrícula
+                      </Button>
+                    )}
                   </div>
                 </form>
               </Form>
