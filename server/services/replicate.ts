@@ -12,17 +12,25 @@ export interface ReplicateImageGenerationOptions {
 }
 
 export class ReplicateService {
-  private readonly apiKey: string;
+  private readonly apiKey: string | null;
   private readonly baseUrl = 'https://api.replicate.com/v1/predictions';
   private readonly defaultModel = 'stability-ai/sdxl';
   private readonly defaultVersion = '39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b';
+  private readonly isAvailable: boolean;
 
   constructor() {
     const apiKey = process.env.REPLICATE_API_TOKEN;
+    this.apiKey = apiKey || null;
+    this.isAvailable = !!apiKey;
+    
     if (!apiKey) {
-      throw new Error('REPLICATE_API_TOKEN não está configurado nas variáveis de ambiente');
+      console.warn('REPLICATE_API_TOKEN não está configurado. Serviço de geração de imagens não estará disponível.');
     }
-    this.apiKey = apiKey;
+  }
+  
+  // Método para verificar se o serviço está disponível
+  public checkAvailability(): boolean {
+    return this.isAvailable;
   }
 
   private getHeaders() {
@@ -36,6 +44,11 @@ export class ReplicateService {
    * Gera uma imagem usando o modelo SDXL do Replicate
    */
   async generateImage(options: ReplicateImageGenerationOptions): Promise<string[]> {
+    // Verificar se o serviço está disponível
+    if (!this.isAvailable) {
+      throw new Error('Serviço Replicate não está disponível. Token de API não configurado.');
+    }
+    
     try {
       // Cria a predição
       const createResponse = await axios.post(

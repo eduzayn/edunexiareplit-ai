@@ -14,6 +14,14 @@ aiServicesRouter.post('/generate-image', async (req: Request, res: Response) => 
       return res.status(401).json({ error: 'Não autorizado' });
     }
 
+    // Verificar se o serviço Replicate está disponível
+    if (!replicateService.checkAvailability()) {
+      return res.status(503).json({ 
+        success: false, 
+        error: 'Serviço de geração de imagens não está disponível. Contate o administrador do sistema.'
+      });
+    }
+
     // Validar payload
     const { 
       prompt, 
