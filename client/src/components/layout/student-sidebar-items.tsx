@@ -8,6 +8,7 @@ import {
   LayersIcon,
   FileTextIcon,
   AssignmentIcon,
+  GraduationCapIcon,
 } from "@/components/ui/icons";
 
 /**
@@ -25,7 +26,7 @@ export function getStudentSidebarItems(currentPath: string) {
     },
     { 
       name: "Meus Cursos", 
-      icon: <MenuBookIcon />, 
+      icon: <GraduationCapIcon />, 
       href: "/student/courses",
       active: currentPath === "/student/courses"
     },
