@@ -370,14 +370,14 @@ export default function CertificationSignersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {signers.length === 0 ? (
+                {Array.isArray(signers) && signers.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center">
                       Nenhum signatário cadastrado.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  signers.map((signer: any) => (
+                  Array.isArray(signers) && signers.map((signer: any) => (
                     <TableRow key={signer.id}>
                       <TableCell>{signer.name}</TableCell>
                       <TableCell>{signer.title}</TableCell>
