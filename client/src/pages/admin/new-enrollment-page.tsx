@@ -342,10 +342,28 @@ export default function NewEnrollmentPage() {
     }
   });
   
+  // Função para avançar para o próximo passo
+  const goToNextStep = () => {
+    console.log("Função goToNextStep chamada");
+    console.log("Passo atual:", step);
+    console.log("Tentando avançar para o passo:", step + 1);
+    
+    try {
+      // Atualizando o estado diretamente sem validação
+      const newStep = step + 1;
+      setStep(newStep);
+      console.log("Estado atualizado para o passo:", newStep);
+    } catch (error) {
+      console.error("Erro ao atualizar o passo:", error);
+    }
+  };
+
   // Lidar com a submissão do formulário em cada etapa
   const onSubmit = (values: EnrollmentFormValues) => {
+    console.log("Formulário submetido na etapa:", step);
     if (step < 4) {
-      setStep(step + 1);
+      // Usar a função goToNextStep em vez de setStep diretamente
+      goToNextStep();
     } else {
       createEnrollmentMutation.mutate(values);
     }
