@@ -25,7 +25,12 @@ import {
   FileCheck,
   ScrollText,
   Settings2,
-  BadgeCheck
+  BadgeCheck,
+  MessageSquare,
+  MessageCircle,
+  Inbox,
+  SendHorizonal,
+  MessagesSquare
 } from "lucide-react";
 
 // Ícones de Lucide exportados diretamente
@@ -54,6 +59,11 @@ export const FileCheckIcon = FileCheck;
 export const ScrollTextIcon = ScrollText;
 export const Settings2Icon = Settings2;
 export const BadgeCheckIcon = BadgeCheck;
+export const MessageSquareIcon = MessageSquare;
+export const MessageCircleIcon = MessageCircle;
+export const InboxIcon = Inbox;
+export const SendIcon = SendHorizonal;
+export const MessagesSquareIcon = MessagesSquare;
 export const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -375,6 +385,80 @@ export function CheckIcon(props: React.SVGProps<SVGSVGElement>) {
 
 // Este arquivo define componentes de ícones usando propriedades SVG padrão
 // para manter consistência visual em toda a aplicação
+
+// Ícones para a Caixa de Entrada
+export function InstagramIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+    </svg>
+  );
+}
+
+export function FacebookIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+    </svg>
+  );
+}
+
+export function TelegramIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="M21.5 2l-19 8.44 5.6 2.41m13.4-10.85l-7.01 19-2.3-10.07m9.31-8.93l-11.94 7.36m4.28 3.62l.56 2.43.5.19.19.5-4.47-1.5" />
+    </svg>
+  );
+}
+
+export function WidgetIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <rect x="3" y="3" width="7" height="7" rx="1" />
+      <rect x="14" y="3" width="7" height="7" rx="1" />
+      <rect x="14" y="14" width="7" height="7" rx="1" />
+      <rect x="3" y="14" width="7" height="7" rx="1" />
+    </svg>
+  );
+}
 
 // Ícones específicos para o módulo CRM
 export function UserPlusIcon(props: React.SVGProps<SVGSVGElement>) {
