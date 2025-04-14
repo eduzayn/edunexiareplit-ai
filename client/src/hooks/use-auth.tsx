@@ -7,6 +7,7 @@ import {
 import { insertUserSchema, User as SelectUser, InsertUser, LoginData } from "@shared/schema";
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
 type AuthContextType = {
   user: SelectUser | null;
@@ -94,6 +95,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
 
+  const [, setLocation] = useLocation();
+  
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
       // Garantir que o portalType esteja presente na requisição
@@ -108,9 +111,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: `Bem-vindo(a) de volta, ${user.fullName}!`,
       });
 
-      // Redirect to the appropriate dashboard
+      // Redirect to the appropriate dashboard usando setLocation ao invés de window.location
       if (user.portalType) {
-        window.location.href = `/${user.portalType}/dashboard`;
+        setLocation(`/${user.portalType}/dashboard`);
       }
     },
     onError: (error: Error) => {
@@ -134,9 +137,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: `Bem-vindo(a), ${user.fullName}!`,
       });
 
-      // Redirect to the appropriate dashboard
+      // Redirect to the appropriate dashboard usando setLocation
       if (user.portalType) {
-        window.location.href = `/${user.portalType}/dashboard`;
+        setLocation(`/${user.portalType}/dashboard`);
       }
     },
     onError: (error: Error) => {
@@ -154,7 +157,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);
-      window.location.href = "/";
+      setLocation("/");
       toast({
         title: "Logout bem-sucedido",
         description: "Você foi desconectado com sucesso.",

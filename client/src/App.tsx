@@ -62,9 +62,8 @@ function Router() {
         {() => {
           if (user) {
             const dashboardPath = `/${user.portalType}/dashboard`;
-            // Use setLocation ao invés de window.location.href para evitar recarregar a página
-            setLocation(dashboardPath);
-            return null;
+            // Substituir setLocation diretamente por um componente de redirecionamento
+            return <Redirect to={dashboardPath} />;
           }
           return <AuthPage />;
         }}
@@ -73,8 +72,7 @@ function Router() {
       <Route path="/admin">
         {() => {
           if (user && user.portalType === "admin") {
-            setLocation("/admin/dashboard");
-            return null;
+            return <Redirect to="/admin/dashboard" />;
           }
           return <AdminAuthPage />;
         }}
@@ -83,8 +81,7 @@ function Router() {
       <Route path="/polo">
         {() => {
           if (user && user.portalType === "polo") {
-            setLocation("/polo/dashboard");
-            return null;
+            return <Redirect to="/polo/dashboard" />;
           }
           return <PoloAuthPage />;
         }}
