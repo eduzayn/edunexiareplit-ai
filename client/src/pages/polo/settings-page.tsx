@@ -335,7 +335,7 @@ export default function PoloSettingsPage() {
   // Função para gerar link do polo para testes
   const generateTestLink = () => {
     const slug = salesLinkForm.getValues("customSlug") || poloData?.code.toLowerCase();
-    const linkUrl = `${window.location.origin}/inscrever?polo=${slug}`;
+    const linkUrl = new URL(`/inscrever?polo=${slug}`, window.location.origin).href;
     setLinkToTest(linkUrl);
     setIsTestLinkDialogOpen(true);
   };
@@ -711,7 +711,7 @@ export default function PoloSettingsPage() {
                             <div className="flex items-center space-x-2">
                               <span className="text-sm text-gray-500">Seu link será:</span>
                               <code className="px-2 py-1 rounded bg-gray-100 text-sm">
-                                {window.location.origin}/inscrever?polo={salesLinkForm.watch("customSlug") || poloData?.code.toLowerCase()}
+                                {new URL(`/inscrever?polo=${salesLinkForm.watch("customSlug") || poloData?.code.toLowerCase()}`, window.location.origin).href}
                               </code>
                               <Button variant="outline" size="sm" onClick={generateTestLink}>
                                 Testar
