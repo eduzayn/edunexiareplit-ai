@@ -35,10 +35,35 @@ console.log('Configuração do cliente Asaas:');
 console.log('- URL base:', ASAAS_API_URL);
 console.log('- Token de acesso:', ASAAS_API_KEY ? `${ASAAS_API_KEY.substring(0, 10)}...` : 'Não definido');
 
-// Função para gerar um CPF fake aleatório (apenas para testes)
+// Função para gerar um CPF válido aleatório (apenas para testes)
 function generateRandomCPF() {
-  const randomDigits = Array.from({ length: 9 }, () => Math.floor(Math.random() * 10)).join('');
-  return `${randomDigits}00`; // Simplificado para testes, não é um CPF válido
+  // Gera 9 dígitos aleatórios
+  const digits = Array.from({ length: 9 }, () => Math.floor(Math.random() * 10));
+  
+  // Calcula o primeiro dígito verificador
+  let sum = 0;
+  for (let i = 0; i < 9; i++) {
+    sum += digits[i] * (10 - i);
+  }
+  let remainder = sum % 11;
+  const firstVerifier = remainder < 2 ? 0 : 11 - remainder;
+  
+  // Adiciona o primeiro dígito verificador
+  digits.push(firstVerifier);
+  
+  // Calcula o segundo dígito verificador
+  sum = 0;
+  for (let i = 0; i < 10; i++) {
+    sum += digits[i] * (11 - i);
+  }
+  remainder = sum % 11;
+  const secondVerifier = remainder < 2 ? 0 : 11 - remainder;
+  
+  // Adiciona o segundo dígito verificador
+  digits.push(secondVerifier);
+  
+  // Retorna o CPF formatado
+  return digits.join('');
 }
 
 // Função para criar um cliente no Asaas
