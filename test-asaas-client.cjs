@@ -3,7 +3,7 @@ require('dotenv').config();
 const axios = require('axios');
 
 const ASAAS_API_KEY = process.env.ASAAS_API_KEY;
-const ASAAS_API_URL = process.env.ASAAS_API_URL || 'https://sandbox.asaas.com/api/v3';
+const ASAAS_API_URL = process.env.ASAAS_API_URL || 'https://api.asaas.com/v3';
 
 if (!ASAAS_API_KEY) {
   console.error('Erro: ASAAS_API_KEY não está definida no ambiente');
@@ -18,6 +18,17 @@ const asaasClient = axios.create({
     'access_token': ASAAS_API_KEY
   }
 });
+
+// Adicionando interceptor para verificar as requisições
+asaasClient.interceptors.request.use(
+  config => {
+    console.log('Cabeçalhos sendo enviados:', JSON.stringify(config.headers));
+    return config;
+  },
+  error => {
+    return Promise.reject(error);
+  }
+);
 
 // Log de verificação da configuração do cliente
 console.log('Configuração do cliente Asaas:');
