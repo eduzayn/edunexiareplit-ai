@@ -9,6 +9,7 @@ import {
   FileTextIcon,
   AssignmentIcon,
   GraduationCapIcon,
+  IdCardIcon,
 } from "@/components/ui/icons";
 
 /**
@@ -62,7 +63,7 @@ export function getStudentSidebarItems(currentPath: string) {
     },
     { 
       name: "Credencial", 
-      icon: <DescriptionIcon />, 
+      icon: <IdCardIcon />, 
       href: "/student/credencial",
       active: currentPath === "/student/credencial"
     },

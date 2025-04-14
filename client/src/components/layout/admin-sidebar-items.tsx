@@ -20,6 +20,7 @@ import {
   ChevronRightIcon,
   GraduationCapIcon,
   BookIcon,
+  BuildingIcon,
 } from "@/components/ui/icons";
 
 // Interfaces para definir a estrutura dos itens da barra lateral
@@ -78,7 +79,7 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
       items: [
         { 
           name: "Disciplinas", 
-          icon: <MenuBookIcon />, 
+          icon: <BookIcon />, 
           href: "/admin/disciplines",
           active: currentPath === "/admin/disciplines" || (currentPath && currentPath.includes("/admin/disciplines/"))
         },
@@ -109,10 +110,10 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
   // Categoria: Institucional
   const institutionalCategory: SidebarCategory = {
     name: "Institucional",
-    icon: <LayersIcon />,
+    icon: <BuildingIcon />,
     expanded: hasCategoryActiveItem({
       name: "Institucional",
-      icon: <LayersIcon />,
+      icon: <BuildingIcon />,
       items: [
         { 
           name: "Instituições", 
