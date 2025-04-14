@@ -451,7 +451,7 @@ export default function AdminPoloEnrollmentsPage() {
                 </div>
               ) : enrollmentsData?.enrollments?.length === 0 ? (
                 <div className="p-6 text-center">
-                  <SchoolIcon className="h-10 w-10 text-orange-500 mx-auto mb-2" />
+                  <SchoolIcon className="h-10 w-10 text-blue-500 mx-auto mb-2" />
                   <p className="text-gray-600">Nenhuma matrícula encontrada</p>
                   <Button 
                     className="mt-2 bg-blue-500 hover:bg-blue-600"
@@ -531,7 +531,7 @@ export default function AdminPoloEnrollmentsPage() {
           <DialogContent className="max-w-3xl">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <SchoolIcon className="h-5 w-5 text-orange-500" />
+                <SchoolIcon className="h-5 w-5 text-blue-500" />
                 Detalhes da Matrícula
               </DialogTitle>
               <DialogDescription>
@@ -709,7 +709,7 @@ export default function AdminPoloEnrollmentsPage() {
                             <Button 
                               variant="default" 
                               size="sm"
-                              className="flex items-center gap-1 bg-orange-500 hover:bg-orange-600"
+                              className="flex items-center gap-1 bg-blue-500 hover:bg-blue-600"
                               onClick={() => handleSendPaymentLinkByEmail(selectedEnrollment)}
                             >
                               <MailIcon className="h-4 w-4" />
@@ -828,7 +828,7 @@ export default function AdminPoloEnrollmentsPage() {
                       
                       <div className="flex items-center justify-between p-3 border rounded-md">
                         <div className="flex items-center gap-3">
-                          <FileTextIcon className="h-5 w-5 text-orange-500" />
+                          <FileTextIcon className="h-5 w-5 text-blue-500" />
                           <div>
                             <p className="font-medium">Declaração de Matrícula</p>
                             <p className="text-xs text-gray-500">Disponível para geração</p>
@@ -979,7 +979,7 @@ export default function AdminPoloEnrollmentsPage() {
                 }}
               >
                 <div className="flex items-center gap-3">
-                  <FileTextIcon className="h-5 w-5 text-orange-500" />
+                  <FileTextIcon className="h-5 w-5 text-blue-500" />
                   <div>
                     <p className="font-medium">Declaração de Matrícula</p>
                     <p className="text-xs text-gray-500">Para fins de comprovação</p>
