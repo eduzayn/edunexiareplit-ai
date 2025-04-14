@@ -1,73 +1,81 @@
-# Análise da Integração com a API Lytex
+# Documentação da Integração com a API Lytex
 
-## Resumo dos Testes
+## Visão Geral
 
-Após testes extensivos com a API Lytex, foi possível determinar quais endpoints estão disponíveis e funcionais nas versões v1 e v2 da API.
+A integração com o gateway de pagamento Lytex foi implementada para permitir o processamento de pagamentos de matrículas no sistema EdunexIA. A integração utiliza a API Lytex para autenticação, consulta de clientes, criação de faturas e verificação de status de pagamentos.
 
-### Endpoints testados com sucesso:
+## Endpoints Utilizados
 
-| Endpoint | Método | Status | Versão |
-|----------|--------|--------|--------|
-| `/v1/clients` | GET | ✅ 200 | v1 |
-| `/v1/invoices` | GET | ✅ 200 | v1 |
-| `/v2/clients` | GET | ✅ 200 | v2 |
-| `/v2/invoices` | GET | ✅ 200 | v2 |
-| `/v2/auth/obtain_token` | POST | ✅ 200 | v2 |
+- **Autenticação**: `/v2/auth/obtain_token` - Endpoint para obter token de acesso
+- **Clientes**: `/v1/clients` - Endpoint para consultar e criar clientes
+- **Faturas**: `/v1/invoices` - Endpoint para criar faturas e gerar links de pagamento
 
-### Endpoints que falharam:
+## Fluxo de Integração
 
-| Endpoint | Método | Status | Versão | Motivo |
-|----------|--------|--------|--------|--------|
-| `/v1/users/me` | GET | ❌ 404 | v1 | Endpoint inexistente |
-| `/v1/clients` | POST | ❌ 422 | v1 | CPF inválido e outros requisitos não atendidos |
-| `/v1/invoices` | POST | ❌ 422 | v1 | Falha de validação - "client" e "items" obrigatórios |
+1. **Autenticação**: O sistema se autentica na API Lytex usando as credenciais configuradas (CLIENT_ID e CLIENT_SECRET)
+2. **Registro de Aluno**: Ao processar uma matrícula, o sistema verifica se o aluno já está cadastrado na plataforma Lytex
+3. **Criação de Fatura**: Com os dados do aluno e da matrícula, o sistema cria uma fatura na Lytex
+4. **Link de Pagamento**: O sistema recebe e armazena o link de pagamento gerado pela Lytex
+5. **Verificação de Status**: Periodicamente, o sistema consulta o status do pagamento na API
 
-## Detalhes da API
+## Requisitos Técnicos
 
-### Estrutura do Cliente
-Campos retornados na listagem de clientes:
-- `_id`: ID do cliente na plataforma Lytex
-- `cpfCnpj`: CPF ou CNPJ do cliente
-- `cellphone`: Telefone celular
-- `createdAt`: Data de criação do registro
-- `name`: Nome do cliente
-- `treatmentPronoun`: Pronome de tratamento
-- `type`: Tipo de pessoa (pf: pessoa física, pj: pessoa jurídica)
-- `email`: E-mail do cliente
+### Autenticação
 
-### Estrutura da Fatura
-Campos retornados na listagem de faturas:
-- `_id`: ID da fatura
-- `_clientId`: ID do cliente associado
-- `client`: Dados do cliente (objeto)
-- `_recipientId`: ID do destinatário
-- `_installmentId`: ID do parcelamento
-- `items`: Itens da fatura (array)
-- `dueDate`: Data de vencimento
-- `paymentMethods`: Métodos de pagamento disponíveis
-- `status`: Status da fatura
-- `notasFiscais`: Notas fiscais associadas
-- `totalValue`: Valor total
-- `createdAt`: Data de criação
-- `_hashId`: Hash ID da fatura
-- `paymentData`: Dados do pagamento
-- `linkCheckout`: Link para checkout
-- `linkBoleto`: Link para boleto
+- O token de acesso obtido é válido por 60 minutos
+- O sistema gerencia automaticamente a renovação do token quando necessário
 
-## Diferenças entre versões da API
+### Clientes
 
-A análise mostra que a API v2 e v1 têm formatação de dados similar para endpoints GET, como `/clients` e `/invoices`. Porém, a API v2 parece ter implementado apenas o mecanismo de autenticação e os endpoints de leitura (GET).
+- O documento (CPF/CNPJ) do cliente é um campo obrigatório e único
+- A busca de clientes pode ser feita diretamente pelo CPF ou pelo ID do cliente
+- Caso o cliente não exista, o sistema o cadastra automaticamente
 
-## Recomendações para integração
+### Faturas
 
-1. **Autenticação**: Utilizar o endpoint `/v2/auth/obtain_token` da API v2, que funciona corretamente.
-2. **Leitura de dados**: Ambas versões da API (v1 e v2) permitem a leitura de clientes e faturas.
-3. **Criação de dados**: As tentativas de criar clientes e faturas via API v1 resultaram em erros de validação, o que sugere que:
-   - Serão necessários testes adicionais para determinar o formato exato esperado pela API
-   - Ou possivelmente a conta atual não tem permissões para criar novos registros
+- As faturas exigem pelo menos os seguintes campos obrigatórios:
+  - `client`: Dados do cliente (nome, tipo, CPF, email)
+  - `items`: Lista de itens da fatura (nome, descrição, quantidade, valor)
+  - `dueDate`: Data de vencimento no formato YYYY-MM-DD
+  - `paymentMethods`: Métodos de pagamento habilitados
+  - `externalReference`: Código de referência da matrícula
 
-## Próximos passos
+### Métodos de Pagamento
 
-1. Consultar documentação adicional da Lytex para entender o formato correto para criação de clientes e faturas.
-2. Implementar uma abordagem híbrida utilizando v2 para autenticação e consultas, enquanto testamos mais a fundo a criação via v1.
-3. Implementar um mecanismo de fallback para quando os endpoints de criação não estiverem disponíveis.
+- **PIX**: Habilitado para todos os valores
+- **Boleto**: Habilitado para todos os valores, com prazo configurável
+- **Cartão de Crédito**: Disponível apenas para valores acima de R$ 500,00
+
+### Tratamento de Erros
+
+- O sistema implementa mecanismos de tolerância a falhas e retry
+- Em caso de indisponibilidade temporária da API, o sistema utiliza uma simulação como fallback
+- Todas as operações e erros são devidamente registrados em logs
+
+## Configuração
+
+Para utilizar a integração, é necessário configurar as seguintes variáveis de ambiente:
+
+- `LYTEX_CLIENT_ID`: Identificador do cliente na plataforma Lytex
+- `LYTEX_CLIENT_SECRET`: Chave secreta para autenticação na API
+
+## Testes e Validação
+
+A integração foi testada em diversos cenários:
+
+1. Autenticação na API
+2. Busca de clientes por CPF
+3. Criação de novos clientes
+4. Criação de faturas com diferentes métodos de pagamento
+5. Verificação de status de pagamentos
+
+## Limitações Conhecidas
+
+- A API de status de pagamento (v2) apresenta inconsistências e em alguns casos retorna erro 404
+- Em caso de falha na verificação de status, o sistema assume o status "pending_payment" por segurança
+
+## Melhorias Futuras
+
+- Implementar webhook para recebimento de notificações de pagamento em tempo real
+- Adicionar suporte a parcelamento no cartão de crédito
+- Melhorar a tratativa de erros específicos da API

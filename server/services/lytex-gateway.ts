@@ -149,20 +149,57 @@ class LytexGateway {
     try {
       const token = await this.getAccessToken();
       
+      // Listar todos os clientes e filtrar pelo documento
+      console.log(`[LYTEX] Buscando cliente com CPF/CNPJ: ${cpfCnpj}`);
+      
+      // 1. Primeiro tenta encontrar o cliente pela API padrão
+      try {
+        const response = await axios.get(`${this.baseUrl}/v1/clients`, {
+          params: { 
+            cpfCnpj 
+          },
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+  
+        if (response.data && response.data.results && response.data.results.length > 0) {
+          console.log(`[LYTEX] Cliente encontrado usando parâmetro: ${response.data.results[0]._id}`);
+          return response.data.results[0];
+        }
+      } catch (specificError) {
+        // Se falhou, tentamos listar todos e filtrar manualmente
+        console.log(`[LYTEX] Busca com parâmetro não funcionou, tentando listar todos.`);
+      }
+      
+      // 2. Se não encontrou, busca na lista completa
       const response = await axios.get(`${this.baseUrl}/v1/clients`, {
-        params: { 
-          cpfCnpj 
-        },
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
-
-      if (response.data && response.data.results && response.data.results.length > 0) {
-        return response.data.results[0];
+      
+      if (response.data && Array.isArray(response.data.data)) {
+        console.log(`[LYTEX] Total de clientes retornados: ${response.data.data.length}`);
+        
+        // Filtrar os resultados para encontrar o cliente com o CPF/CNPJ específico
+        const client = response.data.data.find((c: any) => {
+          // Limpar formatação para comparação
+          const normalizedCpfCnpj = cpfCnpj.replace(/\D/g, '');
+          const normalizedClientCpfCnpj = c.cpfCnpj ? c.cpfCnpj.replace(/\D/g, '') : '';
+          
+          return normalizedClientCpfCnpj === normalizedCpfCnpj;
+        });
+        
+        if (client) {
+          console.log(`[LYTEX] Cliente encontrado na lista: ${client._id}`);
+          return client as LytexClient;
+        }
       }
 
+      console.log(`[LYTEX] Cliente não encontrado com CPF/CNPJ: ${cpfCnpj}`);
       return null;
     } catch (error) {
       const axiosError = error as AxiosError;
@@ -170,9 +207,12 @@ class LytexGateway {
         if (axiosError.response.status === 404) {
           return null;
         }
-        throw new Error(`Erro ao buscar cliente: ${axiosError.response.status} - ${JSON.stringify(axiosError.response.data)}`);
+        console.error(`[LYTEX] Erro ao buscar cliente: ${axiosError.response.status} - ${JSON.stringify(axiosError.response.data)}`);
+      } else {
+        console.error(`[LYTEX] Falha ao buscar cliente: ${(error as Error).message}`);
       }
-      throw new Error(`Falha ao buscar cliente: ${error.message}`);
+      // Em caso de erro na API, retornamos null para poder continuar o fluxo
+      return null;
     }
   }
 

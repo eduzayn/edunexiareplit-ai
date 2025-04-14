@@ -1,12 +1,13 @@
-// Usando formato ESM (import)
-import { LytexGatewayAdapter } from './server/services/payment-gateways.js';
+// Usando TypeScript para executar o teste
+import { createPaymentGateway } from './server/services/payment-gateways';
+import { Enrollment } from './shared/schema';
 
 async function testLytexAdapter() {
   console.log('===== TESTANDO LYTEX GATEWAY ADAPTER =====');
   
   try {
     // Criar instância do adaptador
-    const gateway = new LytexGatewayAdapter();
+    const gateway = createPaymentGateway('lytex');
     console.log('Gateway inicializado');
     
     // Testar registro de aluno
@@ -31,17 +32,25 @@ async function testLytexAdapter() {
       studentId: userData.id,
       courseId: 789,
       amount: 99.90,
+      status: 'pending_payment',
       paymentMethod: 'pix',
+      payment_gateway: 'lytex',
       course: {
+        id: 789,
         name: 'Curso de Teste',
-        price: 99.90
+        price: 99.90,
+        code: 'CURSO001',
+        status: 'published',
+        description: 'Descrição do curso de teste',
+        workload: 40
       },
       student: {
+        id: 123,
         fullName: userData.fullName,
         email: userData.email,
         cpf: userData.cpf
       }
-    };
+    } as unknown as Enrollment;
     
     console.log(`Dados da matrícula: ${JSON.stringify(enrollment)}`);
     
