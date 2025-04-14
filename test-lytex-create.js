@@ -1,3 +1,13 @@
+/**
+ * !!! IMPORTANTE: NÃO EXCLUIR ESTE ARQUIVO !!!
+ * 
+ * Este script é essencial para testar a integração com a API do Lytex.
+ * Ele contém testes de criação de clientes e faturas que são fundamentais 
+ * para validar o funcionamento correto do gateway de pagamento.
+ * 
+ * Mantenha este arquivo para referência e testes futuros.
+ */
+
 // Script para testar a criação de clientes e faturas na API Lytex
 import axios from 'axios';
 

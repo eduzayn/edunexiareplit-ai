@@ -2,6 +2,14 @@ import 'dotenv/config';
 import axios from 'axios';
 
 /**
+ * !!! IMPORTANTE: NÃO EXCLUIR ESTE ARQUIVO !!!
+ * 
+ * Este script é essencial para testar a integração com a API do Lytex v2.
+ * Contém testes de autenticação, busca de clientes, criação de clientes,
+ * criação de faturas e consulta de status de faturas.
+ * 
+ * Mantenha este arquivo para referência e testes futuros da integração.
+ * 
  * Testes da integração com a API Lytex - Versão 2
  */
 

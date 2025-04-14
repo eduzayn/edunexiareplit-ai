@@ -1,3 +1,13 @@
+/**
+ * !!! IMPORTANTE: NÃO EXCLUIR ESTE ARQUIVO !!!
+ * 
+ * Este script é essencial para testar a integração com a API do Lytex.
+ * Ele contém testes para consulta de clientes, criação de clientes, 
+ * verificação de status de pagamento e exploração de endpoints.
+ * 
+ * Mantenha este arquivo para referência e testes futuros da integração.
+ */
+
 // Script para testar a integração com a API do Lytex
 import axios from 'axios';
 
