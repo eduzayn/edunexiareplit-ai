@@ -326,7 +326,7 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
         },
         // Submódulo Financeiro
         { 
-          name: "Produtos/Serviços", 
+          name: "Cursos e Serviços", 
           icon: <ShoppingBagIcon />, 
           href: "/admin/finance/products",
           active: currentPath === "/admin/finance/products" || (currentPath && currentPath.includes("/admin/finance/products/"))
@@ -374,7 +374,7 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
       },
       // Submódulo Financeiro
       { 
-        name: "Produtos/Serviços", 
+        name: "Cursos e Serviços", 
         icon: <ShoppingBagIcon />, 
         href: "/admin/finance/products",
         active: currentPath === "/admin/finance/products" || (currentPath && currentPath.includes("/admin/finance/products/"))
