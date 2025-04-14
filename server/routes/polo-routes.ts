@@ -476,11 +476,15 @@ router.get("/sales-links", async (req, res) => {
     // com uma nova tabela no banco de dados
     
     // Link principal (default)
+    // Garante que não haverá barras duplicadas na URL
+    const host = req.get('host') || '';
+    const baseUrl = `${req.protocol}://${host}`;
+    
     const mainLink = {
       id: 1,
       name: "Link Principal",
       slug: userPolo.code.toLowerCase(),
-      url: `${req.protocol}://${req.get('host')}/inscrever?polo=${userPolo.code.toLowerCase()}`,
+      url: `${baseUrl}/inscrever?polo=${userPolo.code.toLowerCase()}`,
       status: "active",
       created: new Date().toISOString().split('T')[0],
       autoApprove: true,

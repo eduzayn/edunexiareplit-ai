@@ -63,6 +63,13 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Interface para os links de vendas
 interface SalesLink {
@@ -126,7 +133,7 @@ export default function PoloSalesLinksPage() {
             id: 1,
             name: "Link Principal",
             slug: "principal",
-            url: `${window.location.origin}/inscrever?polo=principal`,
+            url: new URL('/inscrever?polo=principal', window.location.origin).href,
             status: "active",
             created: "2023-06-15",
             autoApprove: true,
@@ -139,7 +146,7 @@ export default function PoloSalesLinksPage() {
             id: 2,
             name: "Promoção Verão",
             slug: "promo-verao",
-            url: `${window.location.origin}/inscrever?polo=promo-verao`,
+            url: new URL('/inscrever?polo=promo-verao', window.location.origin).href,
             status: "active",
             created: "2023-10-01",
             autoApprove: false,
@@ -152,7 +159,7 @@ export default function PoloSalesLinksPage() {
             id: 3,
             name: "Parceria Empresa XYZ",
             slug: "xyz",
-            url: `${window.location.origin}/inscrever?polo=xyz`,
+            url: new URL('/inscrever?polo=xyz', window.location.origin).href,
             status: "inactive",
             created: "2023-04-10",
             autoApprove: false,
