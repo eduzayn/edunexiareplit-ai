@@ -4,8 +4,55 @@ import { insertEnrollmentSchema } from '@shared/schema';
 import { requireAdmin, requireStudent, requirePartner } from '../middleware/auth';
 import { z } from 'zod';
 import { logEnrollmentAudit, logStatusChange, getAuditInfo, getSourceChannel } from '../services/audit-service';
+import { createPaymentGateway } from '../services/payment-gateways';
 
 export function registerEnrollmentRoutes(app: Express) {
+  // Endpoint para registrar um aluno como cliente no gateway de pagamento
+  app.post('/api/payment-gateways/register-student', async (req: Request, res: Response) => {
+    try {
+      const { 
+        gateway, 
+        studentData
+      } = req.body;
+      
+      if (!gateway || !studentData) {
+        return res.status(400).json({ error: 'Gateway e dados do aluno são obrigatórios' });
+      }
+      
+      // Verificar se o gateway é suportado
+      if (gateway !== 'asaas' && gateway !== 'lytex') {
+        return res.status(400).json({ error: 'Gateway de pagamento não suportado' });
+      }
+      
+      // Validar dados mínimos do aluno
+      if (!studentData.fullName || !studentData.email) {
+        return res.status(400).json({ 
+          error: 'Dados incompletos do aluno. Nome completo e email são obrigatórios'
+        });
+      }
+      
+      console.log(`[API] Registrando aluno no gateway ${gateway}: ${studentData.fullName}, ${studentData.email}`);
+      
+      // Criar instância do gateway e registrar o aluno
+      const paymentGateway = createPaymentGateway(gateway);
+      const result = await paymentGateway.registerStudent({
+        id: studentData.id || 0,
+        fullName: studentData.fullName,
+        email: studentData.email,
+        cpf: studentData.cpf
+      });
+      
+      console.log(`[API] Aluno registrado com sucesso no gateway ${gateway}. ID: ${result.customerId}`);
+      
+      res.status(200).json(result);
+    } catch (error: any) {
+      console.error('Erro ao registrar aluno no gateway de pagamento:', error);
+      res.status(500).json({ 
+        error: 'Erro interno ao registrar aluno', 
+        message: error.message 
+      });
+    }
+  });
   // Listar matrículas (acesso administrativo)
   app.get('/api/enrollments', requireAdmin, async (req: Request, res: Response) => {
     try {
