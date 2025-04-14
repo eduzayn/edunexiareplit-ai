@@ -149,6 +149,8 @@ export default function IntegrationsPage() {
   const [testResults, setTestResults] = useState<{ success: boolean; message: string; details?: string } | null>(null);
   const [testDialogOpen, setTestDialogOpen] = useState(false);
   const [currentId, setCurrentId] = useState<number | null>(null);
+  // Estado para armazenar as integrações padrão por tipo
+  const [defaultIntegrations, setDefaultIntegrations] = useState<Record<string, number>>({});
   const [formData, setFormData] = useState<IntegrationFormData>({
     name: "",
     type: "asaas",
@@ -313,6 +315,48 @@ export default function IntegrationsPage() {
   const handleTest = (id: number) => {
     testMutation.mutate(id);
   };
+  
+  // Mutação para definir uma integração como padrão para seu tipo
+  const defaultIntegrationMutation = useMutation({
+    mutationFn: async ({ id, type }: { id: number; type: string }) => {
+      const res = await apiRequest("PUT", `/api/integrations/${id}/set-default`, { type });
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/integrations"] });
+      
+      // Atualiza o estado de integrações padrão
+      setDefaultIntegrations(prev => ({
+        ...prev,
+        [data.type]: data.id
+      }));
+      
+      toast({
+        title: "Integração definida como padrão",
+        description: `Esta integração agora é a padrão para ${data.type}.`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao definir integração como padrão",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Função para definir uma integração como padrão
+  const handleSetDefault = (id: number) => {
+    const integration = integrations?.find((i: Integration) => i.id === id);
+    if (integration) {
+      defaultIntegrationMutation.mutate({ id, type: integration.type });
+    }
+  };
+  
+  // Verificar se uma integração é a padrão para seu tipo
+  const isDefaultIntegration = (integration: Integration) => {
+    return defaultIntegrations[integration.type] === integration.id;
+  };
 
   const typeOptions = [
     { value: "asaas", label: "Asaas - Pagamentos" },
@@ -346,7 +390,7 @@ export default function IntegrationsPage() {
   
   return (
     <div className="flex h-screen bg-background">
-      <Sidebar items={sidebarItems} isMobile={isMobile} />
+      <Sidebar items={sidebarItems} />
       
       <div className="flex-1 flex flex-col overflow-hidden">
         <div className="p-6">
@@ -417,6 +461,8 @@ export default function IntegrationsPage() {
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     onTest={handleTest}
+                    onSetDefault={handleSetDefault}
+                    isDefault={isDefaultIntegration(integration)}
                   />
                 ))}
               </div>
@@ -432,6 +478,8 @@ export default function IntegrationsPage() {
                       onEdit={handleEdit}
                       onDelete={handleDelete}
                       onTest={handleTest}
+                      onSetDefault={handleSetDefault}
+                      isDefault={isDefaultIntegration(integration)}
                     />
                   ))}
                 </div>
