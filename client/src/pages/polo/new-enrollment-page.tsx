@@ -255,6 +255,42 @@ export default function NewEnrollmentPage() {
     },
   });
   
+  // Mutation para registrar o aluno no gateway de pagamento
+  const registerStudentMutation = useMutation({
+    mutationFn: async (data: {
+      gateway: string;
+      studentData: {
+        id?: number;
+        fullName: string;
+        email: string;
+        cpf?: string;
+      }
+    }) => {
+      const res = await apiRequest("POST", "/api/payment-gateways/register-student", data);
+      return res.json();
+    },
+    onSuccess: (data) => {
+      console.log("Aluno registrado no gateway com sucesso:", data);
+      // Armazenar o ID do cliente para uso posterior (opcional)
+      if (data.customerId) {
+        // Podemos armazenar em um estado se necessário
+        console.log("ID do cliente no gateway:", data.customerId);
+      }
+      toast({
+        title: "Aluno registrado no gateway",
+        description: "Registro no gateway de pagamento realizado com sucesso",
+      });
+    },
+    onError: (error: Error) => {
+      console.error("Erro ao registrar aluno no gateway:", error);
+      toast({
+        title: "Aviso",
+        description: "Não foi possível registrar o aluno no gateway de pagamento. O processo continuará, mas pode haver problemas na geração do pagamento.",
+        variant: "destructive",
+      });
+    }
+  });
+
   // Função para criar matrícula
   const createEnrollmentMutation = useMutation({
     mutationFn: async (data: EnrollmentFormValues) => {
@@ -399,6 +435,49 @@ export default function NewEnrollmentPage() {
         createEnrollmentMutation.mutate(values);
       }
       return;
+    }
+    
+    // Se estiver finalizando a etapa 1 (dados do aluno),
+    // registrar o aluno no gateway de pagamento
+    if (step === 1) {
+      const paymentGateway = values.paymentGateway;
+      
+      if (values.enrollmentType === "existing" && values.studentId) {
+        // Para aluno existente, registrar com os dados do aluno selecionado
+        const selectedStudent = studentsData.find(
+          (student: any) => student.id.toString() === values.studentId
+        );
+        
+        if (selectedStudent) {
+          console.log("Registrando aluno existente no gateway:", paymentGateway);
+          
+          registerStudentMutation.mutate({
+            gateway: paymentGateway,
+            studentData: {
+              id: selectedStudent.id,
+              fullName: selectedStudent.fullName,
+              email: selectedStudent.email,
+              cpf: selectedStudent.cpf || undefined
+            }
+          });
+        }
+      } 
+      else if (values.enrollmentType === "new") {
+        // Para novo aluno, verificar se temos todos os dados necessários
+        if (values.studentName && values.studentEmail) {
+          console.log("Registrando novo aluno no gateway:", paymentGateway);
+          
+          // Chamar a API para registrar o aluno no gateway
+          registerStudentMutation.mutate({
+            gateway: paymentGateway,
+            studentData: {
+              fullName: values.studentName,
+              email: values.studentEmail,
+              cpf: values.studentDocument
+            }
+          });
+        }
+      }
     }
     
     // Para as outras etapas, apenas avançamos para a próxima
