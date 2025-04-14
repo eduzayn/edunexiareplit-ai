@@ -319,10 +319,8 @@ router.get('/default/:type', requireAdmin, async (req: Request, res: Response) =
     // Buscar a integração padrão para o tipo
     const [defaultIntegration] = await db.select()
       .from(integrations)
-      .where(
-        eq(integrations.type, type),
-        sql`additional_config->>'isDefault' = 'true'`
-      );
+      .where(eq(integrations.type, type))
+      .where(sql`additional_config->>'isDefault' = 'true'` as any);
     
     if (!defaultIntegration) {
       return res.status(404).json({ 
@@ -359,7 +357,7 @@ router.get('/defaults', requireAdmin, async (req: Request, res: Response) => {
     // Buscar todas as integrações definidas como padrão
     const defaultIntegrations = await db.select()
       .from(integrations)
-      .where(sql`additional_config->>'isDefault' = 'true'`);
+      .where(sql`additional_config->>'isDefault' = 'true'` as any);
     
     // Converter para um objeto mapeado por tipo
     const defaultMap: Record<string, any> = {};
