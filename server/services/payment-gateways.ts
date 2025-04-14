@@ -622,11 +622,15 @@ export class LytexGatewayAdapter implements PaymentGateway {
         
         // Se valor for suficiente para cartão (>= R$500), adicionar
         if (amount >= 500) {
-          paymentMethods['creditCard'] = { 
+          // Adicionar método de cartão de crédito se valor for suficiente
+          const creditCardMethod = { 
             enable: true, 
             maxParcels: 6, // limite máximo de parcelas
             isRatesToPayer: true // taxas de parcelamento por conta do cliente
           };
+          
+          // Usar tipo com tipagem adequada
+          paymentMethods.creditCard = creditCardMethod;
         }
         
         // Data de vencimento (5 dias a partir de hoje)
@@ -643,8 +647,8 @@ export class LytexGatewayAdapter implements PaymentGateway {
               name: customerName,
               type: 'pf',
               treatmentPronoun: 'you',
-              cpfCnpj: customerDocument || '00000000000',
-              email: customerEmail || `aluno${Math.random().toString(36).substring(2, 7)}@example.com`
+              cpfCnpj: customerDocument || '', // Deixamos vazio para API validar corretamente
+              email: customerEmail || ''  // Deixamos vazio para API validar corretamente
             },
           items: invoiceItems,
           dueDate: formattedDueDate,

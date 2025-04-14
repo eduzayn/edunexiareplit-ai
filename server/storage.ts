@@ -1306,8 +1306,41 @@ export class DatabaseStorage implements IStorage {
     const { createPaymentGateway } = await import('./services/payment-gateways');
     
     try {
+      console.log(`[STORAGE] Iniciando criação de pagamento para matrícula ${enrollment.code} usando gateway ${gateway}`);
+      
+      // Buscar dados completos do aluno para o pagamento
+      const student = await db.query.users.findFirst({
+        where: eq(users.id, enrollment.studentId)
+      });
+      
+      if (!student) {
+        console.error(`[STORAGE] Aluno não encontrado: ID ${enrollment.studentId}`);
+        throw new Error(`Estudante com ID ${enrollment.studentId} não encontrado`);
+      }
+      
+      console.log(`[STORAGE] Dados do aluno: ${student.fullName}, CPF: ${student.cpf || 'N/A'}, Email: ${student.email || 'N/A'}`);
+      
+      // Verificar se o CPF e email do aluno estão preenchidos (importantes para Lytex)
+      if (gateway === 'lytex' && (!student.cpf || !student.email)) {
+        console.error(`[STORAGE] Dados obrigatórios do aluno faltando para gateway Lytex. CPF: ${student.cpf ? 'OK' : 'FALTANDO'}, Email: ${student.email ? 'OK' : 'FALTANDO'}`);
+        throw new Error('Para pagamentos Lytex, o CPF e email do aluno são obrigatórios');
+      }
+      
+      // Verificar se o valor da matrícula está preenchido
+      if (!enrollment.amount || enrollment.amount <= 0) {
+        console.error(`[STORAGE] Valor da matrícula inválido: ${enrollment.amount}`);
+        throw new Error('O valor da matrícula é obrigatório e deve ser maior que zero');
+      }
+      
+      console.log(`[STORAGE] Gateway ${gateway} inicializado, chamando createPayment...`);
+      
       const paymentGateway = createPaymentGateway(gateway);
+      
+      // Passar os dados da matrícula respeitando a interface original
+      // Não podemos adicionar campos extras como studentData
       const paymentResult = await paymentGateway.createPayment(enrollment);
+      
+      console.log(`[STORAGE] Pagamento criado com sucesso: ${JSON.stringify(paymentResult)}`);
       
       // Atualizar a matrícula com os dados do pagamento
       await db
@@ -1321,8 +1354,11 @@ export class DatabaseStorage implements IStorage {
       
       return paymentResult;
     } catch (error) {
-      console.error(`Erro ao criar pagamento no gateway ${gateway}:`, error);
-      throw new Error(`Falha ao processar pagamento no gateway ${gateway}`);
+      console.error(`[STORAGE] Erro detalhado ao criar pagamento no gateway ${gateway}:`, error);
+      if (error.response) {
+        console.error(`[STORAGE] Resposta da API: ${error.response.status}`, error.response.data);
+      }
+      throw error; // Repassar o erro original para tratamento adequado na camada superior
     }
   }
   
