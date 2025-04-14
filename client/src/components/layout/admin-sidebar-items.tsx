@@ -21,6 +21,11 @@ import {
   GraduationCapIcon,
   BookIcon,
   BuildingIcon,
+  AwardIcon,
+  FileCheckIcon,
+  ScrollTextIcon,
+  Settings2Icon,
+  BadgeCheckIcon,
 } from "@/components/ui/icons";
 
 // Interfaces para definir a estrutura dos itens da barra lateral
@@ -234,6 +239,44 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
     ]
   };
 
+  // Categoria: Certificação
+  const certificationCategory: SidebarCategory = {
+    name: "Certificação",
+    icon: <AwardIcon />,
+    expanded: hasCategoryActiveItem({
+      name: "Certificação",
+      icon: <AwardIcon />,
+      items: [
+        { 
+          name: "Templates", 
+          icon: <ScrollTextIcon />, 
+          href: "/admin/certification/templates",
+          active: currentPath === "/admin/certification/templates" || (currentPath && currentPath.includes("/admin/certification/templates/"))
+        },
+        { 
+          name: "Emissão de Certificados", 
+          icon: <BadgeCheckIcon />, 
+          href: "/admin/certification/issue",
+          active: currentPath === "/admin/certification/issue" || (currentPath && currentPath.includes("/admin/certification/issue/"))
+        },
+      ]
+    }, currentPath),
+    items: [
+      { 
+        name: "Templates", 
+        icon: <ScrollTextIcon />, 
+        href: "/admin/certification/templates",
+        active: currentPath === "/admin/certification/templates" || (currentPath && currentPath.includes("/admin/certification/templates/"))
+      },
+      { 
+        name: "Emissão de Certificados", 
+        icon: <BadgeCheckIcon />, 
+        href: "/admin/certification/issue",
+        active: currentPath === "/admin/certification/issue" || (currentPath && currentPath.includes("/admin/certification/issue/"))
+      },
+    ]
+  };
+
   // Categoria: Sistema
   const systemCategory: SidebarCategory = {
     name: "Sistema",
@@ -291,6 +334,7 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
     institutionalCategory,
     peopleCategory,
     operationalCategory,
+    certificationCategory,
     systemCategory,
   ];
 }

@@ -20,7 +20,12 @@ import {
   CreditCard,
   Upload,
   List,
-  Share
+  Share,
+  Award,
+  FileCheck,
+  ScrollText,
+  Settings2,
+  BadgeCheck
 } from "lucide-react";
 
 // Ícones de Lucide exportados diretamente
@@ -44,6 +49,11 @@ export const CreditCardIcon = CreditCard;
 export const FileUploadIcon = Upload;
 export const ListBulletedIcon = List;
 export const ShareIcon = Share;
+export const AwardIcon = Award;
+export const FileCheckIcon = FileCheck;
+export const ScrollTextIcon = ScrollText;
+export const Settings2Icon = Settings2;
+export const BadgeCheckIcon = BadgeCheck;
 export const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
