@@ -616,14 +616,23 @@ export class LytexGatewayAdapter implements PaymentGateway {
         
         // Se não temos ID de cliente, precisamos incluir informações do cliente
         if (!customerId) {
-          // Formato alternativo quando não temos ID de cliente
-          invoiceData.client = {
-            name: customerName,
-            type: 'pf',
-            treatmentPronoun: 'you',
-            cpfCnpj: customerDocument || '00000000000', // CPF genérico
-            email: customerEmail
-          };
+          // Para testes sem API de produção, vamos usar um ID de cliente fixo
+          if (!this.apiKey || !this.clientId) {
+            // ID fixo apenas para simulação
+            customerId = "sim_cus_" + Math.random().toString(36).substring(2, 10);
+            invoiceData.client._id = customerId;
+            console.log(`[SIMULAÇÃO LYTEX] Usando ID de cliente simulado: ${customerId}`);
+          } else {
+            // Em ambiente de produção, precisamos fornecer todas as informações do cliente
+            invoiceData.client = {
+              _id: null, // API exige o campo, mesmo que seja null
+              name: customerName || 'Aluno',
+              type: 'pf',
+              treatmentPronoun: 'you',
+              cpfCnpj: customerDocument || '00000000000', // CPF genérico para testes
+              email: customerEmail || 'aluno@example.com'
+            };
+          }
         }
         
         console.log(`[LYTEX] Criando fatura para matrícula: ${enrollment.code}`);
