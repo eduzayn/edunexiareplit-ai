@@ -1246,20 +1246,38 @@ export default function NewEnrollmentPage() {
                       </Button>
                     )}
                     {step < 4 ? (
-                      <Button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          console.log("Botão Próximo clicado");
-                          // Forçamos diretamente a transição para o próximo passo
-                          form.setValue("currentStep", step + 1);
-                          setStep(step + 1);
-                        }}
-                        disabled={isCreatingEnrollment}
-                        className="bg-orange-500 hover:bg-orange-600"
-                      >
-                        Próximo
-                      </Button>
+                      <div>
+                        {/* Botão original do shadcn */}
+                        <Button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            console.log("Botão Próximo shadcn clicado");
+                            form.setValue("currentStep", step + 1);
+                            setStep(step + 1);
+                          }}
+                          disabled={isCreatingEnrollment}
+                          className="hidden bg-orange-500 hover:bg-orange-600"
+                        >
+                          Próximo (Botão Shadcn)
+                        </Button>
+                        
+                        {/* Botão HTML nativo */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            console.log("Botão Próximo HTML clicado");
+                            alert("Avançando para o próximo passo");
+                            form.setValue("currentStep", step + 1);
+                            setStep(step + 1);
+                          }}
+                          disabled={isCreatingEnrollment}
+                          className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-md"
+                        >
+                          Próximo
+                        </button>
+                      </div>
                     ) : (
                       <Button
                         type="submit"
