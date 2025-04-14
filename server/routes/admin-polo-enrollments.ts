@@ -1,7 +1,6 @@
 import { Router, Request, Response } from "express";
 import { db } from "../db";
-import { courses, users, enrollments, polos } from "../../shared/schema";
-import { eq, sql } from "drizzle-orm";
+import { pool } from "../db";
 
 const router = Router();
 
@@ -18,48 +17,44 @@ router.get("/polo-enrollments", async (req: Request, res: Response) => {
     const limit = parseInt(req.query.limit as string) || 10;
     const offset = (page - 1) * limit;
 
-    // Construir a consulta SQL com os filtros
-    let query = db
-      .select({
-        id: enrollments.id,
-        code: enrollments.code,
-        status: enrollments.status,
-        enrollmentDate: enrollments.enrollmentDate,
-        amount: enrollments.amount,
-        paymentMethod: enrollments.paymentMethod,
-        paymentUrl: enrollments.paymentUrl,
-        studentId: enrollments.studentId,
-        studentName: users.name,
-        studentEmail: users.email,
-        courseId: enrollments.courseId,
-        courseName: courses.name,
-        poloId: enrollments.poloId,
-        poloName: polos.name,
-      })
-      .from(enrollments)
-      .leftJoin(users, eq(enrollments.studentId, users.id))
-      .leftJoin(courses, eq(enrollments.courseId, courses.id))
-      .leftJoin(polos, eq(enrollments.poloId, polos.id));
-    
-    // Adicionar filtros à consulta
-    const conditions = [];
-    
-    // Filtro de busca
+    // Construir a consulta SQL manualmente para maior controle
+    let queryParams = [];
+    let paramCount = 1;
+
+    // Consulta base
+    let queryText = `
+      SELECT 
+        e.id, e.code, e.status, e.enrollment_date AS "enrollmentDate", 
+        e.amount, e.payment_method AS "paymentMethod", e.payment_url AS "paymentUrl",
+        e.student_id AS "studentId", u.full_name AS "studentName", u.email AS "studentEmail",
+        e.course_id AS "courseId", c.name AS "courseName",
+        e.polo_id AS "poloId", p.name AS "poloName"
+      FROM enrollments e
+      LEFT JOIN users u ON e.student_id = u.id
+      LEFT JOIN courses c ON e.course_id = c.id
+      LEFT JOIN polos p ON e.polo_id = p.id
+      WHERE 1=1
+    `;
+
+    // Adicionar condições de filtro
     if (search) {
-      conditions.push(sql`(${users.name} LIKE ${'%' + search + '%'} OR ${enrollments.code} LIKE ${'%' + search + '%'} OR ${users.email} LIKE ${'%' + search + '%'})`);
+      queryText += ` AND (u.full_name ILIKE $${paramCount} OR e.code ILIKE $${paramCount} OR u.email ILIKE $${paramCount})`;
+      queryParams.push(`%${search}%`);
+      paramCount++;
     }
-    
-    // Filtro de status
+
     if (status && status !== "all") {
-      conditions.push(sql`${enrollments.status} = ${status}`);
+      queryText += ` AND e.status = $${paramCount}`;
+      queryParams.push(status);
+      paramCount++;
     }
-    
-    // Filtro de curso
+
     if (course && course !== "all") {
-      conditions.push(sql`${enrollments.courseId} = ${parseInt(course as string)}`);
+      queryText += ` AND e.course_id = $${paramCount}`;
+      queryParams.push(parseInt(course as string));
+      paramCount++;
     }
-    
-    // Filtro de data
+
     if (date && date !== "all") {
       const now = new Date();
       let startDate = new Date();
@@ -78,38 +73,24 @@ router.get("/polo-enrollments", async (req: Request, res: Response) => {
           startDate.setMonth(now.getMonth() - 12);
           break;
       }
-      
-      conditions.push(sql`${enrollments.enrollmentDate} >= ${startDate.toISOString()} AND ${enrollments.enrollmentDate} <= ${now.toISOString()}`);
+
+      queryText += ` AND e.enrollment_date >= $${paramCount} AND e.enrollment_date <= $${paramCount + 1}`;
+      queryParams.push(startDate.toISOString(), now.toISOString());
+      paramCount += 2;
     }
+
+    // Adicionar ordenação, paginação e executar a consulta
+    queryText += ` ORDER BY e.enrollment_date DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+    queryParams.push(limit, offset);
     
-    // Adicionar as condições à consulta
-    if (conditions.length > 0) {
-      const whereClause = sql.join(conditions, sql` AND `);
-      query = query.where(whereClause);
-    }
-    
-    // Ordenar e limitar resultados
-    const enrollmentsData = await query
-      .orderBy(sql`${enrollments.enrollmentDate} DESC`)
-      .limit(limit)
-      .offset(offset);
-    
-    // Consulta para contar o total de registros
-    let countQuery = db
-      .select({ count: sql`count(*)` })
-      .from(enrollments)
-      .leftJoin(users, eq(enrollments.studentId, users.id))
-      .leftJoin(courses, eq(enrollments.courseId, courses.id));
-    
-    // Adicionar as mesmas condições à consulta de contagem
-    if (conditions.length > 0) {
-      const whereClause = sql.join(conditions, sql` AND `);
-      countQuery = countQuery.where(whereClause);
-    }
-    
-    const countResult = await countQuery;
-    const totalCount = countResult.length > 0 ? Number(countResult[0].count) : 0;
-    
+    const result = await pool.query(queryText, queryParams);
+    const enrollmentsData = result.rows;
+
+    // Contar o total de registros para paginação
+    const countQuery = `SELECT COUNT(*)::int FROM enrollments`;
+    const countResult = await pool.query(countQuery);
+    const totalCount = parseInt(countResult.rows[0].count);
+
     return res.status(200).json({
       enrollments: enrollmentsData,
       total: totalCount,
@@ -133,14 +114,15 @@ router.get("/available-courses", async (req: Request, res: Response) => {
       return res.status(403).json({ message: "Acesso restrito a administradores" });
     }
 
-    const availableCourses = await db
-      .select({
-        id: courses.id,
-        name: courses.name,
-        code: courses.code,
-      })
-      .from(courses)
-      .where(sql`${courses.status} = 'published'`);
+    // Consulta SQL direta para buscar cursos
+    const query = `
+      SELECT id, name, code 
+      FROM courses 
+      WHERE status = 'published'
+    `;
+    
+    const result = await pool.query(query);
+    const availableCourses = result.rows;
 
     return res.status(200).json(availableCourses);
   } catch (error) {
