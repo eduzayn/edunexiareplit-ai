@@ -20,6 +20,13 @@ export const enrollmentStatusEnum = pgEnum("enrollment_status", ["pending_paymen
 export const paymentGatewayEnum = pgEnum("payment_gateway", ["asaas", "lytex"]);
 export const integrationTypeEnum = pgEnum("integration_type", ["asaas", "lytex", "openai", "elevenlabs", "zapi"]);
 
+// Enums para o módulo CRM e Gestão
+export const leadStatusEnum = pgEnum("lead_status", ["novo", "contatado", "qualificado", "negociacao", "convertido", "perdido"]);
+export const clientTypeEnum = pgEnum("client_type", ["pf", "pj"]);
+export const invoiceStatusEnum = pgEnum("invoice_status", ["draft", "pending", "paid", "overdue", "cancelled", "partial"]);
+export const paymentStatusEnum = pgEnum("payment_status", ["completed", "pending", "failed", "refunded"]);
+export const paymentMethodEnum = pgEnum("payment_method", ["credit_card", "debit_card", "bank_slip", "bank_transfer", "pix", "cash", "other"]);
+
 // Tipos de curso
 export const courseTypes = pgTable("course_types", {
   id: serial("id").primaryKey(),
@@ -295,6 +302,155 @@ export const institutions = pgTable("institutions", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Módulo CRM
+export const leads = pgTable("leads", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone"),
+  company: text("company"),
+  source: text("source"), // Como o cliente conheceu a empresa (site, indicação, etc.)
+  interest: text("interest"), // Área de interesse (ex: graduação, pós-graduação)
+  status: leadStatusEnum("status").default("novo").notNull(),
+  notes: text("notes"),
+  
+  // Metadados
+  createdById: integer("created_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const clients = pgTable("clients", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  type: clientTypeEnum("type").default("pj").notNull(), // Pessoa física ou jurídica
+  email: text("email").notNull(),
+  phone: text("phone").notNull(),
+  
+  // Documentos
+  cpfCnpj: text("cpf_cnpj").notNull(), // CPF ou CNPJ
+  rgIe: text("rg_ie"), // RG ou Inscrição Estadual
+  
+  // Endereço
+  zipCode: text("zip_code").notNull(),
+  street: text("street").notNull(),
+  number: text("number").notNull(),
+  complement: text("complement"),
+  neighborhood: text("neighborhood").notNull(),
+  city: text("city").notNull(),
+  state: text("state").notNull(),
+  
+  // Informações adicionais
+  segment: text("segment"), // Segmento de atuação
+  website: text("website"),
+  notes: text("notes"),
+  isActive: boolean("is_active").default(true).notNull(),
+  
+  // Metadados
+  createdById: integer("created_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const contacts = pgTable("contacts", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone").notNull(),
+  position: text("position").notNull(), // Cargo
+  clientId: integer("client_id").notNull().references(() => clients.id, { onDelete: 'cascade' }),
+  role: text("role").notNull(), // Papel no processo de compra (decisor, influenciador, etc.)
+  department: text("department"), // Departamento
+  notes: text("notes"),
+  
+  // Metadados
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Módulo Finanças
+export const products = pgTable("products", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  code: text("code").notNull().unique(),
+  type: text("type").notNull(), // course ou service
+  category: text("category").notNull(),
+  description: text("description").notNull(),
+  
+  // Detalhes específicos
+  workload: integer("workload"), // Carga horária (para cursos)
+  duration: integer("duration"), // Duração
+  durationUnit: text("duration_unit").default("months"), // Unidade de duração (dias, semanas, meses, anos)
+  tags: text("tags"), // Tags para busca
+  
+  // Preços
+  price: doublePrecision("price").notNull(),
+  costPrice: doublePrecision("cost_price"), // Custo interno
+  taxRate: doublePrecision("tax_rate"), // Taxa de imposto (%)
+  
+  // Status
+  isActive: boolean("is_active").default(true).notNull(),
+  isFeatured: boolean("is_featured").default(false).notNull(),
+  isDigital: boolean("is_digital").default(true).notNull(),
+  
+  // Metadados
+  createdById: integer("created_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const invoices = pgTable("invoices", {
+  id: serial("id").primaryKey(),
+  invoiceNumber: text("invoice_number").notNull().unique(),
+  clientId: integer("client_id").notNull().references(() => clients.id),
+  contractId: integer("contract_id").references(() => contracts.id),
+  
+  // Datas
+  issueDate: timestamp("issue_date").defaultNow().notNull(),
+  dueDate: timestamp("due_date").notNull(),
+  
+  // Status e valores
+  status: invoiceStatusEnum("status").default("draft").notNull(),
+  totalAmount: doublePrecision("total_amount").notNull(),
+  
+  // Notas e metadados
+  notes: text("notes"),
+  createdById: integer("created_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const invoiceItems = pgTable("invoice_items", {
+  id: serial("id").primaryKey(),
+  invoiceId: integer("invoice_id").notNull().references(() => invoices.id, { onDelete: 'cascade' }),
+  productId: integer("product_id").notNull().references(() => products.id),
+  description: text("description").notNull(),
+  quantity: doublePrecision("quantity").notNull(),
+  unitPrice: doublePrecision("unit_price").notNull(),
+  discount: doublePrecision("discount").default(0).notNull(),
+  tax: doublePrecision("tax").default(0).notNull(),
+  
+  // Metadados
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const payments = pgTable("payments", {
+  id: serial("id").primaryKey(),
+  invoiceId: integer("invoice_id").notNull().references(() => invoices.id),
+  amount: doublePrecision("amount").notNull(),
+  method: paymentMethodEnum("method").notNull(),
+  paymentDate: timestamp("payment_date").notNull(),
+  status: paymentStatusEnum("status").default("completed").notNull(),
+  transactionId: text("transaction_id"), // ID da transação (para métodos eletrônicos)
+  notes: text("notes"),
+  
+  // Metadados
+  createdById: integer("created_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Enums para certificados
 export const certificateStatusEnum = pgEnum("certificate_status", ["draft", "issued", "revoked"]);
 export const certificateTemplateTypeEnum = pgEnum("certificate_template_type", ["default", "custom"]);
@@ -421,6 +577,11 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   certificatesCreated: many(certificates, { relationName: "createdCertificates" }), // Certificados criados por este usuário
   certificateTemplatesCreated: many(certificateTemplates),
   certificateSignersCreated: many(certificateSigners),
+  leadsCreated: many(leads),
+  clientsCreated: many(clients),
+  productsCreated: many(products),
+  invoicesCreated: many(invoices),
+  paymentsCreated: many(payments),
 }));
 
 export const institutionsRelations = relations(institutions, ({ one, many }) => ({
@@ -634,6 +795,79 @@ export const certificateSignersRelations = relations(certificateSigners, ({ one,
     references: [users.id],
   }),
   certificates: many(certificates),
+}));
+
+// Relações de CRM
+export const leadsRelations = relations(leads, ({ one }) => ({
+  createdBy: one(users, {
+    fields: [leads.createdById],
+    references: [users.id],
+  }),
+}));
+
+export const clientsRelations = relations(clients, ({ one, many }) => ({
+  contacts: many(contacts),
+  invoices: many(invoices),
+  contracts: many(contracts),
+  createdBy: one(users, {
+    fields: [clients.createdById],
+    references: [users.id],
+  }),
+}));
+
+export const contactsRelations = relations(contacts, ({ one }) => ({
+  client: one(clients, {
+    fields: [contacts.clientId],
+    references: [clients.id],
+  }),
+}));
+
+// Relações de Finanças
+export const productsRelations = relations(products, ({ one, many }) => ({
+  invoiceItems: many(invoiceItems),
+  createdBy: one(users, {
+    fields: [products.createdById],
+    references: [users.id],
+  }),
+}));
+
+export const invoicesRelations = relations(invoices, ({ one, many }) => ({
+  client: one(clients, {
+    fields: [invoices.clientId],
+    references: [clients.id],
+  }),
+  contract: one(contracts, {
+    fields: [invoices.contractId],
+    references: [contracts.id],
+  }),
+  items: many(invoiceItems),
+  payments: many(payments),
+  createdBy: one(users, {
+    fields: [invoices.createdById],
+    references: [users.id],
+  }),
+}));
+
+export const invoiceItemsRelations = relations(invoiceItems, ({ one }) => ({
+  invoice: one(invoices, {
+    fields: [invoiceItems.invoiceId],
+    references: [invoices.id],
+  }),
+  product: one(products, {
+    fields: [invoiceItems.productId],
+    references: [products.id],
+  }),
+}));
+
+export const paymentsRelations = relations(payments, ({ one }) => ({
+  invoice: one(invoices, {
+    fields: [payments.invoiceId],
+    references: [invoices.id],
+  }),
+  createdBy: one(users, {
+    fields: [payments.createdById],
+    references: [users.id],
+  }),
 }));
 
 // Relações de Certificados
