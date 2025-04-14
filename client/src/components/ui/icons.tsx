@@ -1450,3 +1450,45 @@ export function BuildingIcon(props: React.SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+
+export function SupportAgentIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="M18 6a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V6Z" />
+      <path d="M17 14h.01" />
+      <path d="M13 14h.01" />
+      <path d="M9 14h.01" />
+      <path d="M17 10h.01" />
+      <path d="M13 10h.01" />
+      <path d="M9 10h.01" />
+      <path d="M3 10v4" />
+      <path d="M21 10v4" />
+    </svg>
+  );
+}
+
+export function LaptopIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16" />
+    </svg>
+  );
+}

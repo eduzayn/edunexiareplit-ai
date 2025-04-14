@@ -94,7 +94,7 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
     items: [
       { 
         name: "Disciplinas", 
-        icon: <MenuBookIcon />, 
+        icon: <BookIcon />, 
         href: "/admin/disciplines",
         active: currentPath === "/admin/disciplines" || (currentPath && currentPath.includes("/admin/disciplines/"))
       },

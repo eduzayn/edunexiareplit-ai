@@ -7,7 +7,7 @@ import {
   ShareIcon,
   FolderIcon,
   CreditCardIcon,
-  SupportAgentIcon,
+  HelpOutlineIcon,
   LaptopIcon,
 } from "@/components/ui/icons";
 
@@ -68,7 +68,7 @@ export function getPoloSidebarItems(currentPath: string) {
     },
     { 
       name: "Suporte", 
-      icon: <SupportAgentIcon />, 
+      icon: <HelpOutlineIcon />, 
       href: "/polo/support",
       active: currentPath === "/polo/support"
     },
