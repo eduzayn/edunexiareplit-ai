@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, doublePrecision, json, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, doublePrecision, json, pgEnum, date } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -295,6 +295,111 @@ export const institutions = pgTable("institutions", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Enums para certificados
+export const certificateStatusEnum = pgEnum("certificate_status", ["draft", "issued", "revoked"]);
+export const certificateTemplateTypeEnum = pgEnum("certificate_template_type", ["default", "custom"]);
+export const teacherTitleEnum = pgEnum("teacher_title", ["Especialista", "Mestre", "Doutor", "Pós-Doutor"]);
+
+// Templates de certificados
+export const certificateTemplates = pgTable("certificate_templates", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  type: certificateTemplateTypeEnum("type").default("default").notNull(),
+  htmlTemplate: text("html_template").notNull(), // Template HTML para renderização do certificado
+  cssStyles: text("css_styles"), // Estilos CSS para o template
+  defaultTitle: text("default_title").default("Certificado").notNull(), // Título padrão (pode ser sobrescrito)
+  isActive: boolean("is_active").default(true).notNull(),
+  previewImageUrl: text("preview_image_url"), // URL da imagem de preview do template
+  institutionId: integer("institution_id").references(() => institutions.id), // Opcional, para templates específicos de instituição
+  createdById: integer("created_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Signatários (pessoas que assinam os certificados)
+export const certificateSigners = pgTable("certificate_signers", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  role: text("role").notNull(), // Cargo (Diretor, Coordenador, etc.)
+  signatureImageUrl: text("signature_image_url"), // URL da imagem da assinatura
+  isActive: boolean("is_active").default(true).notNull(),
+  institutionId: integer("institution_id").references(() => institutions.id), // Opcional, para signatários específicos de instituição
+  createdById: integer("created_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Certificados emitidos
+export const certificates = pgTable("certificates", {
+  id: serial("id").primaryKey(),
+  code: text("code").notNull().unique(), // Código único para validação e consultas
+  enrollmentId: integer("enrollment_id").notNull().references(() => enrollments.id),
+  studentId: integer("student_id").notNull().references(() => users.id),
+  courseId: integer("course_id").notNull().references(() => courses.id),
+  institutionId: integer("institution_id").notNull().references(() => institutions.id),
+  
+  // Dados do certificado
+  templateId: integer("template_id").notNull().references(() => certificateTemplates.id),
+  title: text("title").notNull(), // Título do certificado (ex: Certificado, Diploma)
+  
+  // Dados do aluno
+  studentName: text("student_name").notNull(),
+  studentCpf: text("student_cpf").notNull(),
+  studentBirthDate: date("student_birth_date"),
+  studentNationality: text("student_nationality"), // Naturalidade
+  
+  // Dados do curso
+  courseName: text("course_name").notNull(),
+  courseWorkload: integer("course_workload").notNull(), // Carga horária total
+  knowledgeArea: text("knowledge_area"), // Área de conhecimento
+  courseStartDate: date("course_start_date"),
+  courseEndDate: date("course_end_date"),
+  
+  // Assinatura do certificado
+  signerId: integer("signer_id").references(() => certificateSigners.id),
+  signerName: text("signer_name"), // Redundância para preservar o nome mesmo se o signatário for excluído
+  signerRole: text("signer_role"), // Cargo do signatário
+  
+  // Metadados do certificado
+  pdfUrl: text("pdf_url"), // URL do arquivo PDF gerado
+  status: certificateStatusEnum("status").default("draft").notNull(),
+  issueDate: timestamp("issue_date"), // Data de emissão
+  expirationDate: timestamp("expiration_date"), // Data de expiração (opcional)
+  verificationUrl: text("verification_url"), // URL para verificação pública
+  
+  // Metadados
+  createdById: integer("created_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Disciplinas cursadas (para serem incluídas no certificado)
+export const certificateDisciplines = pgTable("certificate_disciplines", {
+  id: serial("id").primaryKey(),
+  certificateId: integer("certificate_id").notNull().references(() => certificates.id, { onDelete: 'cascade' }),
+  disciplineName: text("discipline_name").notNull(),
+  teacherName: text("teacher_name").notNull(),
+  teacherTitle: teacherTitleEnum("teacher_title").notNull(),
+  workload: integer("workload").notNull(), // Carga horária da disciplina
+  frequency: integer("frequency"), // Frequência em porcentagem
+  performance: text("performance"), // Desempenho/aproveitamento
+  order: integer("order").default(0).notNull(), // Ordem de exibição
+});
+
+// Histórico de operações com certificados
+export const certificateHistory = pgTable("certificate_history", {
+  id: serial("id").primaryKey(),
+  certificateId: integer("certificate_id").notNull().references(() => certificates.id),
+  action: text("action").notNull(), // create, issue, revoke, verify
+  performedById: integer("performed_by_id").references(() => users.id),
+  performedByType: text("performed_by_type").notNull(), // admin, system
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  details: json("details"), // Detalhes da operação
+});
+
 // Relações
 export const usersRelations = relations(users, ({ many, one }) => ({
   coursesCreated: many(courses),
@@ -312,6 +417,10 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   createdEnrollments: many(enrollments, { relationName: "createdEnrollments" }),
   updatedEnrollments: many(enrollments, { relationName: "updatedEnrollments" }),
   integrationsCreated: many(integrations),
+  certificatesReceived: many(certificates, { relationName: "studentCertificates" }), // Certificados em que este usuário é o aluno
+  certificatesCreated: many(certificates, { relationName: "createdCertificates" }), // Certificados criados por este usuário
+  certificateTemplatesCreated: many(certificateTemplates),
+  certificateSignersCreated: many(certificateSigners),
 }));
 
 export const institutionsRelations = relations(institutions, ({ one, many }) => ({
@@ -324,6 +433,9 @@ export const institutionsRelations = relations(institutions, ({ one, many }) => 
   financialCategories: many(financialCategories),
   enrollments: many(enrollments),
   integrations: many(integrations),
+  certificateTemplates: many(certificateTemplates),
+  certificateSigners: many(certificateSigners),
+  certificates: many(certificates),
 }));
 
 export const polosRelations = relations(polos, ({ one, many }) => ({
@@ -494,6 +606,86 @@ export const integrationsRelations = relations(integrations, ({ one }) => ({
   }),
   createdBy: one(users, {
     fields: [integrations.createdById],
+    references: [users.id],
+  }),
+}));
+
+// Relações de Templates de Certificados
+export const certificateTemplatesRelations = relations(certificateTemplates, ({ one, many }) => ({
+  institution: one(institutions, {
+    fields: [certificateTemplates.institutionId],
+    references: [institutions.id],
+  }),
+  createdBy: one(users, {
+    fields: [certificateTemplates.createdById],
+    references: [users.id],
+  }),
+  certificates: many(certificates),
+}));
+
+// Relações de Signatários de Certificados
+export const certificateSignersRelations = relations(certificateSigners, ({ one, many }) => ({
+  institution: one(institutions, {
+    fields: [certificateSigners.institutionId],
+    references: [institutions.id],
+  }),
+  createdBy: one(users, {
+    fields: [certificateSigners.createdById],
+    references: [users.id],
+  }),
+  certificates: many(certificates),
+}));
+
+// Relações de Certificados
+export const certificatesRelations = relations(certificates, ({ one, many }) => ({
+  enrollment: one(enrollments, {
+    fields: [certificates.enrollmentId],
+    references: [enrollments.id],
+  }),
+  student: one(users, {
+    fields: [certificates.studentId],
+    references: [users.id],
+  }),
+  course: one(courses, {
+    fields: [certificates.courseId],
+    references: [courses.id],
+  }),
+  institution: one(institutions, {
+    fields: [certificates.institutionId],
+    references: [institutions.id],
+  }),
+  template: one(certificateTemplates, {
+    fields: [certificates.templateId],
+    references: [certificateTemplates.id],
+  }),
+  signer: one(certificateSigners, {
+    fields: [certificates.signerId],
+    references: [certificateSigners.id],
+  }),
+  createdBy: one(users, {
+    fields: [certificates.createdById],
+    references: [users.id],
+  }),
+  disciplines: many(certificateDisciplines),
+  history: many(certificateHistory),
+}));
+
+// Relações de Disciplinas de Certificados
+export const certificateDisciplinesRelations = relations(certificateDisciplines, ({ one }) => ({
+  certificate: one(certificates, {
+    fields: [certificateDisciplines.certificateId],
+    references: [certificates.id],
+  }),
+}));
+
+// Relações de Histórico de Certificados
+export const certificateHistoryRelations = relations(certificateHistory, ({ one }) => ({
+  certificate: one(certificates, {
+    fields: [certificateHistory.certificateId],
+    references: [certificates.id],
+  }),
+  performedBy: one(users, {
+    fields: [certificateHistory.performedById],
     references: [users.id],
   }),
 }));
@@ -868,3 +1060,90 @@ export const insertContractSchema = createInsertSchema(contracts).pick({
 });
 export type InsertContract = z.infer<typeof insertContractSchema>;
 export type Contract = typeof contracts.$inferSelect;
+
+// Schemas para Templates de Certificados
+export const insertCertificateTemplateSchema = createInsertSchema(certificateTemplates).pick({
+  name: true,
+  description: true,
+  type: true,
+  htmlTemplate: true,
+  cssStyles: true,
+  defaultTitle: true,
+  isActive: true,
+  previewImageUrl: true,
+  institutionId: true,
+  createdById: true,
+});
+export type InsertCertificateTemplate = z.infer<typeof insertCertificateTemplateSchema>;
+export type CertificateTemplate = typeof certificateTemplates.$inferSelect;
+
+// Schemas para Signatários de Certificados
+export const insertCertificateSignerSchema = createInsertSchema(certificateSigners).pick({
+  name: true,
+  role: true,
+  signatureImageUrl: true,
+  isActive: true,
+  institutionId: true,
+  createdById: true,
+});
+export type InsertCertificateSigner = z.infer<typeof insertCertificateSignerSchema>;
+export type CertificateSigner = typeof certificateSigners.$inferSelect;
+
+// Schemas para Certificados
+export const insertCertificateSchema = createInsertSchema(certificates).pick({
+  code: true,
+  enrollmentId: true,
+  studentId: true,
+  courseId: true,
+  institutionId: true,
+  templateId: true,
+  title: true,
+  studentName: true,
+  studentCpf: true,
+  studentBirthDate: true,
+  studentNationality: true,
+  courseName: true,
+  courseWorkload: true,
+  knowledgeArea: true,
+  courseStartDate: true,
+  courseEndDate: true,
+  signerId: true,
+  signerName: true,
+  signerRole: true,
+  pdfUrl: true,
+  status: true,
+  issueDate: true,
+  expirationDate: true,
+  verificationUrl: true,
+  createdById: true,
+});
+export type InsertCertificate = z.infer<typeof insertCertificateSchema>;
+export type Certificate = typeof certificates.$inferSelect;
+
+// Schemas para Disciplinas de Certificados
+export const insertCertificateDisciplineSchema = createInsertSchema(certificateDisciplines).pick({
+  certificateId: true,
+  disciplineName: true,
+  teacherName: true,
+  teacherTitle: true,
+  workload: true,
+  frequency: true,
+  performance: true,
+  order: true,
+});
+export type InsertCertificateDiscipline = z.infer<typeof insertCertificateDisciplineSchema>;
+export type CertificateDiscipline = typeof certificateDisciplines.$inferSelect;
+
+// Schemas para Histórico de Certificados
+export const insertCertificateHistorySchema = createInsertSchema(certificateHistory).pick({
+  certificateId: true,
+  action: true,
+  performedById: true,
+  performedByType: true,
+  timestamp: true,
+  ipAddress: true,
+  userAgent: true,
+  details: true,
+});
+export type InsertCertificateHistory = z.infer<typeof insertCertificateHistorySchema>;
+export type CertificateHistory = typeof certificateHistory.$inferSelect;
