@@ -41,6 +41,8 @@ import PaymentsPage from "@/pages/admin/finance/payments-page";
 import NewPaymentPage from "@/pages/admin/finance/new-payment-page";
 import ContractsPage from "@/pages/admin/contracts";
 import NewContractPage from "@/pages/admin/contracts/new-contract-page";
+// Módulo de Comunicação
+import InboxPage from "@/pages/admin/inbox";
 // Import student pages
 import StudentCoursesPage from "@/pages/student/courses-page";
 import CourseDetailPage from "@/pages/student/course-detail-page";
@@ -266,6 +268,19 @@ function Router() {
       
       <Route path="/admin/finance/payments/new">
         {() => user?.portalType === "admin" ? <NewPaymentPage /> : <Redirect to="/admin" />}
+      </Route>
+      
+      {/* Rotas do Módulo de Comunicação */}
+      <Route path="/admin/inbox">
+        {() => user?.portalType === "admin" ? <InboxPage /> : <Redirect to="/admin" />}
+      </Route>
+
+      <Route path="/admin/whatsapp">
+        {() => user?.portalType === "admin" ? <div>Em breve</div> : <Redirect to="/admin" />}
+      </Route>
+
+      <Route path="/admin/email">
+        {() => user?.portalType === "admin" ? <div>Em breve</div> : <Redirect to="/admin" />}
       </Route>
       
       {/* Rotas do Módulo de Contratos */}
