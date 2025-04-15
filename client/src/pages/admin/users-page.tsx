@@ -87,7 +87,7 @@ export default function UsersPage() {
   const { toast } = useToast();
   const [location, navigate] = useLocation();
   const queryClient = useQueryClient();
-  const { checkPermission } = usePermissions();
+  const { hasPermission } = usePermissions();
   const { user } = useAuth();
 
   // Estado local
@@ -97,11 +97,11 @@ export default function UsersPage() {
   const [portalTypeFilter, setPortalTypeFilter] = useState("all");
 
   // Verificar permissões
-  const hasReadPermission = checkPermission('usuarios', 'ler');
-  const hasCreatePermission = checkPermission('usuarios', 'criar');
-  const hasUpdatePermission = checkPermission('usuarios', 'atualizar');
-  const hasDeletePermission = checkPermission('usuarios', 'deletar');
-  const hasManagePermissionPermission = checkPermission('permissoes', 'gerenciar');
+  const hasReadPermission = hasPermission('usuarios', 'ler');
+  const hasCreatePermission = hasPermission('usuarios', 'criar');
+  const hasUpdatePermission = hasPermission('usuarios', 'atualizar');
+  const hasDeletePermission = hasPermission('usuarios', 'deletar');
+  const hasManagePermissionPermission = hasPermission('permissoes', 'gerenciar');
 
   // Buscar todos os usuários
   const { 
@@ -142,7 +142,7 @@ export default function UsersPage() {
       toast({
         title: "Usuário excluído",
         description: "O usuário foi excluído com sucesso.",
-        variant: "success",
+        variant: "default",
       });
       setIsDeleteDialogOpen(false);
     },
