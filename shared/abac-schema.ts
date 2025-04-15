@@ -96,6 +96,7 @@ export const paymentStatusPermissions = pgTable('payment_status_permissions', {
   action: permissionActionEnum('action').notNull(),
   paymentStatus: varchar('payment_status', { enum: paymentStatusEnum }).notNull(),
   description: text('description').notNull(),
+  isAllowed: boolean('is_allowed').default(true).notNull(),
   isActive: boolean('is_active').default(true).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull()

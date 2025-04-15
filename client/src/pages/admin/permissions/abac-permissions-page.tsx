@@ -99,6 +99,7 @@ const paymentStatusSchema = z.object({
   action: z.string().min(1, { message: 'Ação é obrigatória' }),
   paymentStatus: z.string().min(1, { message: 'Status de pagamento é obrigatório' }),
   description: z.string().min(3, { message: 'Descrição deve ter pelo menos 3 caracteres' }),
+  isAllowed: z.boolean().default(true),
   isActive: z.boolean().default(true)
 });
 
@@ -379,6 +380,7 @@ export default function AbacPermissionsPage() {
       action: '',
       paymentStatus: '',
       description: '',
+      isAllowed: true,
       isActive: true
     }
   });
@@ -540,6 +542,15 @@ export default function AbacPermissionsPage() {
     {
       accessorKey: 'description',
       header: 'Descrição',
+    },
+    {
+      accessorKey: 'isAllowed',
+      header: 'Tipo',
+      cell: ({ row }) => (
+        <div className={`text-center font-medium ${row.original.isAllowed ? 'text-green-600' : 'text-red-600'}`}>
+          {row.original.isAllowed ? 'Permitir' : 'Negar'}
+        </div>
+      ),
     },
     {
       accessorKey: 'isActive',
