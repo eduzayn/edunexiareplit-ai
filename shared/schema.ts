@@ -15,6 +15,7 @@ export const videoSourceEnum = pgEnum("video_source", ["youtube", "onedrive", "g
 export const contentCompletionStatusEnum = pgEnum("content_completion_status", ["incomplete", "complete"]);
 export const assessmentTypeEnum = pgEnum("assessment_type", ["simulado", "avaliacao_final"]);
 export const institutionStatusEnum = pgEnum("institution_status", ["active", "inactive", "pending"]);
+export const institutionPhaseEnum = pgEnum("institution_phase", ["trial", "setup", "active", "suspended", "cancelled"]);
 export const poloStatusEnum = pgEnum("polo_status", ["active", "inactive"]);
 export const enrollmentStatusEnum = pgEnum("enrollment_status", ["pending_payment", "active", "completed", "cancelled", "suspended"]);
 export const paymentGatewayEnum = pgEnum("payment_gateway", ["asaas", "lytex"]);
@@ -316,6 +317,9 @@ export const institutions = pgTable("institutions", {
   isOnTrial: boolean("is_on_trial").default(false),
   trialStartDate: timestamp("trial_start_date"),
   trialEndDate: timestamp("trial_end_date"),
+  
+  // Fase da instituição (para ABAC)
+  phase: institutionPhaseEnum("phase").default("trial").notNull(),
   
   // Plano atual
   currentPlanId: integer("current_plan_id").references(() => subscriptionPlans.id),
@@ -1658,6 +1662,52 @@ export const userPermissions = pgTable("user_permissions", {
   createdById: integer("created_by_id").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   expiresAt: timestamp("expires_at"), // Permissão temporária, se aplicável
+});
+
+// Tabelas para o sistema ABAC (Attribute-Based Access Control)
+
+// Períodos financeiros/acadêmicos para controle de acesso baseado em período
+export const financialPeriods = pgTable("financial_periods", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  type: text("type").notNull(), // fiscal, academic, enrollment
+  institutionId: integer("institution_id").references(() => institutions.id),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdById: integer("created_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Regras de permissão baseadas em período
+export const periodPermissionRules = pgTable("period_permission_rules", {
+  id: serial("id").primaryKey(),
+  resource: permissionResourceEnum("resource").notNull(),
+  action: permissionActionEnum("action").notNull(),
+  periodType: text("period_type").notNull(), // fiscal, academic, enrollment
+  daysBefore: integer("days_before").default(0), // Dias antes do início do período
+  daysAfter: integer("days_after").default(0), // Dias depois do fim do período
+  institutionId: integer("institution_id").references(() => institutions.id),
+  description: text("description"),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdById: integer("created_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Regras de permissão baseadas na fase da instituição
+export const institutionPhasePermissions = pgTable("institution_phase_permissions", {
+  id: serial("id").primaryKey(),
+  resource: permissionResourceEnum("resource").notNull(),
+  action: permissionActionEnum("action").notNull(),
+  phase: institutionPhaseEnum("phase").notNull(),
+  isAllowed: boolean("is_allowed").default(true).notNull(), // true = permitir, false = negar
+  description: text("description"),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdById: integer("created_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // Tabela de registros de auditoria de permissões
