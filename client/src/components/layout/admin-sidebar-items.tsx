@@ -196,7 +196,13 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
           name: "Papéis & Permissões", 
           icon: <SecurityIcon />, 
           href: "/admin/permissions/roles",
-          active: currentPath === "/admin/permissions/roles" || (currentPath && currentPath.includes("/admin/permissions/"))
+          active: currentPath === "/admin/permissions/roles" || (currentPath && currentPath.includes("/admin/permissions/roles"))
+        },
+        { 
+          name: "Permissões Contextuais", 
+          icon: <BadgeCheckIcon />, 
+          href: "/admin/permissions/abac-permissions",
+          active: currentPath === "/admin/permissions/abac-permissions" || (currentPath && currentPath.includes("/admin/permissions/abac"))
         },
       ]
     }, currentPath),
@@ -211,7 +217,13 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
         name: "Papéis & Permissões", 
         icon: <SecurityIcon />, 
         href: "/admin/permissions/roles",
-        active: currentPath === "/admin/permissions/roles" || (currentPath && currentPath.includes("/admin/permissions/"))
+        active: currentPath === "/admin/permissions/roles" || (currentPath && currentPath.includes("/admin/permissions/roles"))
+      },
+      { 
+        name: "Permissões Contextuais", 
+        icon: <BadgeCheckIcon />, 
+        href: "/admin/permissions/abac-permissions",
+        active: currentPath === "/admin/permissions/abac-permissions" || (currentPath && currentPath.includes("/admin/permissions/abac"))
       },
     ]
   };
