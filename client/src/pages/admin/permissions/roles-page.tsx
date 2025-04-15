@@ -85,14 +85,17 @@ export default function RolesPage() {
     deleteRole
   } = useRoles();
 
+  // Garantir que roles é sempre um array
+  const rolesArray = Array.isArray(roles) ? roles : [];
+
   // Filtrar papéis com base no termo de pesquisa
   const filteredRoles = searchTerm 
-    ? roles.filter(role => 
+    ? rolesArray.filter(role => 
         role.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         role.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
         role.scope.toLowerCase().includes(searchTerm.toLowerCase())
       )
-    : roles;
+    : rolesArray;
 
   // Formulário para criação de papel
   const form = useForm<RoleFormValues>({
