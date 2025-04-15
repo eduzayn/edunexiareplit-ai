@@ -319,7 +319,7 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
   // Categoria: CRM & Gestão
   const crmCategory: SidebarCategory = {
     name: "CRM & GESTÃO",
-    icon: <CRMIcon />,
+    icon: <CRMIcon className="text-purple-500" />,
     expanded: hasCategoryActiveItem({
       name: "CRM & Gestão",
       icon: <CRMIcon />,
@@ -423,7 +423,7 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
   // Categoria: Comunicação
   const communicationCategory: SidebarCategory = {
     name: "COMUNICAÇÃO",
-    icon: <MessageSquareIcon />,
+    icon: <MessageSquareIcon className="text-green-500" />,
     expanded: hasCategoryActiveItem({
       name: "Comunicação",
       icon: <MessageSquareIcon />,
@@ -473,7 +473,7 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
   // Categoria: Sistema
   const systemCategory: SidebarCategory = {
     name: "SISTEMA",
-    icon: <BuildIcon />,
+    icon: <BuildIcon className="text-gray-600" />,
     expanded: hasCategoryActiveItem({
       name: "Sistema",
       icon: <BuildIcon />,
