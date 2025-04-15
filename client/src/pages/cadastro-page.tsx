@@ -9,9 +9,9 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
-import { apiRequest } from "@/lib/queryClient";
-import NavbarMain from "@/components/layout/navbar-main";
-import FooterMain from "@/components/layout/footer-main";
+import NavbarMain from "../components/layout/navbar-main";
+import FooterMain from "../components/layout/footer-main";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 // Schema de validação para o formulário de cadastro
 const cadastroSchema = z.object({
@@ -318,8 +318,94 @@ export default function CadastroPage() {
                               onChange={field.onChange}
                               className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                             />
-                            <Label>
-                              Eu aceito os termos e condições de uso, bem como a política de privacidade.
+                            <Label className="flex flex-wrap gap-1 cursor-pointer">
+                              <span>Eu aceito os</span> 
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button variant="link" className="p-0 h-auto text-primary underline cursor-pointer" type="button">
+                                    termos e condições de uso
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-h-[90vh] overflow-y-auto">
+                                  <DialogHeader>
+                                    <DialogTitle>Termos e Condições de Uso</DialogTitle>
+                                    <DialogDescription>
+                                      Por favor, leia atentamente os nossos termos e condições.
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  <div className="space-y-4 text-sm">
+                                    <h3 className="font-bold text-base">1. Aceitação dos Termos</h3>
+                                    <p>Ao se cadastrar na plataforma Edunexia, você concorda em cumprir e ficar vinculado aos presentes Termos e Condições de Uso, todas as leis e regulamentos aplicáveis. Se você não concordar com qualquer um destes termos, está proibido de usar ou acessar este site.</p>
+                                    
+                                    <h3 className="font-bold text-base">2. Período de Teste Gratuito</h3>
+                                    <p>Ao se cadastrar, você terá acesso a um período de teste gratuito de 14 dias para conhecer e utilizar a plataforma. Durante este período, você terá acesso a todas as funcionalidades disponíveis no plano escolhido. Após o término do período de teste, caso não haja contratação de um plano pago, o acesso à plataforma será limitado.</p>
+                                    
+                                    <h3 className="font-bold text-base">3. Proteção de Dados</h3>
+                                    <p>Todas as informações pessoais fornecidas durante o cadastro serão tratadas de acordo com a nossa Política de Privacidade e com a Lei Geral de Proteção de Dados (LGPD). Ao se cadastrar, você consente com a coleta, armazenamento e processamento dos seus dados conforme descrito em nossa Política de Privacidade.</p>
+                                    
+                                    <h3 className="font-bold text-base">4. Responsabilidades do Usuário</h3>
+                                    <p>O usuário é responsável por manter a confidencialidade de suas credenciais de acesso (nome de usuário e senha) e por todas as atividades realizadas em sua conta. O usuário concorda em notificar imediatamente a Edunexia sobre qualquer uso não autorizado de sua conta ou qualquer outra violação de segurança.</p>
+                                    
+                                    <h3 className="font-bold text-base">5. Limitação de Responsabilidade</h3>
+                                    <p>A Edunexia não será responsável por quaisquer danos diretos, indiretos, incidentais, especiais, consequenciais ou punitivos, incluindo, mas não se limitando a, perda de lucros, dados, uso, boa vontade ou outras perdas intangíveis, resultantes do uso ou da impossibilidade de uso da plataforma.</p>
+                                    
+                                    <h3 className="font-bold text-base">6. Alterações nos Termos</h3>
+                                    <p>A Edunexia reserva-se o direito de modificar estes termos a qualquer momento. As alterações entrarão em vigor imediatamente após a publicação dos termos atualizados na plataforma. O uso contínuo da plataforma após tais alterações constitui sua aceitação dos novos termos.</p>
+                                    
+                                    <h3 className="font-bold text-base">7. Lei Aplicável</h3>
+                                    <p>Estes termos e condições são regidos e interpretados de acordo com as leis do Brasil, e quaisquer disputas relacionadas a estes termos estarão sujeitas à jurisdição exclusiva dos tribunais brasileiros.</p>
+                                  </div>
+                                  <DialogFooter>
+                                    <Button type="button">
+                                      Fechar
+                                    </Button>
+                                  </DialogFooter>
+                                </DialogContent>
+                              </Dialog>
+                              <span>, bem como a</span>
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button variant="link" className="p-0 h-auto text-primary underline cursor-pointer" type="button">
+                                    política de privacidade
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-h-[90vh] overflow-y-auto">
+                                  <DialogHeader>
+                                    <DialogTitle>Política de Privacidade</DialogTitle>
+                                    <DialogDescription>
+                                      Por favor, leia atentamente nossa política de privacidade.
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  <div className="space-y-4 text-sm">
+                                    <h3 className="font-bold text-base">1. Informações Coletadas</h3>
+                                    <p>A Edunexia coleta informações pessoais como nome, endereço de e-mail, número de telefone, CNPJ e outras informações necessárias para a prestação dos serviços. Também podemos coletar informações sobre como você usa nossos serviços, incluindo dados de acesso, dispositivos utilizados e preferências.</p>
+                                    
+                                    <h3 className="font-bold text-base">2. Uso das Informações</h3>
+                                    <p>As informações coletadas são utilizadas para fornecer, manter, proteger e melhorar nossos serviços, desenvolver novos recursos, proteger a Edunexia e nossos usuários, e personalizar a experiência do usuário. Também podemos utilizar essas informações para comunicações sobre atualizações, ofertas e eventos relacionados à plataforma.</p>
+                                    
+                                    <h3 className="font-bold text-base">3. Compartilhamento de Informações</h3>
+                                    <p>A Edunexia não compartilha informações pessoais com empresas, organizações ou indivíduos fora da Edunexia, exceto nas seguintes circunstâncias: com seu consentimento, para processamento externo por nossos fornecedores de serviços confiáveis, por motivos legais, ou em caso de reorganização, fusão ou venda da empresa.</p>
+                                    
+                                    <h3 className="font-bold text-base">4. Proteção de Informações</h3>
+                                    <p>A Edunexia trabalha arduamente para proteger as informações contra acesso não autorizado, alteração, divulgação ou destruição. Isso inclui revisões internas de nossas práticas de coleta, armazenamento e processamento de dados, medidas de segurança física e restrições de acesso a informações pessoais.</p>
+                                    
+                                    <h3 className="font-bold text-base">5. Seus Direitos</h3>
+                                    <p>De acordo com a Lei Geral de Proteção de Dados (LGPD), você tem o direito de acessar, corrigir, portar, apagar seus dados, bem como de se opor e restringir o tratamento. Você pode exercer esses direitos entrando em contato conosco através dos canais disponibilizados.</p>
+                                    
+                                    <h3 className="font-bold text-base">6. Alterações na Política</h3>
+                                    <p>A Edunexia pode modificar esta Política de Privacidade de tempos em tempos. Quaisquer alterações serão publicadas na plataforma e, em caso de alterações significativas, forneceremos um aviso mais proeminente, que pode incluir notificação por e-mail.</p>
+                                    
+                                    <h3 className="font-bold text-base">7. Contato</h3>
+                                    <p>Se você tiver dúvidas ou preocupações sobre esta Política de Privacidade ou sobre o tratamento de seus dados pessoais, entre em contato conosco através dos canais de comunicação disponíveis na plataforma.</p>
+                                  </div>
+                                  <DialogFooter>
+                                    <Button type="button">
+                                      Fechar
+                                    </Button>
+                                  </DialogFooter>
+                                </DialogContent>
+                              </Dialog>
+                              <span>.</span>
                             </Label>
                           </div>
                         </FormControl>
