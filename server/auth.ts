@@ -85,37 +85,66 @@ export function setupAuth(app: Express) {
         if (err) return next(err);
         res.status(201).json(user);
       });
-    } catch (error) {
-      res.status(400).json({ message: error.message });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      res.status(400).json({ message: errorMessage });
     }
   });
 
   app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", async (err, user, info) => {
+    passport.authenticate("local", async (err: any, user: Express.User | false, info: any) => {
       if (err) return next(err);
       if (!user) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
       
-      // Registrar o último portal acessado
-      const userUpdate = { ...user };
-      userUpdate.portalType = req.body.portalType;
+      // Logs para debug
+      console.log("Autenticação bem-sucedida para usuário:", user.username);
+      console.log("Portal type atual:", user.portalType);
+      console.log("Portal type solicitado:", req.body.portalType);
       
-      // Atualizar o usuário no banco se necessário
-      if (user.portalType !== req.body.portalType) {
-        try {
-          await storage.updateUser(user.id, { portalType: req.body.portalType });
-          // Atualizar o objeto do usuário para a sessão
-          user.portalType = req.body.portalType;
-        } catch (error) {
-          console.error("Erro ao atualizar portalType:", error);
-        }
+      // Sempre atualizar o portalType no banco de dados
+      try {
+        await storage.updateUser(user.id, { portalType: req.body.portalType });
+        
+        // Atualizar o objeto do usuário para a sessão
+        user.portalType = req.body.portalType;
+        
+        console.log("Portal type atualizado para:", user.portalType);
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+        console.error("Erro ao atualizar portalType:", errorMessage);
       }
 
-      req.login(user, (err) => {
-        if (err) return next(err);
-        return res.status(200).json(user);
-      });
+      // Consultar o usuário atualizado do banco para garantir
+      try {
+        const updatedUser = await storage.getUser(user.id);
+        console.log("Usuário atualizado do banco:", updatedUser);
+        
+        // Verificar se o usuário existe antes de fazer login
+        if (updatedUser) {
+          // Usar o usuário atualizado na sessão
+          req.login(updatedUser, (err) => {
+            if (err) return next(err);
+            return res.status(200).json(updatedUser);
+          });
+        } else {
+          // Se o usuário não for encontrado (improvável), use o original
+          req.login(user, (err) => {
+            if (err) return next(err);
+            return res.status(200).json(user);
+          });
+        }
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+        console.error("Erro ao buscar usuário atualizado:", errorMessage);
+        
+        // Fallback para o usuário original caso haja erro
+        req.login(user, (err) => {
+          if (err) return next(err);
+          return res.status(200).json(user);
+        });
+      }
     })(req, res, next);
   });
 

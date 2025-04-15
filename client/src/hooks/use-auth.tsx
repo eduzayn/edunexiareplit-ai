@@ -102,10 +102,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     mutationFn: async (credentials: LoginData) => {
       // Garantir que o portalType esteja presente na requisição
       const data = { ...credentials };
+      console.log("Enviando requisição de login com portalType:", data.portalType);
       return apiRequest<SelectUser>("/api/login", { method: 'POST', data });
     },
     onSuccess: (user: SelectUser) => {
+      // Atualizar o cache do usuário com os dados mais recentes
       queryClient.setQueryData(["/api/user"], user);
+      
+      // Forçar uma invalidação do cache para garantir que temos os dados mais recentes
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       
       // Adicionar logs para debug
       console.log("Login bem-sucedido. Dados do usuário:", user);
@@ -119,7 +124,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Redirect to the appropriate dashboard usando setLocation ao invés de window.location
       if (user.portalType) {
-        setLocation(getNavigationPath(`/${user.portalType}/dashboard`));
+        // Pequeno atraso para garantir que os dados estejam atualizados
+        setTimeout(() => {
+          setLocation(getNavigationPath(`/${user.portalType}/dashboard`));
+        }, 100);
       }
     },
     onError: (error: Error) => {
