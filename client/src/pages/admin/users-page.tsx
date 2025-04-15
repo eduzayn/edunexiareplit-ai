@@ -90,12 +90,12 @@ export default function UsersPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   // Hook de permissões RBAC
-  const { hasPermissionFor } = usePermissions();
-  const hasCreatePermission = hasPermissionFor("usuario", "criar");
-  const hasReadPermission = hasPermissionFor("usuario", "ler");
-  const hasUpdatePermission = hasPermissionFor("usuario", "atualizar");
-  const hasDeletePermission = hasPermissionFor("usuario", "deletar");
-  const hasManagePermissionPermission = hasPermissionFor("permissao", "gerenciar");
+  const { hasPermission } = usePermissions();
+  const hasCreatePermission = hasPermission("usuario", "criar");
+  const hasReadPermission = hasPermission("usuario", "ler");
+  const hasUpdatePermission = hasPermission("usuario", "atualizar");
+  const hasDeletePermission = hasPermission("usuario", "deletar");
+  const hasManagePermissionPermission = hasPermission("permissao", "gerenciar");
 
   // Query client para invalidar caches
   const queryClient = useQueryClient();
