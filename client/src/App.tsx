@@ -55,7 +55,8 @@ import InboxPage from "@/pages/admin/inbox";
 import RolesPage from "@/pages/admin/pessoas/roles-page";
 import RoleDetailPage from "@/pages/admin/pessoas/role-detail-page";
 import AbacPermissionsPage from "@/pages/admin/pessoas/abac-permissions-page";
-// import UserFormPage from "@/pages/admin/user-form-page";
+import UsuariosPage from "@/pages/admin/pessoas/usuarios-page";
+import UsuarioFormPage from "@/pages/admin/pessoas/usuario-form-page";
 // Módulo de Auditoria
 import LogsAuditoriaPage from "@/pages/admin/auditoria/logs-auditoria-page";
 // Import student pages
@@ -349,6 +350,18 @@ function Router() {
       
       <Route path="/admin/pessoas/abac-permissions">
         {() => user?.portalType === "admin" ? <AbacPermissionsPage /> : <Redirect to="/admin" />}
+      </Route>
+      
+      <Route path="/admin/pessoas/usuarios">
+        {() => user?.portalType === "admin" ? <UsuariosPage /> : <Redirect to="/admin" />}
+      </Route>
+      
+      <Route path="/admin/pessoas/usuarios/new">
+        {() => user?.portalType === "admin" ? <UsuarioFormPage /> : <Redirect to="/admin" />}
+      </Route>
+      
+      <Route path="/admin/pessoas/usuarios/:id">
+        {() => user?.portalType === "admin" ? <UsuarioFormPage /> : <Redirect to="/admin" />}
       </Route>
       
       {/* Rotas do Módulo de Auditoria */}
