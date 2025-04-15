@@ -80,6 +80,17 @@ const userFormSchema = z.object({
   fullName: z.string().min(3, "O nome completo deve ter pelo menos 3 caracteres"),
   email: z.string().email("Email inválido"),
   cpf: z.string().optional(),
+  // Campos RBAC
+  roleId: z.number().optional(),
+  // Campos ABAC
+  institutionId: z.number().optional(),
+  poloId: z.number().optional(),
+  // Outros campos úteis
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  zipCode: z.string().optional(),
 }).superRefine((data, ctx) => {
   // CPF é obrigatório para alunos
   if (data.portalType === "student" && (!data.cpf || data.cpf.trim() === "")) {
@@ -87,6 +98,24 @@ const userFormSchema = z.object({
       code: z.ZodIssueCode.custom,
       message: "CPF é obrigatório para alunos",
       path: ["cpf"],
+    });
+  }
+  
+  // Instituição é obrigatória para usuários do tipo partner ou polo
+  if ((data.portalType === "partner" || data.portalType === "polo") && !data.institutionId) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "A instituição é obrigatória para este tipo de usuário",
+      path: ["institutionId"],
+    });
+  }
+  
+  // Polo é obrigatório para usuários do tipo polo
+  if (data.portalType === "polo" && !data.poloId) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "O polo é obrigatório para este tipo de usuário",
+      path: ["poloId"],
     });
   }
 });
