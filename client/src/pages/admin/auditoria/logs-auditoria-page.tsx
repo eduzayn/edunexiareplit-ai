@@ -168,11 +168,13 @@ export const LogsAuditoriaPage = () => {
 
   // Consulta para obter logs de auditoria
   const { data, isLoading, refetch } = useQuery<AuditLogResponse>({
-    queryKey: ['/api/audit/logs', buildQueryParams()]
+    queryKey: ['/api/audit/logs', buildQueryParams()],
+    refetchOnWindowFocus: false
   });
 
   const logs = data?.logs || [];
-  const totalPages = Math.ceil((data?.totalCount || 0) / limit);
+  const totalCount = data?.totalCount || 0;
+  const totalPages = Math.ceil(totalCount / limit);
 
   // Função para exportar logs
   const exportLogs = async (format: 'csv' | 'json') => {

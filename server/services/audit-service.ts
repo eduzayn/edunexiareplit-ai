@@ -2,7 +2,7 @@ import { db } from "../db";
 import { permissionAudit } from "../../shared/audit-schema";
 import { InsertPermissionAudit } from "../../shared/audit-schema";
 import { Request } from "express";
-import { eq, desc, gte, lte } from 'drizzle-orm';
+import { eq, desc, gte, lte, count } from 'drizzle-orm';
 
 /**
  * Extrai o canal de origem de uma requisição
@@ -188,6 +188,53 @@ class AuditService {
     } catch (error) {
       console.error("Erro ao buscar detalhe de log de auditoria:", error);
       throw error;
+    }
+  }
+
+  /**
+   * Conta o número total de registros de auditoria com base nos filtros
+   */
+  async getAuditLogsCount(filters: {
+    userId?: number;
+    actionType?: string;
+    entityType?: string;
+    entityId?: number;
+    startDate?: Date;
+    endDate?: Date;
+  }) {
+    try {
+      let query = db.select({ count: count() }).from(permissionAudit);
+      
+      // Aplicar os mesmos filtros usados na busca de logs
+      if (filters.userId) {
+        query = query.where(eq(permissionAudit.userId, filters.userId));
+      }
+      
+      if (filters.actionType) {
+        query = query.where(eq(permissionAudit.actionType, filters.actionType as any));
+      }
+      
+      if (filters.entityType) {
+        query = query.where(eq(permissionAudit.entityType, filters.entityType as any));
+      }
+      
+      if (filters.entityId) {
+        query = query.where(eq(permissionAudit.entityId, filters.entityId));
+      }
+      
+      if (filters.startDate) {
+        query = query.where(gte(permissionAudit.createdAt, filters.startDate));
+      }
+      
+      if (filters.endDate) {
+        query = query.where(lte(permissionAudit.createdAt, filters.endDate));
+      }
+      
+      const result = await query;
+      return Number(result[0]?.count || 0);
+    } catch (error) {
+      console.error("Erro ao contar logs de auditoria:", error);
+      return 0;
     }
   }
 

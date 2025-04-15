@@ -50,7 +50,8 @@ router.get('/logs', requireAuth, async (req, res) => {
 
     // Caso contrário, retornar JSON
     const logs = await auditService.getAuditLogs(validatedParams);
-    res.json({ logs });
+    const totalCount = await auditService.getAuditLogsCount(validatedParams);
+    res.json({ logs, totalCount });
   } catch (error) {
     console.error('Erro ao buscar logs de auditoria:', error);
     res.status(500).json({ error: 'Erro ao buscar logs de auditoria' });
