@@ -366,23 +366,13 @@ export default function UsersPage() {
     },
   });
 
-  // Funções para abrir diálogos
-  const handleOpenCreateDialog = () => {
-    createForm.reset();
-    setIsCreateDialogOpen(true);
+  // Funções para navegação
+  const handleCreateUser = () => {
+    navigate("/admin/users/new");
   };
 
-  const handleOpenEditDialog = (user: User) => {
-    setSelectedUser(user);
-    editForm.reset({
-      username: user.username,
-      password: "", // Não preenchemos a senha por segurança
-      portalType: user.portalType,
-      fullName: user.fullName,
-      email: user.email,
-      cpf: user.cpf || "",
-    });
-    setIsEditDialogOpen(true);
+  const handleEditUser = (user: User) => {
+    navigate(`/admin/users/${user.id}`);
   };
 
   const handleOpenDeleteDialog = (user: User) => {

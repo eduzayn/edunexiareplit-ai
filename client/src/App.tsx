@@ -50,6 +50,7 @@ import InboxPage from "@/pages/admin/inbox";
 import RolesPage from "@/pages/admin/permissions/roles-page";
 import RoleDetailPage from "@/pages/admin/permissions/role-detail-page";
 import AbacPermissionsPage from "@/pages/admin/permissions/abac-permissions-page";
+import UserFormPage from "@/pages/admin/user-form-page";
 // Módulo de Auditoria
 import LogsAuditoriaPage from "@/pages/admin/auditoria/logs-auditoria-page";
 // Import student pages
@@ -196,11 +197,14 @@ function Router() {
       <Route path="/admin/institutions">
         {() => user?.portalType === "admin" ? <InstitutionsPage /> : <Redirect to="/admin" />}
       </Route>
-      <Route path="/admin/users">
+      <Route path="/admin/users" exact>
         {() => user?.portalType === "admin" ? <UsersPage /> : <Redirect to="/admin" />}
       </Route>
       <Route path="/admin/users/new">
-        {() => user?.portalType === "admin" ? <UsersPage /> : <Redirect to="/admin" />}
+        {() => user?.portalType === "admin" ? <UserFormPage /> : <Redirect to="/admin" />}
+      </Route>
+      <Route path="/admin/users/:id">
+        {() => user?.portalType === "admin" ? <UserFormPage /> : <Redirect to="/admin" />}
       </Route>
       <Route path="/admin/polos">
         {() => user?.portalType === "admin" ? <PolosPage /> : <Redirect to="/admin" />}
