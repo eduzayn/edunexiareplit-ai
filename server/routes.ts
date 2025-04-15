@@ -2805,6 +2805,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Registro das rotas do módulo de Contratos
   app.use("/api/contracts", contractsRoutes);
+  
+  // Registro das rotas de auditoria
+  app.use("/api/audit", auditRoutes);
 
   const httpServer = createServer(app);
 

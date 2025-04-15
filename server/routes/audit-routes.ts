@@ -84,7 +84,7 @@ router.get('/logs/:id', requireAuth, async (req, res) => {
  * Rota para obter estatísticas de auditoria
  * GET /api/audit/stats
  */
-router.get('/stats', checkPermission('papel', 'ler_historico'), async (req, res) => {
+router.get('/stats', requireAuth, async (req, res) => {
   try {
     // Implementar lógica para obter estatísticas
     // Por exemplo: número de ações por tipo, por usuário, etc.

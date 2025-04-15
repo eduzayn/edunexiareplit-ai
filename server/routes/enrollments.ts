@@ -3,7 +3,7 @@ import { storage } from '../storage';
 import { insertEnrollmentSchema } from '@shared/schema';
 import { requireAdmin, requireStudent, requirePartner } from '../middleware/auth';
 import { z } from 'zod';
-import { logEnrollmentAudit, logStatusChange, getAuditInfo } from '../services/audit-service';
+import { logEnrollmentAudit, logStatusChange, getAuditInfo, getSourceChannel } from '../services/audit-service';
 import { createPaymentGateway } from '../services/payment-gateways';
 
 export function registerEnrollmentRoutes(app: Express) {
