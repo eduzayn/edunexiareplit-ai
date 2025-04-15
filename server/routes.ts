@@ -33,6 +33,7 @@ import certificateSignersRoutes from "./routes/certificate-signers";
 import { WebhookController } from "./controllers/webhook-controller";
 import subscriptionPlansRoutes from "./routes/subscription-plans";
 import subscriptionsRoutes from "./routes/subscriptions";
+import publicRegisterRouter from "./routes/public-register";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes

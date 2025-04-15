@@ -240,12 +240,17 @@ export default function PlanosPage() {
                         </li>
                       ))}
                     </ul>
+                    {plano.trial > 0 && (
+                      <div className="text-center mb-4 text-sm">
+                        <span className="text-primary font-semibold">Teste grátis por {plano.trial} dias</span>
+                      </div>
+                    )}
                     <Button 
                       variant={plano.destaque ? "default" : "outline"}
                       className={`w-full ${!plano.destaque ? "text-primary border-primary hover:bg-primary hover:text-white" : ""}`}
-                      onClick={() => navigate('/contato')}
+                      onClick={() => navigate(plano.nome === "Empresarial" ? '/contato' : '/cadastro?plano=' + plano.id)}
                     >
-                      {plano.nome === "Enterprise" ? "Fale conosco" : "Selecionar plano"}
+                      {plano.nome === "Empresarial" ? "Fale conosco" : "Começar período de teste"}
                     </Button>
                   </div>
                 </div>
