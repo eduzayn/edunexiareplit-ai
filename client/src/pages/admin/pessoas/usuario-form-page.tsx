@@ -240,34 +240,12 @@ export default function UsuarioFormPage() {
     <AdminLayout>
       <title>{isEditing ? "Editar" : "Novo"} Usuário | EdunexIA</title>
 
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex items-center mb-6">
         <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" onClick={() => navigate("/admin/pessoas/usuarios")}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <h1 className="text-3xl font-bold">{isEditing ? "Editar" : "Novo"} Usuário</h1>
-        </div>
-        
-        <div className="flex gap-2">
-          {isEditing && (
-            <Button variant="destructive" onClick={() => setConfirmDelete(true)}>
-              <Trash2 className="mr-2 h-4 w-4" />
-              Excluir
-            </Button>
-          )}
-          <Button onClick={form.handleSubmit(onSubmit)} disabled={saveUserMutation.isPending}>
-            {saveUserMutation.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Salvando...
-              </>
-            ) : (
-              <>
-                <Save className="mr-2 h-4 w-4" />
-                Salvar
-              </>
-            )}
-          </Button>
         </div>
       </div>
 
