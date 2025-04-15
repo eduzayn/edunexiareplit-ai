@@ -195,14 +195,14 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
         { 
           name: "Papéis & Permissões", 
           icon: <SecurityIcon className="text-muted-foreground" />, 
-          href: "/admin/permissions/roles",
-          active: currentPath === "/admin/permissions/roles" || (currentPath && currentPath.includes("/admin/permissions/roles"))
+          href: "/admin/pessoas/roles",
+          active: currentPath === "/admin/pessoas/roles" || (currentPath && currentPath.includes("/admin/pessoas/roles"))
         },
         { 
           name: "Permissões Contextuais", 
           icon: <BadgeCheckIcon className="text-muted-foreground" />, 
-          href: "/admin/permissions/abac-permissions",
-          active: currentPath === "/admin/permissions/abac-permissions" || (currentPath && currentPath.includes("/admin/permissions/abac"))
+          href: "/admin/pessoas/abac-permissions",
+          active: currentPath === "/admin/pessoas/abac-permissions" || (currentPath && currentPath.includes("/admin/pessoas/abac"))
         },
       ]
     }, currentPath),
@@ -216,14 +216,14 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
       { 
         name: "Papéis & Permissões", 
         icon: <SecurityIcon className="text-muted-foreground" />, 
-        href: "/admin/permissions/roles",
-        active: currentPath === "/admin/permissions/roles" || (currentPath && currentPath.includes("/admin/permissions/roles"))
+        href: "/admin/pessoas/roles",
+        active: currentPath === "/admin/pessoas/roles" || (currentPath && currentPath.includes("/admin/pessoas/roles"))
       },
       { 
         name: "Permissões Contextuais", 
         icon: <BadgeCheckIcon className="text-muted-foreground" />, 
-        href: "/admin/permissions/abac-permissions",
-        active: currentPath === "/admin/permissions/abac-permissions" || (currentPath && currentPath.includes("/admin/permissions/abac"))
+        href: "/admin/pessoas/abac-permissions",
+        active: currentPath === "/admin/pessoas/abac-permissions" || (currentPath && currentPath.includes("/admin/pessoas/abac"))
       },
     ]
   };
