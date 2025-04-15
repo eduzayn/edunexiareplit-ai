@@ -472,8 +472,8 @@ export default function UsersPage() {
         redirectTo
       }));
       
-      // Abrir automaticamente o modal de criação quando vier de redirecionamento
-      handleOpenCreateDialog();
+      // Redirecionar automaticamente para página de cadastro quando vier de redirecionamento
+      handleCreateUser();
     }
   }, []);
 
@@ -493,7 +493,7 @@ export default function UsersPage() {
           </div>
           <div className="mt-4 flex space-x-2 md:mt-0">
             <PermissionButtonWrapper
-              onClick={handleOpenCreateDialog}
+              onClick={handleCreateUser}
               hasPermission={hasCreatePermission}
               deniedTooltip="Você não tem permissão para criar usuários"
               className="flex items-center bg-blue-600 hover:bg-blue-700"
@@ -604,7 +604,7 @@ export default function UsersPage() {
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end space-x-2">
                             <PermissionButtonWrapper
-                              onClick={() => handleOpenEditDialog(user)}
+                              onClick={() => handleEditUser(user)}
                               hasPermission={hasUpdatePermission}
                               deniedTooltip="Você não tem permissão para editar usuários"
                               variant="ghost"
@@ -648,7 +648,7 @@ export default function UsersPage() {
                   Não encontramos nenhum usuário com os filtros aplicados.
                 </p>
                 <PermissionButtonWrapper
-                  onClick={handleOpenCreateDialog}
+                  onClick={handleCreateUser}
                   hasPermission={hasCreatePermission}
                   deniedTooltip="Você não tem permissão para criar usuários"
                   className="flex items-center"
