@@ -253,7 +253,15 @@ export default function UsersPageNew() {
   return (
     <AdminLayout>
       <div className="container mx-auto p-6">
-        <h1 className="text-3xl font-bold mb-6">Usuários</h1>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-3xl font-bold">Usuários</h1>
+          {hasCreatePermission && (
+            <Button onClick={handleCreateUser} size="sm">
+              <UserPlus className="mr-2 h-4 w-4" />
+              Novo Usuário
+            </Button>
+          )}
+        </div>
         
         <Card className="mb-6">
           <CardHeader className="pb-3">
@@ -264,12 +272,6 @@ export default function UsersPageNew() {
                   Gerencie os usuários do sistema e suas permissões.
                 </CardDescription>
               </div>
-              {hasCreatePermission && (
-                <Button onClick={handleCreateUser} size="sm">
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Novo Usuário
-                </Button>
-              )}
             </div>
           </CardHeader>
           <CardContent>
