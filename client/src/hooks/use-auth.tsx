@@ -102,8 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     mutationFn: async (credentials: LoginData) => {
       // Garantir que o portalType esteja presente na requisição
       const data = { ...credentials };
-      const res = await apiRequest("POST", "/api/login", data);
-      return await res.json();
+      return apiRequest<SelectUser>("/api/login", { method: 'POST', data });
     },
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
@@ -128,8 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerMutation = useMutation({
     mutationFn: async (credentials: InsertUser) => {
-      const res = await apiRequest("POST", "/api/register", credentials);
-      return await res.json();
+      return apiRequest<SelectUser>("/api/register", { method: 'POST', data: credentials });
     },
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
@@ -154,7 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("POST", "/api/logout");
+      await apiRequest<{}>("/api/logout", { method: 'POST' });
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);
