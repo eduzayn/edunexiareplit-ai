@@ -48,6 +48,7 @@ import InboxPage from "@/pages/admin/inbox";
 // Módulo de Permissões
 import RolesPage from "@/pages/admin/permissions/roles-page";
 import RoleDetailPage from "@/pages/admin/permissions/role-detail-page";
+import AbacPermissionsPage from "@/pages/admin/permissions/abac-permissions-page";
 // Módulo de Auditoria
 import LogsAuditoriaPage from "@/pages/admin/auditoria/logs-auditoria-page";
 // Import student pages
@@ -308,6 +309,10 @@ function Router() {
       
       <Route path="/admin/permissions/roles/:id">
         {() => user?.portalType === "admin" ? <RoleDetailPage /> : <Redirect to="/admin" />}
+      </Route>
+      
+      <Route path="/admin/permissions/abac-permissions">
+        {() => user?.portalType === "admin" ? <AbacPermissionsPage /> : <Redirect to="/admin" />}
       </Route>
       
       {/* Rotas do Módulo de Auditoria */}
