@@ -59,8 +59,8 @@ const formSchema = z.object({
   state: z.string().length(2, { message: "Estado deve ter 2 caracteres" }),
   
   // Outras informações
-  birthDate: z.string().optional().or(z.literal("")),
-  observation: z.string().optional().or(z.literal("")),
+  segment: z.string().optional().or(z.literal("")),
+  notes: z.string().optional().or(z.literal("")),
   isActive: z.boolean().default(true),
 });
 
@@ -87,8 +87,8 @@ export default function NewClientPage() {
       neighborhood: "",
       city: "",
       state: "",
-      birthDate: "",
-      observation: "",
+      segment: "",
+      notes: "",
       isActive: true,
     },
   });
@@ -483,6 +483,9 @@ export default function NewClientPage() {
                           </FormItem>
                         )}
                       />
+
+
+                      {/* O campo website foi removido porque não existe no banco de dados */}
                     </div>
 
                     <FormField
