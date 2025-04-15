@@ -19,7 +19,7 @@ import CoursesPage from "@/pages/admin/courses-page";
 import CourseFormPage from "@/pages/admin/course-form-page";
 import DisciplineContentPage from "@/pages/admin/discipline-content-page";
 import InstitutionsPage from "@/pages/admin/institutions-page";
-import UsersPage from "@/pages/admin/users-page-new";
+import UsersPage from "@/pages/admin/users-page";
 import PolosPage from "@/pages/admin/polos-page";
 import PartnersPage from "@/pages/admin/partners-page";
 import FinancialPage from "@/pages/admin/financial-page";
