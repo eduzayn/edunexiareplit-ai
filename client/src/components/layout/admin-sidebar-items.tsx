@@ -422,7 +422,7 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
   
   // Categoria: Comunicação
   const communicationCategory: SidebarCategory = {
-    name: "Comunicação",
+    name: "COMUNICAÇÃO",
     icon: <MessageSquareIcon />,
     expanded: hasCategoryActiveItem({
       name: "Comunicação",
@@ -472,7 +472,7 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
 
   // Categoria: Sistema
   const systemCategory: SidebarCategory = {
-    name: "Sistema",
+    name: "SISTEMA",
     icon: <BuildIcon />,
     expanded: hasCategoryActiveItem({
       name: "Sistema",
