@@ -59,9 +59,8 @@ const formSchema = z.object({
   state: z.string().length(2, { message: "Estado deve ter 2 caracteres" }),
   
   // Outras informações
-  birthDate: z.string().optional().or(z.literal("")),
+  birthDate: z.string().optional().or(z.literal("")).transform(val => val || undefined),
   observation: z.string().optional().or(z.literal("")),
-  isActive: z.boolean().default(true),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -89,7 +88,6 @@ export default function NewClientPage() {
       state: "",
       birthDate: "",
       observation: "",
-      isActive: true,
     },
   });
 
@@ -115,8 +113,7 @@ export default function NewClientPage() {
         zipCode: data.zipCode,
         city: data.city,
         state: data.state,
-        isActive: data.isActive,
-        birthDate: data.birthDate || null,
+        birthDate: data.birthDate,
         observation: data.observation || ""
       };
 
@@ -278,26 +275,7 @@ export default function NewClientPage() {
                         )}
                       />
 
-                      <FormField
-                        control={form.control}
-                        name="isActive"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md p-4">
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                            <div className="space-y-1 leading-none">
-                              <FormLabel>Cliente Ativo</FormLabel>
-                              <p className="text-sm text-gray-500">
-                                O cliente estará ativo e disponível no sistema
-                              </p>
-                            </div>
-                          </FormItem>
-                        )}
-                      />
+
                     </div>
                   </TabsContent>
 
