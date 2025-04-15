@@ -3,9 +3,10 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
+import * as permissionService from '../services/permission-service';
 import { db } from '../db';
 import * as schema from '../../shared/schema';
-import { and, eq, sql } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 
 /**
  * Verifica se o usuário tem uma permissão específica
@@ -19,54 +20,7 @@ export async function hasPermission(req: Request, resource: string, action: stri
     return false;
   }
 
-  // Verificar se o usuário é super_admin (tem todas as permissões)
-  const superAdminCheck = await db.select({ id: schema.userRoles.id })
-    .from(schema.userRoles)
-    .innerJoin(schema.roles, eq(schema.userRoles.roleId, schema.roles.id))
-    .where(
-      and(
-        eq(schema.userRoles.userId, req.user.id),
-        eq(schema.roles.name, 'super_admin')
-      )
-    );
-
-  if (superAdminCheck.length > 0) {
-    return true;
-  }
-
-  // Consulta para verificar se o usuário tem a permissão específica através de seus papéis
-  const permissionCheck = await db.select({
-    permissionId: schema.rolePermissions.permissionId
-  })
-    .from(schema.userRoles)
-    .innerJoin(schema.roles, eq(schema.userRoles.roleId, schema.roles.id))
-    .innerJoin(schema.rolePermissions, eq(schema.rolePermissions.roleId, schema.roles.id))
-    .innerJoin(schema.permissions, eq(schema.rolePermissions.permissionId, schema.permissions.id))
-    .where(
-      and(
-        eq(schema.userRoles.userId, req.user.id),
-        eq(schema.permissions.resource, resource),
-        eq(schema.permissions.action, action)
-      )
-    );
-
-  // Verificar também se o usuário tem a permissão 'manage' para o recurso
-  const managePermissionCheck = await db.select({
-    permissionId: schema.rolePermissions.permissionId
-  })
-    .from(schema.userRoles)
-    .innerJoin(schema.roles, eq(schema.userRoles.roleId, schema.roles.id))
-    .innerJoin(schema.rolePermissions, eq(schema.rolePermissions.roleId, schema.roles.id))
-    .innerJoin(schema.permissions, eq(schema.rolePermissions.permissionId, schema.permissions.id))
-    .where(
-      and(
-        eq(schema.userRoles.userId, req.user.id),
-        eq(schema.permissions.resource, resource),
-        eq(schema.permissions.action, 'manage')
-      )
-    );
-
-  return permissionCheck.length > 0 || managePermissionCheck.length > 0;
+  return await permissionService.checkUserPermission(req.user.id, resource, action);
 }
 
 /**
@@ -77,24 +31,24 @@ export async function hasPermission(req: Request, resource: string, action: stri
  */
 export function requirePermission(resource: string, action: string) {
   return async (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ error: 'Autenticação necessária' });
+    }
+
     try {
-      if (!req.user) {
-        return res.status(401).json({ error: 'Usuário não autenticado' });
-      }
-
-      const hasAccess = await hasPermission(req, resource, action);
-
+      const hasAccess = await permissionService.checkUserPermission(req.user.id, resource, action);
+      
       if (!hasAccess) {
         return res.status(403).json({ 
           error: 'Acesso negado', 
-          message: `Você não tem permissão para ${action} ${resource}`
+          details: `Você não tem permissão para ${action} em ${resource}`
         });
       }
-
+      
       next();
     } catch (error) {
-      console.error('Erro ao verificar permissão:', error);
-      res.status(500).json({ error: 'Erro interno do servidor' });
+      console.error(`Erro ao verificar permissão ${action}:${resource}:`, error);
+      return res.status(500).json({ error: 'Erro ao verificar permissão' });
     }
   };
 }
@@ -110,17 +64,15 @@ export async function hasRole(req: Request, roleNames: string[]): Promise<boolea
     return false;
   }
 
-  const rolesCheck = await db.select({ id: schema.userRoles.id })
+  const userRoles = await db.select({ name: schema.roles.name })
     .from(schema.userRoles)
     .innerJoin(schema.roles, eq(schema.userRoles.roleId, schema.roles.id))
-    .where(
-      and(
-        eq(schema.userRoles.userId, req.user.id),
-        sql`${schema.roles.name} IN (${roleNames.join(',')})`
-      )
-    );
+    .where(eq(schema.userRoles.userId, req.user.id));
 
-  return rolesCheck.length > 0;
+  const userRoleNames = userRoles.map(r => r.name);
+  
+  // Verificar se o usuário tem algum dos papéis especificados
+  return roleNames.some(name => userRoleNames.includes(name));
 }
 
 /**
@@ -130,24 +82,24 @@ export async function hasRole(req: Request, roleNames: string[]): Promise<boolea
  */
 export function requireRole(roleNames: string[]) {
   return async (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ error: 'Autenticação necessária' });
+    }
+
     try {
-      if (!req.user) {
-        return res.status(401).json({ error: 'Usuário não autenticado' });
-      }
-
-      const hasAccess = await hasRole(req, roleNames);
-
-      if (!hasAccess) {
+      const hasUserRole = await hasRole(req, roleNames);
+      
+      if (!hasUserRole) {
         return res.status(403).json({ 
           error: 'Acesso negado', 
-          message: `Você precisa ter um dos seguintes papéis: ${roleNames.join(', ')}`
+          details: `É necessário um dos seguintes papéis: ${roleNames.join(', ')}`
         });
       }
-
+      
       next();
     } catch (error) {
-      console.error('Erro ao verificar papel:', error);
-      res.status(500).json({ error: 'Erro interno do servidor' });
+      console.error('Erro ao verificar papel do usuário:', error);
+      return res.status(500).json({ error: 'Erro ao verificar papel do usuário' });
     }
   };
 }
@@ -159,27 +111,27 @@ export function requireRole(roleNames: string[]) {
  */
 export function requireInstitutionAccess(checkOwner = true) {
   return async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      if (!req.user) {
-        return res.status(401).json({ error: 'Usuário não autenticado' });
-      }
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ error: 'Autenticação necessária' });
+    }
 
-      // Verificar se é super_admin (tem acesso global)
+    // Obter instituição do parâmetro ou query
+    const institutionId = parseInt(req.params.institutionId || req.query.institutionId as string);
+    
+    if (isNaN(institutionId)) {
+      return res.status(400).json({ error: 'ID de instituição inválido' });
+    }
+
+    try {
+      // Verificar se o usuário é super_admin (acesso a tudo)
       const isSuperAdmin = await hasRole(req, ['super_admin']);
-      
       if (isSuperAdmin) {
         return next();
       }
-      
-      const institutionId = parseInt(req.params.institutionId || req.body.institutionId);
-      
-      if (!institutionId) {
-        return res.status(400).json({ error: 'ID da instituição não fornecido' });
-      }
-      
-      // Verificar se é proprietário da instituição
+
+      // Verificar se o usuário é owner da instituição
       if (checkOwner) {
-        const institutionOwnerCheck = await db.select({ id: schema.institutions.id })
+        const isOwner = await db.select({ id: schema.institutions.id })
           .from(schema.institutions)
           .where(
             and(
@@ -187,14 +139,14 @@ export function requireInstitutionAccess(checkOwner = true) {
               eq(schema.institutions.ownerId, req.user.id)
             )
           );
-        
-        if (institutionOwnerCheck.length > 0) {
+          
+        if (isOwner.length > 0) {
           return next();
         }
       }
-      
-      // Verificar se tem papel de instituição
-      const institutionRoleCheck = await db.select({ id: schema.userRoles.id })
+
+      // Verificar se o usuário tem papel na instituição
+      const hasInstitutionRole = await db.select({ id: schema.userRoles.id })
         .from(schema.userRoles)
         .innerJoin(schema.roles, eq(schema.userRoles.roleId, schema.roles.id))
         .where(
@@ -204,19 +156,18 @@ export function requireInstitutionAccess(checkOwner = true) {
             eq(schema.roles.scope, 'institution')
           )
         );
-      
-      if (institutionRoleCheck.length > 0) {
+        
+      if (hasInstitutionRole.length > 0) {
         return next();
       }
       
       return res.status(403).json({ 
         error: 'Acesso negado', 
-        message: 'Você não tem acesso a esta instituição'
+        details: 'Você não tem acesso a esta instituição'
       });
-      
     } catch (error) {
       console.error('Erro ao verificar acesso à instituição:', error);
-      res.status(500).json({ error: 'Erro interno do servidor' });
+      return res.status(500).json({ error: 'Erro ao verificar acesso à instituição' });
     }
   };
 }
@@ -227,26 +178,26 @@ export function requireInstitutionAccess(checkOwner = true) {
  */
 export function requirePoloAccess() {
   return async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      if (!req.user) {
-        return res.status(401).json({ error: 'Usuário não autenticado' });
-      }
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ error: 'Autenticação necessária' });
+    }
 
-      // Verificar se é super_admin (tem acesso global)
+    // Obter polo do parâmetro ou query
+    const poloId = parseInt(req.params.poloId || req.query.poloId as string);
+    
+    if (isNaN(poloId)) {
+      return res.status(400).json({ error: 'ID de polo inválido' });
+    }
+
+    try {
+      // Verificar se o usuário é super_admin (acesso a tudo)
       const isSuperAdmin = await hasRole(req, ['super_admin']);
-      
       if (isSuperAdmin) {
         return next();
       }
-      
-      const poloId = parseInt(req.params.poloId || req.body.poloId);
-      
-      if (!poloId) {
-        return res.status(400).json({ error: 'ID do polo não fornecido' });
-      }
-      
-      // Verificar se tem papel no polo
-      const poloRoleCheck = await db.select({ id: schema.userRoles.id })
+
+      // Verificar se o usuário tem papel no polo
+      const hasPoloRole = await db.select({ id: schema.userRoles.id })
         .from(schema.userRoles)
         .innerJoin(schema.roles, eq(schema.userRoles.roleId, schema.roles.id))
         .where(
@@ -256,20 +207,35 @@ export function requirePoloAccess() {
             eq(schema.roles.scope, 'polo')
           )
         );
-      
-      if (poloRoleCheck.length > 0) {
+        
+      if (hasPoloRole.length > 0) {
         return next();
       }
-      
-      // Verificar se tem acesso à instituição deste polo
+
+      // Verificar se o usuário tem acesso à instituição deste polo
       const poloData = await db.select({ institutionId: schema.polos.institutionId })
         .from(schema.polos)
         .where(eq(schema.polos.id, poloId));
-      
+
       if (poloData.length > 0) {
         const institutionId = poloData[0].institutionId;
-        
-        const institutionRoleCheck = await db.select({ id: schema.userRoles.id })
+
+        // Verificar se o usuário é owner da instituição
+        const isOwner = await db.select({ id: schema.institutions.id })
+          .from(schema.institutions)
+          .where(
+            and(
+              eq(schema.institutions.id, institutionId),
+              eq(schema.institutions.ownerId, req.user.id)
+            )
+          );
+          
+        if (isOwner.length > 0) {
+          return next();
+        }
+
+        // Verificar se o usuário tem papel na instituição
+        const hasInstitutionRole = await db.select({ id: schema.userRoles.id })
           .from(schema.userRoles)
           .innerJoin(schema.roles, eq(schema.userRoles.roleId, schema.roles.id))
           .where(
@@ -279,20 +245,19 @@ export function requirePoloAccess() {
               eq(schema.roles.scope, 'institution')
             )
           );
-        
-        if (institutionRoleCheck.length > 0) {
+          
+        if (hasInstitutionRole.length > 0) {
           return next();
         }
       }
       
       return res.status(403).json({ 
         error: 'Acesso negado', 
-        message: 'Você não tem acesso a este polo'
+        details: 'Você não tem acesso a este polo'
       });
-      
     } catch (error) {
       console.error('Erro ao verificar acesso ao polo:', error);
-      res.status(500).json({ error: 'Erro interno do servidor' });
+      return res.status(500).json({ error: 'Erro ao verificar acesso ao polo' });
     }
   };
 }

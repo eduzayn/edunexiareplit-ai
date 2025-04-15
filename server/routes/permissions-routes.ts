@@ -1,631 +1,519 @@
+/**
+ * Rotas para gerenciamento de permissões e papéis
+ */
+
 import express from 'express';
-import { requireAuth } from '../auth';
-import { requirePermission, requireSuperAdmin } from '../middlewares/permission-middleware';
+import * as permissionService from '../services/permission-service';
+import { requireAuth } from '../middlewares/requireAuth';
+import { requirePermission } from '../middlewares/permission-middleware';
 import { db } from '../db';
-import { 
-  permissions, 
-  roles, 
-  rolePermissions, 
-  userRoles
-} from '@shared/schema';
-import { eq, and, inArray } from 'drizzle-orm';
-import { 
-  assignRoleToUser, 
-  getUserPermissions, 
-  getUserRoles, 
-  removeRoleFromUser 
-} from '../services/permission-service';
+import * as schema from '../../shared/schema';
+import { and, eq } from 'drizzle-orm';
 
 const router = express.Router();
 
 // Middleware de autenticação para todas as rotas
 router.use(requireAuth);
 
-/**
- * Obter todas as permissões disponíveis no sistema
- * Requer: permissão 'read:permissions'
- */
-router.get(
-  '/permissions',
-  requirePermission('permissions', 'read'),
-  async (req, res) => {
-    try {
-      const allPermissions = await db.query.permissions.findMany({
-        orderBy: (permissions, { asc }) => [
-          asc(permissions.resource),
-          asc(permissions.action)
-        ]
-      });
+// Listar todos os papéis
+router.get('/roles', requirePermission('roles', 'read'), async (req, res) => {
+  try {
+    const roles = await db.select({
+      id: schema.roles.id,
+      name: schema.roles.name,
+      description: schema.roles.description,
+      scope: schema.roles.scope,
+      isSystem: schema.roles.isSystem,
+      institutionId: schema.roles.institutionId,
+      createdAt: schema.roles.createdAt,
+      updatedAt: schema.roles.updatedAt
+    }).from(schema.roles);
 
-      res.json({
-        success: true,
-        data: allPermissions
-      });
-    } catch (error) {
-      console.error('Erro ao buscar permissões:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erro ao buscar permissões'
-      });
-    }
+    return res.json(roles);
+  } catch (error) {
+    console.error('Erro ao listar papéis:', error);
+    return res.status(500).json({ error: 'Erro ao listar papéis' });
   }
-);
+});
 
-/**
- * Obter todos os papéis (roles) disponíveis
- * Requer: permissão 'read:roles'
- */
-router.get(
-  '/roles',
-  requirePermission('roles', 'read'),
-  async (req, res) => {
-    try {
-      const { institutionId } = req.query;
-      
-      let query = db.query.roles.findMany({
-        orderBy: (roles, { asc }) => [
-          asc(roles.name)
-        ]
-      });
-
-      // Filtrar por instituição, se especificado
-      if (institutionId) {
-        query = db.query.roles.findMany({
-          where: (roles, { eq, or, isNull }) => or(
-            eq(roles.institutionId, Number(institutionId)),
-            isNull(roles.institutionId) // Também incluir papéis do sistema
-          ),
-          orderBy: (roles, { asc }) => [
-            asc(roles.name)
-          ]
-        });
-      }
-
-      const allRoles = await query;
-
-      res.json({
-        success: true,
-        data: allRoles
-      });
-    } catch (error) {
-      console.error('Erro ao buscar papéis:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erro ao buscar papéis'
-      });
+// Obter papel por ID
+router.get('/roles/:id', requirePermission('roles', 'read'), async (req, res) => {
+  try {
+    const roleId = parseInt(req.params.id);
+    
+    if (isNaN(roleId)) {
+      return res.status(400).json({ error: 'ID de papel inválido' });
     }
-  }
-);
-
-/**
- * Obter um papel (role) específico e suas permissões
- * Requer: permissão 'read:roles'
- */
-router.get(
-  '/roles/:id',
-  requirePermission('roles', 'read'),
-  async (req, res) => {
-    try {
-      const roleId = Number(req.params.id);
-      
-      // Buscar o papel
-      const role = await db.query.roles.findFirst({
-        where: eq(roles.id, roleId)
-      });
-
-      if (!role) {
-        return res.status(404).json({
-          success: false,
-          message: 'Papel não encontrado'
-        });
-      }
-
-      // Buscar permissões associadas ao papel
-      const rolePerms = await db
-        .select({
-          id: permissions.id,
-          name: permissions.name,
-          description: permissions.description,
-          resource: permissions.resource,
-          action: permissions.action
-        })
-        .from(permissions)
-        .innerJoin(
-          rolePermissions,
-          eq(permissions.id, rolePermissions.permissionId)
-        )
-        .where(eq(rolePermissions.roleId, roleId));
-
-      res.json({
-        success: true,
-        data: {
-          ...role,
-          permissions: rolePerms
-        }
-      });
-    } catch (error) {
-      console.error('Erro ao buscar detalhes do papel:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erro ao buscar detalhes do papel'
-      });
+    
+    const role = await db.select({
+      id: schema.roles.id,
+      name: schema.roles.name,
+      description: schema.roles.description,
+      scope: schema.roles.scope,
+      isSystem: schema.roles.isSystem,
+      institutionId: schema.roles.institutionId,
+      createdAt: schema.roles.createdAt,
+      updatedAt: schema.roles.updatedAt
+    })
+    .from(schema.roles)
+    .where(eq(schema.roles.id, roleId));
+    
+    if (role.length === 0) {
+      return res.status(404).json({ error: 'Papel não encontrado' });
     }
+    
+    return res.json(role[0]);
+  } catch (error) {
+    console.error('Erro ao obter papel:', error);
+    return res.status(500).json({ error: 'Erro ao obter papel' });
   }
-);
+});
 
-/**
- * Criar um novo papel (role)
- * Requer: permissão 'create:roles'
- */
-router.post(
-  '/roles',
-  requirePermission('roles', 'create'),
-  async (req, res) => {
-    try {
-      const { name, description, institutionId, permissionIds } = req.body;
-
-      // Validação de dados
-      if (!name || !description) {
-        return res.status(400).json({
-          success: false,
-          message: 'Nome e descrição são obrigatórios'
-        });
-      }
-
-      // Verificar nome duplicado
-      const existingRole = await db.query.roles.findFirst({
-        where: and(
-          eq(roles.name, name),
-          institutionId 
-            ? eq(roles.institutionId, institutionId)
-            : undefined
-        )
-      });
-
-      if (existingRole) {
-        return res.status(400).json({
-          success: false,
-          message: 'Já existe um papel com este nome'
-        });
-      }
-
-      // Criar o papel
-      const result = await db.insert(roles).values({
+// Criar novo papel (apenas admin)
+router.post('/roles', requirePermission('roles', 'create'), async (req, res) => {
+  try {
+    const { name, description, scope, institutionId } = req.body;
+    
+    if (!name || !description || !scope) {
+      return res.status(400).json({ error: 'Dados incompletos' });
+    }
+    
+    // Verificar se scope é válido
+    if (!['global', 'institution', 'polo'].includes(scope)) {
+      return res.status(400).json({ error: 'Escopo inválido' });
+    }
+    
+    // Verificar se já existe papel com este nome
+    const existingRole = await db.select({ id: schema.roles.id })
+      .from(schema.roles)
+      .where(eq(schema.roles.name, name));
+    
+    if (existingRole.length > 0) {
+      return res.status(409).json({ error: 'Já existe um papel com este nome' });
+    }
+    
+    // Inserir o papel
+    const [newRole] = await db.insert(schema.roles)
+      .values({
         name,
         description,
-        institutionId: institutionId ? Number(institutionId) : undefined,
+        scope,
         isSystem: false,
-        createdById: req.user?.id
-      }).returning();
-
-      const newRole = result[0];
-
-      // Se foram fornecidos IDs de permissões, associá-los ao papel
-      if (permissionIds && Array.isArray(permissionIds) && permissionIds.length > 0) {
-        // Verificar se todas as permissões existem
-        const validPermissions = await db.query.permissions.findMany({
-          where: inArray(permissions.id, permissionIds)
-        });
-
-        if (validPermissions.length !== permissionIds.length) {
-          // Algumas permissões não existem, mas vamos continuar com as válidas
-          console.warn('Algumas permissões especificadas não existem');
-        }
-
-        // Associar as permissões válidas ao papel
-        const validPermissionIds = validPermissions.map(p => p.id);
-        
-        if (validPermissionIds.length > 0) {
-          await db.insert(rolePermissions).values(
-            validPermissionIds.map(permId => ({
-              roleId: newRole.id,
-              permissionId: permId,
-              createdById: req.user?.id
-            }))
-          );
-        }
-      }
-
-      res.status(201).json({
-        success: true,
-        data: newRole,
-        message: 'Papel criado com sucesso'
+        institutionId: institutionId || null,
+        createdById: req.user?.id || null
+      })
+      .returning({
+        id: schema.roles.id,
+        name: schema.roles.name,
+        description: schema.roles.description,
+        scope: schema.roles.scope
       });
-    } catch (error) {
-      console.error('Erro ao criar papel:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erro ao criar papel'
-      });
-    }
+    
+    return res.status(201).json(newRole);
+  } catch (error) {
+    console.error('Erro ao criar papel:', error);
+    return res.status(500).json({ error: 'Erro ao criar papel' });
   }
-);
+});
 
-/**
- * Atualizar um papel (role)
- * Requer: permissão 'update:roles'
- */
-router.put(
-  '/roles/:id',
-  requirePermission('roles', 'update'),
-  async (req, res) => {
-    try {
-      const roleId = Number(req.params.id);
-      const { name, description, permissionIds } = req.body;
-
-      // Buscar o papel
-      const existingRole = await db.query.roles.findFirst({
-        where: eq(roles.id, roleId)
-      });
-
-      if (!existingRole) {
-        return res.status(404).json({
-          success: false,
-          message: 'Papel não encontrado'
-        });
-      }
-
-      // Verificar se é um papel do sistema
-      if (existingRole.isSystem && !req.user?.isSuperAdmin) {
-        return res.status(403).json({
-          success: false,
-          message: 'Papéis do sistema só podem ser modificados por superadministradores'
-        });
-      }
-
-      // Atualizar o papel
-      if (name || description) {
-        await db.update(roles)
-          .set({
-            name: name || existingRole.name,
-            description: description || existingRole.description,
-            updatedAt: new Date()
-          })
-          .where(eq(roles.id, roleId));
-      }
-
-      // Se foram fornecidos IDs de permissões, atualizar as associações
-      if (permissionIds && Array.isArray(permissionIds)) {
-        // Remover associações existentes
-        await db.delete(rolePermissions)
-          .where(eq(rolePermissions.roleId, roleId));
-
-        // Se houver novas permissões, adicioná-las
-        if (permissionIds.length > 0) {
-          // Verificar se todas as permissões existem
-          const validPermissions = await db.query.permissions.findMany({
-            where: inArray(permissions.id, permissionIds)
-          });
-
-          // Associar as permissões válidas ao papel
-          const validPermissionIds = validPermissions.map(p => p.id);
-          
-          if (validPermissionIds.length > 0) {
-            await db.insert(rolePermissions).values(
-              validPermissionIds.map(permId => ({
-                roleId: roleId,
-                permissionId: permId,
-                createdById: req.user?.id
-              }))
-            );
-          }
-        }
-      }
-
-      res.json({
-        success: true,
-        message: 'Papel atualizado com sucesso'
-      });
-    } catch (error) {
-      console.error('Erro ao atualizar papel:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erro ao atualizar papel'
-      });
+// Atualizar papel por ID (apenas admin)
+router.put('/roles/:id', requirePermission('roles', 'update'), async (req, res) => {
+  try {
+    const roleId = parseInt(req.params.id);
+    const { name, description } = req.body;
+    
+    if (isNaN(roleId)) {
+      return res.status(400).json({ error: 'ID de papel inválido' });
     }
-  }
-);
-
-/**
- * Excluir um papel (role)
- * Requer: permissão 'delete:roles'
- */
-router.delete(
-  '/roles/:id',
-  requirePermission('roles', 'delete'),
-  async (req, res) => {
-    try {
-      const roleId = Number(req.params.id);
-
-      // Buscar o papel
-      const existingRole = await db.query.roles.findFirst({
-        where: eq(roles.id, roleId)
-      });
-
-      if (!existingRole) {
-        return res.status(404).json({
-          success: false,
-          message: 'Papel não encontrado'
-        });
-      }
-
-      // Verificar se é um papel do sistema
-      if (existingRole.isSystem && !req.user?.isSuperAdmin) {
-        return res.status(403).json({
-          success: false,
-          message: 'Papéis do sistema não podem ser excluídos'
-        });
-      }
-
-      // Verificar se o papel está em uso
-      const roleUsage = await db.query.userRoles.findFirst({
-        where: eq(userRoles.roleId, roleId)
-      });
-
-      if (roleUsage) {
-        return res.status(400).json({
-          success: false,
-          message: 'Este papel está atribuído a usuários e não pode ser excluído'
-        });
-      }
-
-      // Excluir associações com permissões
-      await db.delete(rolePermissions)
-        .where(eq(rolePermissions.roleId, roleId));
-
-      // Excluir o papel
-      await db.delete(roles)
-        .where(eq(roles.id, roleId));
-
-      res.json({
-        success: true,
-        message: 'Papel excluído com sucesso'
-      });
-    } catch (error) {
-      console.error('Erro ao excluir papel:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erro ao excluir papel'
-      });
+    
+    if (!name || !description) {
+      return res.status(400).json({ error: 'Dados incompletos' });
     }
-  }
-);
-
-/**
- * Obter permissões do usuário atual
- * Não requer permissão específica (usuário consulta suas próprias permissões)
- */
-router.get(
-  '/my-permissions',
-  async (req, res) => {
-    try {
-      const userId = req.user?.id;
-      
-      if (!userId) {
-        return res.status(401).json({
-          success: false,
-          message: 'Usuário não autenticado'
-        });
-      }
-
-      // Opcionalmente, filtrar por instituição e polo
-      const { institutionId, poloId } = req.query;
-      const contextParams: {
-        institutionId?: number;
-        poloId?: number;
-      } = {};
-
-      if (institutionId) {
-        contextParams.institutionId = Number(institutionId);
-      }
-
-      if (poloId) {
-        contextParams.poloId = Number(poloId);
-      }
-
-      // Buscar permissões do usuário
-      const userPermissions = await getUserPermissions(userId, contextParams);
-
-      res.json({
-        success: true,
-        data: userPermissions
-      });
-    } catch (error) {
-      console.error('Erro ao buscar permissões do usuário:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erro ao buscar permissões do usuário'
-      });
+    
+    // Verificar se o papel existe
+    const existingRole = await db.select({ id: schema.roles.id, isSystem: schema.roles.isSystem })
+      .from(schema.roles)
+      .where(eq(schema.roles.id, roleId));
+    
+    if (existingRole.length === 0) {
+      return res.status(404).json({ error: 'Papel não encontrado' });
     }
-  }
-);
-
-/**
- * Obter papéis do usuário atual
- * Não requer permissão específica (usuário consulta seus próprios papéis)
- */
-router.get(
-  '/my-roles',
-  async (req, res) => {
-    try {
-      const userId = req.user?.id;
-      
-      if (!userId) {
-        return res.status(401).json({
-          success: false,
-          message: 'Usuário não autenticado'
-        });
-      }
-
-      // Opcionalmente, filtrar por instituição e polo
-      const { institutionId, poloId } = req.query;
-      const contextParams: {
-        institutionId?: number;
-        poloId?: number;
-      } = {};
-
-      if (institutionId) {
-        contextParams.institutionId = Number(institutionId);
-      }
-
-      if (poloId) {
-        contextParams.poloId = Number(poloId);
-      }
-
-      // Buscar papéis do usuário
-      const userRoles = await getUserRoles(userId, contextParams);
-
-      res.json({
-        success: true,
-        data: userRoles
-      });
-    } catch (error) {
-      console.error('Erro ao buscar papéis do usuário:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erro ao buscar papéis do usuário'
-      });
+    
+    // Não permitir alterar papéis do sistema
+    if (existingRole[0].isSystem) {
+      return res.status(403).json({ error: 'Não é possível alterar papéis do sistema' });
     }
+    
+    // Atualizar o papel
+    const [updatedRole] = await db.update(schema.roles)
+      .set({
+        name,
+        description,
+        updatedAt: new Date()
+      })
+      .where(eq(schema.roles.id, roleId))
+      .returning({
+        id: schema.roles.id,
+        name: schema.roles.name,
+        description: schema.roles.description,
+        scope: schema.roles.scope
+      });
+    
+    return res.json(updatedRole);
+  } catch (error) {
+    console.error('Erro ao atualizar papel:', error);
+    return res.status(500).json({ error: 'Erro ao atualizar papel' });
   }
-);
+});
 
-/**
- * Obter papéis de um usuário específico
- * Requer: permissão 'read:users'
- */
-router.get(
-  '/users/:userId/roles',
-  requirePermission('users', 'read'),
-  async (req, res) => {
-    try {
-      const userId = Number(req.params.userId);
-      
-      // Opcionalmente, filtrar por instituição e polo
-      const { institutionId, poloId } = req.query;
-      const contextParams: {
-        institutionId?: number;
-        poloId?: number;
-      } = {};
-
-      if (institutionId) {
-        contextParams.institutionId = Number(institutionId);
-      }
-
-      if (poloId) {
-        contextParams.poloId = Number(poloId);
-      }
-
-      // Buscar papéis do usuário
-      const userRoles = await getUserRoles(userId, contextParams);
-
-      res.json({
-        success: true,
-        data: userRoles
-      });
-    } catch (error) {
-      console.error('Erro ao buscar papéis do usuário:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erro ao buscar papéis do usuário'
-      });
+// Remover papel por ID (apenas admin)
+router.delete('/roles/:id', requirePermission('roles', 'delete'), async (req, res) => {
+  try {
+    const roleId = parseInt(req.params.id);
+    
+    if (isNaN(roleId)) {
+      return res.status(400).json({ error: 'ID de papel inválido' });
     }
+    
+    // Verificar se o papel existe
+    const existingRole = await db.select({ id: schema.roles.id, isSystem: schema.roles.isSystem })
+      .from(schema.roles)
+      .where(eq(schema.roles.id, roleId));
+    
+    if (existingRole.length === 0) {
+      return res.status(404).json({ error: 'Papel não encontrado' });
+    }
+    
+    // Não permitir remover papéis do sistema
+    if (existingRole[0].isSystem) {
+      return res.status(403).json({ error: 'Não é possível remover papéis do sistema' });
+    }
+    
+    // Remover associações do papel com permissões
+    await db.delete(schema.rolePermissions)
+      .where(eq(schema.rolePermissions.roleId, roleId));
+    
+    // Remover associações do papel com usuários
+    await db.delete(schema.userRoles)
+      .where(eq(schema.userRoles.roleId, roleId));
+    
+    // Remover o papel
+    await db.delete(schema.roles)
+      .where(eq(schema.roles.id, roleId));
+    
+    return res.json({ success: true, message: 'Papel removido com sucesso' });
+  } catch (error) {
+    console.error('Erro ao remover papel:', error);
+    return res.status(500).json({ error: 'Erro ao remover papel' });
   }
-);
+});
 
-/**
- * Atribuir papel a um usuário
- * Requer: permissão 'update:users'
- */
-router.post(
-  '/users/:userId/roles',
-  requirePermission('users', 'update'),
-  async (req, res) => {
-    try {
-      const userId = Number(req.params.userId);
-      const { roleId, institutionId, poloId } = req.body;
+// Listar permissões de um papel
+router.get('/roles/:id/permissions', requirePermission('roles', 'read'), async (req, res) => {
+  try {
+    const roleId = parseInt(req.params.id);
+    
+    if (isNaN(roleId)) {
+      return res.status(400).json({ error: 'ID de papel inválido' });
+    }
+    
+    // Verificar se o papel existe
+    const existingRole = await db.select({ id: schema.roles.id })
+      .from(schema.roles)
+      .where(eq(schema.roles.id, roleId));
+    
+    if (existingRole.length === 0) {
+      return res.status(404).json({ error: 'Papel não encontrado' });
+    }
+    
+    // Buscar permissões do papel
+    const permissions = await db.select({
+      id: schema.permissions.id,
+      resource: schema.permissions.resource,
+      action: schema.permissions.action,
+      description: schema.permissions.description
+    })
+    .from(schema.rolePermissions)
+    .innerJoin(schema.permissions, eq(schema.rolePermissions.permissionId, schema.permissions.id))
+    .where(eq(schema.rolePermissions.roleId, roleId));
+    
+    return res.json(permissions);
+  } catch (error) {
+    console.error('Erro ao listar permissões do papel:', error);
+    return res.status(500).json({ error: 'Erro ao listar permissões do papel' });
+  }
+});
 
-      // Validação de dados
-      if (!roleId) {
-        return res.status(400).json({
-          success: false,
-          message: 'ID do papel é obrigatório'
-        });
-      }
-
-      // Atribuir papel ao usuário
-      const success = await assignRoleToUser(
-        userId,
-        Number(roleId),
-        {
-          institutionId: institutionId ? Number(institutionId) : undefined,
-          poloId: poloId ? Number(poloId) : undefined,
-          createdById: req.user?.id || 0
-        }
+// Atribuir permissão a um papel
+router.post('/roles/:id/permissions', requirePermission('roles', 'manage'), async (req, res) => {
+  try {
+    const roleId = parseInt(req.params.id);
+    const { permissionIds } = req.body;
+    
+    if (isNaN(roleId)) {
+      return res.status(400).json({ error: 'ID de papel inválido' });
+    }
+    
+    if (!Array.isArray(permissionIds) || permissionIds.length === 0) {
+      return res.status(400).json({ error: 'Lista de IDs de permissões inválida' });
+    }
+    
+    // Verificar se o papel existe
+    const existingRole = await db.select({ id: schema.roles.id })
+      .from(schema.roles)
+      .where(eq(schema.roles.id, roleId));
+    
+    if (existingRole.length === 0) {
+      return res.status(404).json({ error: 'Papel não encontrado' });
+    }
+    
+    // Verificar se todas as permissões existem
+    const existingPermissions = await db.select({ id: schema.permissions.id })
+      .from(schema.permissions)
+      .where(schema.permissions.id.in(permissionIds));
+    
+    if (existingPermissions.length !== permissionIds.length) {
+      return res.status(400).json({ error: 'Uma ou mais permissões não existem' });
+    }
+    
+    // Buscar permissões já associadas
+    const existingAssociations = await db.select({ permissionId: schema.rolePermissions.permissionId })
+      .from(schema.rolePermissions)
+      .where(
+        and(
+          eq(schema.rolePermissions.roleId, roleId),
+          schema.rolePermissions.permissionId.in(permissionIds)
+        )
       );
-
-      if (!success) {
-        return res.status(400).json({
-          success: false,
-          message: 'Não foi possível atribuir o papel ao usuário'
-        });
-      }
-
-      res.json({
-        success: true,
-        message: 'Papel atribuído com sucesso'
-      });
-    } catch (error) {
-      console.error('Erro ao atribuir papel ao usuário:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erro ao atribuir papel ao usuário'
-      });
-    }
-  }
-);
-
-/**
- * Remover papel de um usuário
- * Requer: permissão 'update:users'
- */
-router.delete(
-  '/users/:userId/roles/:roleId',
-  requirePermission('users', 'update'),
-  async (req, res) => {
-    try {
-      const userId = Number(req.params.userId);
-      const roleId = Number(req.params.roleId);
-      const { institutionId, poloId } = req.query;
-
-      // Remover papel do usuário
-      const success = await removeRoleFromUser(
-        userId,
+    
+    // Filtrar apenas permissões que ainda não estão associadas
+    const existingPermissionIds = existingAssociations.map(a => a.permissionId);
+    const newPermissionIds = permissionIds.filter(id => !existingPermissionIds.includes(id));
+    
+    // Inserir novas associações
+    if (newPermissionIds.length > 0) {
+      const valuesToInsert = newPermissionIds.map(permissionId => ({
         roleId,
-        {
-          institutionId: institutionId ? Number(institutionId) : undefined,
-          poloId: poloId ? Number(poloId) : undefined
-        }
-      );
-
-      if (!success) {
-        return res.status(400).json({
-          success: false,
-          message: 'Não foi possível remover o papel do usuário'
-        });
-      }
-
-      res.json({
-        success: true,
-        message: 'Papel removido com sucesso'
-      });
-    } catch (error) {
-      console.error('Erro ao remover papel do usuário:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erro ao remover papel do usuário'
-      });
+        permissionId
+      }));
+      
+      await db.insert(schema.rolePermissions)
+        .values(valuesToInsert);
     }
+    
+    return res.json({ 
+      success: true, 
+      message: `${newPermissionIds.length} permissões atribuídas ao papel com sucesso` 
+    });
+  } catch (error) {
+    console.error('Erro ao atribuir permissões ao papel:', error);
+    return res.status(500).json({ error: 'Erro ao atribuir permissões ao papel' });
   }
-);
+});
+
+// Remover permissão de um papel
+router.delete('/roles/:roleId/permissions/:permissionId', requirePermission('roles', 'manage'), async (req, res) => {
+  try {
+    const roleId = parseInt(req.params.roleId);
+    const permissionId = parseInt(req.params.permissionId);
+    
+    if (isNaN(roleId) || isNaN(permissionId)) {
+      return res.status(400).json({ error: 'IDs inválidos' });
+    }
+    
+    // Verificar se o papel existe
+    const existingRole = await db.select({ id: schema.roles.id })
+      .from(schema.roles)
+      .where(eq(schema.roles.id, roleId));
+    
+    if (existingRole.length === 0) {
+      return res.status(404).json({ error: 'Papel não encontrado' });
+    }
+    
+    // Remover a associação
+    await db.delete(schema.rolePermissions)
+      .where(
+        and(
+          eq(schema.rolePermissions.roleId, roleId),
+          eq(schema.rolePermissions.permissionId, permissionId)
+        )
+      );
+    
+    return res.json({ success: true, message: 'Permissão removida do papel com sucesso' });
+  } catch (error) {
+    console.error('Erro ao remover permissão do papel:', error);
+    return res.status(500).json({ error: 'Erro ao remover permissão do papel' });
+  }
+});
+
+// Listar todas as permissões
+router.get('/permissions', requirePermission('permissions', 'read'), async (req, res) => {
+  try {
+    const permissions = await db.select({
+      id: schema.permissions.id,
+      resource: schema.permissions.resource,
+      action: schema.permissions.action,
+      description: schema.permissions.description
+    }).from(schema.permissions);
+    
+    return res.json(permissions);
+  } catch (error) {
+    console.error('Erro ao listar permissões:', error);
+    return res.status(500).json({ error: 'Erro ao listar permissões' });
+  }
+});
+
+// Atribuir papel a um usuário
+router.post('/users/:userId/roles', requirePermission('users', 'manage'), async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    const { roleId, institutionId, poloId } = req.body;
+    
+    if (isNaN(userId) || !roleId) {
+      return res.status(400).json({ error: 'Dados inválidos' });
+    }
+    
+    try {
+      const userRoleId = await permissionService.assignRoleToUser(
+        userId, 
+        roleId, 
+        institutionId, 
+        poloId
+      );
+      
+      return res.status(201).json({ 
+        success: true, 
+        message: 'Papel atribuído ao usuário com sucesso',
+        userRoleId
+      });
+    } catch (err) {
+      if (err instanceof Error) {
+        return res.status(400).json({ error: err.message });
+      }
+      throw err;
+    }
+  } catch (error) {
+    console.error('Erro ao atribuir papel ao usuário:', error);
+    return res.status(500).json({ error: 'Erro ao atribuir papel ao usuário' });
+  }
+});
+
+// Remover papel de um usuário
+router.delete('/users/:userId/roles/:roleId', requirePermission('users', 'manage'), async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    const roleId = parseInt(req.params.roleId);
+    const { institutionId, poloId } = req.body;
+    
+    if (isNaN(userId) || isNaN(roleId)) {
+      return res.status(400).json({ error: 'IDs inválidos' });
+    }
+    
+    await permissionService.removeRoleFromUser(userId, roleId, institutionId, poloId);
+    
+    return res.json({ 
+      success: true, 
+      message: 'Papel removido do usuário com sucesso' 
+    });
+  } catch (error) {
+    console.error('Erro ao remover papel do usuário:', error);
+    return res.status(500).json({ error: 'Erro ao remover papel do usuário' });
+  }
+});
+
+// Listar papéis de um usuário
+router.get('/users/:userId/roles', requirePermission('users', 'read'), async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: 'ID de usuário inválido' });
+    }
+    
+    const userRoles = await permissionService.getUserRoles(userId);
+    
+    return res.json(userRoles);
+  } catch (error) {
+    console.error('Erro ao listar papéis do usuário:', error);
+    return res.status(500).json({ error: 'Erro ao listar papéis do usuário' });
+  }
+});
+
+// Listar permissões de um usuário
+router.get('/users/:userId/permissions', requirePermission('users', 'read'), async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: 'ID de usuário inválido' });
+    }
+    
+    const userPermissions = await permissionService.getUserPermissions(userId);
+    
+    return res.json(userPermissions);
+  } catch (error) {
+    console.error('Erro ao listar permissões do usuário:', error);
+    return res.status(500).json({ error: 'Erro ao listar permissões do usuário' });
+  }
+});
+
+// Obter informações do usuário atualmente autenticado (self)
+router.get('/me/roles', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuário não autenticado' });
+    }
+    
+    const userRoles = await permissionService.getUserRoles(userId);
+    
+    return res.json(userRoles);
+  } catch (error) {
+    console.error('Erro ao listar papéis do usuário:', error);
+    return res.status(500).json({ error: 'Erro ao listar papéis do usuário' });
+  }
+});
+
+// Obter permissões do usuário atualmente autenticado (self)
+router.get('/me/permissions', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuário não autenticado' });
+    }
+    
+    const userPermissions = await permissionService.getUserPermissions(userId);
+    
+    return res.json(userPermissions);
+  } catch (error) {
+    console.error('Erro ao listar permissões do usuário:', error);
+    return res.status(500).json({ error: 'Erro ao listar permissões do usuário' });
+  }
+});
+
+// Verificar se o usuário atual tem uma permissão específica
+router.get('/me/check-permission', requireAuth, async (req, res) => {
+  try {
+    const { resource, action } = req.query;
+    const userId = req.user?.id;
+    
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuário não autenticado' });
+    }
+    
+    if (!resource || !action || typeof resource !== 'string' || typeof action !== 'string') {
+      return res.status(400).json({ error: 'Parâmetros inválidos' });
+    }
+    
+    const hasPermission = await permissionService.checkUserPermission(userId, resource, action);
+    
+    return res.json({ hasPermission });
+  } catch (error) {
+    console.error('Erro ao verificar permissão:', error);
+    return res.status(500).json({ error: 'Erro ao verificar permissão' });
+  }
+});
 
 export default router;

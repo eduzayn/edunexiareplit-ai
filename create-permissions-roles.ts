@@ -1,254 +1,507 @@
-// Script para criar permissões e papéis (roles) padrão
-// Execute com: npx tsx create-permissions-roles.ts
+/**
+ * Script para criação das permissões e papéis padrão do sistema
+ * Execução: npm run ts-node create-permissions-roles.ts
+ */
 
-import { config } from 'dotenv';
-import { drizzle } from 'drizzle-orm/postgres-js';
-import { eq, and } from 'drizzle-orm';
-import postgres from 'postgres';
-
-// Importar schema do banco de dados
+import { db } from './server/db';
 import * as schema from './shared/schema';
-import { PermissionAction, PermissionResource } from './shared/types';
+import { eq, and } from 'drizzle-orm';
 
-config();
+// Definição dos recursos do sistema
+type PermissionResource = 
+  | 'users'
+  | 'roles'
+  | 'permissions'
+  | 'institutions'
+  | 'polos'
+  | 'courses'
+  | 'enrollments'
+  | 'financial_transactions'
+  | 'leads'
+  | 'clients'
+  | 'contracts'
+  | 'products'
+  | 'invoices'
+  | 'payments'
+  | 'certificates'
+  | 'certificate_templates'
+  | 'certificate_signers'
+  | 'subscription_plans'
+  | 'subscriptions'
+  | 'reports'
+  | 'settings'
+  | 'communications';
 
-const DATABASE_URL = process.env.DATABASE_URL || '';
+// Definição das ações possíveis
+type PermissionAction = 'read' | 'create' | 'update' | 'delete' | 'manage';
 
-// Recursos do sistema
-const RESOURCES: PermissionResource[] = [
-  // Recursos administrativos
-  'users', 'institutions', 'polos', 
-  
-  // Recursos educacionais
-  'courses', 'disciplines', 'enrollments', 'assessments', 'questions',
-  
-  // Recursos financeiros
-  'financial_transactions', 'financial_categories',
-  
-  // Recursos de certificados
-  'certificates', 'certificate_templates', 'certificate_signers',
-  
-  // Recursos de CRM
-  'leads', 'clients', 'contacts',
-  
-  // Recursos financeiros
-  'products', 'invoices', 'payments',
-  
-  // Recursos de contratos
-  'contracts', 'contract_templates',
-  
-  // Recursos de permissões
-  'roles', 'permissions',
-  
-  // Recursos de integração
-  'integrations',
-  
-  // Outros recursos
-  'reports', 'dashboard', 'settings'
-];
-
-// Ações possíveis
-const ACTIONS: PermissionAction[] = ['create', 'read', 'update', 'delete', 'manage', 'export'];
-
-// Nomes de papéis (roles) padrão
-const DEFAULT_ROLES = {
-  SUPER_ADMIN: 'super_admin',
-  INSTITUTION_ADMIN: 'institution_admin',
-  INSTITUTION_MANAGER: 'institution_manager',
-  POLO_ADMIN: 'polo_admin',
-  POLO_MANAGER: 'polo_manager',
-  TEACHER: 'teacher',
-  STUDENT: 'student',
-  PARTNER: 'partner',
-  FINANCIAL_ANALYST: 'financial_analyst',
-  CERTIFICATE_MANAGER: 'certificate_manager',
-  CRM_AGENT: 'crm_agent'
-};
-
-// Combinações de recursos e ações para cada papel
+// Mapeamento dos papéis e suas permissões
 const ROLE_PERMISSIONS: Record<string, { resource: PermissionResource, actions: PermissionAction[] }[]> = {
-  [DEFAULT_ROLES.SUPER_ADMIN]: RESOURCES.map(resource => ({
-    resource,
-    actions: ['manage'] // Super admin tem permissão total em todos os recursos
-  })),
-  
-  [DEFAULT_ROLES.INSTITUTION_ADMIN]: [
-    { resource: 'users', actions: ['create', 'read', 'update', 'delete'] },
-    { resource: 'polos', actions: ['create', 'read', 'update', 'delete'] },
-    { resource: 'courses', actions: ['create', 'read', 'update', 'delete'] },
-    { resource: 'disciplines', actions: ['create', 'read', 'update', 'delete'] },
-    { resource: 'enrollments', actions: ['create', 'read', 'update', 'delete'] },
-    { resource: 'assessments', actions: ['create', 'read', 'update', 'delete'] },
-    { resource: 'questions', actions: ['create', 'read', 'update', 'delete'] },
-    { resource: 'financial_transactions', actions: ['create', 'read', 'update', 'delete'] },
-    { resource: 'financial_categories', actions: ['create', 'read', 'update', 'delete'] },
-    { resource: 'certificates', actions: ['create', 'read', 'update', 'delete'] },
-    { resource: 'certificate_templates', actions: ['create', 'read', 'update', 'delete'] },
-    { resource: 'certificate_signers', actions: ['create', 'read', 'update', 'delete'] },
-    { resource: 'leads', actions: ['create', 'read', 'update', 'delete'] },
-    { resource: 'clients', actions: ['create', 'read', 'update', 'delete'] },
-    { resource: 'contacts', actions: ['create', 'read', 'update', 'delete'] },
-    { resource: 'products', actions: ['create', 'read', 'update', 'delete'] },
-    { resource: 'invoices', actions: ['create', 'read', 'update', 'delete'] },
-    { resource: 'payments', actions: ['create', 'read', 'update', 'delete'] },
-    { resource: 'contracts', actions: ['create', 'read', 'update', 'delete'] },
-    { resource: 'contract_templates', actions: ['create', 'read', 'update', 'delete'] },
-    { resource: 'roles', actions: ['create', 'read', 'update', 'delete'] },
-    { resource: 'permissions', actions: ['read'] },
-    { resource: 'integrations', actions: ['create', 'read', 'update', 'delete'] },
-    { resource: 'reports', actions: ['read', 'export'] },
-    { resource: 'dashboard', actions: ['read'] },
-    { resource: 'settings', actions: ['read', 'update'] }
+  // Papel com acesso total ao sistema
+  'super_admin': [
+    // Recursos administrativos
+    { resource: 'users', actions: ['read', 'create', 'update', 'delete', 'manage'] },
+    { resource: 'roles', actions: ['read', 'create', 'update', 'delete', 'manage'] },
+    { resource: 'permissions', actions: ['read', 'create', 'update', 'delete', 'manage'] },
+    { resource: 'institutions', actions: ['read', 'create', 'update', 'delete', 'manage'] },
+    { resource: 'polos', actions: ['read', 'create', 'update', 'delete', 'manage'] },
+    { resource: 'settings', actions: ['read', 'update', 'manage'] },
+    
+    // Recursos educacionais
+    { resource: 'courses', actions: ['read', 'create', 'update', 'delete', 'manage'] },
+    { resource: 'enrollments', actions: ['read', 'create', 'update', 'delete', 'manage'] },
+    
+    // Recursos financeiros
+    { resource: 'financial_transactions', actions: ['read', 'create', 'update', 'delete', 'manage'] },
+    { resource: 'invoices', actions: ['read', 'create', 'update', 'delete', 'manage'] },
+    { resource: 'payments', actions: ['read', 'create', 'update', 'delete', 'manage'] },
+    
+    // Recursos de CRM
+    { resource: 'leads', actions: ['read', 'create', 'update', 'delete', 'manage'] },
+    { resource: 'clients', actions: ['read', 'create', 'update', 'delete', 'manage'] },
+    { resource: 'communications', actions: ['read', 'create', 'update', 'delete', 'manage'] },
+    
+    // Recursos de contratos
+    { resource: 'contracts', actions: ['read', 'create', 'update', 'delete', 'manage'] },
+    { resource: 'products', actions: ['read', 'create', 'update', 'delete', 'manage'] },
+    
+    // Recursos de certificados
+    { resource: 'certificates', actions: ['read', 'create', 'update', 'delete', 'manage'] },
+    { resource: 'certificate_templates', actions: ['read', 'create', 'update', 'delete', 'manage'] },
+    { resource: 'certificate_signers', actions: ['read', 'create', 'update', 'delete', 'manage'] },
+    
+    // Recursos de assinaturas
+    { resource: 'subscription_plans', actions: ['read', 'create', 'update', 'delete', 'manage'] },
+    { resource: 'subscriptions', actions: ['read', 'create', 'update', 'delete', 'manage'] },
+    
+    // Relatórios
+    { resource: 'reports', actions: ['read', 'create', 'manage'] }
   ],
   
-  [DEFAULT_ROLES.INSTITUTION_MANAGER]: [
-    { resource: 'users', actions: ['read', 'update'] },
-    { resource: 'polos', actions: ['read'] },
-    { resource: 'courses', actions: ['read'] },
-    { resource: 'disciplines', actions: ['read'] },
-    { resource: 'enrollments', actions: ['create', 'read', 'update'] },
-    { resource: 'assessments', actions: ['read'] },
+  // Administrador com acesso à maioria das funcionalidades, exceto configurações críticas
+  'admin': [
+    // Recursos administrativos
+    { resource: 'users', actions: ['read', 'create', 'update'] },
+    { resource: 'institutions', actions: ['read', 'create', 'update'] },
+    { resource: 'polos', actions: ['read', 'create', 'update'] },
+    
+    // Recursos educacionais
+    { resource: 'courses', actions: ['read', 'create', 'update', 'delete'] },
+    { resource: 'enrollments', actions: ['read', 'create', 'update'] },
+    
+    // Recursos financeiros
     { resource: 'financial_transactions', actions: ['read'] },
-    { resource: 'certificates', actions: ['read'] },
-    { resource: 'leads', actions: ['create', 'read', 'update'] },
-    { resource: 'clients', actions: ['create', 'read', 'update'] },
-    { resource: 'contacts', actions: ['create', 'read', 'update'] },
-    { resource: 'products', actions: ['read'] },
-    { resource: 'invoices', actions: ['read'] },
-    { resource: 'payments', actions: ['read'] },
-    { resource: 'contracts', actions: ['read'] },
-    { resource: 'reports', actions: ['read'] },
-    { resource: 'dashboard', actions: ['read'] }
+    { resource: 'invoices', actions: ['read', 'create', 'update'] },
+    { resource: 'payments', actions: ['read', 'create'] },
+    
+    // Recursos de CRM
+    { resource: 'leads', actions: ['read', 'create', 'update'] },
+    { resource: 'clients', actions: ['read', 'create', 'update'] },
+    { resource: 'communications', actions: ['read', 'create', 'update'] },
+    
+    // Recursos de contratos
+    { resource: 'contracts', actions: ['read', 'create', 'update'] },
+    { resource: 'products', actions: ['read', 'create', 'update'] },
+    
+    // Recursos de certificados
+    { resource: 'certificates', actions: ['read', 'create'] },
+    { resource: 'certificate_templates', actions: ['read', 'create', 'update'] },
+    { resource: 'certificate_signers', actions: ['read', 'create', 'update'] },
+    
+    // Relatórios
+    { resource: 'reports', actions: ['read', 'create'] }
   ],
   
-  [DEFAULT_ROLES.POLO_ADMIN]: [
-    { resource: 'users', actions: ['create', 'read', 'update'] }, // Só pode gerenciar usuários do próprio polo
-    { resource: 'courses', actions: ['read'] },
-    { resource: 'disciplines', actions: ['read'] },
-    { resource: 'enrollments', actions: ['create', 'read', 'update'] }, // Só pode gerenciar matrículas do próprio polo
-    { resource: 'assessments', actions: ['read'] },
-    { resource: 'certificates', actions: ['read'] },
-    { resource: 'leads', actions: ['create', 'read', 'update'] },
-    { resource: 'clients', actions: ['create', 'read', 'update'] },
-    { resource: 'contacts', actions: ['create', 'read', 'update'] },
-    { resource: 'invoices', actions: ['read'] },
+  // Administrador de uma instituição específica
+  'institution_admin': [
+    // Recursos administrativos específicos da instituição
+    { resource: 'users', actions: ['read', 'create', 'update'] },
+    { resource: 'polos', actions: ['read', 'create', 'update'] },
+    
+    // Recursos educacionais
+    { resource: 'courses', actions: ['read', 'create', 'update'] },
+    { resource: 'enrollments', actions: ['read', 'create', 'update'] },
+    
+    // Recursos financeiros
+    { resource: 'financial_transactions', actions: ['read'] },
+    { resource: 'invoices', actions: ['read', 'create'] },
     { resource: 'payments', actions: ['read'] },
-    { resource: 'contracts', actions: ['read'] },
-    { resource: 'dashboard', actions: ['read'] },
+    
+    // Recursos de CRM
+    { resource: 'leads', actions: ['read', 'create', 'update'] },
+    { resource: 'clients', actions: ['read', 'create', 'update'] },
+    { resource: 'communications', actions: ['read', 'create'] },
+    
+    // Recursos de contratos
+    { resource: 'contracts', actions: ['read', 'create'] },
+    
+    // Recursos de certificados
+    { resource: 'certificates', actions: ['read', 'create'] },
+    
+    // Relatórios
     { resource: 'reports', actions: ['read'] }
   ],
   
-  [DEFAULT_ROLES.POLO_MANAGER]: [
+  // Coordenador pedagógico de uma instituição
+  'coordinator': [
+    // Acesso a usuários
+    { resource: 'users', actions: ['read'] },
+    
+    // Recursos educacionais
+    { resource: 'courses', actions: ['read', 'update'] },
+    { resource: 'enrollments', actions: ['read', 'update'] },
+    
+    // Recursos de CRM
+    { resource: 'leads', actions: ['read'] },
+    { resource: 'clients', actions: ['read'] },
+    
+    // Certificados
+    { resource: 'certificates', actions: ['read', 'create'] },
+    
+    // Relatórios
+    { resource: 'reports', actions: ['read'] }
+  ],
+  
+  // Secretaria acadêmica
+  'secretary': [
+    // Acesso a usuários
+    { resource: 'users', actions: ['read'] },
+    
+    // Recursos educacionais
+    { resource: 'courses', actions: ['read'] },
+    { resource: 'enrollments', actions: ['read', 'create', 'update'] },
+    
+    // Recursos de CRM
+    { resource: 'leads', actions: ['read', 'update'] },
+    { resource: 'clients', actions: ['read', 'update'] },
+    { resource: 'communications', actions: ['read', 'create'] },
+    
+    // Certificados
+    { resource: 'certificates', actions: ['read', 'create'] }
+  ],
+  
+  // Financeiro
+  'financial': [
+    // Recursos financeiros
+    { resource: 'financial_transactions', actions: ['read', 'create', 'update'] },
+    { resource: 'invoices', actions: ['read', 'create', 'update'] },
+    { resource: 'payments', actions: ['read', 'create', 'update'] },
+    
+    // Recursos de clientes
+    { resource: 'clients', actions: ['read', 'update'] },
+    { resource: 'communications', actions: ['read', 'create'] },
+    
+    // Contratos
+    { resource: 'contracts', actions: ['read'] },
+    
+    // Relatórios
+    { resource: 'reports', actions: ['read'] }
+  ],
+  
+  // Vendas
+  'sales': [
+    // Recursos de CRM
+    { resource: 'leads', actions: ['read', 'create', 'update'] },
+    { resource: 'clients', actions: ['read', 'create', 'update'] },
+    { resource: 'communications', actions: ['read', 'create', 'update'] },
+    
+    // Produtos e contratos
+    { resource: 'contracts', actions: ['read', 'create'] },
+    { resource: 'products', actions: ['read'] },
+    
+    // Cursos e matrículas
+    { resource: 'courses', actions: ['read'] },
+    { resource: 'enrollments', actions: ['read', 'create'] }
+  ],
+  
+  // Professor
+  'teacher': [
+    // Recursos educacionais
+    { resource: 'courses', actions: ['read'] },
+    { resource: 'enrollments', actions: ['read', 'update'] }
+  ],
+  
+  // Administrador de polo
+  'polo_admin': [
+    // Recursos educacionais
+    { resource: 'courses', actions: ['read'] },
+    { resource: 'enrollments', actions: ['read', 'create', 'update'] },
+    
+    // Recursos de CRM
+    { resource: 'leads', actions: ['read', 'create', 'update'] },
+    { resource: 'clients', actions: ['read', 'create', 'update'] },
+    { resource: 'communications', actions: ['read', 'create'] },
+    
+    // Certificados
+    { resource: 'certificates', actions: ['read'] }
+  ],
+  
+  // Aluno
+  'student': [
+    // Acesso limitado a seus próprios dados
+    { resource: 'courses', actions: ['read'] },
+    { resource: 'enrollments', actions: ['read'] },
+    { resource: 'certificates', actions: ['read'] },
+    { resource: 'invoices', actions: ['read'] },
+    { resource: 'payments', actions: ['read', 'create'] }
+  ],
+  
+  // Auditor
+  'auditor': [
+    // Acesso de leitura a dados diversos para auditoria
     { resource: 'users', actions: ['read'] },
     { resource: 'courses', actions: ['read'] },
     { resource: 'enrollments', actions: ['read'] },
-    { resource: 'leads', actions: ['create', 'read', 'update'] },
-    { resource: 'clients', actions: ['read'] },
-    { resource: 'dashboard', actions: ['read'] }
-  ],
-  
-  [DEFAULT_ROLES.TEACHER]: [
-    { resource: 'courses', actions: ['read'] },
-    { resource: 'disciplines', actions: ['read', 'update'] },
-    { resource: 'assessments', actions: ['create', 'read', 'update'] },
-    { resource: 'questions', actions: ['create', 'read', 'update'] },
-    { resource: 'enrollments', actions: ['read'] }
-  ],
-  
-  [DEFAULT_ROLES.STUDENT]: [
-    { resource: 'courses', actions: ['read'] },
-    { resource: 'disciplines', actions: ['read'] },
-    { resource: 'assessments', actions: ['read'] },
-    { resource: 'certificates', actions: ['read'] },
+    { resource: 'financial_transactions', actions: ['read'] },
     { resource: 'invoices', actions: ['read'] },
     { resource: 'payments', actions: ['read'] },
-    { resource: 'contracts', actions: ['read'] }
-  ],
-  
-  [DEFAULT_ROLES.PARTNER]: [
-    { resource: 'leads', actions: ['create', 'read', 'update'] },
     { resource: 'clients', actions: ['read'] },
-    { resource: 'courses', actions: ['read'] },
-    { resource: 'enrollments', actions: ['read'] } // Só pode ver matrículas que indicou
-  ],
-  
-  [DEFAULT_ROLES.FINANCIAL_ANALYST]: [
-    { resource: 'financial_transactions', actions: ['create', 'read', 'update', 'delete'] },
-    { resource: 'financial_categories', actions: ['create', 'read', 'update', 'delete'] },
-    { resource: 'products', actions: ['create', 'read', 'update', 'delete'] },
-    { resource: 'invoices', actions: ['create', 'read', 'update', 'delete'] },
-    { resource: 'payments', actions: ['create', 'read', 'update', 'delete'] },
-    { resource: 'reports', actions: ['read', 'export'] },
-    { resource: 'clients', actions: ['read'] },
-    { resource: 'enrollments', actions: ['read'] }
-  ],
-  
-  [DEFAULT_ROLES.CERTIFICATE_MANAGER]: [
-    { resource: 'certificates', actions: ['create', 'read', 'update', 'delete'] },
-    { resource: 'certificate_templates', actions: ['create', 'read', 'update', 'delete'] },
-    { resource: 'certificate_signers', actions: ['create', 'read', 'update', 'delete'] },
-    { resource: 'courses', actions: ['read'] },
-    { resource: 'disciplines', actions: ['read'] },
-    { resource: 'enrollments', actions: ['read'] },
-    { resource: 'users', actions: ['read'] }
-  ],
-  
-  [DEFAULT_ROLES.CRM_AGENT]: [
-    { resource: 'leads', actions: ['create', 'read', 'update'] },
-    { resource: 'clients', actions: ['create', 'read', 'update'] },
-    { resource: 'contacts', actions: ['create', 'read', 'update'] },
-    { resource: 'courses', actions: ['read'] },
     { resource: 'contracts', actions: ['read'] },
-    { resource: 'invoices', actions: ['read'] },
-    { resource: 'payments', actions: ['read'] }
+    { resource: 'certificates', actions: ['read'] },
+    { resource: 'reports', actions: ['read'] }
+  ],
+  
+  // Gerente de marketing
+  'marketing': [
+    // Recursos de CRM e comunicação
+    { resource: 'leads', actions: ['read', 'create', 'update'] },
+    { resource: 'communications', actions: ['read', 'create', 'update'] },
+    { resource: 'reports', actions: ['read'] }
   ]
 };
 
-// Descrições dos papéis
-const ROLE_DESCRIPTIONS: Record<string, string> = {
-  [DEFAULT_ROLES.SUPER_ADMIN]: 'Administrador com acesso total ao sistema',
-  [DEFAULT_ROLES.INSTITUTION_ADMIN]: 'Administrador da instituição com acesso à maioria das funcionalidades',
-  [DEFAULT_ROLES.INSTITUTION_MANAGER]: 'Gerente da instituição com permissões limitadas de administração',
-  [DEFAULT_ROLES.POLO_ADMIN]: 'Administrador do polo com permissões para gerenciar recursos do seu polo',
-  [DEFAULT_ROLES.POLO_MANAGER]: 'Gerente do polo com permissões limitadas',
-  [DEFAULT_ROLES.TEACHER]: 'Professor com acesso a disciplinas, avaliações e questões',
-  [DEFAULT_ROLES.STUDENT]: 'Aluno com acesso limitado a cursos e disciplinas matriculados',
-  [DEFAULT_ROLES.PARTNER]: 'Parceiro com permissões para captação de leads e acompanhamento',
-  [DEFAULT_ROLES.FINANCIAL_ANALYST]: 'Analista financeiro com permissões para gerenciar recursos financeiros',
-  [DEFAULT_ROLES.CERTIFICATE_MANAGER]: 'Gerente de certificados com permissões para criar e gerenciar certificados',
-  [DEFAULT_ROLES.CRM_AGENT]: 'Agente de CRM com permissões para gerenciar leads e clientes'
+/**
+ * Descrições detalhadas das permissões
+ */
+const PERMISSION_DESCRIPTIONS: Record<string, string> = {
+  'users:read': 'Visualizar usuários',
+  'users:create': 'Criar novos usuários',
+  'users:update': 'Atualizar dados de usuários',
+  'users:delete': 'Remover usuários',
+  'users:manage': 'Gerenciar usuários (todas as operações)',
+  
+  'roles:read': 'Visualizar papéis',
+  'roles:create': 'Criar novos papéis',
+  'roles:update': 'Atualizar papéis',
+  'roles:delete': 'Remover papéis',
+  'roles:manage': 'Gerenciar papéis (todas as operações)',
+  
+  'permissions:read': 'Visualizar permissões',
+  'permissions:create': 'Criar novas permissões',
+  'permissions:update': 'Atualizar permissões',
+  'permissions:delete': 'Remover permissões',
+  'permissions:manage': 'Gerenciar permissões (todas as operações)',
+  
+  'institutions:read': 'Visualizar instituições',
+  'institutions:create': 'Criar novas instituições',
+  'institutions:update': 'Atualizar instituições',
+  'institutions:delete': 'Remover instituições',
+  'institutions:manage': 'Gerenciar instituições (todas as operações)',
+  
+  'polos:read': 'Visualizar polos',
+  'polos:create': 'Criar novos polos',
+  'polos:update': 'Atualizar polos',
+  'polos:delete': 'Remover polos',
+  'polos:manage': 'Gerenciar polos (todas as operações)',
+  
+  'courses:read': 'Visualizar cursos',
+  'courses:create': 'Criar novos cursos',
+  'courses:update': 'Atualizar cursos',
+  'courses:delete': 'Remover cursos',
+  'courses:manage': 'Gerenciar cursos (todas as operações)',
+  
+  'enrollments:read': 'Visualizar matrículas',
+  'enrollments:create': 'Criar novas matrículas',
+  'enrollments:update': 'Atualizar matrículas',
+  'enrollments:delete': 'Cancelar matrículas',
+  'enrollments:manage': 'Gerenciar matrículas (todas as operações)',
+  
+  'financial_transactions:read': 'Visualizar transações financeiras',
+  'financial_transactions:create': 'Registrar novas transações financeiras',
+  'financial_transactions:update': 'Atualizar transações financeiras',
+  'financial_transactions:delete': 'Remover transações financeiras',
+  'financial_transactions:manage': 'Gerenciar transações financeiras (todas as operações)',
+  
+  'leads:read': 'Visualizar leads',
+  'leads:create': 'Criar novos leads',
+  'leads:update': 'Atualizar leads',
+  'leads:delete': 'Remover leads',
+  'leads:manage': 'Gerenciar leads (todas as operações)',
+  
+  'clients:read': 'Visualizar clientes',
+  'clients:create': 'Criar novos clientes',
+  'clients:update': 'Atualizar clientes',
+  'clients:delete': 'Remover clientes',
+  'clients:manage': 'Gerenciar clientes (todas as operações)',
+  
+  'contracts:read': 'Visualizar contratos',
+  'contracts:create': 'Criar novos contratos',
+  'contracts:update': 'Atualizar contratos',
+  'contracts:delete': 'Remover contratos',
+  'contracts:manage': 'Gerenciar contratos (todas as operações)',
+  
+  'products:read': 'Visualizar produtos',
+  'products:create': 'Criar novos produtos',
+  'products:update': 'Atualizar produtos',
+  'products:delete': 'Remover produtos',
+  'products:manage': 'Gerenciar produtos (todas as operações)',
+  
+  'invoices:read': 'Visualizar faturas',
+  'invoices:create': 'Criar novas faturas',
+  'invoices:update': 'Atualizar faturas',
+  'invoices:delete': 'Cancelar faturas',
+  'invoices:manage': 'Gerenciar faturas (todas as operações)',
+  
+  'payments:read': 'Visualizar pagamentos',
+  'payments:create': 'Registrar novos pagamentos',
+  'payments:update': 'Atualizar pagamentos',
+  'payments:delete': 'Estornar pagamentos',
+  'payments:manage': 'Gerenciar pagamentos (todas as operações)',
+  
+  'certificates:read': 'Visualizar certificados',
+  'certificates:create': 'Emitir novos certificados',
+  'certificates:update': 'Atualizar certificados',
+  'certificates:delete': 'Revogar certificados',
+  'certificates:manage': 'Gerenciar certificados (todas as operações)',
+  
+  'certificate_templates:read': 'Visualizar modelos de certificados',
+  'certificate_templates:create': 'Criar novos modelos de certificados',
+  'certificate_templates:update': 'Atualizar modelos de certificados',
+  'certificate_templates:delete': 'Remover modelos de certificados',
+  'certificate_templates:manage': 'Gerenciar modelos de certificados (todas as operações)',
+  
+  'certificate_signers:read': 'Visualizar signatários',
+  'certificate_signers:create': 'Criar novos signatários',
+  'certificate_signers:update': 'Atualizar signatários',
+  'certificate_signers:delete': 'Remover signatários',
+  'certificate_signers:manage': 'Gerenciar signatários (todas as operações)',
+  
+  'subscription_plans:read': 'Visualizar planos de assinatura',
+  'subscription_plans:create': 'Criar novos planos de assinatura',
+  'subscription_plans:update': 'Atualizar planos de assinatura',
+  'subscription_plans:delete': 'Remover planos de assinatura',
+  'subscription_plans:manage': 'Gerenciar planos de assinatura (todas as operações)',
+  
+  'subscriptions:read': 'Visualizar assinaturas',
+  'subscriptions:create': 'Criar novas assinaturas',
+  'subscriptions:update': 'Atualizar assinaturas',
+  'subscriptions:delete': 'Cancelar assinaturas',
+  'subscriptions:manage': 'Gerenciar assinaturas (todas as operações)',
+  
+  'reports:read': 'Visualizar relatórios',
+  'reports:create': 'Gerar novos relatórios',
+  'reports:manage': 'Gerenciar relatórios (todas as operações)',
+  
+  'settings:read': 'Visualizar configurações do sistema',
+  'settings:update': 'Atualizar configurações do sistema',
+  'settings:manage': 'Gerenciar configurações do sistema (todas as operações)',
+  
+  'communications:read': 'Visualizar comunicações',
+  'communications:create': 'Enviar novas comunicações',
+  'communications:update': 'Atualizar comunicações',
+  'communications:delete': 'Remover comunicações',
+  'communications:manage': 'Gerenciar comunicações (todas as operações)'
 };
 
-// Função principal para criar permissões e papéis
+/**
+ * Detalhes dos papéis
+ */
+const ROLES_DETAILS: Record<string, { name: string, description: string, scope: 'global' | 'institution' | 'polo' }> = {
+  'super_admin': {
+    name: 'super_admin',
+    description: 'Administrador com acesso total ao sistema',
+    scope: 'global'
+  },
+  'admin': {
+    name: 'admin',
+    description: 'Administrador com acesso à maioria das funcionalidades',
+    scope: 'global'
+  },
+  'institution_admin': {
+    name: 'institution_admin',
+    description: 'Administrador de uma instituição específica',
+    scope: 'institution'
+  },
+  'coordinator': {
+    name: 'coordinator',
+    description: 'Coordenador pedagógico',
+    scope: 'institution'
+  },
+  'secretary': {
+    name: 'secretary',
+    description: 'Secretaria acadêmica',
+    scope: 'institution'
+  },
+  'financial': {
+    name: 'financial',
+    description: 'Profissional do setor financeiro',
+    scope: 'institution'
+  },
+  'sales': {
+    name: 'sales',
+    description: 'Profissional de vendas',
+    scope: 'institution'
+  },
+  'teacher': {
+    name: 'teacher',
+    description: 'Professor ou tutor',
+    scope: 'institution'
+  },
+  'polo_admin': {
+    name: 'polo_admin',
+    description: 'Administrador de polo',
+    scope: 'polo'
+  },
+  'student': {
+    name: 'student',
+    description: 'Aluno',
+    scope: 'institution'
+  },
+  'auditor': {
+    name: 'auditor',
+    description: 'Auditor com acesso de leitura aos dados',
+    scope: 'institution'
+  },
+  'marketing': {
+    name: 'marketing',
+    description: 'Gerente de marketing e comunicação',
+    scope: 'institution'
+  }
+};
+
 async function createPermissionsAndRoles() {
-  // Conexão com o banco de dados
-  const client = postgres(DATABASE_URL);
-  const db = drizzle(client);
-  
   try {
-    console.log('Iniciando a criação de permissões e papéis...');
+    console.log('Iniciando criação de permissões e papéis...');
     
-    // 1. Criação das permissões
-    console.log('Criando permissões...');
-    const permissionsToCreate = [];
+    // Criar permissões
+    const allPermissions: { resource: string; action: string; description: string }[] = [];
     
-    for (const resource of RESOURCES) {
-      for (const action of ACTIONS) {
-        const permissionName = `${action}:${resource}`;
-        const description = `Permissão para ${action} em ${resource}`;
-        
-        permissionsToCreate.push({
-          name: permissionName,
-          description: description,
-          resource: resource,
-          action: action
+    // Gerar lista completa de permissões com base em ROLE_PERMISSIONS
+    Object.values(ROLE_PERMISSIONS).forEach(permissions => {
+      permissions.forEach(permission => {
+        const { resource, actions } = permission;
+        actions.forEach(action => {
+          const permissionKey = `${resource}:${action}`;
+          
+          // Evitar duplicatas
+          if (!allPermissions.some(p => p.resource === resource && p.action === action)) {
+            allPermissions.push({
+              resource,
+              action,
+              description: PERMISSION_DESCRIPTIONS[permissionKey] || `${action} ${resource}`
+            });
+          }
         });
-      }
-    }
+      });
+    });
     
-    // Inserir permissões no banco de dados (verificar se já existem)
-    for (const permission of permissionsToCreate) {
-      const existingPermissions = await db.select()
+    console.log(`Criando ${allPermissions.length} permissões...`);
+    
+    // Inserir permissões no banco
+    for (const permission of allPermissions) {
+      // Verificar se a permissão já existe
+      const existingPermission = await db
+        .select({ id: schema.permissions.id })
         .from(schema.permissions)
         .where(
           and(
@@ -257,80 +510,122 @@ async function createPermissionsAndRoles() {
           )
         );
       
-      if (existingPermissions.length === 0) {
-        await db.insert(schema.permissions).values(permission);
-        console.log(`Permissão criada: ${permission.name}`);
-      } else {
-        console.log(`Permissão já existe: ${permission.name}`);
+      if (existingPermission.length === 0) {
+        await db.insert(schema.permissions).values({
+          resource: permission.resource,
+          action: permission.action,
+          description: permission.description
+        });
       }
     }
     
-    // 2. Criação dos papéis (roles)
-    console.log('\nCriando papéis (roles)...');
+    console.log('Permissões criadas com sucesso!');
+    console.log(`Criando ${Object.keys(ROLES_DETAILS).length} papéis...`);
     
-    for (const [roleName, description] of Object.entries(ROLE_DESCRIPTIONS)) {
-      const existingRoles = await db.select()
+    // Criar papéis
+    const roleIds: Record<string, number> = {};
+    
+    for (const [roleKey, roleData] of Object.entries(ROLES_DETAILS)) {
+      // Verificar se o papel já existe
+      const existingRole = await db
+        .select({ id: schema.roles.id })
         .from(schema.roles)
-        .where(eq(schema.roles.name, roleName));
+        .where(eq(schema.roles.name, roleData.name));
       
-      if (existingRoles.length === 0) {
-        // Inserir o papel
-        const roleResult = await db.insert(schema.roles).values({
-          name: roleName,
-          description: description,
-          isSystem: true,
-          scope: roleName.includes('institution') ? 'institution' : 
-                 roleName.includes('polo') ? 'polo' : 'global'
-        }).returning();
+      let roleId: number;
+      
+      if (existingRole.length === 0) {
+        // Criar novo papel
+        const [newRole] = await db.insert(schema.roles).values({
+          name: roleData.name,
+          description: roleData.description,
+          scope: roleData.scope,
+          isSystem: true
+        }).returning({ id: schema.roles.id });
         
-        const roleId = roleResult[0].id;
-        console.log(`Papel criado: ${roleName} (ID: ${roleId})`);
-        
-        // Associar permissões ao papel
-        if (ROLE_PERMISSIONS[roleName]) {
-          for (const permItem of ROLE_PERMISSIONS[roleName]) {
-            const { resource, actions } = permItem;
-            
-            for (const action of actions) {
-              // Encontrar a permissão
-              const permissions = await db.select()
-                .from(schema.permissions)
-                .where(
-                  and(
-                    eq(schema.permissions.resource, resource),
-                    eq(schema.permissions.action, action)
-                  )
-                );
-              
-              if (permissions.length > 0) {
-                const permission = permissions[0];
-                // Associar permissão ao papel
-                await db.insert(schema.rolePermissions).values({
-                  roleId: roleId,
-                  permissionId: permission.id
-                });
-                
-                console.log(`  Associada permissão: ${action}:${resource}`);
-              } else {
-                console.log(`  AVISO: Permissão não encontrada: ${action}:${resource}`);
-              }
-            }
+        roleId = newRole.id;
+      } else {
+        roleId = existingRole[0].id;
+      }
+      
+      roleIds[roleKey] = roleId;
+    }
+    
+    console.log('Papéis criados com sucesso!');
+    console.log('Atribuindo permissões aos papéis...');
+    
+    // Atribuir permissões aos papéis
+    for (const [roleKey, permissions] of Object.entries(ROLE_PERMISSIONS)) {
+      const roleId = roleIds[roleKey];
+      
+      if (!roleId) {
+        console.error(`Papel '${roleKey}' não encontrado!`);
+        continue;
+      }
+      
+      for (const { resource, actions } of permissions) {
+        for (const action of actions) {
+          // Buscar ID da permissão
+          const permission = await db
+            .select({ id: schema.permissions.id })
+            .from(schema.permissions)
+            .where(
+              and(
+                eq(schema.permissions.resource, resource),
+                eq(schema.permissions.action, action)
+              )
+            );
+          
+          if (permission.length === 0) {
+            console.error(`Permissão '${resource}:${action}' não encontrada!`);
+            continue;
+          }
+          
+          const permissionId = permission[0].id;
+          
+          // Verificar se a associação já existe
+          const existingAssociation = await db
+            .select({ id: schema.rolePermissions.id })
+            .from(schema.rolePermissions)
+            .where(
+              and(
+                eq(schema.rolePermissions.roleId, roleId),
+                eq(schema.rolePermissions.permissionId, permissionId)
+              )
+            );
+          
+          if (existingAssociation.length === 0) {
+            // Criar nova associação
+            await db.insert(schema.rolePermissions).values({
+              roleId,
+              permissionId
+            });
           }
         }
-      } else {
-        console.log(`Papel já existe: ${roleName}`);
       }
     }
     
-    console.log('\nCriação de permissões e papéis concluída com sucesso!');
+    console.log('Permissões atribuídas aos papéis com sucesso!');
+    console.log('Contando atribuições...');
     
+    // Contar número de permissões por papel
+    for (const [roleKey, roleId] of Object.entries(roleIds)) {
+      const permissionCount = await db
+        .select({ count: schema.rolePermissions.id })
+        .from(schema.rolePermissions)
+        .where(eq(schema.rolePermissions.roleId, roleId));
+      
+      console.log(`Papel '${roleKey}' possui ${permissionCount.length} permissões atribuídas.`);
+    }
+    
+    console.log('Criação de permissões e papéis concluída com sucesso!');
   } catch (error) {
-    console.error('Erro ao criar permissões e papéis:', error);
+    console.error('Erro durante a criação de permissões e papéis:', error);
   } finally {
-    // Fechar a conexão
-    await client.end();
+    // Encerrar conexão com o banco de dados
+    process.exit(0);
   }
 }
 
-// Executar a função principal
+// Executar o script
 createPermissionsAndRoles();
