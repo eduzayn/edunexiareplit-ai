@@ -11,6 +11,7 @@ import CadastroSucessoPage from "@/pages/cadastro-sucesso-page";
 import SobrePage from "@/pages/sobre-page";
 import ContatoPage from "@/pages/contato-page";
 import BlogPage from "@/pages/blog-page";
+import PrivacidadePage from "@/pages/institucional/privacidade-page";
 import AdminAuthPage from "@/pages/admin-auth-page";
 import PoloAuthPage from "@/pages/polo-auth-page";
 import DisciplinesPage from "@/pages/admin/disciplines-page";
@@ -120,6 +121,7 @@ function Router() {
       <Route path="/sobre" component={SobrePage} />
       <Route path="/contato" component={ContatoPage} />
       <Route path="/blog" component={BlogPage} />
+      <Route path="/privacidade" component={PrivacidadePage} />
       
       <ProtectedRoute path="/student/dashboard" portalType="student" />
       <Route path="/student/courses">
