@@ -188,19 +188,19 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
       items: [
         { 
           name: "Usuários", 
-          icon: <GroupIcon />, 
+          icon: <GroupIcon className="text-muted-foreground" />, 
           href: "/admin/users",
           active: currentPath === "/admin/users"
         },
         { 
           name: "Papéis & Permissões", 
-          icon: <SecurityIcon />, 
+          icon: <SecurityIcon className="text-muted-foreground" />, 
           href: "/admin/permissions/roles",
           active: currentPath === "/admin/permissions/roles" || (currentPath && currentPath.includes("/admin/permissions/roles"))
         },
         { 
           name: "Permissões Contextuais", 
-          icon: <BadgeCheckIcon />, 
+          icon: <BadgeCheckIcon className="text-muted-foreground" />, 
           href: "/admin/permissions/abac-permissions",
           active: currentPath === "/admin/permissions/abac-permissions" || (currentPath && currentPath.includes("/admin/permissions/abac"))
         },
@@ -209,19 +209,19 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
     items: [
       { 
         name: "Usuários", 
-        icon: <GroupIcon />, 
+        icon: <GroupIcon className="text-muted-foreground" />, 
         href: "/admin/users",
         active: currentPath === "/admin/users"
       },
       { 
         name: "Papéis & Permissões", 
-        icon: <SecurityIcon />, 
+        icon: <SecurityIcon className="text-muted-foreground" />, 
         href: "/admin/permissions/roles",
         active: currentPath === "/admin/permissions/roles" || (currentPath && currentPath.includes("/admin/permissions/roles"))
       },
       { 
         name: "Permissões Contextuais", 
-        icon: <BadgeCheckIcon />, 
+        icon: <BadgeCheckIcon className="text-muted-foreground" />, 
         href: "/admin/permissions/abac-permissions",
         active: currentPath === "/admin/permissions/abac-permissions" || (currentPath && currentPath.includes("/admin/permissions/abac"))
       },
