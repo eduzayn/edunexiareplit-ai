@@ -33,6 +33,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeftIcon, BuildingStoreIcon, SaveIcon } from "@/components/ui/icons";
+import { useClients } from "@/hooks/use-crm";
 
 // Schema de validação para criação de cliente
 const formSchema = z.object({
