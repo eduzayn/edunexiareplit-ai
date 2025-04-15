@@ -5,7 +5,7 @@
 import { pgTable, serial, text, varchar, timestamp, integer, boolean } from 'drizzle-orm/pg-core';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
-import { permissionResourceEnum, permissionActionEnum } from './schema';
+import { permissionResourceEnum, permissionActionEnum, institutions, polos } from './schema';
 
 /**
  * Enum para fase de instituição
@@ -101,41 +101,17 @@ export const paymentStatusPermissions = pgTable('payment_status_permissions', {
 });
 
 // Schemas de inserção
-export const insertInstitutionPhasePermissionSchema = createInsertSchema(institutionPhasePermissions, {
-  resource: (schema) => schema.resource,
-  action: (schema) => schema.action,
-  phase: (schema) => schema.phase,
-  description: (schema) => schema.description,
-  isActive: (schema) => schema.isActive
-});
+export const insertInstitutionPhasePermissionSchema = createInsertSchema(institutionPhasePermissions)
+  .omit({ id: true, createdAt: true, updatedAt: true });
 
-export const insertFinancialPeriodSchema = createInsertSchema(financialPeriods, {
-  name: (schema) => schema.name,
-  type: (schema) => schema.type,
-  startDate: (schema) => schema.startDate,
-  endDate: (schema) => schema.endDate,
-  institutionId: (schema) => schema.institutionId,
-  poloId: (schema) => schema.poloId,
-  isActive: (schema) => schema.isActive
-});
+export const insertFinancialPeriodSchema = createInsertSchema(financialPeriods)
+  .omit({ id: true, createdAt: true, updatedAt: true });
 
-export const insertPeriodPermissionRuleSchema = createInsertSchema(periodPermissionRules, {
-  resource: (schema) => schema.resource,
-  action: (schema) => schema.action,
-  periodType: (schema) => schema.periodType,
-  daysBeforeStart: (schema) => schema.daysBeforeStart,
-  daysAfterEnd: (schema) => schema.daysAfterEnd,
-  description: (schema) => schema.description,
-  isActive: (schema) => schema.isActive
-});
+export const insertPeriodPermissionRuleSchema = createInsertSchema(periodPermissionRules)
+  .omit({ id: true, createdAt: true, updatedAt: true });
 
-export const insertPaymentStatusPermissionSchema = createInsertSchema(paymentStatusPermissions, {
-  resource: (schema) => schema.resource,
-  action: (schema) => schema.action,
-  paymentStatus: (schema) => schema.paymentStatus,
-  description: (schema) => schema.description,
-  isActive: (schema) => schema.isActive
-});
+export const insertPaymentStatusPermissionSchema = createInsertSchema(paymentStatusPermissions)
+  .omit({ id: true, createdAt: true, updatedAt: true });
 
 // Tipos de inserção
 export type InsertInstitutionPhasePermission = z.infer<typeof insertInstitutionPhasePermissionSchema>;

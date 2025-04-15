@@ -1218,6 +1218,374 @@ export async function checkPaymentStatusAccess(
 }
 
 /**
+ * Obtém todas as permissões baseadas em fase de instituição
+ * @returns Lista de permissões baseadas em fase de instituição
+ */
+export async function getAllInstitutionPhasePermissions() {
+  return await db
+    .select({
+      id: abacSchema.institutionPhasePermissions.id,
+      resource: abacSchema.institutionPhasePermissions.resource,
+      action: abacSchema.institutionPhasePermissions.action,
+      phase: abacSchema.institutionPhasePermissions.phase,
+      description: abacSchema.institutionPhasePermissions.description,
+      isActive: abacSchema.institutionPhasePermissions.isActive,
+      createdAt: abacSchema.institutionPhasePermissions.createdAt,
+      updatedAt: abacSchema.institutionPhasePermissions.updatedAt
+    })
+    .from(abacSchema.institutionPhasePermissions)
+    .orderBy(
+      abacSchema.institutionPhasePermissions.resource,
+      abacSchema.institutionPhasePermissions.action,
+      abacSchema.institutionPhasePermissions.phase
+    );
+}
+
+/**
+ * Obtém uma permissão baseada em fase de instituição pelo ID
+ * @param id ID da permissão
+ * @returns Permissão baseada em fase de instituição
+ */
+export async function getInstitutionPhasePermissionById(id: number) {
+  const result = await db
+    .select({
+      id: abacSchema.institutionPhasePermissions.id,
+      resource: abacSchema.institutionPhasePermissions.resource,
+      action: abacSchema.institutionPhasePermissions.action,
+      phase: abacSchema.institutionPhasePermissions.phase,
+      description: abacSchema.institutionPhasePermissions.description,
+      isActive: abacSchema.institutionPhasePermissions.isActive,
+      createdAt: abacSchema.institutionPhasePermissions.createdAt,
+      updatedAt: abacSchema.institutionPhasePermissions.updatedAt
+    })
+    .from(abacSchema.institutionPhasePermissions)
+    .where(eq(abacSchema.institutionPhasePermissions.id, id));
+
+  return result.length > 0 ? result[0] : null;
+}
+
+/**
+ * Cria uma nova permissão baseada em fase de instituição
+ * @param data Dados da permissão
+ * @returns Permissão criada
+ */
+export async function createInstitutionPhasePermission(data: abacSchema.InsertInstitutionPhasePermission) {
+  try {
+    const [newPermission] = await db
+      .insert(abacSchema.institutionPhasePermissions)
+      .values({
+        resource: data.resource,
+        action: data.action,
+        phase: data.phase,
+        description: data.description,
+        isActive: data.isActive ?? true
+      })
+      .returning();
+
+    return newPermission;
+  } catch (error) {
+    console.error('Erro ao criar permissão baseada em fase:', error);
+    throw error;
+  }
+}
+
+/**
+ * Atualiza uma permissão baseada em fase de instituição
+ * @param id ID da permissão
+ * @param data Dados da permissão
+ * @returns Permissão atualizada
+ */
+export async function updateInstitutionPhasePermission(
+  id: number,
+  data: Partial<abacSchema.InsertInstitutionPhasePermission>
+) {
+  try {
+    const [updatedPermission] = await db
+      .update(abacSchema.institutionPhasePermissions)
+      .set({
+        resource: data.resource,
+        action: data.action,
+        phase: data.phase,
+        description: data.description,
+        isActive: data.isActive
+      })
+      .where(eq(abacSchema.institutionPhasePermissions.id, id))
+      .returning();
+
+    return updatedPermission;
+  } catch (error) {
+    console.error('Erro ao atualizar permissão baseada em fase:', error);
+    throw error;
+  }
+}
+
+/**
+ * Exclui uma permissão baseada em fase de instituição
+ * @param id ID da permissão
+ * @returns boolean
+ */
+export async function deleteInstitutionPhasePermission(id: number): Promise<boolean> {
+  try {
+    await db
+      .delete(abacSchema.institutionPhasePermissions)
+      .where(eq(abacSchema.institutionPhasePermissions.id, id));
+
+    return true;
+  } catch (error) {
+    console.error('Erro ao excluir permissão baseada em fase:', error);
+    return false;
+  }
+}
+
+/**
+ * Obtém todas as regras de permissão baseadas em período
+ * @returns Lista de regras de permissão baseadas em período
+ */
+export async function getAllPeriodPermissionRules() {
+  return await db
+    .select({
+      id: abacSchema.periodPermissionRules.id,
+      resource: abacSchema.periodPermissionRules.resource,
+      action: abacSchema.periodPermissionRules.action,
+      periodType: abacSchema.periodPermissionRules.periodType,
+      daysBeforeStart: abacSchema.periodPermissionRules.daysBeforeStart,
+      daysAfterEnd: abacSchema.periodPermissionRules.daysAfterEnd,
+      description: abacSchema.periodPermissionRules.description,
+      isActive: abacSchema.periodPermissionRules.isActive,
+      createdAt: abacSchema.periodPermissionRules.createdAt,
+      updatedAt: abacSchema.periodPermissionRules.updatedAt
+    })
+    .from(abacSchema.periodPermissionRules)
+    .orderBy(
+      abacSchema.periodPermissionRules.resource,
+      abacSchema.periodPermissionRules.action,
+      abacSchema.periodPermissionRules.periodType
+    );
+}
+
+/**
+ * Obtém uma regra de permissão baseada em período pelo ID
+ * @param id ID da regra
+ * @returns Regra de permissão baseada em período
+ */
+export async function getPeriodPermissionRuleById(id: number) {
+  const result = await db
+    .select({
+      id: abacSchema.periodPermissionRules.id,
+      resource: abacSchema.periodPermissionRules.resource,
+      action: abacSchema.periodPermissionRules.action,
+      periodType: abacSchema.periodPermissionRules.periodType,
+      daysBeforeStart: abacSchema.periodPermissionRules.daysBeforeStart,
+      daysAfterEnd: abacSchema.periodPermissionRules.daysAfterEnd,
+      description: abacSchema.periodPermissionRules.description,
+      isActive: abacSchema.periodPermissionRules.isActive,
+      createdAt: abacSchema.periodPermissionRules.createdAt,
+      updatedAt: abacSchema.periodPermissionRules.updatedAt
+    })
+    .from(abacSchema.periodPermissionRules)
+    .where(eq(abacSchema.periodPermissionRules.id, id));
+
+  return result.length > 0 ? result[0] : null;
+}
+
+/**
+ * Cria uma nova regra de permissão baseada em período
+ * @param data Dados da regra
+ * @returns Regra criada
+ */
+export async function createPeriodPermissionRule(data: abacSchema.InsertPeriodPermissionRule) {
+  try {
+    const [newRule] = await db
+      .insert(abacSchema.periodPermissionRules)
+      .values({
+        resource: data.resource,
+        action: data.action,
+        periodType: data.periodType,
+        daysBeforeStart: data.daysBeforeStart ?? 0,
+        daysAfterEnd: data.daysAfterEnd ?? 0,
+        description: data.description,
+        isActive: data.isActive ?? true
+      })
+      .returning();
+
+    return newRule;
+  } catch (error) {
+    console.error('Erro ao criar regra de permissão baseada em período:', error);
+    throw error;
+  }
+}
+
+/**
+ * Atualiza uma regra de permissão baseada em período
+ * @param id ID da regra
+ * @param data Dados da regra
+ * @returns Regra atualizada
+ */
+export async function updatePeriodPermissionRule(
+  id: number,
+  data: Partial<abacSchema.InsertPeriodPermissionRule>
+) {
+  try {
+    const [updatedRule] = await db
+      .update(abacSchema.periodPermissionRules)
+      .set({
+        resource: data.resource,
+        action: data.action,
+        periodType: data.periodType,
+        daysBeforeStart: data.daysBeforeStart,
+        daysAfterEnd: data.daysAfterEnd,
+        description: data.description,
+        isActive: data.isActive
+      })
+      .where(eq(abacSchema.periodPermissionRules.id, id))
+      .returning();
+
+    return updatedRule;
+  } catch (error) {
+    console.error('Erro ao atualizar regra de permissão baseada em período:', error);
+    throw error;
+  }
+}
+
+/**
+ * Exclui uma regra de permissão baseada em período
+ * @param id ID da regra
+ * @returns boolean
+ */
+export async function deletePeriodPermissionRule(id: number): Promise<boolean> {
+  try {
+    await db
+      .delete(abacSchema.periodPermissionRules)
+      .where(eq(abacSchema.periodPermissionRules.id, id));
+
+    return true;
+  } catch (error) {
+    console.error('Erro ao excluir regra de permissão baseada em período:', error);
+    return false;
+  }
+}
+
+/**
+ * Obtém todas as permissões baseadas em status de pagamento
+ * @returns Lista de permissões baseadas em status de pagamento
+ */
+export async function getAllPaymentStatusPermissions() {
+  return await db
+    .select({
+      id: abacSchema.paymentStatusPermissions.id,
+      resource: abacSchema.paymentStatusPermissions.resource,
+      action: abacSchema.paymentStatusPermissions.action,
+      paymentStatus: abacSchema.paymentStatusPermissions.paymentStatus,
+      description: abacSchema.paymentStatusPermissions.description,
+      isActive: abacSchema.paymentStatusPermissions.isActive,
+      createdAt: abacSchema.paymentStatusPermissions.createdAt,
+      updatedAt: abacSchema.paymentStatusPermissions.updatedAt
+    })
+    .from(abacSchema.paymentStatusPermissions)
+    .orderBy(
+      abacSchema.paymentStatusPermissions.resource,
+      abacSchema.paymentStatusPermissions.action,
+      abacSchema.paymentStatusPermissions.paymentStatus
+    );
+}
+
+/**
+ * Obtém uma permissão baseada em status de pagamento pelo ID
+ * @param id ID da permissão
+ * @returns Permissão baseada em status de pagamento
+ */
+export async function getPaymentStatusPermissionById(id: number) {
+  const result = await db
+    .select({
+      id: abacSchema.paymentStatusPermissions.id,
+      resource: abacSchema.paymentStatusPermissions.resource,
+      action: abacSchema.paymentStatusPermissions.action,
+      paymentStatus: abacSchema.paymentStatusPermissions.paymentStatus,
+      description: abacSchema.paymentStatusPermissions.description,
+      isActive: abacSchema.paymentStatusPermissions.isActive,
+      createdAt: abacSchema.paymentStatusPermissions.createdAt,
+      updatedAt: abacSchema.paymentStatusPermissions.updatedAt
+    })
+    .from(abacSchema.paymentStatusPermissions)
+    .where(eq(abacSchema.paymentStatusPermissions.id, id));
+
+  return result.length > 0 ? result[0] : null;
+}
+
+/**
+ * Cria uma nova permissão baseada em status de pagamento
+ * @param data Dados da permissão
+ * @returns Permissão criada
+ */
+export async function createPaymentStatusPermission(data: abacSchema.InsertPaymentStatusPermission) {
+  try {
+    const [newPermission] = await db
+      .insert(abacSchema.paymentStatusPermissions)
+      .values({
+        resource: data.resource,
+        action: data.action,
+        paymentStatus: data.paymentStatus,
+        description: data.description,
+        isActive: data.isActive ?? true
+      })
+      .returning();
+
+    return newPermission;
+  } catch (error) {
+    console.error('Erro ao criar permissão baseada em status de pagamento:', error);
+    throw error;
+  }
+}
+
+/**
+ * Atualiza uma permissão baseada em status de pagamento
+ * @param id ID da permissão
+ * @param data Dados da permissão
+ * @returns Permissão atualizada
+ */
+export async function updatePaymentStatusPermission(
+  id: number,
+  data: Partial<abacSchema.InsertPaymentStatusPermission>
+) {
+  try {
+    const [updatedPermission] = await db
+      .update(abacSchema.paymentStatusPermissions)
+      .set({
+        resource: data.resource,
+        action: data.action,
+        paymentStatus: data.paymentStatus,
+        description: data.description,
+        isActive: data.isActive
+      })
+      .where(eq(abacSchema.paymentStatusPermissions.id, id))
+      .returning();
+
+    return updatedPermission;
+  } catch (error) {
+    console.error('Erro ao atualizar permissão baseada em status de pagamento:', error);
+    throw error;
+  }
+}
+
+/**
+ * Exclui uma permissão baseada em status de pagamento
+ * @param id ID da permissão
+ * @returns boolean
+ */
+export async function deletePaymentStatusPermission(id: number): Promise<boolean> {
+  try {
+    await db
+      .delete(abacSchema.paymentStatusPermissions)
+      .where(eq(abacSchema.paymentStatusPermissions.id, id));
+
+    return true;
+  } catch (error) {
+    console.error('Erro ao excluir permissão baseada em status de pagamento:', error);
+    return false;
+  }
+}
+
+/**
  * Verifica permissão contextual ABAC completa
  * @param userId ID do usuário
  * @param condition Condição contextual
