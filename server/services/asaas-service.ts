@@ -69,14 +69,14 @@ interface AsaasCustomerResponse {
  */
 function mapClientToAsaasCustomer(client: Partial<Client> | InsertClient, clientId?: number): AsaasCustomerRequest {
   // Validação para garantir que os campos obrigatórios existam
-  if (!client.name || !client.cpfCnpj) {
+  if (!client.name || !client.document) {
     throw new Error('Nome e CPF/CNPJ são campos obrigatórios para criar um cliente no Asaas');
   }
 
   // Criando objeto de cliente do Asaas com dados obrigatórios
   const customerData: AsaasCustomerRequest = {
     name: client.name,
-    cpfCnpj: client.cpfCnpj,
+    cpfCnpj: client.document,
   };
 
   // Adicionando campos opcionais se existirem
@@ -85,14 +85,10 @@ function mapClientToAsaasCustomer(client: Partial<Client> | InsertClient, client
   
   // Campos de endereço
   if (client.zipCode) customerData.postalCode = client.zipCode;
-  if (client.street) customerData.address = client.street;
-  if (client.number) customerData.addressNumber = client.number;
-  if (client.complement) customerData.complement = client.complement;
-  if (client.neighborhood) customerData.province = client.neighborhood;
+  if (client.address) customerData.address = client.address;
   
   // Adicionando informações extras
   if (client.notes) customerData.observations = client.notes;
-  if (client.website) customerData.additionalEmails = client.website; // Não é o uso correto, mas para armazenar a informação
   
   // Adicionando referência externa
   if (clientId) {
@@ -175,10 +171,15 @@ export const AsaasService = {
       
       // Se encontrou algum resultado
       if (response.data.data && response.data.data.length > 0) {
-        return response.data.data[0]; // Retorna o primeiro cliente encontrado
+        // Filtra para encontrar clientes não deletados
+        const activeCustomers = response.data.data.filter((customer: AsaasCustomerResponse) => !customer.deleted);
+        
+        if (activeCustomers.length > 0) {
+          return activeCustomers[0]; // Retorna o primeiro cliente ativo encontrado
+        }
       }
       
-      return null; // Nenhum cliente encontrado
+      return null; // Nenhum cliente encontrado ou todos deletados
     } catch (error) {
       console.error(`Erro ao buscar cliente por CPF/CNPJ no Asaas (${cpfCnpj}):`, error);
       throw error;
