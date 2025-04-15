@@ -45,6 +45,9 @@ import ContractsPage from "@/pages/admin/contracts";
 import NewContractPage from "@/pages/admin/contracts/new-contract-page";
 // Módulo de Comunicação
 import InboxPage from "@/pages/admin/inbox";
+// Módulo de Permissões
+import RolesPage from "@/pages/admin/permissions/roles-page";
+import RoleDetailPage from "@/pages/admin/permissions/role-detail-page";
 // Import student pages
 import StudentCoursesPage from "@/pages/student/courses-page";
 import CourseDetailPage from "@/pages/student/course-detail-page";

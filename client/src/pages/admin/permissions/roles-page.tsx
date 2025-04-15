@@ -23,7 +23,7 @@ import {
   SearchIcon,
   EyeIcon,
   RefreshCwIcon,
-  FileEditIcon,
+  PencilIcon,
   TrashIcon
 } from "@/components/ui/icons";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -350,7 +350,7 @@ export default function RolesPage() {
                                 size="sm"
                                 onClick={() => navigate(`/admin/permissions/roles/${role.id}/edit`)}
                               >
-                                <FileEditIcon className="mr-2 h-4 w-4" />
+                                <PencilIcon className="mr-2 h-4 w-4" />
                                 Editar
                               </Button>
                             )}

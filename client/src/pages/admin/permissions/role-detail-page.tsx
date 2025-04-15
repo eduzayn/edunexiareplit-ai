@@ -24,7 +24,7 @@ import {
   ArrowLeftIcon,
   SearchIcon,
   PlusIcon,
-  XIcon,
+  MinusIcon,
   RefreshCwIcon
 } from "@/components/ui/icons";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -441,7 +441,7 @@ export default function RoleDetailPage() {
                                 className="text-red-500 hover:text-red-700"
                                 onClick={() => handleRemovePermission(permission.permissionId)}
                               >
-                                <XIcon className="h-4 w-4" />
+                                <Cross1Icon className="h-4 w-4" />
                               </Button>
                             )}
                           </PermissionGuard>
