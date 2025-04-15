@@ -1,6 +1,5 @@
 import React from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Link, useLocation } from "wouter";
+import { useLocation } from "wouter";
 import AdminLayout from "@/components/layout/admin-layout";
 import {
   Card,
@@ -29,26 +28,39 @@ import {
   UserIcon
 } from "@/components/ui/icons";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useLeads } from "@/hooks/use-crm";
+import { usePermissions, PermissionGuard } from "@/hooks/use-permissions";
 
 export default function LeadsPage() {
   const [, navigate] = useLocation();
   const [searchTerm, setSearchTerm] = React.useState("");
+  const [statusFilter, setStatusFilter] = React.useState("");
+  
+  // Usar o hook de permissões para verificar acesso
+  const { hasPermission } = usePermissions();
+  
+  // Usar o hook de leads que criamos
+  const { 
+    leads, 
+    isLoading, 
+    isError, 
+    error,
+    deleteLead 
+  } = useLeads(searchTerm, statusFilter);
 
-  // Quando tivermos a API real, este useQuery será usado para carregar os dados
-  // Por enquanto, definimos como isLoading para mostrar o estado de carregamento
-  const { data: leads, isLoading } = useQuery({
-    queryKey: ["/api/crm/leads"],
-    enabled: false, // Desabilitado até termos a API real
-  });
+  // Função para buscar dados com base no termo de pesquisa
+  const handleSearch = (value: string) => {
+    setSearchTerm(value);
+  };
 
   const getStatusBadge = (status: string) => {
     const statusMap: Record<string, React.ReactNode> = {
-      new: <Badge className="bg-blue-500">Novo</Badge>,
-      contacted: <Badge className="bg-yellow-500">Contatado</Badge>,
-      qualified: <Badge className="bg-green-500">Qualificado</Badge>,
-      negotiating: <Badge className="bg-purple-500">Em Negociação</Badge>,
-      won: <Badge className="bg-emerald-500">Convertido</Badge>,
-      lost: <Badge className="bg-red-500">Perdido</Badge>,
+      novo: <Badge className="bg-blue-500">Novo</Badge>,
+      contatado: <Badge className="bg-yellow-500">Contatado</Badge>,
+      qualificado: <Badge className="bg-green-500">Qualificado</Badge>,
+      negociacao: <Badge className="bg-purple-500">Em Negociação</Badge>,
+      convertido: <Badge className="bg-emerald-500">Convertido</Badge>,
+      perdido: <Badge className="bg-red-500">Perdido</Badge>,
     };
 
     return statusMap[status] || <Badge>{status}</Badge>;
@@ -64,10 +76,22 @@ export default function LeadsPage() {
               Gerenciamento de leads e prospecção de clientes.
             </p>
           </div>
-          <Button onClick={() => navigate("/admin/crm/leads/new")}>
-            <PlusIcon className="mr-2 h-4 w-4" />
-            Novo Lead
-          </Button>
+          {/* Usando o componente PermissionGuard para verificar permissão de criação */}
+          <PermissionGuard 
+            resource="leads" 
+            action="criar"
+            fallback={
+              <Button disabled title="Você não tem permissão para criar leads">
+                <PlusIcon className="mr-2 h-4 w-4" />
+                Novo Lead
+              </Button>
+            }
+          >
+            <Button onClick={() => navigate("/admin/crm/leads/new")}>
+              <PlusIcon className="mr-2 h-4 w-4" />
+              Novo Lead
+            </Button>
+          </PermissionGuard>
         </div>
 
         <Card>
@@ -124,82 +148,89 @@ export default function LeadsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {/* Dados de exemplo - serão substituídos por dados da API */}
-                  <TableRow>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center">
-                        <UserIcon className="mr-2 h-4 w-4" />
-                        Marcela Oliveira
-                      </div>
-                    </TableCell>
-                    <TableCell>marcela.oliveira@email.com</TableCell>
-                    <TableCell>(11) 99876-5432</TableCell>
-                    <TableCell>Site</TableCell>
-                    <TableCell>MBA em Gestão Empresarial</TableCell>
-                    <TableCell>
-                      {getStatusBadge('new')}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigate("/admin/crm/leads/1")}
-                      >
-                        <EyeIcon className="mr-2 h-4 w-4" />
-                        Detalhes
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center">
-                        <UserIcon className="mr-2 h-4 w-4" />
-                        Roberto Mendes
-                      </div>
-                    </TableCell>
-                    <TableCell>roberto.mendes@empresa.com.br</TableCell>
-                    <TableCell>(21) 98765-4321</TableCell>
-                    <TableCell>Indicação</TableCell>
-                    <TableCell>Especialização em Marketing Digital</TableCell>
-                    <TableCell>
-                      {getStatusBadge('contacted')}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigate("/admin/crm/leads/2")}
-                      >
-                        <EyeIcon className="mr-2 h-4 w-4" />
-                        Detalhes
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center">
-                        <UserIcon className="mr-2 h-4 w-4" />
-                        Carolina Souza
-                      </div>
-                    </TableCell>
-                    <TableCell>carolina.souza@outlook.com</TableCell>
-                    <TableCell>(31) 97654-3210</TableCell>
-                    <TableCell>Redes Sociais</TableCell>
-                    <TableCell>Graduação em Pedagogia</TableCell>
-                    <TableCell>
-                      {getStatusBadge('qualified')}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigate("/admin/crm/leads/3")}
-                      >
-                        <EyeIcon className="mr-2 h-4 w-4" />
-                        Detalhes
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+                  {isError ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-8 text-red-500">
+                        Erro ao carregar leads: {(error as any)?.message || 'Erro desconhecido'}
+                      </TableCell>
+                    </TableRow>
+                  ) : leads?.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                        Nenhum lead encontrado
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    /* Dados reais da API */
+                    leads?.map((lead) => (
+                      <TableRow key={lead.id}>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center">
+                            <UserIcon className="mr-2 h-4 w-4" />
+                            {lead.name}
+                          </div>
+                        </TableCell>
+                        <TableCell>{lead.email}</TableCell>
+                        <TableCell>{lead.phone}</TableCell>
+                        <TableCell>{lead.source}</TableCell>
+                        <TableCell>{lead.interest}</TableCell>
+                        <TableCell>
+                          {getStatusBadge(lead.status)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            {/* Verificar permissão de leitura */}
+                            <PermissionGuard resource="leads" action="ler">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => navigate(`/admin/crm/leads/${lead.id}`)}
+                              >
+                                <EyeIcon className="mr-2 h-4 w-4" />
+                                Detalhes
+                              </Button>
+                            </PermissionGuard>
+                            
+                            {/* Verificar permissão de exclusão */}
+                            <PermissionGuard 
+                              resource="leads" 
+                              action="deletar"
+                              fallback={null}
+                            >
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-red-500 hover:text-red-700"
+                                onClick={() => {
+                                  if (window.confirm('Tem certeza que deseja excluir este lead?')) {
+                                    deleteLead(lead.id);
+                                  }
+                                }}
+                              >
+                                <svg 
+                                  xmlns="http://www.w3.org/2000/svg" 
+                                  width="16" 
+                                  height="16" 
+                                  viewBox="0 0 24 24" 
+                                  fill="none" 
+                                  stroke="currentColor" 
+                                  strokeWidth="2" 
+                                  strokeLinecap="round" 
+                                  strokeLinejoin="round"
+                                  className="mr-2 h-4 w-4"
+                                >
+                                  <path d="M3 6h18"></path>
+                                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                                </svg>
+                                Excluir
+                              </Button>
+                            </PermissionGuard>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             )}
