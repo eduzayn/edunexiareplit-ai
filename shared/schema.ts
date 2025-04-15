@@ -1574,6 +1574,7 @@ export const insertClientSchema = createInsertSchema(clients).pick({
   notes: true,
   metadata: true,
   createdById: true,
+  asaasId: true,
 });
 export type InsertClient = z.infer<typeof insertClientSchema>;
 export type Client = typeof clients.$inferSelect;

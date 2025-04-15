@@ -191,32 +191,37 @@ export async function createClient(data: InsertClient): Promise<Client> {
     
     // Tentar cadastrar o cliente no Asaas
     try {
-      // Mapear dados do cliente para o formato do Asaas
-      const asaasData = {
-        name: newClient.name,
-        email: newClient.email,
-        phone: newClient.phone,
-        cpfCnpj: newClient.document, // CPF/CNPJ do cliente
-        address: newClient.street,
-        addressNumber: newClient.number || 'SN',
-        complement: newClient.complement,
-        province: newClient.neighborhood, // Bairro
-        postalCode: newClient.zipCode,
-        externalReference: `client_${newClient.id}`
-      };
-      
-      // Cadastrar no Asaas
-      const asaasResponse = await AsaasService.createCustomer(asaasData, newClient.id);
-      
-      // Se o cadastro no Asaas for bem-sucedido, atualizar o ID do Asaas no cliente
-      if (asaasResponse && asaasResponse.id) {
-        // Atualizar o cliente com o ID do Asaas
-        await storage.updateClient(newClient.id, {
-          asaasId: asaasResponse.id
-        });
+      // Verificar se o cliente tem um documento válido para o Asaas
+      if (!newClient.document) {
+        console.log(`Cliente ${newClient.id} não tem CPF/CNPJ para cadastro no Asaas`);
+      } else {
+        // Criar objeto para o Asaas com os dados disponíveis
+        const asaasData: any = {
+          name: newClient.name,
+          email: newClient.email,
+          phone: newClient.phone,
+          cpfCnpj: newClient.document, // CPF/CNPJ do cliente
+          postalCode: newClient.zipCode,
+          address: newClient.address,
+          externalReference: `client_${newClient.id}`
+        };
         
-        // Atualizar o objeto do cliente que será retornado
-        newClient.asaasId = asaasResponse.id;
+        // Adicionar campos opcionais de endereço se disponíveis na implementação futura
+        // quando esses campos forem adicionados ao schema de clientes
+        
+        // Cadastrar no Asaas
+        const asaasResponse = await AsaasService.createCustomer(asaasData, newClient.id);
+        
+        // Se o cadastro no Asaas for bem-sucedido, atualizar o ID do Asaas no cliente
+        if (asaasResponse && asaasResponse.id) {
+          // Atualizar o cliente com o ID do Asaas
+          await storage.updateClient(newClient.id, {
+            asaasId: asaasResponse.id
+          });
+          
+          // Atualizar o objeto do cliente que será retornado
+          newClient.asaasId = asaasResponse.id;
+        }
       }
     } catch (asaasError) {
       // Apenas logar o erro sem interromper o fluxo
@@ -251,9 +256,62 @@ export async function updateClient(id: number, data: Partial<InsertClient>): Pro
       }
     }
     
+    // Atualizar o cliente no banco de dados
     const updatedClient = await storage.updateClient(id, data);
     if (!updatedClient) {
       throw new Error(`Falha ao atualizar cliente ${id}`);
+    }
+    
+    // Tentar atualizar o cliente no Asaas se necessário
+    try {
+      // Se o cliente tem um asaasId, atualizar no Asaas
+      if (updatedClient.asaasId) {
+        // Criar objeto para o Asaas com os dados disponíveis
+        const asaasData: any = {
+          name: updatedClient.name,
+          email: updatedClient.email,
+          phone: updatedClient.phone,
+          postalCode: updatedClient.zipCode,
+          address: updatedClient.address
+        };
+        
+        // Se o documento foi alterado, incluir no update
+        if (data.document) {
+          asaasData.cpfCnpj = updatedClient.document;
+        }
+        
+        // Atualizar no Asaas
+        await AsaasService.updateCustomer(updatedClient.asaasId, asaasData);
+      } 
+      // Se o cliente não tem asaasId mas tem um documento, criar no Asaas
+      else if (updatedClient.document && !data.asaasId) {
+        // Criar objeto para o Asaas
+        const asaasData: any = {
+          name: updatedClient.name,
+          email: updatedClient.email,
+          phone: updatedClient.phone,
+          cpfCnpj: updatedClient.document,
+          postalCode: updatedClient.zipCode,
+          address: updatedClient.address,
+          externalReference: `client_${updatedClient.id}`
+        };
+        
+        // Criar no Asaas
+        const asaasResponse = await AsaasService.createCustomer(asaasData, updatedClient.id);
+        
+        // Se o cadastro no Asaas for bem-sucedido, atualizar o ID do Asaas no cliente
+        if (asaasResponse && asaasResponse.id) {
+          await storage.updateClient(updatedClient.id, {
+            asaasId: asaasResponse.id
+          });
+          
+          // Atualizar o objeto do cliente que será retornado
+          updatedClient.asaasId = asaasResponse.id;
+        }
+      }
+    } catch (asaasError) {
+      // Apenas logar o erro sem interromper o fluxo
+      console.error(`Erro ao atualizar cliente ${id} no Asaas:`, asaasError);
     }
     
     return updatedClient;
@@ -268,6 +326,19 @@ export async function updateClient(id: number, data: Partial<InsertClient>): Pro
  */
 export async function deleteClient(id: number): Promise<boolean> {
   try {
+    // Buscar o cliente para verificar se tem asaasId
+    const client = await storage.getClient(id);
+    if (client && client.asaasId) {
+      // Tentar inativar o cliente no Asaas antes de excluí-lo do banco
+      try {
+        await AsaasService.deleteCustomer(client.asaasId);
+      } catch (asaasError) {
+        // Apenas logar o erro sem interromper o fluxo
+        console.error(`Erro ao inativar cliente ${id} no Asaas:`, asaasError);
+      }
+    }
+    
+    // Excluir o cliente no banco de dados
     return await storage.deleteClient(id);
   } catch (error) {
     console.error(`Erro ao excluir cliente ${id}:`, error);
