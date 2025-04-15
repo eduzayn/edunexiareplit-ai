@@ -96,6 +96,9 @@ export default function UsersPage() {
   const hasUpdatePermission = hasPermission("usuario", "atualizar");
   const hasDeletePermission = hasPermission("usuario", "deletar");
   const hasManagePermissionPermission = hasPermission("permissao", "gerenciar");
+  
+  // Alias para compatibilidade com código existente (hasPermissionFor)
+  const hasPermissionFor = hasPermission;
 
   // Query client para invalidar caches
   const queryClient = useQueryClient();
