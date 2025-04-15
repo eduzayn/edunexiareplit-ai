@@ -180,7 +180,7 @@ export default function RoleDetailPage() {
           <div className="flex items-center mb-6">
             <Button
               variant="ghost"
-              onClick={() => navigate("/admin/permissions/roles")}
+              onClick={() => navigate("/admin/pessoas/roles")}
               className="mr-4"
             >
               <ArrowLeftIcon className="mr-2 h-4 w-4" />
@@ -195,7 +195,7 @@ export default function RoleDetailPage() {
                 <p className="text-lg font-semibold mb-2">Erro ao carregar dados do papel</p>
                 <p>{(roleError as any)?.message || (rolePermissionsError as any)?.message || 'Erro desconhecido'}</p>
                 <Button
-                  onClick={() => navigate("/admin/permissions/roles")}
+                  onClick={() => navigate("/admin/pessoas/roles")}
                   className="mt-4"
                 >
                   Voltar para a lista de papéis
@@ -214,7 +214,7 @@ export default function RoleDetailPage() {
         <div className="flex items-center mb-6">
           <Button
             variant="ghost"
-            onClick={() => navigate("/admin/permissions/roles")}
+            onClick={() => navigate("/admin/pessoas/roles")}
             className="mr-4"
           >
             <ArrowLeftIcon className="mr-2 h-4 w-4" />

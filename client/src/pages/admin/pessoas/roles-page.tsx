@@ -414,7 +414,7 @@ export default function RolesPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => navigate(`/admin/permissions/roles/${role.id}`)}
+                              onClick={() => navigate(`/admin/pessoas/roles/${role.id}`)}
                             >
                               <EyeIcon className="mr-2 h-4 w-4" />
                               Detalhes
@@ -426,7 +426,7 @@ export default function RolesPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => navigate(`/admin/permissions/roles/${role.id}/edit`)}
+                              onClick={() => navigate(`/admin/pessoas/roles/${role.id}/edit`)}
                             >
                               <PencilIcon className="mr-2 h-4 w-4" />
                               Editar
