@@ -1,14 +1,17 @@
-import { useEffect, useState } from 'react';
-import { useAuth } from './use-auth';
-import { usePermissions } from './use-permissions';
+/**
+ * Hook para verificação de permissões contextuais ABAC
+ */
 
-interface ContextCondition {
+import { useState, useCallback } from 'react';
+import { useAuth } from './use-auth';
+import { apiRequest } from '@/lib/queryClient';
+
+interface ABACCondition {
   resource: string;
   action: string;
   entityId?: number;
   institutionId?: number;
   poloId?: number;
-  // Condições dinâmicas específicas
   subscriptionStatus?: string;
   paymentStatus?: string;
   institutionPhase?: string;
@@ -16,192 +19,203 @@ interface ContextCondition {
   dateRange?: { start: Date; end: Date };
 }
 
-/**
- * Hook para verificação de permissões baseadas em contexto (ABAC)
- * Implementa o componente Attribute-Based Access Control do sistema híbrido
- */
-export function useABAC() {
+export const useABAC = () => {
   const { user } = useAuth();
-  const { hasPermission } = usePermissions();
-  const [contextCache, setContextCache] = useState<Record<string, boolean>>({});
+  const [isCheckingPermission, setIsCheckingPermission] = useState(false);
 
-  // Função para verificar condições baseadas em contexto
-  const checkCondition = async (condition: ContextCondition): Promise<boolean> => {
-    // Gera uma chave única para a condição para cache
-    const cacheKey = JSON.stringify(condition);
-    
-    // Verifica se já temos este resultado em cache
-    if (contextCache[cacheKey] !== undefined) {
-      return contextCache[cacheKey];
-    }
-    
-    // Verificação básica de permissão RBAC primeiro
-    const hasBasicPermission = await hasPermission(condition.resource, condition.action);
-    
-    if (!hasBasicPermission || !user) {
-      setContextCache(prev => ({ ...prev, [cacheKey]: false }));
-      return false;
-    }
-    
-    try {
-      // Fazer a verificação contextual no servidor
-      const response = await fetch('/api/permissions/check-context', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: user.id,
-          condition,
-        }),
-        credentials: 'include',
-      });
+  /**
+   * Verifica se o usuário possui permissão baseada em contexto específico
+   * @param condition Condição ABAC a ser verificada
+   * @returns {Promise<boolean>} Permissão concedida ou não
+   */
+  const checkContextualPermission = useCallback(
+    async (condition: ABACCondition): Promise<boolean> => {
+      if (!user) return false;
       
-      if (!response.ok) {
-        setContextCache(prev => ({ ...prev, [cacheKey]: false }));
+      setIsCheckingPermission(true);
+      
+      try {
+        const response = await apiRequest<{ hasPermission: boolean }>('/api/permissions/abac/check', {
+          method: 'POST',
+          data: {
+            ...condition,
+            userId: user.id
+          }
+        });
+        
+        return response.hasPermission;
+      } catch (error) {
+        console.error('Erro ao verificar permissão contextual:', error);
         return false;
+      } finally {
+        setIsCheckingPermission(false);
       }
+    },
+    [user]
+  );
+
+  /**
+   * Verifica se o usuário é proprietário de um recurso específico
+   * @param resourceType Tipo do recurso (ex: 'courses', 'products', etc)
+   * @param entityId ID da entidade
+   * @returns {Promise<boolean>} É o proprietário ou não
+   */
+  const checkEntityOwnership = useCallback(
+    async (resourceType: string, entityId: number): Promise<boolean> => {
+      if (!user) return false;
       
-      const { allowed } = await response.json();
-      setContextCache(prev => ({ ...prev, [cacheKey]: allowed }));
-      return allowed;
-    } catch (error) {
-      console.error('Erro ao verificar permissão contextual:', error);
-      setContextCache(prev => ({ ...prev, [cacheKey]: false }));
-      return false;
-    }
-  };
-  
-  // Função para verificar se o usuário é proprietário de uma entidade
-  const isEntityOwner = async (resource: string, entityId: number): Promise<boolean> => {
-    if (!user) return false;
-    
-    try {
-      const response = await fetch(`/api/permissions/is-owner/${resource}/${entityId}`, {
-        credentials: 'include',
-      });
+      setIsCheckingPermission(true);
       
-      if (!response.ok) return false;
+      try {
+        const response = await apiRequest<{ isOwner: boolean }>('/api/permissions/abac/check-ownership', {
+          method: 'POST',
+          data: {
+            userId: user.id,
+            resourceType,
+            entityId
+          }
+        });
+        
+        return response.isOwner;
+      } catch (error) {
+        console.error('Erro ao verificar propriedade do recurso:', error);
+        return false;
+      } finally {
+        setIsCheckingPermission(false);
+      }
+    },
+    [user]
+  );
+
+  /**
+   * Verifica permissões baseadas na fase da instituição
+   * @param resource Nome do recurso
+   * @param action Ação a ser verificada
+   * @param institutionId ID da instituição
+   * @returns {Promise<boolean>} Permissão concedida ou não
+   */
+  const checkInstitutionPhasePermission = useCallback(
+    async (resource: string, action: string, institutionId: number): Promise<boolean> => {
+      if (!user) return false;
       
-      const { isOwner } = await response.json();
-      return isOwner;
-    } catch (error) {
-      console.error('Erro ao verificar propriedade da entidade:', error);
-      return false;
-    }
-  };
-  
-  // Função para verificar permissões de período financeiro/acadêmico
-  const checkPeriodAccess = async (
-    resource: string, 
-    action: string, 
-    targetDate: Date,
-    institutionId?: number
-  ): Promise<boolean> => {
-    if (!user) return false;
-    
-    try {
-      const response = await fetch(`/api/permissions/check-period`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: user.id,
-          resource,
-          action,
-          targetDate: targetDate.toISOString(),
-          institutionId,
-        }),
-        credentials: 'include',
-      });
+      setIsCheckingPermission(true);
       
-      if (!response.ok) return false;
+      try {
+        const response = await apiRequest<{ hasPermission: boolean }>(
+          '/api/permissions/abac/check-institution-phase', 
+          {
+            method: 'POST',
+            data: {
+              userId: user.id,
+              resource,
+              action,
+              institutionId
+            }
+          }
+        );
+        
+        return response.hasPermission;
+      } catch (error) {
+        console.error('Erro ao verificar permissão baseada na fase da instituição:', error);
+        return false;
+      } finally {
+        setIsCheckingPermission(false);
+      }
+    },
+    [user]
+  );
+
+  /**
+   * Verifica permissões baseadas no status do pagamento
+   * @param resource Nome do recurso
+   * @param action Ação a ser verificada
+   * @param entityId ID da entidade
+   * @returns {Promise<boolean>} Permissão concedida ou não
+   */
+  const checkPaymentStatusPermission = useCallback(
+    async (resource: string, action: string, entityId: number): Promise<boolean> => {
+      if (!user) return false;
       
-      const { allowed } = await response.json();
-      return allowed;
-    } catch (error) {
-      console.error('Erro ao verificar acesso por período:', error);
-      return false;
-    }
-  };
-  
-  // Função para verificar permissões baseadas na fase da instituição
-  const checkInstitutionPhase = async (
-    resource: string,
-    action: string,
-    institutionId: number
-  ): Promise<boolean> => {
-    if (!user) return false;
-    
-    try {
-      const response = await fetch(`/api/permissions/check-institution-phase`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: user.id,
-          resource,
-          action,
-          institutionId,
-        }),
-        credentials: 'include',
-      });
+      setIsCheckingPermission(true);
       
-      if (!response.ok) return false;
+      try {
+        const response = await apiRequest<{ hasPermission: boolean }>(
+          '/api/permissions/abac/check-payment-status', 
+          {
+            method: 'POST',
+            data: {
+              userId: user.id,
+              resource,
+              action,
+              entityId
+            }
+          }
+        );
+        
+        return response.hasPermission;
+      } catch (error) {
+        console.error('Erro ao verificar permissão baseada no status do pagamento:', error);
+        return false;
+      } finally {
+        setIsCheckingPermission(false);
+      }
+    },
+    [user]
+  );
+
+  /**
+   * Verifica permissões baseadas no período acadêmico/financeiro
+   * @param resource Nome do recurso
+   * @param action Ação a ser verificada
+   * @param targetDate Data alvo a ser verificada
+   * @param institutionId ID da instituição (opcional)
+   * @returns {Promise<boolean>} Permissão concedida ou não
+   */
+  const checkPeriodPermission = useCallback(
+    async (
+      resource: string, 
+      action: string, 
+      targetDate: Date, 
+      institutionId?: number
+    ): Promise<boolean> => {
+      if (!user) return false;
       
-      const { allowed } = await response.json();
-      return allowed;
-    } catch (error) {
-      console.error('Erro ao verificar permissão baseada na fase da instituição:', error);
-      return false;
-    }
-  };
-  
-  // Função para verificar permissões baseadas no status do pagamento
-  const checkPaymentStatus = async (
-    resource: string,
-    action: string,
-    entityId: number
-  ): Promise<boolean> => {
-    if (!user) return false;
-    
-    try {
-      const response = await fetch(`/api/permissions/check-payment-status`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: user.id,
-          resource,
-          action,
-          entityId,
-        }),
-        credentials: 'include',
-      });
+      setIsCheckingPermission(true);
       
-      if (!response.ok) return false;
-      
-      const { allowed } = await response.json();
-      return allowed;
-    } catch (error) {
-      console.error('Erro ao verificar permissão baseada no status de pagamento:', error);
-      return false;
-    }
-  };
-  
-  // Limpar cache quando o usuário mudar
-  useEffect(() => {
-    setContextCache({});
-  }, [user]);
-  
+      try {
+        const response = await apiRequest<{ hasPermission: boolean }>(
+          '/api/permissions/abac/check-period', 
+          {
+            method: 'POST',
+            data: {
+              userId: user.id,
+              resource,
+              action,
+              targetDate: targetDate.toISOString(),
+              institutionId
+            }
+          }
+        );
+        
+        return response.hasPermission;
+      } catch (error) {
+        console.error('Erro ao verificar permissão baseada no período:', error);
+        return false;
+      } finally {
+        setIsCheckingPermission(false);
+      }
+    },
+    [user]
+  );
+
   return {
-    checkCondition,
-    isEntityOwner,
-    checkPeriodAccess,
-    checkInstitutionPhase,
-    checkPaymentStatus
+    checkContextualPermission,
+    checkEntityOwnership,
+    checkInstitutionPhasePermission,
+    checkPaymentStatusPermission,
+    checkPeriodPermission,
+    isCheckingPermission
   };
-}
+};
+
+export default useABAC;

@@ -1,12 +1,17 @@
-import React, { useState, useEffect, ReactNode } from 'react';
-import { useABAC } from '@/hooks/use-abac';
+/**
+ * Componente de guarda ABAC (Attribute-Based Access Control)
+ * Protege componentes dinamicamente com base em permissões contextuais
+ */
 
-interface ABACGuardProps {
+import { useState, useEffect, ReactNode } from 'react';
+import { useABAC } from '@/hooks/use-abac';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
+
+interface ABACCondition {
   resource: string;
   action: string;
-  children: ReactNode;
-  fallback?: ReactNode;
-  // Condições contextuais opcionais
   entityId?: number;
   institutionId?: number;
   poloId?: number;
@@ -15,82 +20,83 @@ interface ABACGuardProps {
   institutionPhase?: string;
   entityOwnerId?: number;
   dateRange?: { start: Date; end: Date };
-  // Callback para erros
-  onError?: (error: Error) => void;
 }
 
-/**
- * Componente de guarda para verificação contextual de permissões
- * Implementa o padrão ABAC (Attribute-Based Access Control)
- */
-export function ABACGuard({
-  resource,
-  action,
+interface ABACGuardProps {
+  /* Condição ABAC a ser verificada */
+  condition: ABACCondition;
+  
+  /* Conteúdo a ser renderizado se a permissão for concedida */
+  children: ReactNode;
+  
+  /* Conteúdo alternativo a ser renderizado se a permissão for negada (opcional) */
+  fallback?: ReactNode;
+  
+  /* Se deve mostrar um alerta de acesso negado (padrão: false) */
+  showAccessDenied?: boolean;
+  
+  /* Mensagem personalizada de acesso negado (opcional) */
+  accessDeniedMessage?: string;
+  
+  /* Se deve mostrar um skeleton de carregamento durante a verificação (padrão: true) */
+  showSkeleton?: boolean;
+}
+
+export const ABACGuard: React.FC<ABACGuardProps> = ({
+  condition,
   children,
-  fallback = null,
-  entityId,
-  institutionId,
-  poloId,
-  subscriptionStatus,
-  paymentStatus,
-  institutionPhase,
-  entityOwnerId,
-  dateRange,
-  onError
-}: ABACGuardProps) {
-  const [isAllowed, setIsAllowed] = useState<boolean | null>(null);
-  const [error, setError] = useState<Error | null>(null);
-  const { checkCondition } = useABAC();
+  fallback,
+  showAccessDenied = false,
+  accessDeniedMessage = 'Você não tem permissão para acessar este recurso.',
+  showSkeleton = true
+}) => {
+  const { checkContextualPermission, isCheckingPermission } = useABAC();
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const verifyAccess = async () => {
-      try {
-        const allowed = await checkCondition({
-          resource,
-          action,
-          entityId,
-          institutionId,
-          poloId,
-          subscriptionStatus,
-          paymentStatus,
-          institutionPhase,
-          entityOwnerId,
-          dateRange
-        });
-        
-        setIsAllowed(allowed);
-        setError(null);
-      } catch (err) {
-        console.error('Erro na verificação ABAC:', err);
-        setIsAllowed(false);
-        setError(err instanceof Error ? err : new Error('Erro desconhecido na verificação de permissão'));
-        if (onError && err instanceof Error) {
-          onError(err);
-        }
-      }
+    const checkPermission = async () => {
+      const result = await checkContextualPermission(condition);
+      setHasPermission(result);
     };
 
-    verifyAccess();
-  }, [
-    resource, 
-    action, 
-    entityId, 
-    institutionId, 
-    poloId,
-    subscriptionStatus,
-    paymentStatus,
-    institutionPhase,
-    entityOwnerId,
-    dateRange,
-    checkCondition,
-    onError
-  ]);
+    checkPermission();
+  }, [checkContextualPermission, condition]);
 
-  // Estado de carregamento inicial
-  if (isAllowed === null) {
-    return null; // Não renderiza nada durante a verificação inicial
+  // Mostrar skeleton durante a verificação (se ativado)
+  if ((hasPermission === null || isCheckingPermission) && showSkeleton) {
+    return (
+      <div className="w-full space-y-2">
+        <Skeleton className="h-6 w-3/4" />
+        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-6 w-1/2" />
+      </div>
+    );
   }
 
-  // Renderização condicional baseada na permissão
-  return isAllowed ? <>{children}</> : <>{fallback}</>;
-}
+  // Acesso negado
+  if (hasPermission === false) {
+    // Se tiver conteúdo fallback, use-o
+    if (fallback) {
+      return <>{fallback}</>;
+    }
+
+    // Se showAccessDenied for true, mostre o alerta
+    if (showAccessDenied) {
+      return (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Acesso Negado</AlertTitle>
+          <AlertDescription>{accessDeniedMessage}</AlertDescription>
+        </Alert>
+      );
+    }
+
+    // Caso contrário, não renderize nada
+    return null;
+  }
+
+  // Acesso concedido
+  return <>{children}</>;
+};
+
+export default ABACGuard;

@@ -678,3 +678,614 @@ export async function removePermissionFromUser(
     return false;
   }
 }
+
+/**
+ * ABAC - Attribute-Based Access Control
+ * Funções para verificação de permissões contextual baseada em atributos
+ */
+
+/**
+ * Verifica se um usuário é proprietário de um recurso
+ * @param userId ID do usuário
+ * @param resourceType Tipo do recurso (ex: 'courses', 'products', etc)
+ * @param entityId ID da entidade
+ * @returns boolean
+ */
+export async function isEntityOwner(
+  userId: number,
+  resourceType: string,
+  entityId: number
+): Promise<boolean> {
+  try {
+    // Verifica permissões administrativas primeiro (bypass)
+    const isSuperAdmin = await hasSuperAdminRole(userId);
+    if (isSuperAdmin) return true;
+
+    // Tipos específicos de recursos e suas tabelas correspondentes
+    switch (resourceType) {
+      case 'courses':
+        const course = await db
+          .select()
+          .from(schema.courses)
+          .where(
+            and(
+              eq(schema.courses.id, entityId),
+              eq(schema.courses.createdById, userId)
+            )
+          );
+        return course.length > 0;
+
+      case 'institutions':
+        const institution = await db
+          .select()
+          .from(schema.institutions)
+          .where(
+            and(
+              eq(schema.institutions.id, entityId),
+              eq(schema.institutions.ownerId, userId)
+            )
+          );
+        return institution.length > 0;
+
+      case 'polos':
+        const polo = await db
+          .select()
+          .from(schema.polos)
+          .where(
+            and(
+              eq(schema.polos.id, entityId),
+              eq(schema.polos.managerId, userId)
+            )
+          );
+        return polo.length > 0;
+
+      case 'products':
+        const product = await db
+          .select()
+          .from(schema.products)
+          .where(
+            and(
+              eq(schema.products.id, entityId),
+              eq(schema.products.createdBy, userId)
+            )
+          );
+        return product.length > 0;
+
+      case 'invoices':
+        const invoice = await db
+          .select()
+          .from(schema.invoices)
+          .where(
+            and(
+              eq(schema.invoices.id, entityId),
+              eq(schema.invoices.createdBy, userId)
+            )
+          );
+        return invoice.length > 0;
+
+      case 'contracts':
+        const contract = await db
+          .select()
+          .from(schema.contracts)
+          .where(
+            and(
+              eq(schema.contracts.id, entityId),
+              eq(schema.contracts.createdBy, userId)
+            )
+          );
+        return contract.length > 0;
+
+      case 'leads':
+        const lead = await db
+          .select()
+          .from(schema.leads)
+          .where(
+            and(
+              eq(schema.leads.id, entityId),
+              eq(schema.leads.assignedTo, userId)
+            )
+          );
+        return lead.length > 0;
+
+      case 'clients':
+        const client = await db
+          .select()
+          .from(schema.clients)
+          .where(
+            and(
+              eq(schema.clients.id, entityId),
+              eq(schema.clients.assignedTo, userId)
+            )
+          );
+        return client.length > 0;
+
+      case 'certificate_templates':
+        const template = await db
+          .select()
+          .from(schema.certificateTemplates)
+          .where(
+            and(
+              eq(schema.certificateTemplates.id, entityId),
+              eq(schema.certificateTemplates.createdBy, userId)
+            )
+          );
+        return template.length > 0;
+
+      default:
+        // Para outros tipos de recursos, retorna false
+        return false;
+    }
+  } catch (error) {
+    console.error(`Erro ao verificar propriedade do recurso ${resourceType}:`, error);
+    return false;
+  }
+}
+
+/**
+ * Verifica se um usuário tem papel de super admin
+ * @param userId ID do usuário
+ * @returns boolean
+ */
+export async function hasSuperAdminRole(userId: number): Promise<boolean> {
+  // Verifica papéis de super_admin (acesso a tudo)
+  const superAdmin = await db
+    .select({ id: schema.userRoles.id })
+    .from(schema.userRoles)
+    .innerJoin(schema.roles, eq(schema.userRoles.roleId, schema.roles.id))
+    .where(
+      and(
+        eq(schema.userRoles.userId, userId),
+        eq(schema.roles.name, 'super_admin')
+      )
+    );
+
+  return superAdmin.length > 0;
+}
+
+/**
+ * Verifica se o acesso é permitido com base no ciclo acadêmico/financeiro
+ * @param userId ID do usuário
+ * @param resource Nome do recurso
+ * @param action Ação a ser verificada
+ * @param targetDate Data alvo a ser verificada
+ * @param institutionId ID da instituição (opcional)
+ * @returns boolean
+ */
+export async function checkPeriodAccess(
+  userId: number,
+  resource: string,
+  action: string,
+  targetDate: Date,
+  institutionId?: number
+): Promise<boolean> {
+  try {
+    // Verifica permissões administrativas primeiro (bypass)
+    const isSuperAdmin = await hasSuperAdminRole(userId);
+    if (isSuperAdmin) return true;
+
+    // Verifica permissão básica
+    const hasBasePermission = await checkUserPermission(userId, resource, action);
+    if (!hasBasePermission) return false;
+
+    // Se não houver instituição, usa regras gerais de período
+    if (!institutionId) {
+      // Períodos financeiros gerais do sistema
+      const currentDate = new Date();
+      const financialPeriods = await db
+        .select()
+        .from(schema.financialPeriods)
+        .where(
+          and(
+            lte(schema.financialPeriods.startDate, targetDate),
+            gte(schema.financialPeriods.endDate, targetDate),
+            eq(schema.financialPeriods.isActive, true)
+          )
+        );
+
+      // Se não houver período financeiro ativo que inclua a data, nega o acesso
+      if (financialPeriods.length === 0) {
+        // Exceções para ações administrativas
+        if (action === 'read') return true;
+        return false;
+      }
+
+      return true;
+    }
+
+    // Verifica regras específicas da instituição
+    const institutionPeriods = await db
+      .select()
+      .from(schema.institutionPeriods)
+      .where(
+        and(
+          eq(schema.institutionPeriods.institutionId, institutionId),
+          lte(schema.institutionPeriods.startDate, targetDate),
+          gte(schema.institutionPeriods.endDate, targetDate),
+          eq(schema.institutionPeriods.isActive, true)
+        )
+      );
+
+    // Se não houver período específico da instituição, nega o acesso
+    if (institutionPeriods.length === 0) {
+      // Exceções para ações administrativas
+      if (action === 'read') return true;
+      return false;
+    }
+
+    // Verifica permissões específicas para ações dentro do período
+    const periodRules = await db
+      .select()
+      .from(schema.periodPermissionRules)
+      .where(
+        and(
+          eq(schema.periodPermissionRules.institutionId, institutionId),
+          eq(schema.periodPermissionRules.resource, resource),
+          eq(schema.periodPermissionRules.action, action)
+        )
+      );
+
+    // Se não houver regras específicas, permite o acesso
+    if (periodRules.length === 0) return true;
+
+    // Verifica regras específicas
+    const rule = periodRules[0];
+    
+    // Regras baseadas no status do período
+    const period = institutionPeriods[0];
+    
+    // Lógica para regras específicas por tipo de recurso
+    switch (resource) {
+      case 'enrollments':
+        if (action === 'create' && !period.allowEnrollments) return false;
+        break;
+      case 'financial_transactions':
+        if (action === 'create' && !period.allowFinancialTransactions) return false;
+        break;
+      case 'payments':
+        if (action === 'process' && !period.allowPaymentProcessing) return false;
+        break;
+      case 'reports':
+        if (action === 'generate' && !period.allowReportGeneration) return false;
+        break;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Erro ao verificar acesso por período:', error);
+    return false;
+  }
+}
+
+/**
+ * Verifica permissões baseadas na fase da instituição
+ * @param userId ID do usuário
+ * @param resource Nome do recurso
+ * @param action Ação a ser verificada
+ * @param institutionId ID da instituição
+ * @returns boolean
+ */
+export async function checkInstitutionPhaseAccess(
+  userId: number,
+  resource: string,
+  action: string,
+  institutionId: number
+): Promise<boolean> {
+  try {
+    // Verifica permissões administrativas primeiro (bypass)
+    const isSuperAdmin = await hasSuperAdminRole(userId);
+    if (isSuperAdmin) return true;
+
+    // Verifica permissão básica
+    const hasBasePermission = await checkUserPermission(userId, resource, action);
+    if (!hasBasePermission) return false;
+
+    // Obtém a fase atual da instituição
+    const institution = await db
+      .select({ phase: schema.institutions.phase })
+      .from(schema.institutions)
+      .where(eq(schema.institutions.id, institutionId));
+
+    if (institution.length === 0) return false;
+
+    const currentPhase = institution[0].phase;
+
+    // Mapeamento de permissões por fase da instituição
+    const phasePermissions: Record<string, { allowedResources: string[], restrictedActions: Record<string, string[]> }> = {
+      'trial': {
+        allowedResources: ['users', 'students', 'courses', 'disciplines', 'polos', 'leads', 'clients', 'settings'],
+        restrictedActions: {
+          'enrollments': ['create', 'approve'],
+          'financial_transactions': ['create', 'approve', 'cancel'],
+          'reports': ['export', 'print']
+        }
+      },
+      'setup': {
+        allowedResources: ['users', 'students', 'courses', 'disciplines', 'polos', 'leads', 'clients', 'settings', 'enrollments', 'financial_transactions'],
+        restrictedActions: {
+          'financial_transactions': ['approve', 'bulk_process'],
+          'reports': ['export_financial']
+        }
+      },
+      'active': {
+        allowedResources: [], // Todos os recursos são permitidos
+        restrictedActions: {} // Sem restrições
+      },
+      'suspended': {
+        allowedResources: ['users', 'reports', 'students', 'settings', 'support'],
+        restrictedActions: {
+          'enrollments': ['create', 'approve', 'modify'],
+          'financial_transactions': ['create', 'approve', 'modify', 'cancel'],
+          'courses': ['create', 'publish', 'modify'],
+          'polos': ['create', 'modify']
+        }
+      },
+      'cancelled': {
+        allowedResources: ['reports', 'settings', 'support'],
+        restrictedActions: {
+          'users': ['create', 'modify'],
+          'enrollments': ['create', 'approve', 'modify'],
+          'financial_transactions': ['create', 'approve', 'modify', 'cancel'],
+          'courses': ['create', 'publish', 'modify'],
+          'polos': ['create', 'modify'],
+          'students': ['create', 'modify']
+        }
+      }
+    };
+
+    // Se a fase atual não estiver mapeada, usa regras padrão (como 'active')
+    if (!phasePermissions[currentPhase]) {
+      return true;
+    }
+
+    const { allowedResources, restrictedActions } = phasePermissions[currentPhase];
+
+    // Se todos os recursos são permitidos (lista vazia), permite acesso
+    if (allowedResources.length === 0) {
+      // Verifica se há restrições específicas para a ação
+      if (restrictedActions[resource] && restrictedActions[resource].includes(action)) {
+        return false;
+      }
+      return true;
+    }
+
+    // Verifica se o recurso está na lista de permitidos
+    if (!allowedResources.includes(resource)) {
+      return false;
+    }
+
+    // Verifica se há restrições específicas para a ação
+    if (restrictedActions[resource] && restrictedActions[resource].includes(action)) {
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Erro ao verificar permissões baseadas na fase da instituição:', error);
+    return false;
+  }
+}
+
+/**
+ * Verifica permissões baseadas no status do pagamento
+ * @param userId ID do usuário
+ * @param resource Nome do recurso
+ * @param action Ação a ser verificada
+ * @param entityId ID da entidade
+ * @returns boolean
+ */
+export async function checkPaymentStatusAccess(
+  userId: number,
+  resource: string,
+  action: string,
+  entityId: number
+): Promise<boolean> {
+  try {
+    // Verifica permissões administrativas primeiro (bypass)
+    const isSuperAdmin = await hasSuperAdminRole(userId);
+    if (isSuperAdmin) return true;
+
+    // Verifica permissão básica
+    const hasBasePermission = await checkUserPermission(userId, resource, action);
+    if (!hasBasePermission) return false;
+
+    // Regras específicas com base no tipo de recurso
+    switch (resource) {
+      case 'enrollments':
+        // Verifica o status da matrícula e pagamentos associados
+        const enrollment = await db
+          .select({ 
+            status: schema.enrollments.status,
+            studentId: schema.enrollments.studentId,
+            courseId: schema.enrollments.courseId,
+            hasPendingPayment: schema.enrollments.hasPendingPayment
+          })
+          .from(schema.enrollments)
+          .where(eq(schema.enrollments.id, entityId));
+
+        if (enrollment.length === 0) return false;
+
+        const enrollmentData = enrollment[0];
+
+        // Ações restritas com base no status do pagamento
+        if (enrollmentData.hasPendingPayment && 
+            ['complete', 'issue_certificate', 'grant_access'].includes(action)) {
+          return false;
+        }
+
+        // Regras específicas para status da matrícula
+        if (enrollmentData.status === 'cancelled' && 
+            !['read', 'view_history'].includes(action)) {
+          return false;
+        }
+
+        if (enrollmentData.status === 'suspended' && 
+            !['read', 'reactivate', 'view_history'].includes(action)) {
+          return false;
+        }
+
+        return true;
+
+      case 'certificates':
+        // Verificar se a matrícula relacionada tem pagamentos pendentes
+        const certificate = await db
+          .select({
+            enrollmentId: schema.certificates.enrollmentId
+          })
+          .from(schema.certificates)
+          .where(eq(schema.certificates.id, entityId));
+
+        if (certificate.length === 0) return false;
+
+        const certEnrollment = await db
+          .select({ hasPendingPayment: schema.enrollments.hasPendingPayment })
+          .from(schema.enrollments)
+          .where(eq(schema.enrollments.id, certificate[0].enrollmentId));
+
+        if (certEnrollment.length === 0) return false;
+
+        // Não permite emitir/assinar certificados se houver pagamentos pendentes
+        if (certEnrollment[0].hasPendingPayment && 
+            ['issue', 'sign', 'publish'].includes(action)) {
+          return false;
+        }
+
+        return true;
+
+      case 'subscriptions':
+        // Verifica status da assinatura
+        const subscription = await db
+          .select({ status: schema.subscriptions.status })
+          .from(schema.subscriptions)
+          .where(eq(schema.subscriptions.id, entityId));
+
+        if (subscription.length === 0) return false;
+
+        // Restrições baseadas no status da assinatura
+        if (subscription[0].status === 'cancelled' && 
+            !['read', 'view_history'].includes(action)) {
+          return false;
+        }
+
+        if (subscription[0].status === 'expired' && 
+            !['read', 'renew', 'view_history'].includes(action)) {
+          return false;
+        }
+
+        if (subscription[0].status === 'trial' && 
+            action === 'access_premium_features') {
+          return false;
+        }
+
+        return true;
+
+      default:
+        // Para outros recursos, permitir acesso
+        return true;
+    }
+  } catch (error) {
+    console.error('Erro ao verificar permissões baseadas no status de pagamento:', error);
+    return false;
+  }
+}
+
+/**
+ * Verifica permissão contextual ABAC completa
+ * @param userId ID do usuário
+ * @param condition Condição contextual
+ * @returns boolean
+ */
+export async function checkContextualPermission(
+  userId: number,
+  condition: {
+    resource: string;
+    action: string;
+    entityId?: number;
+    institutionId?: number;
+    poloId?: number;
+    subscriptionStatus?: string;
+    paymentStatus?: string;
+    institutionPhase?: string;
+    entityOwnerId?: number;
+    dateRange?: { start: Date; end: Date };
+  }
+): Promise<boolean> {
+  try {
+    // 1. Verificação RBAC básica
+    const hasBasePermission = await checkUserPermission(userId, condition.resource, condition.action);
+    if (!hasBasePermission) return false;
+
+    // 2. Verificação de propriedade da entidade (se apropriado)
+    if (condition.entityId && condition.entityOwnerId === userId) {
+      const isOwner = await isEntityOwner(userId, condition.resource, condition.entityId);
+      // Se for proprietário, concede acesso para a maioria das ações
+      if (isOwner && !['delete', 'approve', 'reject'].includes(condition.action)) {
+        return true;
+      }
+    }
+
+    // 3. Verificação de escopo institucional
+    if (condition.institutionId) {
+      const hasInstitutionAccess = await checkInstitutionAccess(userId, condition.institutionId);
+      if (!hasInstitutionAccess) return false;
+
+      // 4. Verificações específicas da fase da instituição
+      if (condition.institutionPhase) {
+        const hasPhasePermission = await checkInstitutionPhaseAccess(
+          userId, 
+          condition.resource, 
+          condition.action, 
+          condition.institutionId
+        );
+        if (!hasPhasePermission) return false;
+      }
+    }
+
+    // 5. Verificação de escopo do polo
+    if (condition.poloId) {
+      const hasPoloAccess = await checkPoloAccess(userId, condition.poloId);
+      if (!hasPoloAccess) return false;
+    }
+
+    // 6. Verificação de período financeiro/acadêmico (se aplicável)
+    if (condition.dateRange) {
+      const targetDate = new Date(condition.dateRange.start);
+      const hasPeriodPermission = await checkPeriodAccess(
+        userId,
+        condition.resource,
+        condition.action,
+        targetDate,
+        condition.institutionId
+      );
+      if (!hasPeriodPermission) return false;
+    }
+
+    // 7. Verificação de status de pagamento (se aplicável)
+    if (condition.entityId && (condition.paymentStatus || 
+        ['enrollments', 'certificates', 'subscriptions'].includes(condition.resource))) {
+      const hasPaymentStatusPermission = await checkPaymentStatusAccess(
+        userId,
+        condition.resource,
+        condition.action,
+        condition.entityId
+      );
+      if (!hasPaymentStatusPermission) return false;
+    }
+
+    // 8. Verificação de status de assinatura (se aplicável)
+    if (condition.subscriptionStatus) {
+      // Implementação específica para verificação de status de assinatura
+      // Se a condição exige "active" e o status atual não é ativo, negar
+      if (condition.subscriptionStatus === 'active' && 
+          condition.paymentStatus !== 'active') {
+        return false;
+      }
+    }
+
+    // Todas as verificações passaram, concede acesso
+    return true;
+
+  } catch (error) {
+    console.error('Erro na verificação contextual de permissão:', error);
+    return false;
+  }
+}

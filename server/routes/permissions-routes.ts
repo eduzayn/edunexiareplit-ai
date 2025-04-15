@@ -424,4 +424,184 @@ router.delete('/user/:userId/permission/:permissionId', requirePermission('users
   }
 });
 
+/**
+ * Rotas para verificação de permissões contextuais ABAC
+ */
+
+/**
+ * Verifica permissão contextual ABAC
+ * @route POST /api/permissions/abac/check
+ */
+router.post('/abac/check', async (req, res) => {
+  try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ error: 'Autenticação necessária' });
+    }
+
+    const { 
+      resource, 
+      action, 
+      entityId, 
+      institutionId, 
+      poloId,
+      subscriptionStatus,
+      paymentStatus,
+      institutionPhase,
+      entityOwnerId,
+      dateRange
+    } = req.body;
+
+    if (!resource || !action) {
+      return res.status(400).json({ error: 'Parâmetros resource e action são obrigatórios' });
+    }
+
+    const hasPermission = await permissionService.checkContextualPermission(
+      req.user.id, 
+      {
+        resource,
+        action,
+        entityId,
+        institutionId,
+        poloId,
+        subscriptionStatus,
+        paymentStatus,
+        institutionPhase,
+        entityOwnerId,
+        dateRange
+      }
+    );
+
+    res.json({ hasPermission });
+  } catch (error) {
+    console.error('Erro ao verificar permissão contextual:', error);
+    res.status(500).json({ error: 'Erro ao verificar permissão contextual' });
+  }
+});
+
+/**
+ * Verifica propriedade de um recurso
+ * @route POST /api/permissions/abac/check-ownership
+ */
+router.post('/abac/check-ownership', async (req, res) => {
+  try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ error: 'Autenticação necessária' });
+    }
+
+    const { resourceType, entityId } = req.body;
+
+    if (!resourceType || !entityId) {
+      return res.status(400).json({ error: 'Parâmetros resourceType e entityId são obrigatórios' });
+    }
+
+    const isOwner = await permissionService.isEntityOwner(
+      req.user.id,
+      resourceType,
+      entityId
+    );
+
+    res.json({ isOwner });
+  } catch (error) {
+    console.error('Erro ao verificar propriedade do recurso:', error);
+    res.status(500).json({ error: 'Erro ao verificar propriedade do recurso' });
+  }
+});
+
+/**
+ * Verifica permissão baseada na fase da instituição
+ * @route POST /api/permissions/abac/check-institution-phase
+ */
+router.post('/abac/check-institution-phase', async (req, res) => {
+  try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ error: 'Autenticação necessária' });
+    }
+
+    const { resource, action, institutionId } = req.body;
+
+    if (!resource || !action || !institutionId) {
+      return res.status(400).json({ 
+        error: 'Parâmetros resource, action e institutionId são obrigatórios' 
+      });
+    }
+
+    const hasPermission = await permissionService.checkInstitutionPhaseAccess(
+      req.user.id,
+      resource,
+      action,
+      institutionId
+    );
+
+    res.json({ hasPermission });
+  } catch (error) {
+    console.error('Erro ao verificar permissão baseada na fase da instituição:', error);
+    res.status(500).json({ error: 'Erro ao verificar permissão baseada na fase da instituição' });
+  }
+});
+
+/**
+ * Verifica permissão baseada no status do pagamento
+ * @route POST /api/permissions/abac/check-payment-status
+ */
+router.post('/abac/check-payment-status', async (req, res) => {
+  try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ error: 'Autenticação necessária' });
+    }
+
+    const { resource, action, entityId } = req.body;
+
+    if (!resource || !action || !entityId) {
+      return res.status(400).json({ 
+        error: 'Parâmetros resource, action e entityId são obrigatórios' 
+      });
+    }
+
+    const hasPermission = await permissionService.checkPaymentStatusAccess(
+      req.user.id,
+      resource,
+      action,
+      entityId
+    );
+
+    res.json({ hasPermission });
+  } catch (error) {
+    console.error('Erro ao verificar permissão baseada no status do pagamento:', error);
+    res.status(500).json({ error: 'Erro ao verificar permissão baseada no status do pagamento' });
+  }
+});
+
+/**
+ * Verifica permissão baseada no período acadêmico/financeiro
+ * @route POST /api/permissions/abac/check-period
+ */
+router.post('/abac/check-period', async (req, res) => {
+  try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ error: 'Autenticação necessária' });
+    }
+
+    const { resource, action, targetDate, institutionId } = req.body;
+
+    if (!resource || !action || !targetDate) {
+      return res.status(400).json({ 
+        error: 'Parâmetros resource, action e targetDate são obrigatórios' 
+      });
+    }
+
+    const hasPermission = await permissionService.checkPeriodAccess(
+      req.user.id,
+      resource,
+      action,
+      new Date(targetDate),
+      institutionId
+    );
+
+    res.json({ hasPermission });
+  } catch (error) {
+    console.error('Erro ao verificar permissão baseada no período:', error);
+    res.status(500).json({ error: 'Erro ao verificar permissão baseada no período' });
+  }
+});
+
 export default router;
