@@ -4,7 +4,7 @@
 
 import { db } from '../db';
 import * as schema from '../../shared/schema';
-import { eq, and, or, inArray } from 'drizzle-orm';
+import { eq, and, or, inArray, lt, gt, lte, gte, isNull, not, asc, desc, sql } from 'drizzle-orm';
 
 /**
  * Verifica se um usuário tem uma permissão específica
