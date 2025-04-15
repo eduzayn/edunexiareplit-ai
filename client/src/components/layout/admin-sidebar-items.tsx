@@ -83,8 +83,8 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
   // Item principal sempre visível no topo
   const mainItems: SidebarItemOrCategory[] = [
     { 
-      name: "Dashboard", 
-      icon: <DashboardIcon />, 
+      name: "DASHBOARD", 
+      icon: <DashboardIcon className="text-blue-500" />, 
       href: "/admin/dashboard",
       active: currentPath === "/admin/dashboard"
     },
@@ -93,7 +93,7 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
   // Categoria: Acadêmico
   const academicCategory: SidebarCategory = {
     name: "ACADÊMICO",
-    icon: <MenuBookIcon />,
+    icon: <MenuBookIcon className="text-green-500" />,
     expanded: hasCategoryActiveItem({
       name: "Acadêmico",
       icon: <MenuBookIcon />,
@@ -131,7 +131,7 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
   // Categoria: Institucional
   const institutionalCategory: SidebarCategory = {
     name: "INSTITUCIONAL",
-    icon: <BuildingIcon />,
+    icon: <BuildingIcon className="text-purple-500" />,
     expanded: hasCategoryActiveItem({
       name: "Institucional",
       icon: <BuildingIcon />,
@@ -181,7 +181,7 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
   // Categoria: Pessoas
   const peopleCategory: SidebarCategory = {
     name: "PESSOAS",
-    icon: <UsersIcon />,
+    icon: <UsersIcon className="text-orange-500" />,
     expanded: hasCategoryActiveItem({
       name: "Pessoas",
       icon: <UsersIcon />,
@@ -231,7 +231,7 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
   // Categoria: Operacional
   const operationalCategory: SidebarCategory = {
     name: "OPERACIONAL",
-    icon: <FolderIcon />,
+    icon: <FolderIcon className="text-blue-500" />,
     expanded: hasCategoryActiveItem({
       name: "Operacional",
       icon: <FolderIcon />,
@@ -269,7 +269,7 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
   // Categoria: Certificação
   const certificationCategory: SidebarCategory = {
     name: "CERTIFICAÇÃO",
-    icon: <AwardIcon />,
+    icon: <AwardIcon className="text-amber-500" />,
     expanded: hasCategoryActiveItem({
       name: "Certificação",
       icon: <AwardIcon />,
