@@ -149,8 +149,6 @@ export default function UsersPage() {
   const [location, navigate] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [portalTypeFilter, setPortalTypeFilter] = useState("all");
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   
@@ -279,92 +277,10 @@ export default function UsersPage() {
     },
   });
 
-  // Consulta para listar papéis (roles)
-  const { 
-    data: roles, 
-    isLoading: isLoadingRoles 
-  } = useQuery({
-    queryKey: ['/api/admin/roles'],
-    queryFn: () => apiRequest<Array<{id: number, name: string, description: string, scope: string}>>('/api/admin/roles'),
-    // Não buscar roles quando o modal não estiver aberto para reduzir chamadas desnecessárias
-    enabled: isCreateDialogOpen || isEditDialogOpen,
-  });
+  // Estas consultas foram movidas para user-form-page.tsx
+  // Aqui não precisamos mais buscar papéis, instituições e polos pois o formulário foi movido
 
-  // Consulta para listar instituições
-  const { 
-    data: institutions, 
-    isLoading: isLoadingInstitutions 
-  } = useQuery({
-    queryKey: ['/api/admin/institutions'],
-    queryFn: () => apiRequest<Array<{id: number, name: string, code: string}>>('/api/admin/institutions'),
-    // Não buscar quando o modal não estiver aberto
-    enabled: isCreateDialogOpen || isEditDialogOpen,
-  });
-
-  // Consulta para listar polos (filtrada por instituição selecionada)
-  const [selectedInstitutionId, setSelectedInstitutionId] = useState<number | null>(null);
-  
-  const { 
-    data: polos, 
-    isLoading: isLoadingPolos 
-  } = useQuery({
-    queryKey: ['/api/admin/polos', selectedInstitutionId],
-    queryFn: () => {
-      let url = `/api/admin/polos`;
-      if (selectedInstitutionId) {
-        url += `?institutionId=${selectedInstitutionId}`;
-      }
-      return apiRequest<Array<{id: number, name: string, code: string}>>(url);
-    },
-    // Só buscar polos se tiver uma instituição selecionada e modal aberto
-    enabled: !!selectedInstitutionId && (isCreateDialogOpen || isEditDialogOpen),
-  });
-
-  // Form para criar usuário
-  const createForm = useForm<UserFormValues>({
-    resolver: zodResolver(userFormSchema),
-    defaultValues: {
-      username: "",
-      password: "",
-      portalType: "student",
-      fullName: "",
-      email: "",
-      cpf: "",
-      // Novos campos RBAC/ABAC
-      roleId: undefined,
-      institutionId: undefined,
-      poloId: undefined,
-      // Outros campos
-      phone: "",
-      address: "",
-      city: "",
-      state: "",
-      zipCode: "",
-    },
-  });
-
-  // Form para editar usuário
-  const editForm = useForm<UserFormValues>({
-    resolver: zodResolver(userFormSchema),
-    defaultValues: {
-      username: "",
-      password: "",
-      portalType: "student",
-      fullName: "",
-      email: "",
-      cpf: "",
-      // Novos campos RBAC/ABAC
-      roleId: undefined,
-      institutionId: undefined,
-      poloId: undefined,
-      // Outros campos
-      phone: "",
-      address: "",
-      city: "",
-      state: "",
-      zipCode: "",
-    },
-  });
+  // Os formulários foram movidos para user-form-page.tsx
 
   // Funções para navegação
   const handleCreateUser = () => {
