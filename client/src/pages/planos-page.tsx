@@ -1,8 +1,9 @@
-import Header from "@/components/layout/header";
-import Footer from "@/components/layout/footer";
+import NavbarMain from "@/components/layout/navbar-main";
+import FooterMain from "@/components/layout/footer-main";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { CheckCircleIcon } from "@/components/ui/icons";
+import { Check, CheckCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import axios from "axios";
@@ -192,17 +193,17 @@ export default function PlanosPage() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Header onLogin={handleLogin} />
+      <NavbarMain />
       
       <main className="flex-grow">
         {/* Hero Section */}
-        <section className="bg-gray-50 py-12 border-b">
+        <section className="bg-gradient-to-b from-blue-50 to-white py-16 border-b">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
-              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              <h1 className="text-3xl md:text-5xl font-bold text-blue-950 mb-6">
                 Planos que se adaptam ao seu crescimento
               </h1>
-              <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+              <p className="text-lg md:text-xl text-blue-700/80 max-w-3xl mx-auto">
                 Escolha o plano ideal para sua instituição de ensino e comece a transformar a experiência dos seus alunos.
               </p>
             </div>
@@ -210,101 +211,224 @@ export default function PlanosPage() {
         </section>
         
         {/* Pricing Table */}
-        <section className="py-16">
+        <section className="py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {/* Alternador de ciclo de cobrança (opcional) */}
+            <div className="flex justify-center mb-12">
+              <div className="inline-flex items-center bg-blue-100/50 p-1 rounded-full">
+                <button className="px-6 py-2 rounded-full bg-white shadow text-blue-700 font-medium">
+                  Mensal
+                </button>
+                <button className="px-6 py-2 rounded-full text-blue-600 font-medium">
+                  Anual (2 meses grátis)
+                </button>
+              </div>
+            </div>
+            
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {planos.map((plano, index) => (
                 <div 
                   key={index} 
-                  className={`bg-white rounded-xl shadow-md overflow-hidden border-2 ${plano.destaque ? 'border-primary relative' : plano.cor} hover:shadow-lg transition-shadow`}
+                  className={`relative bg-white rounded-2xl shadow-lg overflow-hidden ${
+                    plano.destaque 
+                      ? 'border-2 border-primary ring-4 ring-primary/10 transform md:-translate-y-4' 
+                      : 'border border-gray-200'
+                  } hover:shadow-xl transition-all duration-300`}
                 >
                   {plano.destaque && (
                     <div className="absolute top-0 inset-x-0 bg-primary text-white text-center py-2 text-sm font-medium">
-                      Mais Popular
+                      Recomendado
                     </div>
                   )}
-                  <div className={`p-6 ${plano.destaque ? 'pt-12' : ''}`}>
-                    <h3 className="text-xl font-semibold text-center text-gray-900 mb-2">{plano.nome}</h3>
-                    <div className="text-center mb-4">
-                      <span className="text-3xl font-bold text-gray-900">{plano.preco}</span>
-                      <span className="text-gray-500">{plano.periodo}</span>
+                  <div className={`p-8 ${plano.destaque ? 'pt-14' : 'pt-8'}`}>
+                    <h3 className="text-2xl font-bold text-center text-blue-950 mb-3">{plano.nome}</h3>
+                    <div className="text-center mb-6">
+                      <span className="text-4xl font-bold text-blue-900">{plano.preco}</span>
+                      <span className="text-blue-600">{plano.periodo}</span>
                     </div>
-                    <p className="text-sm text-gray-600 text-center mb-6">
-                      {plano.descricao}
-                    </p>
-                    <ul className="text-sm text-gray-700 mb-6 space-y-3">
-                      {plano.recursos.map((recurso, i) => (
-                        <li key={i} className="flex items-start">
-                          <CheckCircleIcon className="text-green-500 mr-2 h-5 w-5 shrink-0" />
-                          <span>{recurso}</span>
-                        </li>
-                      ))}
-                    </ul>
+                    <div className="h-16">
+                      <p className="text-sm text-blue-600 text-center mb-6">
+                        {plano.descricao}
+                      </p>
+                    </div>
                     {plano.trial > 0 && (
-                      <div className="text-center mb-4 text-sm">
-                        <span className="text-primary font-semibold">Teste grátis por {plano.trial} dias</span>
+                      <div className="text-center mb-6">
+                        <Badge variant="outline" className="px-3 py-1 border-primary/30 bg-primary/5 text-primary">
+                          {plano.trial} dias de teste grátis
+                        </Badge>
                       </div>
                     )}
-                    <Button 
-                      variant={plano.destaque ? "default" : "outline"}
-                      className={`w-full ${!plano.destaque ? "text-primary border-primary hover:bg-primary hover:text-white" : ""}`}
-                      onClick={() => navigate(plano.nome === "Empresarial" ? '/contato' : '/cadastro?plano=' + plano.id)}
-                    >
-                      {plano.nome === "Empresarial" ? "Fale conosco" : "Começar período de teste"}
-                    </Button>
+                    <div className="mb-8">
+                      <Button 
+                        variant={plano.destaque ? "default" : "outline"}
+                        size="lg"
+                        className={`w-full ${!plano.destaque 
+                          ? "text-primary border-primary hover:bg-primary hover:text-white" 
+                          : "shadow-md shadow-primary/20"}`}
+                        onClick={() => navigate(plano.nome === "Empresarial" 
+                          ? '/contato' 
+                          : '/cadastro?plano=' + plano.id)}
+                      >
+                        {plano.nome === "Empresarial" 
+                          ? "Fale conosco" 
+                          : "Começar período de teste"}
+                      </Button>
+                    </div>
+                    
+                    <div className="border-t border-gray-100 pt-6">
+                      <h4 className="font-medium text-blue-900 mb-4">O que está incluído:</h4>
+                      <ul className="space-y-4">
+                        {plano.recursos.map((recurso, i) => (
+                          <li key={i} className="flex items-start">
+                            <div className="mr-3 mt-1">
+                              <CheckCircle className="h-5 w-5 text-green-500" />
+                            </div>
+                            <span className="text-gray-700">{recurso}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
             
-            <div className="mt-16 bg-gray-50 rounded-xl p-8 border border-gray-200">
+            <div className="mt-20 bg-blue-50 rounded-2xl p-10 border border-blue-100">
               <div className="text-center">
-                <h3 className="text-2xl font-semibold text-gray-900 mb-4">Precisa de algo diferente?</h3>
-                <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
-                  Entre em contato com nossa equipe para criar um plano personalizado que atenda perfeitamente às necessidades da sua instituição.
+                <h3 className="text-2xl font-bold text-blue-950 mb-4">Precisa de uma solução personalizada?</h3>
+                <p className="text-blue-700 mb-8 max-w-2xl mx-auto">
+                  Entre em contato com nossa equipe para criar um plano customizado que atenda perfeitamente às necessidades da sua instituição.
                 </p>
-                <Button onClick={() => navigate('/contato')} size="lg">
-                  Solicitar orçamento personalizado
+                <Button variant="outline" onClick={() => navigate('/contato')} size="lg" className="px-8 border-blue-300 text-blue-700 hover:bg-blue-700 hover:text-white">
+                  Solicitar orçamento
                 </Button>
               </div>
             </div>
           </div>
         </section>
         
-        {/* FAQ Section */}
-        <section className="py-16 bg-gray-50">
-          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Comparação de recursos */}
+        <section className="py-16 bg-white border-t border-gray-100">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">Perguntas Frequentes</h2>
-              <p className="text-gray-600">Tire suas dúvidas sobre nossos planos e serviços</p>
+              <h2 className="text-3xl font-bold text-blue-950 mb-4">Compare os recursos</h2>
+              <p className="text-blue-600 max-w-3xl mx-auto">
+                Veja em detalhes o que cada plano oferece para sua instituição
+              </p>
+            </div>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="py-4 px-4 text-left text-blue-900 font-medium">Recursos</th>
+                    {planos.map((plano, idx) => (
+                      <th key={idx} className="py-4 px-4 text-center text-blue-900 font-medium">
+                        {plano.nome}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b border-gray-100">
+                    <td className="py-4 px-4 text-gray-700">Alunos ativos</td>
+                    <td className="py-4 px-4 text-center">50</td>
+                    <td className="py-4 px-4 text-center">200</td>
+                    <td className="py-4 px-4 text-center">Ilimitados</td>
+                  </tr>
+                  <tr className="border-b border-gray-100 bg-gray-50">
+                    <td className="py-4 px-4 text-gray-700">Portal do Aluno</td>
+                    <td className="py-4 px-4 text-center"><Check className="h-5 w-5 text-green-500 mx-auto" /></td>
+                    <td className="py-4 px-4 text-center"><Check className="h-5 w-5 text-green-500 mx-auto" /></td>
+                    <td className="py-4 px-4 text-center"><Check className="h-5 w-5 text-green-500 mx-auto" /></td>
+                  </tr>
+                  <tr className="border-b border-gray-100">
+                    <td className="py-4 px-4 text-gray-700">Módulo financeiro</td>
+                    <td className="py-4 px-4 text-center">—</td>
+                    <td className="py-4 px-4 text-center"><Check className="h-5 w-5 text-green-500 mx-auto" /></td>
+                    <td className="py-4 px-4 text-center"><Check className="h-5 w-5 text-green-500 mx-auto" /></td>
+                  </tr>
+                  <tr className="border-b border-gray-100 bg-gray-50">
+                    <td className="py-4 px-4 text-gray-700">Módulo CRM</td>
+                    <td className="py-4 px-4 text-center">—</td>
+                    <td className="py-4 px-4 text-center"><Check className="h-5 w-5 text-green-500 mx-auto" /></td>
+                    <td className="py-4 px-4 text-center"><Check className="h-5 w-5 text-green-500 mx-auto" /></td>
+                  </tr>
+                  <tr className="border-b border-gray-100">
+                    <td className="py-4 px-4 text-gray-700">Chat multicanal</td>
+                    <td className="py-4 px-4 text-center">—</td>
+                    <td className="py-4 px-4 text-center">—</td>
+                    <td className="py-4 px-4 text-center"><Check className="h-5 w-5 text-green-500 mx-auto" /></td>
+                  </tr>
+                  <tr className="border-b border-gray-100 bg-gray-50">
+                    <td className="py-4 px-4 text-gray-700">API completa</td>
+                    <td className="py-4 px-4 text-center">—</td>
+                    <td className="py-4 px-4 text-center">—</td>
+                    <td className="py-4 px-4 text-center"><Check className="h-5 w-5 text-green-500 mx-auto" /></td>
+                  </tr>
+                  <tr className="border-b border-gray-100">
+                    <td className="py-4 px-4 text-gray-700">Suporte prioritário</td>
+                    <td className="py-4 px-4 text-center">—</td>
+                    <td className="py-4 px-4 text-center">—</td>
+                    <td className="py-4 px-4 text-center"><Check className="h-5 w-5 text-green-500 mx-auto" /></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+        
+        {/* FAQ Section */}
+        <section className="py-20 bg-blue-50">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold text-blue-950 mb-4">Perguntas Frequentes</h2>
+              <p className="text-blue-700">Tire suas dúvidas sobre nossos planos e serviços</p>
             </div>
             
             <div className="space-y-6">
-              <div className="bg-white p-6 rounded-lg shadow-sm">
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Posso trocar de plano a qualquer momento?</h3>
-                <p className="text-gray-600">Sim, você pode fazer upgrade ou downgrade do seu plano a qualquer momento. As mudanças entram em vigor no próximo ciclo de cobrança.</p>
+              <div className="bg-white p-8 rounded-xl shadow-sm">
+                <h3 className="text-lg font-medium text-blue-900 mb-3">Posso trocar de plano a qualquer momento?</h3>
+                <p className="text-gray-700">Sim, você pode fazer upgrade ou downgrade do seu plano a qualquer momento. As mudanças entram em vigor no próximo ciclo de cobrança.</p>
               </div>
               
-              <div className="bg-white p-6 rounded-lg shadow-sm">
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Existe período mínimo de contrato?</h3>
-                <p className="text-gray-600">Nossos planos são mensais, sem período mínimo de fidelidade. Para contratos anuais, oferecemos descontos especiais.</p>
+              <div className="bg-white p-8 rounded-xl shadow-sm">
+                <h3 className="text-lg font-medium text-blue-900 mb-3">Existe período mínimo de contrato?</h3>
+                <p className="text-gray-700">Nossos planos são mensais, sem período mínimo de fidelidade. Para contratos anuais, oferecemos descontos especiais.</p>
               </div>
               
-              <div className="bg-white p-6 rounded-lg shadow-sm">
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Como funciona o suporte técnico?</h3>
-                <p className="text-gray-600">Todos os planos incluem suporte por e-mail. Os planos Profissional e Enterprise possuem canais de atendimento prioritários e tempos de resposta garantidos em contrato.</p>
+              <div className="bg-white p-8 rounded-xl shadow-sm">
+                <h3 className="text-lg font-medium text-blue-900 mb-3">Como funciona o suporte técnico?</h3>
+                <p className="text-gray-700">Todos os planos incluem suporte por e-mail. Os planos Profissional e Enterprise possuem canais de atendimento prioritários e tempos de resposta garantidos em contrato.</p>
               </div>
               
-              <div className="bg-white p-6 rounded-lg shadow-sm">
-                <h3 className="text-lg font-medium text-gray-900 mb-2">É necessário instalar algum software?</h3>
-                <p className="text-gray-600">Não, nossa plataforma é 100% em nuvem e pode ser acessada de qualquer dispositivo com conexão à internet. Não é necessário instalar nenhum software adicional.</p>
+              <div className="bg-white p-8 rounded-xl shadow-sm">
+                <h3 className="text-lg font-medium text-blue-900 mb-3">É necessário instalar algum software?</h3>
+                <p className="text-gray-700">Não, nossa plataforma é 100% em nuvem e pode ser acessada de qualquer dispositivo com conexão à internet. Não é necessário instalar nenhum software adicional.</p>
               </div>
             </div>
           </div>
         </section>
+        
+        {/* CTA Section */}
+        <section className="py-16 bg-blue-900 text-white">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 className="text-3xl font-bold mb-6">Pronto para transformar sua instituição?</h2>
+            <p className="text-blue-100 mb-8 text-lg max-w-3xl mx-auto">
+              Experimente o EdunexIA gratuitamente por 14 dias e descubra como nossa plataforma pode ajudar sua instituição a crescer.
+            </p>
+            <Button 
+              size="lg" 
+              onClick={() => navigate('/cadastro')}
+              className="bg-white text-blue-900 hover:bg-blue-50 px-8 py-6 text-lg"
+            >
+              Começar período de teste grátis
+            </Button>
+          </div>
+        </section>
       </main>
       
-      <Footer />
+      <FooterMain />
     </div>
   );
 }
