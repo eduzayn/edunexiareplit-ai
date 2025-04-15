@@ -113,27 +113,82 @@ export default function AbacPermissionsPage() {
   const [resourceOptions, setResourceOptions] = useState<string[]>([]);
   const [actionOptions, setActionOptions] = useState<Array<{ value: string; label: string }>>([]);
 
+  // Lista fixa de recursos do sistema
+  const fixedResources = [
+    'users',
+    'roles',
+    'permissions',
+    'institutions',
+    'polos',
+    'courses',
+    'enrollments',
+    'financial_transactions',
+    'leads',
+    'clients',
+    'contracts',
+    'products',
+    'invoices',
+    'payments',
+    'certificates',
+    'certificate_templates',
+    'certificate_signers',
+    'subscription_plans',
+    'subscriptions',
+    'reports',
+    'settings',
+    'communications'
+  ];
+
   // Consulta para buscar permissões disponíveis
   const permissionsQuery = useQuery({
     queryKey: ['/api/permissions/list'],
     queryFn: () => apiRequest<Permission[]>('/api/permissions/list')
   });
 
-  // Extrair recursos únicos das permissões
+  // Extrair recursos únicos das permissões ou usar recursos fixos
   useEffect(() => {
     if (permissionsQuery.data && permissionsQuery.data.length > 0) {
+      // Se tiver dados da API, usar esses recursos
       const uniqueResources = Array.from(new Set(permissionsQuery.data.map(p => p.resource)));
       setResourceOptions(uniqueResources);
+    } else {
+      // Caso contrário, usar a lista fixa
+      setResourceOptions(fixedResources);
     }
   }, [permissionsQuery.data]);
 
+  // Lista fixa de ações comuns
+  const commonActions = [
+    { value: 'read', label: 'Visualizar' },
+    { value: 'create', label: 'Criar' },
+    { value: 'update', label: 'Atualizar' },
+    { value: 'delete', label: 'Excluir' },
+    { value: 'manage', label: 'Gerenciar' },
+    { value: 'approve', label: 'Aprovar' },
+    { value: 'reject', label: 'Rejeitar' },
+    { value: 'cancel', label: 'Cancelar' },
+    { value: 'assign', label: 'Atribuir' },
+    { value: 'unassign', label: 'Desatribuir' },
+    { value: 'export', label: 'Exportar' },
+    { value: 'import', label: 'Importar' },
+    { value: 'activate', label: 'Ativar' },
+    { value: 'deactivate', label: 'Desativar' },
+    { value: 'generate', label: 'Gerar' },
+    { value: 'validate', label: 'Validar' },
+    { value: 'finalize', label: 'Finalizar' }
+  ];
+
   // Função para obter ações disponíveis para um recurso específico
   const getActionsForResource = (resource: string) => {
-    if (!permissionsQuery.data || permissionsQuery.data.length === 0) return [];
-    
-    return permissionsQuery.data
-      .filter(p => p.resource === resource)
-      .map(p => ({ value: p.action, label: p.description }));
+    if (permissionsQuery.data && permissionsQuery.data.length > 0) {
+      // Se tiver dados da API, usar ações específicas para o recurso
+      return permissionsQuery.data
+        .filter(p => p.resource === resource)
+        .map(p => ({ value: p.action, label: p.description }));
+    } else {
+      // Caso contrário, usar ações comuns
+      return commonActions;
+    }
   };
 
   // Atualizar ações disponíveis quando o recurso selecionado muda
