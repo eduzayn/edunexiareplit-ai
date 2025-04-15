@@ -39,12 +39,22 @@ export default function AdminAuthPage() {
     },
   });
 
-  const onSubmit = (data: LoginFormValues) => {
-    loginMutation.mutate({
-      username: data.username,
-      password: data.password,
-      portalType: "admin",
-    });
+  const onSubmit = async (data: LoginFormValues) => {
+    console.log("Tentando login como admin com portalType:", "admin");
+    
+    try {
+      await loginMutation.mutateAsync({
+        username: data.username,
+        password: data.password,
+        portalType: "admin",
+      });
+      
+      // Login bem-sucedido, vamos esperar os dados serem atualizados antes de navegar
+      console.log("Login bem-sucedido, redirecionando para dashboard administrativo");
+      navigate("/admin/dashboard");
+    } catch (error) {
+      console.error("Erro no login:", error);
+    }
   };
 
   return (
