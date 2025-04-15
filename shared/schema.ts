@@ -1760,6 +1760,31 @@ export const insertUserPermissionSchema = createInsertSchema(userPermissions).om
 export type InsertUserPermission = z.infer<typeof insertUserPermissionSchema>;
 export type UserPermission = typeof userPermissions.$inferSelect;
 
+// Schemas para tabelas ABAC
+export const insertFinancialPeriodSchema = createInsertSchema(financialPeriods).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertFinancialPeriod = z.infer<typeof insertFinancialPeriodSchema>;
+export type FinancialPeriod = typeof financialPeriods.$inferSelect;
+
+export const insertPeriodPermissionRuleSchema = createInsertSchema(periodPermissionRules).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertPeriodPermissionRule = z.infer<typeof insertPeriodPermissionRuleSchema>;
+export type PeriodPermissionRule = typeof periodPermissionRules.$inferSelect;
+
+export const insertInstitutionPhasePermissionSchema = createInsertSchema(institutionPhasePermissions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertInstitutionPhasePermission = z.infer<typeof insertInstitutionPhasePermissionSchema>;
+export type InstitutionPhasePermission = typeof institutionPhasePermissions.$inferSelect;
+
 // -------------------- Relacionamentos do Sistema de Permissões --------------------
 
 // Relações de papéis
@@ -1850,6 +1875,36 @@ export const userRolesRelations = relations(userRoles, ({ one }) => ({
 export const permissionAuditsRelations = relations(permissionAudits, ({ one }) => ({
   user: one(users, {
     fields: [permissionAudits.userId],
+    references: [users.id],
+  }),
+}));
+
+// Relações para tabelas do sistema ABAC (Attribute-Based Access Control)
+export const financialPeriodsRelations = relations(financialPeriods, ({ one }) => ({
+  institution: one(institutions, {
+    fields: [financialPeriods.institutionId],
+    references: [institutions.id],
+  }),
+  createdBy: one(users, {
+    fields: [financialPeriods.createdById],
+    references: [users.id],
+  }),
+}));
+
+export const periodPermissionRulesRelations = relations(periodPermissionRules, ({ one }) => ({
+  institution: one(institutions, {
+    fields: [periodPermissionRules.institutionId],
+    references: [institutions.id],
+  }),
+  createdBy: one(users, {
+    fields: [periodPermissionRules.createdById],
+    references: [users.id],
+  }),
+}));
+
+export const institutionPhasePermissionsRelations = relations(institutionPhasePermissions, ({ one }) => ({
+  createdBy: one(users, {
+    fields: [institutionPhasePermissions.createdById],
     references: [users.id],
   }),
 }));

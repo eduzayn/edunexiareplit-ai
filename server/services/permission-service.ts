@@ -870,7 +870,6 @@ export async function checkPeriodAccess(
     // Se não houver instituição, usa regras gerais de período
     if (!institutionId) {
       // Períodos financeiros gerais do sistema
-      const currentDate = new Date();
       const financialPeriods = await db
         .select()
         .from(schema.financialPeriods)
@@ -878,14 +877,15 @@ export async function checkPeriodAccess(
           and(
             lte(schema.financialPeriods.startDate, targetDate),
             gte(schema.financialPeriods.endDate, targetDate),
-            eq(schema.financialPeriods.isActive, true)
+            eq(schema.financialPeriods.isActive, true),
+            isNull(schema.financialPeriods.institutionId) // Períodos globais (não vinculados a instituição)
           )
         );
 
       // Se não houver período financeiro ativo que inclua a data, nega o acesso
       if (financialPeriods.length === 0) {
         // Exceções para ações administrativas
-        if (action === 'read') return true;
+        if (action === 'ler') return true;
         return false;
       }
 
@@ -893,22 +893,22 @@ export async function checkPeriodAccess(
     }
 
     // Verifica regras específicas da instituição
-    const institutionPeriods = await db
+    const financialPeriods = await db
       .select()
-      .from(schema.institutionPeriods)
+      .from(schema.financialPeriods)
       .where(
         and(
-          eq(schema.institutionPeriods.institutionId, institutionId),
-          lte(schema.institutionPeriods.startDate, targetDate),
-          gte(schema.institutionPeriods.endDate, targetDate),
-          eq(schema.institutionPeriods.isActive, true)
+          eq(schema.financialPeriods.institutionId, institutionId),
+          lte(schema.financialPeriods.startDate, targetDate),
+          gte(schema.financialPeriods.endDate, targetDate),
+          eq(schema.financialPeriods.isActive, true)
         )
       );
 
     // Se não houver período específico da instituição, nega o acesso
-    if (institutionPeriods.length === 0) {
+    if (financialPeriods.length === 0) {
       // Exceções para ações administrativas
-      if (action === 'read') return true;
+      if (action === 'ler') return true;
       return false;
     }
 
@@ -924,31 +924,30 @@ export async function checkPeriodAccess(
         )
       );
 
-    // Se não houver regras específicas, permite o acesso
+    // Se não houver regras específicas para este recurso/ação, permite o acesso
     if (periodRules.length === 0) return true;
 
     // Verifica regras específicas
     const rule = periodRules[0];
+    const period = financialPeriods[0];
+    const currentDate = new Date();
     
-    // Regras baseadas no status do período
-    const period = institutionPeriods[0];
+    // Calcula o período estendido com os dias antes/depois 
+    // usando valores default em caso de daysBefore/daysAfter nulos
+    const daysBefore = rule.daysBefore ?? 0;
+    const daysAfter = rule.daysAfter ?? 0;
     
-    // Lógica para regras específicas por tipo de recurso
-    switch (resource) {
-      case 'enrollments':
-        if (action === 'create' && !period.allowEnrollments) return false;
-        break;
-      case 'financial_transactions':
-        if (action === 'create' && !period.allowFinancialTransactions) return false;
-        break;
-      case 'payments':
-        if (action === 'process' && !period.allowPaymentProcessing) return false;
-        break;
-      case 'reports':
-        if (action === 'generate' && !period.allowReportGeneration) return false;
-        break;
+    const effectiveStartDate = new Date(period.startDate);
+    effectiveStartDate.setDate(effectiveStartDate.getDate() - daysBefore);
+    
+    const effectiveEndDate = new Date(period.endDate);
+    effectiveEndDate.setDate(effectiveEndDate.getDate() + daysAfter);
+    
+    // Verifica se a data atual está dentro do período estendido
+    if (currentDate < effectiveStartDate || currentDate > effectiveEndDate) {
+      return false;
     }
-
+    
     return true;
   } catch (error) {
     console.error('Erro ao verificar acesso por período:', error);
@@ -989,73 +988,101 @@ export async function checkInstitutionPhaseAccess(
 
     const currentPhase = institution[0].phase;
 
-    // Mapeamento de permissões por fase da instituição
-    const phasePermissions: Record<string, { allowedResources: string[], restrictedActions: Record<string, string[]> }> = {
-      'trial': {
-        allowedResources: ['users', 'students', 'courses', 'disciplines', 'polos', 'leads', 'clients', 'settings'],
-        restrictedActions: {
-          'enrollments': ['create', 'approve'],
-          'financial_transactions': ['create', 'approve', 'cancel'],
-          'reports': ['export', 'print']
-        }
-      },
-      'setup': {
-        allowedResources: ['users', 'students', 'courses', 'disciplines', 'polos', 'leads', 'clients', 'settings', 'enrollments', 'financial_transactions'],
-        restrictedActions: {
-          'financial_transactions': ['approve', 'bulk_process'],
-          'reports': ['export_financial']
-        }
-      },
-      'active': {
-        allowedResources: [], // Todos os recursos são permitidos
-        restrictedActions: {} // Sem restrições
-      },
-      'suspended': {
-        allowedResources: ['users', 'reports', 'students', 'settings', 'support'],
-        restrictedActions: {
-          'enrollments': ['create', 'approve', 'modify'],
-          'financial_transactions': ['create', 'approve', 'modify', 'cancel'],
-          'courses': ['create', 'publish', 'modify'],
-          'polos': ['create', 'modify']
-        }
-      },
-      'cancelled': {
-        allowedResources: ['reports', 'settings', 'support'],
-        restrictedActions: {
-          'users': ['create', 'modify'],
-          'enrollments': ['create', 'approve', 'modify'],
-          'financial_transactions': ['create', 'approve', 'modify', 'cancel'],
-          'courses': ['create', 'publish', 'modify'],
-          'polos': ['create', 'modify'],
-          'students': ['create', 'modify']
-        }
-      }
-    };
+    // Consulta as regras de permissão baseadas na fase atual da instituição
+    const phasePermissions = await db
+      .select()
+      .from(schema.institutionPhasePermissions)
+      .where(
+        and(
+          eq(schema.institutionPhasePermissions.phase, currentPhase),
+          eq(schema.institutionPhasePermissions.resource, resource),
+          eq(schema.institutionPhasePermissions.action, action),
+          eq(schema.institutionPhasePermissions.isActive, true)
+        )
+      );
 
-    // Se a fase atual não estiver mapeada, usa regras padrão (como 'active')
-    if (!phasePermissions[currentPhase]) {
-      return true;
+    // Se encontrar regras específicas para essa combinação de fase/recurso/ação
+    if (phasePermissions.length > 0) {
+      // Retorna o valor de isAllowed (true = permitir, false = negar)
+      return phasePermissions[0].isAllowed;
     }
-
-    const { allowedResources, restrictedActions } = phasePermissions[currentPhase];
-
-    // Se todos os recursos são permitidos (lista vazia), permite acesso
-    if (allowedResources.length === 0) {
-      // Verifica se há restrições específicas para a ação
-      if (restrictedActions[resource] && restrictedActions[resource].includes(action)) {
+    
+    // Se não houver regras específicas, consulta apenas pela fase e recurso
+    const resourcePhasePermissions = await db
+      .select()
+      .from(schema.institutionPhasePermissions)
+      .where(
+        and(
+          eq(schema.institutionPhasePermissions.phase, currentPhase),
+          eq(schema.institutionPhasePermissions.resource, resource),
+          eq(schema.institutionPhasePermissions.isActive, true)
+        )
+      );
+    
+    // Se encontrar regras para o recurso mas não específicas para a ação,
+    // assume uma regra padrão baseada na fase
+    if (resourcePhasePermissions.length > 0) {
+      // Lógica para determinar o comportamento padrão por fase
+      switch (currentPhase) {
+        case 'trial':
+          // Na fase trial, permitimos apenas ações de leitura por padrão
+          return ['ler', 'listar'].includes(action);
+        case 'setup':
+          // Na fase de configuração, permitimos leitura e edição, mas não exclusão
+          return !['deletar', 'cancelar'].includes(action);
+        case 'active':
+          // Na fase ativa, permitimos a maioria das ações
+          return true;
+        case 'suspended':
+          // Na fase suspensa, permitimos apenas leitura
+          return action === 'ler';
+        case 'cancelled':
+          // Na fase cancelada, bloqueamos a maioria das ações
+          return ['ler', 'listar'].includes(action);
+        default:
+          return false;
+      }
+    }
+    
+    // Regra de fallback baseada apenas na fase da instituição
+    switch (currentPhase) {
+      case 'trial':
+        // No trial, permissão limitada (apenas recursos principais)
+        const trialAllowedResources = ['usuario', 'curso', 'disciplina', 'polo', 'lead', 'cliente', 'configuracao'];
+        if (!trialAllowedResources.includes(resource)) {
+          return false;
+        }
+        // Restringe ações potencialmente custosas ou de transação financeira
+        const trialRestrictedActions = ['criar', 'deletar', 'aprovar', 'gerar_cobranca'];
+        return !trialRestrictedActions.includes(action);
+        
+      case 'setup':
+        // Em setup, mais permissões, mas ainda com restrições
+        const setupRestrictedResources = ['pagamento', 'fatura', 'certificado'];
+        if (setupRestrictedResources.includes(resource)) {
+          return ['ler', 'listar'].includes(action);
+        }
+        return true;
+        
+      case 'active':
+        // Na fase ativa, quase tudo é permitido
+        return true;
+        
+      case 'suspended':
+        // Na fase suspensa, restrições significativas
+        const suspendedAllowedResources = ['usuario', 'relatorio', 'configuracao', 'suporte'];
+        if (!suspendedAllowedResources.includes(resource)) {
+          return ['ler', 'listar'].includes(action);
+        }
+        return true;
+        
+      case 'cancelled':
+        // Na fase cancelada, acesso mínimo
+        const cancelledAllowedResources = ['relatorio', 'configuracao', 'suporte'];
+        return cancelledAllowedResources.includes(resource) && ['ler', 'listar'].includes(action);
+        
+      default:
         return false;
-      }
-      return true;
-    }
-
-    // Verifica se o recurso está na lista de permitidos
-    if (!allowedResources.includes(resource)) {
-      return false;
-    }
-
-    // Verifica se há restrições específicas para a ação
-    if (restrictedActions[resource] && restrictedActions[resource].includes(action)) {
-      return false;
     }
 
     return true;
