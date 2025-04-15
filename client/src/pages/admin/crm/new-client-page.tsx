@@ -496,19 +496,7 @@ export default function NewClientPage() {
                         )}
                       />
 
-                      <FormField
-                        control={form.control}
-                        name="website"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Website</FormLabel>
-                            <FormControl>
-                              <Input placeholder="www.exemplo.com.br" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      {/* O campo website foi removido porque não existe no banco de dados */}
                     </div>
 
                     <FormField
