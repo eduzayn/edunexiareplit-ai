@@ -278,7 +278,9 @@ async function createPermissionsAndRoles() {
         const roleResult = await db.insert(schema.roles).values({
           name: roleName,
           description: description,
-          isSystem: true
+          isSystem: true,
+          scope: roleName.includes('institution') ? 'institution' : 
+                 roleName.includes('polo') ? 'polo' : 'global'
         }).returning();
         
         const roleId = roleResult[0].id;
