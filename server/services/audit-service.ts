@@ -94,17 +94,36 @@ class AuditService {
    * Registra uma ação de auditoria no sistema
    */
   async logPermissionAction(
-    data: Omit<InsertPermissionAudit, 'ipAddress' | 'userAgent'>, 
+    data: {
+      userId: number;
+      actionType: ActionType;
+      entityType: EntityType;
+      entityId: number | null;
+      description?: string;
+      detail?: string;
+      sourceIp?: string;
+      metadata?: any;
+      oldValue?: any;
+      newValue?: any;
+    }, 
     req?: Request
   ) {
     try {
       // Extrair informações do request se disponível
-      const ipAddress = req?.ip || null;
+      const ipAddress = data.sourceIp || req?.ip || null;
       const userAgent = req?.headers['user-agent'] || null;
       
       // Criar registro de auditoria
       const auditEntry = await db.insert(permissionAudit).values({
-        ...data,
+        userId: data.userId,
+        actionType: data.actionType,
+        entityType: data.entityType,
+        entityId: data.entityId,
+        description: data.description || '',
+        detail: data.detail || null,
+        metadata: data.metadata ? JSON.stringify(data.metadata) : null,
+        oldValue: data.oldValue ? JSON.stringify(data.oldValue) : null,
+        newValue: data.newValue ? JSON.stringify(data.newValue) : null,
         ipAddress,
         userAgent,
       }).returning();
