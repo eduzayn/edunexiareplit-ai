@@ -562,7 +562,7 @@ export async function findClientByCpfCnpj(cpfCnpj: string): Promise<Client | nul
       SELECT 
         id, name, type, email, phone, cpf_cnpj, rg_ie, birth_date,
         zip_code, street, number_address as number, complement, neighborhood, city, state,
-        observation, is_active, asaas_id, created_by_id, created_at, updated_at
+        observation, asaas_id, created_by_id, created_at, updated_at
       FROM clients
       WHERE cpf_cnpj = $1
       LIMIT 1

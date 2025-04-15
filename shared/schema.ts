@@ -370,7 +370,6 @@ export const clients = pgTable("clients", {
   
   // Informações adicionais
   observation: text("observation"), // Renamed from notes to match DB structure
-  isActive: boolean("is_active", { mode: "boolean" }).default(true).notNull(),
   
   // Integrações
   asaasId: text("asaas_id"), // ID do cliente no Asaas
@@ -1524,7 +1523,6 @@ export const insertClientSchema = createInsertSchema(clients).pick({
   city: true,
   state: true,
   observation: true,
-  isActive: true,
   createdById: true,
 });
 export type InsertClient = z.infer<typeof insertClientSchema>;
