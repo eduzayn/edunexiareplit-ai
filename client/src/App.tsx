@@ -46,10 +46,10 @@ import ContractsPage from "@/pages/admin/contracts";
 import NewContractPage from "@/pages/admin/contracts/new-contract-page";
 // Módulo de Comunicação
 import InboxPage from "@/pages/admin/inbox";
-// Módulo de Permissões
-import RolesPage from "@/pages/admin/permissions/roles-page";
-import RoleDetailPage from "@/pages/admin/permissions/role-detail-page";
-import AbacPermissionsPage from "@/pages/admin/permissions/abac-permissions-page";
+// Módulo de Pessoas
+import RolesPage from "@/pages/admin/pessoas/roles-page";
+import RoleDetailPage from "@/pages/admin/pessoas/role-detail-page";
+import AbacPermissionsPage from "@/pages/admin/pessoas/abac-permissions-page";
 // import UserFormPage from "@/pages/admin/user-form-page";
 // Módulo de Auditoria
 import LogsAuditoriaPage from "@/pages/admin/auditoria/logs-auditoria-page";
@@ -197,15 +197,16 @@ function Router() {
       <Route path="/admin/institutions">
         {() => user?.portalType === "admin" ? <InstitutionsPage /> : <Redirect to="/admin" />}
       </Route>
-      <Route path="/admin/users" exact>
-        {() => user?.portalType === "admin" ? <UsersPage /> : <Redirect to="/admin" />}
+      {/* Rotas de usuários removidas temporariamente */}
+      {/* <Route path="/admin/users" exact>
+        {() => user?.portalType === "admin" ? <div>Em desenvolvimento</div> : <Redirect to="/admin" />}
       </Route>
       <Route path="/admin/users/new">
-        {() => user?.portalType === "admin" ? <UserFormPage /> : <Redirect to="/admin" />}
+        {() => user?.portalType === "admin" ? <div>Em desenvolvimento</div> : <Redirect to="/admin" />}
       </Route>
       <Route path="/admin/users/:id">
-        {() => user?.portalType === "admin" ? <UserFormPage /> : <Redirect to="/admin" />}
-      </Route>
+        {() => user?.portalType === "admin" ? <div>Em desenvolvimento</div> : <Redirect to="/admin" />}
+      </Route> */}
       <Route path="/admin/polos">
         {() => user?.portalType === "admin" ? <PolosPage /> : <Redirect to="/admin" />}
       </Route>
@@ -308,16 +309,16 @@ function Router() {
         {() => user?.portalType === "admin" ? <NewContractPage /> : <Redirect to="/admin" />}
       </Route>
       
-      {/* Rotas do Módulo de Permissões */}
-      <Route path="/admin/permissions/roles">
+      {/* Rotas do Módulo de Pessoas */}
+      <Route path="/admin/pessoas/roles">
         {() => user?.portalType === "admin" ? <RolesPage /> : <Redirect to="/admin" />}
       </Route>
       
-      <Route path="/admin/permissions/roles/:id">
+      <Route path="/admin/pessoas/roles/:id">
         {() => user?.portalType === "admin" ? <RoleDetailPage /> : <Redirect to="/admin" />}
       </Route>
       
-      <Route path="/admin/permissions/abac-permissions">
+      <Route path="/admin/pessoas/abac-permissions">
         {() => user?.portalType === "admin" ? <AbacPermissionsPage /> : <Redirect to="/admin" />}
       </Route>
       
