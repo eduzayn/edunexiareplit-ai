@@ -46,7 +46,9 @@ const formSchema = z.object({
   phone: z.string().min(10, { message: "Telefone inválido" }),
   
   // Documentos
-  cpfCnpj: z.string().min(11, { message: "CPF/CNPJ inválido" }),
+  cpfCnpj: z.string().min(11, { message: "CPF/CNPJ inválido" }).refine(val => val.length > 0, {
+    message: "CPF/CNPJ é obrigatório para integração com sistema financeiro"
+  }),
   rgIe: z.string().optional().or(z.literal("")),
   
   // Endereço
@@ -74,7 +76,7 @@ export default function NewClientPage() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      type: "pj",
+      type: "pf", // Alterado para "pf" (pessoa física) como padrão
       email: "",
       phone: "",
       cpfCnpj: "",
