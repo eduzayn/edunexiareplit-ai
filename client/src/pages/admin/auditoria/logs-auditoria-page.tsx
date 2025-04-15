@@ -286,7 +286,7 @@ export const LogsAuditoriaPage = () => {
                       <SelectValue placeholder="Selecione a ação" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todas as ações</SelectItem>
+                      <SelectItem value="all">Todas as ações</SelectItem>
                       <SelectItem value="create">Criação</SelectItem>
                       <SelectItem value="update">Atualização</SelectItem>
                       <SelectItem value="delete">Exclusão</SelectItem>
@@ -304,7 +304,7 @@ export const LogsAuditoriaPage = () => {
                       <SelectValue placeholder="Selecione a entidade" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todas as entidades</SelectItem>
+                      <SelectItem value="all">Todas as entidades</SelectItem>
                       <SelectItem value="user">Usuário</SelectItem>
                       <SelectItem value="role">Papel</SelectItem>
                       <SelectItem value="permission">Permissão</SelectItem>
