@@ -580,694 +580,681 @@ export default function AbacPermissionsPage() {
 
   return (
     <AdminLayout>
-      <div className="container mx-auto py-8">
-        <h1 className="text-3xl font-bold mb-8">Gerenciamento de Permissões Contextuais (ABAC)</h1>
-        <Tabs defaultValue="institution-phase" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="institution-phase">
-              <Award className="mr-2 h-4 w-4" />
-              Fase de Instituição
-            </TabsTrigger>
-            <TabsTrigger value="period-rules">
-              <CalendarClock className="mr-2 h-4 w-4" />
-              Regras de Período
-            </TabsTrigger>
-            <TabsTrigger value="payment-status">
-              <ListFilter className="mr-2 h-4 w-4" />
-              Status de Pagamento
-            </TabsTrigger>
-          </TabsList>
+      <div className="container mx-auto py-6">
+        <h1 className="text-3xl font-bold tracking-tight mb-6">Gerenciamento de Permissões Contextuais (ABAC)</h1>
+        
+        <Alert className="mb-6">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Importante</AlertTitle>
+          <AlertDescription>
+            As permissões contextuais (ABAC) permitem um controle mais granular sobre as permissões dos usuários com base em diferentes contextos, como fase da instituição, período de tempo ou status de pagamento.
+          </AlertDescription>
+        </Alert>
 
-          {/* Tab Content - Fase de Instituição */}
-          <TabsContent value="institution-phase">
-            <Card>
-              <CardHeader>
-                <CardTitle>Permissões por Fase de Instituição</CardTitle>
-                <CardDescription>
-                  Configure permissões baseadas na fase atual da instituição.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Form {...institutionPhaseForm}>
-                  <form onSubmit={institutionPhaseForm.handleSubmit(onSubmitInstitutionPhase)} className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <FormField
-                        control={institutionPhaseForm.control}
-                        name="resource"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Recurso</FormLabel>
-                            <Select
-                              onValueChange={(value) => {
-                                field.onChange(value);
-                                updateActionsForResource(value);
-                              }}
-                              defaultValue={field.value}
-                            >
+        <Tabs 
+          value={activeTab} 
+          onValueChange={setActiveTab}
+          className="space-y-6"
+        >
+          <div className="flex justify-between items-center mb-4">
+            <TabsList>
+              <TabsTrigger value="institution-phase" className="flex items-center">
+                <Award className="mr-2 h-4 w-4" />
+                Fase da Instituição
+              </TabsTrigger>
+              <TabsTrigger value="period-rules" className="flex items-center">
+                <CalendarClock className="mr-2 h-4 w-4" />
+                Regras de Período
+              </TabsTrigger>
+              <TabsTrigger value="payment-status" className="flex items-center">
+                <ListFilter className="mr-2 h-4 w-4" />
+                Status de Pagamento
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          {/* Fase da Instituição */}
+          <TabsContent value="institution-phase" className="space-y-6">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              <div className="lg:col-span-1">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Adicionar Regra por Fase</CardTitle>
+                    <CardDescription>
+                      Crie regras de permissão baseadas na fase da instituição educacional.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Form {...institutionPhaseForm}>
+                      <form onSubmit={institutionPhaseForm.handleSubmit(onSubmitInstitutionPhase)} className="space-y-4">
+                        <FormField
+                          control={institutionPhaseForm.control}
+                          name="resource"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Recurso</FormLabel>
+                              <Select 
+                                value={field.value} 
+                                onValueChange={(value) => {
+                                  field.onChange(value);
+                                }}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Selecione um recurso" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {resourceOptions.map((resource) => (
+                                    <SelectItem key={resource} value={resource}>{resource}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={institutionPhaseForm.control}
+                          name="action"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Ação</FormLabel>
+                              <Select 
+                                value={field.value} 
+                                onValueChange={field.onChange}
+                                disabled={!watchResourceInstitutionPhase}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Selecione uma ação" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {actionOptions.map((action) => (
+                                    <SelectItem key={action.value} value={action.value}>{action.label}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={institutionPhaseForm.control}
+                          name="phase"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Fase da Instituição</FormLabel>
+                              <Select 
+                                value={field.value} 
+                                onValueChange={field.onChange}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Selecione uma fase" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="credenciamento">Credenciamento</SelectItem>
+                                  <SelectItem value="analise_documental">Análise Documental</SelectItem>
+                                  <SelectItem value="visita_tecnica">Visita Técnica</SelectItem>
+                                  <SelectItem value="aprovada">Aprovada</SelectItem>
+                                  <SelectItem value="ativa">Ativa</SelectItem>
+                                  <SelectItem value="suspensa">Suspensa</SelectItem>
+                                  <SelectItem value="descredenciada">Descredenciada</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={institutionPhaseForm.control}
+                          name="description"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Descrição</FormLabel>
                               <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Selecione um recurso" />
-                                </SelectTrigger>
+                                <Input {...field} placeholder="Descreva a regra de permissão" />
                               </FormControl>
-                              <SelectContent>
-                                {resourceOptions.map((resource) => (
-                                  <SelectItem key={resource} value={resource}>
-                                    {resource}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormDescription>
-                              O recurso que será afetado por esta permissão.
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
 
-                      <FormField
-                        control={institutionPhaseForm.control}
-                        name="action"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Ação</FormLabel>
-                            <Select
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                              disabled={!watchResourceInstitutionPhase || actionOptions.length === 0}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Selecione uma ação" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {actionOptions.map((action) => (
-                                  <SelectItem key={action.value} value={action.value}>
-                                    {action.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormDescription>
-                              A ação que será permitida ou negada.
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={institutionPhaseForm.control}
+                            name="isAllowed"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                                <div className="space-y-0.5">
+                                  <FormLabel>Tipo de Regra</FormLabel>
+                                  <FormDescription>
+                                    {field.value ? 'Permitir' : 'Negar'}
+                                  </FormDescription>
+                                </div>
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
 
-                    <FormField
-                      control={institutionPhaseForm.control}
-                      name="phase"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Fase da Instituição</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Selecione uma fase" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="trial">Trial</SelectItem>
-                              <SelectItem value="setup">Configuração</SelectItem>
-                              <SelectItem value="active">Ativa</SelectItem>
-                              <SelectItem value="suspended">Suspensa</SelectItem>
-                              <SelectItem value="cancelled">Cancelada</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormDescription>
-                            A fase da instituição em que esta permissão será aplicada.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={institutionPhaseForm.control}
-                      name="description"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Descrição</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Descrição da regra de permissão" {...field} />
-                          </FormControl>
-                          <FormDescription>
-                            Uma descrição clara do que esta regra faz.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={institutionPhaseForm.control}
-                      name="isAllowed"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">Tipo de Regra</FormLabel>
-                            <FormDescription>
-                              Define se esta regra permite ou nega acesso.
-                            </FormDescription>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <span className={field.value ? 'text-gray-400' : 'font-medium'}>Negar</span>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                            <span className={!field.value ? 'text-gray-400' : 'font-medium'}>Permitir</span>
-                          </div>
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={institutionPhaseForm.control}
-                      name="isActive"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">Ativo</FormLabel>
-                            <FormDescription>
-                              Determina se esta regra está ativa ou não.
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-
-                    <Button type="submit" disabled={createInstitutionPhaseMutation.isPending}>
-                      {createInstitutionPhaseMutation.isPending ? 'Salvando...' : 'Salvar Regra'}
-                    </Button>
-                  </form>
-                </Form>
-
-                <Separator className="my-8" />
-
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Regras de Permissão Existentes</h3>
-                  
-                  {institutionPhaseQuery.isLoading ? (
-                    <div className="space-y-4">
-                      {Array(3).fill(0).map((_, i) => (
-                        <div key={i} className="flex items-center space-x-4">
-                          <Skeleton className="h-12 w-12 rounded-full" />
-                          <div className="space-y-2">
-                            <Skeleton className="h-4 w-[250px]" />
-                            <Skeleton className="h-4 w-[200px]" />
-                          </div>
+                          <FormField
+                            control={institutionPhaseForm.control}
+                            name="isActive"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                                <div className="space-y-0.5">
+                                  <FormLabel>Status</FormLabel>
+                                  <FormDescription>
+                                    {field.value ? 'Ativo' : 'Inativo'}
+                                  </FormDescription>
+                                </div>
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
                         </div>
-                      ))}
-                    </div>
-                  ) : institutionPhaseQuery.isError ? (
-                    <Alert variant="destructive">
-                      <AlertTriangle className="h-4 w-4" />
-                      <AlertTitle>Erro</AlertTitle>
-                      <AlertDescription>
-                        Ocorreu um erro ao carregar as regras de permissão.
-                      </AlertDescription>
-                    </Alert>
-                  ) : institutionPhaseQuery.data && institutionPhaseQuery.data.length > 0 ? (
-                    <DataTable 
-                      columns={institutionPhaseColumns} 
-                      data={institutionPhaseQuery.data} 
-                    />
-                  ) : (
-                    <p className="text-center py-4 text-gray-500">
-                      Nenhuma regra de permissão encontrada.
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+
+                        <Button 
+                          type="submit" 
+                          className="w-full"
+                          disabled={createInstitutionPhaseMutation.isPending}
+                        >
+                          {createInstitutionPhaseMutation.isPending ? 'Criando...' : 'Criar Regra'}
+                        </Button>
+                      </form>
+                    </Form>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="lg:col-span-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Regras por Fase da Instituição</CardTitle>
+                    <CardDescription>
+                      Lista de regras de permissão definidas por fase da instituição.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {institutionPhaseQuery.isLoading ? (
+                      <div className="space-y-3">
+                        <Skeleton className="h-8 w-full" />
+                        <Skeleton className="h-8 w-full" />
+                        <Skeleton className="h-8 w-full" />
+                      </div>
+                    ) : institutionPhaseQuery.isError ? (
+                      <div className="text-center py-4 text-red-500">
+                        Erro ao carregar dados: {(institutionPhaseQuery.error as any)?.message || 'Erro desconhecido'}
+                      </div>
+                    ) : (institutionPhaseQuery.data && institutionPhaseQuery.data.length === 0) ? (
+                      <div className="text-center py-8">
+                        <p className="text-muted-foreground">Nenhuma regra de permissão por fase encontrada.</p>
+                        <p className="text-sm text-muted-foreground mt-1">Crie uma nova regra usando o formulário.</p>
+                      </div>
+                    ) : (
+                      <DataTable 
+                        columns={institutionPhaseColumns} 
+                        data={institutionPhaseQuery.data || []} 
+                        searchPlaceholder="Buscar regras por recurso, ação ou fase..." 
+                        searchColumn="description"
+                      />
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
           </TabsContent>
 
-          {/* Tab Content - Regras de Período */}
-          <TabsContent value="period-rules">
-            <Card>
-              <CardHeader>
-                <CardTitle>Permissões por Período</CardTitle>
-                <CardDescription>
-                  Configure permissões baseadas em períodos específicos (matrícula, pagamento, etc).
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Form {...periodPermissionForm}>
-                  <form onSubmit={periodPermissionForm.handleSubmit(onSubmitPeriodPermission)} className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <FormField
-                        control={periodPermissionForm.control}
-                        name="resource"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Recurso</FormLabel>
-                            <Select
-                              onValueChange={(value) => {
-                                field.onChange(value);
-                                updateActionsForResource(value);
-                              }}
-                              defaultValue={field.value}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Selecione um recurso" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {resourceOptions.map((resource) => (
-                                  <SelectItem key={resource} value={resource}>
-                                    {resource}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormDescription>
-                              O recurso que será afetado por esta permissão.
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+          {/* Regras de Período */}
+          <TabsContent value="period-rules" className="space-y-6">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              <div className="lg:col-span-1">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Adicionar Regra de Período</CardTitle>
+                    <CardDescription>
+                      Crie regras de permissão baseadas em períodos de tempo antes ou após eventos.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Form {...periodPermissionForm}>
+                      <form onSubmit={periodPermissionForm.handleSubmit(onSubmitPeriodPermission)} className="space-y-4">
+                        <FormField
+                          control={periodPermissionForm.control}
+                          name="resource"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Recurso</FormLabel>
+                              <Select 
+                                value={field.value} 
+                                onValueChange={(value) => {
+                                  field.onChange(value);
+                                }}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Selecione um recurso" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {resourceOptions.map((resource) => (
+                                    <SelectItem key={resource} value={resource}>{resource}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
 
-                      <FormField
-                        control={periodPermissionForm.control}
-                        name="action"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Ação</FormLabel>
-                            <Select
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                              disabled={!watchResourcePeriod || actionOptions.length === 0}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Selecione uma ação" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {actionOptions.map((action) => (
-                                  <SelectItem key={action.value} value={action.value}>
-                                    {action.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormDescription>
-                              A ação que será permitida ou negada.
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+                        <FormField
+                          control={periodPermissionForm.control}
+                          name="action"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Ação</FormLabel>
+                              <Select 
+                                value={field.value} 
+                                onValueChange={field.onChange}
+                                disabled={!watchResourcePeriod}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Selecione uma ação" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {actionOptions.map((action) => (
+                                    <SelectItem key={action.value} value={action.value}>{action.label}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
 
-                    <FormField
-                      control={periodPermissionForm.control}
-                      name="periodType"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Tipo de Período</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Selecione um tipo de período" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="enrollment">Período de Matrícula</SelectItem>
-                              <SelectItem value="course">Período do Curso</SelectItem>
-                              <SelectItem value="payment">Período de Pagamento</SelectItem>
-                              <SelectItem value="financial">Período Financeiro</SelectItem>
-                              <SelectItem value="academic">Período Acadêmico</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormDescription>
-                            O tipo de período ao qual esta regra se aplica.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                        <FormField
+                          control={periodPermissionForm.control}
+                          name="periodType"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Tipo de Período</FormLabel>
+                              <Select 
+                                value={field.value} 
+                                onValueChange={field.onChange}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Selecione um tipo de período" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="inscricao_curso">Inscrição em Curso</SelectItem>
+                                  <SelectItem value="inicio_curso">Início de Curso</SelectItem>
+                                  <SelectItem value="fim_curso">Fim de Curso</SelectItem>
+                                  <SelectItem value="matricula">Matrícula</SelectItem>
+                                  <SelectItem value="data_prova">Data de Prova</SelectItem>
+                                  <SelectItem value="data_evento">Data de Evento</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <FormField
-                        control={periodPermissionForm.control}
-                        name="daysBeforeStart"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Dias Antes do Início</FormLabel>
-                            <FormControl>
-                              <Input type="number" min="0" {...field} />
-                            </FormControl>
-                            <FormDescription>
-                              Número de dias antes do início do período em que a regra é válida.
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={periodPermissionForm.control}
+                            name="daysBeforeStart"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Dias Antes</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    type="number" 
+                                    min="0"
+                                    {...field} 
+                                  />
+                                </FormControl>
+                                <FormDescription>
+                                  Quantidade de dias antes do evento
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
 
-                      <FormField
-                        control={periodPermissionForm.control}
-                        name="daysAfterEnd"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Dias Após o Fim</FormLabel>
-                            <FormControl>
-                              <Input type="number" min="0" {...field} />
-                            </FormControl>
-                            <FormDescription>
-                              Número de dias após o fim do período em que a regra é válida.
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <FormField
-                      control={periodPermissionForm.control}
-                      name="description"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Descrição</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Descrição da regra de período" {...field} />
-                          </FormControl>
-                          <FormDescription>
-                            Uma descrição clara do que esta regra faz.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={periodPermissionForm.control}
-                      name="isActive"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">Ativo</FormLabel>
-                            <FormDescription>
-                              Determina se esta regra está ativa ou não.
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-
-                    <Button type="submit" disabled={createPeriodPermissionMutation.isPending}>
-                      {createPeriodPermissionMutation.isPending ? 'Salvando...' : 'Salvar Regra'}
-                    </Button>
-                  </form>
-                </Form>
-
-                <Separator className="my-8" />
-
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Regras de Período Existentes</h3>
-                  
-                  {periodPermissionQuery.isLoading ? (
-                    <div className="space-y-4">
-                      {Array(3).fill(0).map((_, i) => (
-                        <div key={i} className="flex items-center space-x-4">
-                          <Skeleton className="h-12 w-12 rounded-full" />
-                          <div className="space-y-2">
-                            <Skeleton className="h-4 w-[250px]" />
-                            <Skeleton className="h-4 w-[200px]" />
-                          </div>
+                          <FormField
+                            control={periodPermissionForm.control}
+                            name="daysAfterEnd"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Dias Depois</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    type="number" 
+                                    min="0"
+                                    {...field} 
+                                  />
+                                </FormControl>
+                                <FormDescription>
+                                  Quantidade de dias após o evento
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
                         </div>
-                      ))}
-                    </div>
-                  ) : periodPermissionQuery.isError ? (
-                    <Alert variant="destructive">
-                      <AlertTriangle className="h-4 w-4" />
-                      <AlertTitle>Erro</AlertTitle>
-                      <AlertDescription>
-                        Ocorreu um erro ao carregar as regras de período.
-                      </AlertDescription>
-                    </Alert>
-                  ) : periodPermissionQuery.data && periodPermissionQuery.data.length > 0 ? (
-                    <DataTable 
-                      columns={periodRuleColumns} 
-                      data={periodPermissionQuery.data} 
-                    />
-                  ) : (
-                    <p className="text-center py-4 text-gray-500">
-                      Nenhuma regra de período encontrada.
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+
+                        <FormField
+                          control={periodPermissionForm.control}
+                          name="description"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Descrição</FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="Descreva a regra de período" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={periodPermissionForm.control}
+                          name="isActive"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                              <div className="space-y-0.5">
+                                <FormLabel>Status</FormLabel>
+                                <FormDescription>
+                                  {field.value ? 'Ativo' : 'Inativo'}
+                                </FormDescription>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+
+                        <Button 
+                          type="submit" 
+                          className="w-full"
+                          disabled={createPeriodPermissionMutation.isPending}
+                        >
+                          {createPeriodPermissionMutation.isPending ? 'Criando...' : 'Criar Regra de Período'}
+                        </Button>
+                      </form>
+                    </Form>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="lg:col-span-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Regras de Período</CardTitle>
+                    <CardDescription>
+                      Lista de regras de permissão baseadas em períodos de tempo.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {periodPermissionQuery.isLoading ? (
+                      <div className="space-y-3">
+                        <Skeleton className="h-8 w-full" />
+                        <Skeleton className="h-8 w-full" />
+                        <Skeleton className="h-8 w-full" />
+                      </div>
+                    ) : periodPermissionQuery.isError ? (
+                      <div className="text-center py-4 text-red-500">
+                        Erro ao carregar dados: {(periodPermissionQuery.error as any)?.message || 'Erro desconhecido'}
+                      </div>
+                    ) : (periodPermissionQuery.data && periodPermissionQuery.data.length === 0) ? (
+                      <div className="text-center py-8">
+                        <p className="text-muted-foreground">Nenhuma regra de período encontrada.</p>
+                        <p className="text-sm text-muted-foreground mt-1">Crie uma nova regra usando o formulário.</p>
+                      </div>
+                    ) : (
+                      <DataTable 
+                        columns={periodRuleColumns} 
+                        data={periodPermissionQuery.data || []} 
+                        searchPlaceholder="Buscar regras por recurso, ação ou tipo de período..." 
+                        searchColumn="description"
+                      />
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
           </TabsContent>
 
-          {/* Tab Content - Status de Pagamento */}
-          <TabsContent value="payment-status">
-            <Card>
-              <CardHeader>
-                <CardTitle>Permissões por Status de Pagamento</CardTitle>
-                <CardDescription>
-                  Configure permissões baseadas no status de pagamento (pendente, pago, atrasado, etc).
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Form {...paymentStatusForm}>
-                  <form onSubmit={paymentStatusForm.handleSubmit(onSubmitPaymentStatus)} className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <FormField
-                        control={paymentStatusForm.control}
-                        name="resource"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Recurso</FormLabel>
-                            <Select
-                              onValueChange={(value) => {
-                                field.onChange(value);
-                                updateActionsForResource(value);
-                              }}
-                              defaultValue={field.value}
-                            >
+          {/* Status de Pagamento */}
+          <TabsContent value="payment-status" className="space-y-6">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              <div className="lg:col-span-1">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Adicionar Regra por Status de Pagamento</CardTitle>
+                    <CardDescription>
+                      Crie regras de permissão baseadas no status de pagamento.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Form {...paymentStatusForm}>
+                      <form onSubmit={paymentStatusForm.handleSubmit(onSubmitPaymentStatus)} className="space-y-4">
+                        <FormField
+                          control={paymentStatusForm.control}
+                          name="resource"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Recurso</FormLabel>
+                              <Select 
+                                value={field.value} 
+                                onValueChange={(value) => {
+                                  field.onChange(value);
+                                }}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Selecione um recurso" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {resourceOptions.map((resource) => (
+                                    <SelectItem key={resource} value={resource}>{resource}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={paymentStatusForm.control}
+                          name="action"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Ação</FormLabel>
+                              <Select 
+                                value={field.value} 
+                                onValueChange={field.onChange}
+                                disabled={!watchResourcePaymentStatus}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Selecione uma ação" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {actionOptions.map((action) => (
+                                    <SelectItem key={action.value} value={action.value}>{action.label}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={paymentStatusForm.control}
+                          name="paymentStatus"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Status de Pagamento</FormLabel>
+                              <Select 
+                                value={field.value} 
+                                onValueChange={field.onChange}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Selecione um status" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="pendente">Pendente</SelectItem>
+                                  <SelectItem value="em_processamento">Em Processamento</SelectItem>
+                                  <SelectItem value="pago">Pago</SelectItem>
+                                  <SelectItem value="cancelado">Cancelado</SelectItem>
+                                  <SelectItem value="reembolsado">Reembolsado</SelectItem>
+                                  <SelectItem value="atrasado">Atrasado</SelectItem>
+                                  <SelectItem value="parcialmente_pago">Parcialmente Pago</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={paymentStatusForm.control}
+                          name="description"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Descrição</FormLabel>
                               <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Selecione um recurso" />
-                                </SelectTrigger>
+                                <Input {...field} placeholder="Descreva a regra de permissão" />
                               </FormControl>
-                              <SelectContent>
-                                {resourceOptions.map((resource) => (
-                                  <SelectItem key={resource} value={resource}>
-                                    {resource}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormDescription>
-                              O recurso que será afetado por esta permissão.
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
 
-                      <FormField
-                        control={paymentStatusForm.control}
-                        name="action"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Ação</FormLabel>
-                            <Select
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                              disabled={!watchResourcePaymentStatus || actionOptions.length === 0}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Selecione uma ação" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {actionOptions.map((action) => (
-                                  <SelectItem key={action.value} value={action.value}>
-                                    {action.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormDescription>
-                              A ação que será permitida ou negada.
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={paymentStatusForm.control}
+                            name="isAllowed"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                                <div className="space-y-0.5">
+                                  <FormLabel>Tipo de Regra</FormLabel>
+                                  <FormDescription>
+                                    {field.value ? 'Permitir' : 'Negar'}
+                                  </FormDescription>
+                                </div>
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
 
-                    <FormField
-                      control={paymentStatusForm.control}
-                      name="paymentStatus"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Status de Pagamento</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Selecione um status" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="pending">Pendente</SelectItem>
-                              <SelectItem value="paid">Pago</SelectItem>
-                              <SelectItem value="overdue">Atrasado</SelectItem>
-                              <SelectItem value="refunded">Reembolsado</SelectItem>
-                              <SelectItem value="cancelled">Cancelado</SelectItem>
-                              <SelectItem value="partial">Parcialmente Pago</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormDescription>
-                            O status de pagamento em que esta permissão será aplicada.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={paymentStatusForm.control}
-                      name="description"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Descrição</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Descrição da regra de status de pagamento" {...field} />
-                          </FormControl>
-                          <FormDescription>
-                            Uma descrição clara do que esta regra faz.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={paymentStatusForm.control}
-                      name="isAllowed"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">Tipo de Regra</FormLabel>
-                            <FormDescription>
-                              Define se esta regra permite ou nega acesso.
-                            </FormDescription>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <span className={field.value ? 'text-gray-400' : 'font-medium'}>Negar</span>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                            <span className={!field.value ? 'text-gray-400' : 'font-medium'}>Permitir</span>
-                          </div>
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={paymentStatusForm.control}
-                      name="isActive"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">Ativo</FormLabel>
-                            <FormDescription>
-                              Determina se esta regra está ativa ou não.
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-
-                    <Button type="submit" disabled={createPaymentStatusMutation.isPending}>
-                      {createPaymentStatusMutation.isPending ? 'Salvando...' : 'Salvar Regra'}
-                    </Button>
-                  </form>
-                </Form>
-
-                <Separator className="my-8" />
-
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Regras de Status de Pagamento Existentes</h3>
-                  
-                  {paymentStatusQuery.isLoading ? (
-                    <div className="space-y-4">
-                      {Array(3).fill(0).map((_, i) => (
-                        <div key={i} className="flex items-center space-x-4">
-                          <Skeleton className="h-12 w-12 rounded-full" />
-                          <div className="space-y-2">
-                            <Skeleton className="h-4 w-[250px]" />
-                            <Skeleton className="h-4 w-[200px]" />
-                          </div>
+                          <FormField
+                            control={paymentStatusForm.control}
+                            name="isActive"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                                <div className="space-y-0.5">
+                                  <FormLabel>Status</FormLabel>
+                                  <FormDescription>
+                                    {field.value ? 'Ativo' : 'Inativo'}
+                                  </FormDescription>
+                                </div>
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
                         </div>
-                      ))}
-                    </div>
-                  ) : paymentStatusQuery.isError ? (
-                    <Alert variant="destructive">
-                      <AlertTriangle className="h-4 w-4" />
-                      <AlertTitle>Erro</AlertTitle>
-                      <AlertDescription>
-                        Ocorreu um erro ao carregar as regras de status de pagamento.
-                      </AlertDescription>
-                    </Alert>
-                  ) : paymentStatusQuery.data && paymentStatusQuery.data.length > 0 ? (
-                    <DataTable 
-                      columns={paymentStatusColumns} 
-                      data={paymentStatusQuery.data} 
-                    />
-                  ) : (
-                    <p className="text-center py-4 text-gray-500">
-                      Nenhuma regra de status de pagamento encontrada.
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+
+                        <Button 
+                          type="submit" 
+                          className="w-full"
+                          disabled={createPaymentStatusMutation.isPending}
+                        >
+                          {createPaymentStatusMutation.isPending ? 'Criando...' : 'Criar Regra'}
+                        </Button>
+                      </form>
+                    </Form>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="lg:col-span-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Regras por Status de Pagamento</CardTitle>
+                    <CardDescription>
+                      Lista de regras de permissão baseadas em status de pagamento.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {paymentStatusQuery.isLoading ? (
+                      <div className="space-y-3">
+                        <Skeleton className="h-8 w-full" />
+                        <Skeleton className="h-8 w-full" />
+                        <Skeleton className="h-8 w-full" />
+                      </div>
+                    ) : paymentStatusQuery.isError ? (
+                      <div className="text-center py-4 text-red-500">
+                        Erro ao carregar dados: {(paymentStatusQuery.error as any)?.message || 'Erro desconhecido'}
+                      </div>
+                    ) : (paymentStatusQuery.data && paymentStatusQuery.data.length === 0) ? (
+                      <div className="text-center py-8">
+                        <p className="text-muted-foreground">Nenhuma regra de status de pagamento encontrada.</p>
+                        <p className="text-sm text-muted-foreground mt-1">Crie uma nova regra usando o formulário.</p>
+                      </div>
+                    ) : (
+                      <DataTable 
+                        columns={paymentStatusColumns} 
+                        data={paymentStatusQuery.data || []} 
+                        searchPlaceholder="Buscar regras por recurso, ação ou status..." 
+                        searchColumn="description"
+                      />
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
