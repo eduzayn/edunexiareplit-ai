@@ -63,17 +63,32 @@ import {
   LoaderIcon,
   UsersIcon,
   KeyIcon,
+  PhoneIcon,
+  MailIcon,
+  MapPinIcon,
+  CalendarIcon,
+  BuildingIcon,
+  Tag,
 } from "lucide-react";
 
 // Interfaces
 interface User {
   id: number;
   username: string;
-  password: string;
   portalType: "student" | "partner" | "polo" | "admin";
   fullName: string;
   email: string;
   cpf?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  birthDate?: string;
+  roleId?: number;
+  institutionId?: number;
+  poloId?: number;
+  roleName?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -201,7 +216,7 @@ export default function UsersPage() {
   };
 
   return (
-    <AdminLayout sidebarItems={getAdminSidebarItems()}>
+    <AdminLayout>
       <div className="space-y-4 p-8 pt-6">
         <div className="flex items-center justify-between space-y-2">
           <h2 className="text-3xl font-bold tracking-tight">Usuários</h2>
@@ -271,14 +286,13 @@ export default function UsersPage() {
                 <p>Nenhum usuário encontrado para os filtros selecionados.</p>
               </div>
             ) : (
-              <div className="rounded-md border">
+              <div className="rounded-md border overflow-hidden">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>ID</TableHead>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Username</TableHead>
-                      <TableHead>Email</TableHead>
+                      <TableHead className="w-14">ID</TableHead>
+                      <TableHead>Nome / Informações</TableHead>
+                      <TableHead>Contato</TableHead>
                       <TableHead>Tipo</TableHead>
                       <TableHead>Criado em</TableHead>
                       <TableHead className="text-right">Ações</TableHead>
@@ -287,16 +301,58 @@ export default function UsersPage() {
                   <TableBody>
                     {filteredUsers.map((user: User) => (
                       <TableRow key={user.id}>
-                        <TableCell className="font-medium">{user.id}</TableCell>
-                        <TableCell>{user.fullName}</TableCell>
-                        <TableCell>{user.username}</TableCell>
-                        <TableCell>{user.email}</TableCell>
+                        <TableCell className="font-medium text-center">{user.id}</TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{user.fullName}</div>
+                            <div className="text-sm text-muted-foreground flex items-center gap-2">
+                              <Tag className="h-3 w-3" />
+                              <span>{user.username}</span>
+                            </div>
+                            {user.roleName && (
+                              <div className="text-xs text-muted-foreground mt-1">
+                                Função: {user.roleName}
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-1">
+                            <div className="text-sm flex items-center gap-1">
+                              <MailIcon className="h-3 w-3 text-muted-foreground" />
+                              <span>{user.email}</span>
+                            </div>
+                            {user.phone && (
+                              <div className="text-sm flex items-center gap-1">
+                                <PhoneIcon className="h-3 w-3 text-muted-foreground" />
+                                <span>{user.phone}</span>
+                              </div>
+                            )}
+                            {user.city && user.state && (
+                              <div className="text-sm flex items-center gap-1">
+                                <MapPinIcon className="h-3 w-3 text-muted-foreground" />
+                                <span>{user.city}/{user.state}</span>
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell>
                           <Badge variant={getPortalTypeBadgeVariant(user.portalType)}>
                             {getPortalTypeLabel(user.portalType)}
                           </Badge>
+                          {user.portalType === "polo" && user.poloId && (
+                            <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                              <BuildingIcon className="h-3 w-3" />
+                              <span>Polo #{user.poloId}</span>
+                            </div>
+                          )}
                         </TableCell>
-                        <TableCell>{formatDate(user.createdAt)}</TableCell>
+                        <TableCell>
+                          <div className="text-sm flex items-center gap-1">
+                            <CalendarIcon className="h-3 w-3 text-muted-foreground" />
+                            <span>{formatDate(user.createdAt)}</span>
+                          </div>
+                        </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end space-x-2">
                             {hasUpdatePermission && (
