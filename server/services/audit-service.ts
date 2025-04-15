@@ -116,6 +116,152 @@ class AuditService {
       return null;
     }
   }
+  
+  /**
+   * Método específico para registrar alterações em permissões
+   * Registra os detalhes das alterações com informações sobre o que mudou
+   */
+  async logPermissionChange({
+    userId,
+    entityType,
+    entityId,
+    action,
+    oldPermissions,
+    newPermissions,
+    description,
+    resourceType,
+    req
+  }: {
+    userId: number;
+    entityType: string;
+    entityId: number;
+    action: string;
+    oldPermissions: any;
+    newPermissions: any;
+    description: string;
+    resourceType?: string;
+    req?: Request;
+  }) {
+    try {
+      // Calcular diferenças entre permissões antigas e novas
+      const changes = this.calculatePermissionChanges(oldPermissions, newPermissions);
+      
+      // Preparar metadados com as mudanças detalhadas
+      const metadata = {
+        changes,
+        changedFields: Object.keys(changes),
+        totalChanges: Object.keys(changes).length
+      };
+      
+      // Formatar descrição detalhada baseada nas mudanças
+      const detailedDescription = this.formatPermissionChangeDescription(
+        description,
+        changes,
+        entityType
+      );
+      
+      // Registrar a entrada de auditoria
+      return this.logPermissionAction({
+        userId,
+        actionType: action as any,
+        entityType: entityType as any,
+        entityId,
+        resourceType,
+        description: detailedDescription,
+        oldValue: oldPermissions,
+        newValue: newPermissions,
+        metadata,
+      }, req);
+    } catch (error) {
+      console.error("Erro ao registrar mudança de permissão:", error);
+      return null;
+    }
+  }
+  
+  /**
+   * Calcula as diferenças entre as permissões antigas e novas
+   * @private
+   */
+  private calculatePermissionChanges(oldData: any, newData: any) {
+    if (!oldData) return { addedAll: true };
+    if (!newData) return { removedAll: true };
+    
+    const changes: Record<string, { old: any, new: any }> = {};
+    
+    // Identificar todas as chaves em ambos os objetos
+    const allKeys = new Set([
+      ...Object.keys(oldData), 
+      ...Object.keys(newData)
+    ]);
+    
+    // Comparar valores para cada chave
+    allKeys.forEach(key => {
+      const oldValue = oldData[key];
+      const newValue = newData[key];
+      
+      // Se os valores são diferentes, registrar a mudança
+      if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
+        changes[key] = {
+          old: oldValue,
+          new: newValue
+        };
+      }
+    });
+    
+    return changes;
+  }
+  
+  /**
+   * Formata uma descrição detalhada das mudanças de permissão
+   * @private
+   */
+  private formatPermissionChangeDescription(
+    baseDescription: string,
+    changes: Record<string, any>,
+    entityType: string
+  ) {
+    const changeCount = Object.keys(changes).length;
+    if (changeCount === 0) {
+      return `${baseDescription} (Nenhuma alteração detectada)`;
+    }
+    
+    // Criar descrição detalhada para diferentes tipos de entidades
+    let detailedChanges = '';
+    
+    if (entityType === 'permission' || entityType === 'role_permission') {
+      detailedChanges = Object.entries(changes)
+        .map(([field, values]: [string, any]) => {
+          if (field === 'isActive') {
+            return `${values.new ? 'Ativou' : 'Desativou'} permissão`;
+          } else if (field === 'resource') {
+            return `Alterou recurso: ${values.old} → ${values.new}`;
+          } else if (field === 'action') {
+            return `Alterou ação: ${values.old} → ${values.new}`;
+          } else {
+            return `Alterou ${field}: ${JSON.stringify(values.old)} → ${JSON.stringify(values.new)}`;
+          }
+        })
+        .join('; ');
+    } else if (entityType === 'role' || entityType === 'user_role') {
+      detailedChanges = Object.entries(changes)
+        .map(([field, values]: [string, any]) => {
+          if (field === 'permissions') {
+            const added = values.new?.filter((p: any) => !values.old?.includes(p)) || [];
+            const removed = values.old?.filter((p: any) => !values.new?.includes(p)) || [];
+            
+            return [
+              added.length > 0 ? `Adicionou ${added.length} permissões` : '',
+              removed.length > 0 ? `Removeu ${removed.length} permissões` : ''
+            ].filter(Boolean).join('; ');
+          } else {
+            return `Alterou ${field}: ${JSON.stringify(values.old)} → ${JSON.stringify(values.new)}`;
+          }
+        })
+        .join('; ');
+    }
+    
+    return `${baseDescription}${detailedChanges ? ` (${detailedChanges})` : ''}`;
+  }
 
   /**
    * Busca registros de auditoria com filtros
@@ -242,21 +388,85 @@ class AuditService {
    * Exporta logs de auditoria para CSV ou JSON
    */
   async exportAuditLogs(filters: any, format: 'csv' | 'json' = 'json') {
-    const logs = await this.getAuditLogs(filters);
+    // Remover limites para exportar todos os registros correspondentes aos filtros
+    const allFilters = { ...filters };
+    delete allFilters.limit;
+    delete allFilters.offset;
+    
+    const logs = await this.getAuditLogs(allFilters);
     
     if (format === 'csv') {
-      // Implementar exportação para CSV
-      const headers = ['ID', 'Usuário', 'Ação', 'Entidade', 'ID Entidade', 'Recurso', 'Descrição', 'Data'];
-      const rows = logs.map(log => [
-        log.id,
-        log.userId,
-        log.actionType,
-        log.entityType,
-        log.entityId,
-        log.resourceType || '',
-        log.description,
-        new Date(log.createdAt).toISOString()
-      ]);
+      // Definir cabeçalhos do CSV
+      const headers = [
+        'ID', 
+        'Usuário ID', 
+        'Nome do Usuário',
+        'Ação', 
+        'Entidade', 
+        'ID Entidade', 
+        'Recurso', 
+        'Descrição', 
+        'Alterações',
+        'IP de Origem',
+        'Navegador',
+        'Data/Hora'
+      ];
+      
+      // Preparar linhas de dados
+      const rows = logs.map(log => {
+        // Preparar campo de alterações
+        let changesFormatted = '';
+        if (log.oldValue && log.newValue) {
+          try {
+            const oldValue = typeof log.oldValue === 'string' ? JSON.parse(log.oldValue) : log.oldValue;
+            const newValue = typeof log.newValue === 'string' ? JSON.parse(log.newValue) : log.newValue;
+            
+            // Identificar campos alterados
+            const changes = this.calculatePermissionChanges(oldValue, newValue);
+            const changeList = Object.entries(changes)
+              .map(([field, change]: [string, any]) => {
+                const oldVal = change.old === undefined ? 'não definido' : 
+                               typeof change.old === 'object' ? JSON.stringify(change.old) : change.old;
+                const newVal = change.new === undefined ? 'não definido' : 
+                               typeof change.new === 'object' ? JSON.stringify(change.new) : change.new;
+                return `${field}: ${oldVal} → ${newVal}`;
+              })
+              .join('; ');
+            
+            changesFormatted = changeList;
+          } catch (err) {
+            changesFormatted = 'Erro ao processar alterações';
+          }
+        }
+        
+        // Tratar valores com vírgulas para evitar problemas no CSV
+        const escapeCSV = (value: any) => {
+          if (value === null || value === undefined) return '';
+          const str = String(value);
+          // Se contém vírgulas, aspas ou quebras de linha, envolve em aspas duplas
+          // e escapa as aspas duplas internas
+          if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+            return `"${str.replace(/"/g, '""')}"`;
+          }
+          return str;
+        };
+        
+        // Dados da linha
+        return [
+          escapeCSV(log.id),
+          escapeCSV(log.userId),
+          escapeCSV(log.userName),
+          escapeCSV(log.actionType),
+          escapeCSV(log.entityType),
+          escapeCSV(log.entityId),
+          escapeCSV(log.resourceType),
+          escapeCSV(log.description),
+          escapeCSV(changesFormatted),
+          escapeCSV(log.ipAddress),
+          escapeCSV(log.userAgent),
+          escapeCSV(new Date(log.createdAt).toLocaleString('pt-BR'))
+        ];
+      });
       
       // Converter para CSV
       const csvContent = [
