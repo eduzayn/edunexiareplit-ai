@@ -4,6 +4,7 @@
 
 import { db } from '../db';
 import * as schema from '../../shared/schema';
+import * as abacSchema from '../../shared/abac-schema';
 import { eq, and, or, inArray, lt, gt, lte, gte, isNull, not, asc, desc, sql } from 'drizzle-orm';
 
 /**

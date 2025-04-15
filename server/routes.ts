@@ -35,6 +35,7 @@ import subscriptionPlansRoutes from "./routes/subscription-plans";
 import subscriptionsRoutes from "./routes/subscriptions";
 import publicRegisterRouter from "./routes/public-register";
 import permissionsRoutes from "./routes/permissions-routes";
+import abacPermissionsRoutes from "./routes/abac-permissions-routes";
 import auditRoutes from "./routes/audit-routes";
 // Importação das novas rotas para os módulos CRM, Financeiro e Contratos
 import crmRoutes from "./routes/crm-routes";
@@ -63,6 +64,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Registro das rotas de permissões e papéis (roles)
   app.use("/api/permissions", permissionsRoutes);
+  
+  // Registro das rotas de permissões contextuais (ABAC)
+  app.use("/api/permissions/abac", abacPermissionsRoutes);
   
   // Rota pública para obter planos de assinatura
   app.use("/api/public/subscription-plans", subscriptionPlansRoutes);
