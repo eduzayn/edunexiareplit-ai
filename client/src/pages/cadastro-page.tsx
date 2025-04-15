@@ -77,12 +77,15 @@ export default function CadastroPage() {
   async function onSubmit(data: CadastroFormValues) {
     setLoading(true);
     try {
-      const response = await apiRequest('/api/public/register', {
+      const response = await fetch('/api/public/register', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
+      
+      const responseData = await response.json();
 
-      if (response.success) {
+      if (response.ok) {
         toast({
           title: "Cadastro realizado com sucesso!",
           description: "Você será redirecionado para a página de confirmação.",
@@ -91,7 +94,7 @@ export default function CadastroPage() {
           setLocation('/cadastro-sucesso');
         }, 2000);
       } else {
-        throw new Error(response.message || 'Erro ao cadastrar');
+        throw new Error(responseData.message || 'Erro ao cadastrar');
       }
     } catch (error: any) {
       toast({

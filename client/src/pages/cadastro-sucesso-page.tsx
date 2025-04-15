@@ -2,8 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle } from "lucide-react";
 import { Link } from "wouter";
-import NavbarMain from "@/components/layout/navbar-main";
-import FooterMain from "@/components/layout/footer-main";
+import NavbarMain from "../components/layout/navbar-main";
+import FooterMain from "../components/layout/footer-main";
 
 export default function CadastroSucessoPage() {
   return (
