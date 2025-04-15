@@ -92,7 +92,7 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
 
   // Categoria: Acadêmico
   const academicCategory: SidebarCategory = {
-    name: "Acadêmico",
+    name: "ACADÊMICO",
     icon: <MenuBookIcon />,
     expanded: hasCategoryActiveItem({
       name: "Acadêmico",
@@ -130,7 +130,7 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
 
   // Categoria: Institucional
   const institutionalCategory: SidebarCategory = {
-    name: "Institucional",
+    name: "INSTITUCIONAL",
     icon: <BuildingIcon />,
     expanded: hasCategoryActiveItem({
       name: "Institucional",
@@ -180,7 +180,7 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
 
   // Categoria: Pessoas
   const peopleCategory: SidebarCategory = {
-    name: "Pessoas",
+    name: "PESSOAS",
     icon: <UsersIcon />,
     expanded: hasCategoryActiveItem({
       name: "Pessoas",
@@ -230,7 +230,7 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
 
   // Categoria: Operacional
   const operationalCategory: SidebarCategory = {
-    name: "Operacional",
+    name: "OPERACIONAL",
     icon: <FolderIcon />,
     expanded: hasCategoryActiveItem({
       name: "Operacional",
@@ -268,7 +268,7 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
 
   // Categoria: Certificação
   const certificationCategory: SidebarCategory = {
-    name: "Certificação",
+    name: "CERTIFICAÇÃO",
     icon: <AwardIcon />,
     expanded: hasCategoryActiveItem({
       name: "Certificação",
@@ -318,7 +318,7 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
 
   // Categoria: CRM & Gestão
   const crmCategory: SidebarCategory = {
-    name: "CRM & Gestão",
+    name: "CRM & GESTÃO",
     icon: <CRMIcon />,
     expanded: hasCategoryActiveItem({
       name: "CRM & Gestão",
