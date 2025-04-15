@@ -218,9 +218,9 @@ export async function getClients(
     // Construir a consulta SQL manualmente para evitar o erro de coluna ausente
     let queryStr = `
       SELECT 
-        id, name, type, email, phone, cpf_cnpj, rg_ie,
-        zip_code, street, number, complement, neighborhood, city, state,
-        notes, is_active, asaas_id, created_by_id, created_at, updated_at
+        id, name, type, email, phone, cpf_cnpj, rg_ie, birth_date,
+        zip_code, street, number_address as number, complement, neighborhood, city, state,
+        observation, is_active, asaas_id, created_by_id, created_at, updated_at
       FROM clients
       WHERE 1=1
     `;
@@ -313,9 +313,9 @@ export async function getClient(id: number) {
     // Usar SQL customizado para evitar o campo segment e website
     const queryStr = `
       SELECT 
-        id, name, type, email, phone, cpf_cnpj, rg_ie,
-        zip_code, street, number, complement, neighborhood, city, state,
-        notes, is_active, asaas_id, created_by_id, created_at, updated_at
+        id, name, type, email, phone, cpf_cnpj, rg_ie, birth_date,
+        zip_code, street, number_address as number, complement, neighborhood, city, state,
+        observation, is_active, asaas_id, created_by_id, created_at, updated_at
       FROM clients
       WHERE id = $1
       LIMIT 1
@@ -339,6 +339,7 @@ export async function getClient(id: number) {
       phone: result[0].phone,
       cpfCnpj: result[0].cpf_cnpj,
       rgIe: result[0].rg_ie,
+      birthDate: result[0].birth_date,
       zipCode: result[0].zip_code,
       street: result[0].street,
       number: result[0].number,
@@ -346,8 +347,7 @@ export async function getClient(id: number) {
       neighborhood: result[0].neighborhood,
       city: result[0].city,
       state: result[0].state,
-      // segment e website não existem
-      notes: result[0].notes,
+      observation: result[0].observation,
       isActive: result[0].is_active,
       asaasId: result[0].asaas_id,
       createdById: result[0].created_by_id,
@@ -404,9 +404,9 @@ export async function createClient(data: InsertClient): Promise<Client> {
       INSERT INTO clients (${columns.join(', ')})
       VALUES (${placeholders.join(', ')})
       RETURNING 
-        id, name, type, email, phone, cpf_cnpj, rg_ie,
-        zip_code, street, number, complement, neighborhood, city, state,
-        notes, is_active, asaas_id, created_by_id, created_at, updated_at
+        id, name, type, email, phone, cpf_cnpj, rg_ie, birth_date,
+        zip_code, street, number_address as number, complement, neighborhood, city, state,
+        observation, is_active, asaas_id, created_by_id, created_at, updated_at
     `;
     
     console.log('Query SQL para inserção:', queryStr);
@@ -489,9 +489,9 @@ export async function updateClient(id: number, data: Partial<InsertClient>): Pro
       SET ${updatePairs.join(', ')}
       WHERE id = $${paramIndex}
       RETURNING 
-        id, name, type, email, phone, cpf_cnpj, rg_ie,
-        zip_code, street, number, complement, neighborhood, city, state,
-        notes, is_active, asaas_id, created_by_id, created_at, updated_at
+        id, name, type, email, phone, cpf_cnpj, rg_ie, birth_date,
+        zip_code, street, number_address as number, complement, neighborhood, city, state,
+        observation, is_active, asaas_id, created_by_id, created_at, updated_at
     `;
     
     console.log('Query SQL para atualização:', queryStr);
@@ -569,9 +569,9 @@ export async function findClientByCpfCnpj(cpfCnpj: string): Promise<Client | nul
     
     const queryStr = `
       SELECT 
-        id, name, type, email, phone, cpf_cnpj, rg_ie,
-        zip_code, street, number, complement, neighborhood, city, state,
-        notes, is_active, asaas_id, created_by_id, created_at, updated_at
+        id, name, type, email, phone, cpf_cnpj, rg_ie, birth_date,
+        zip_code, street, number_address as number, complement, neighborhood, city, state,
+        observation, is_active, asaas_id, created_by_id, created_at, updated_at
       FROM clients
       WHERE cpf_cnpj = $1
       LIMIT 1
