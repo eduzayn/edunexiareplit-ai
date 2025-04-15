@@ -22,8 +22,8 @@ export const paymentGatewayEnum = pgEnum("payment_gateway", ["asaas", "lytex"]);
 export const integrationTypeEnum = pgEnum("integration_type", ["asaas", "lytex", "openai", "elevenlabs", "zapi"]);
 
 // Enums para o módulo CRM e Gestão
-export const leadStatusEnum = pgEnum("lead_status", ["novo", "contatado", "qualificado", "negociacao", "convertido", "perdido"]);
-export const clientTypeEnum = pgEnum("client_type", ["pf", "pj"]);
+export const leadStatusEnum = pgEnum("lead_status", ["new", "contacted", "qualified", "proposal", "negotiation", "won", "lost", "inactive"]);
+export const clientTypeEnum = pgEnum("client_type", ["pf", "pj"]);  // Pessoa Física ou Pessoa Jurídica
 export const invoiceStatusEnum = pgEnum("invoice_status", ["draft", "pending", "paid", "overdue", "cancelled", "partial"]);
 export const paymentStatusEnum = pgEnum("payment_status", ["completed", "pending", "failed", "refunded"]);
 export const paymentMethodEnum = pgEnum("payment_method", ["credit_card", "debit_card", "bank_slip", "bank_transfer", "pix", "cash", "other"]);
@@ -336,12 +336,18 @@ export const leads = pgTable("leads", {
   email: text("email").notNull(),
   phone: text("phone"),
   company: text("company"),
-  source: text("source"), // Como o cliente conheceu a empresa (site, indicação, etc.)
-  interest: text("interest"), // Área de interesse (ex: graduação, pós-graduação)
-  status: leadStatusEnum("status").default("novo").notNull(),
+  position: text("position"),
+  source: text("source"), // Website, indicação, campanha, etc.
+  status: leadStatusEnum("status").default("new").notNull(),
+  score: integer("score"), // Score do lead (0-100)
+  lastContactDate: timestamp("last_contact_date"),
+  nextContactDate: timestamp("next_contact_date"),
+  assignedToId: integer("assigned_to_id").references(() => users.id),
+  institutionId: integer("institution_id").references(() => institutions.id),
   notes: text("notes"),
-  
-  // Metadados
+  interests: json("interests").$type<string[]>(), // Interesses (cursos, serviços)
+  segment: text("segment"), // Segmento do lead (Educacional, Empresarial, etc)
+  metadata: json("metadata"), // Dados adicionais
   createdById: integer("created_by_id").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -350,31 +356,33 @@ export const leads = pgTable("leads", {
 export const clients = pgTable("clients", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  type: clientTypeEnum("type").default("pj").notNull(), // Pessoa física ou jurídica
+  type: clientTypeEnum("type").default("pf").notNull(), // PF ou PJ
   email: text("email").notNull(),
-  phone: text("phone").notNull(),
+  phone: text("phone"),
+  document: text("document"), // CPF ou CNPJ
+  address: text("address"),
+  city: text("city"),
+  state: text("state"),
+  zipCode: text("zip_code"),
+  segment: text("segment"), // Segmento do cliente
+  institutionId: integer("institution_id").references(() => institutions.id),
+  assignedToId: integer("assigned_to_id").references(() => users.id),
   
-  // Documentos
-  cpfCnpj: text("cpf_cnpj").notNull(), // CPF ou CNPJ
-  rgIe: text("rg_ie"), // RG ou Inscrição Estadual
-  birthDate: timestamp("birth_date"), // Data de nascimento
+  // Para clientes PJ
+  contactName: text("contact_name"), // Nome do contato principal
+  contactEmail: text("contact_email"), // Email do contato principal
+  contactPhone: text("contact_phone"), // Telefone do contato principal
   
-  // Endereço
-  zipCode: text("zip_code").notNull(),
-  street: text("street").notNull(),
-  number: text("number_address").notNull(), // Renamed to match DB structure
-  complement: text("complement"),
-  neighborhood: text("neighborhood").notNull(),
-  city: text("city").notNull(),
-  state: text("state").notNull(),
-  
-  // Informações adicionais
-  observation: text("observation"), // Renamed from notes to match DB structure
-  
-  // Integrações
-  asaasId: text("asaas_id"), // ID do cliente no Asaas
+  // Financeiro
+  paymentTerms: text("payment_terms"), // Termos de pagamento padrão
+  creditLimit: doublePrecision("credit_limit"), // Limite de crédito
   
   // Metadados
+  status: text("status").default("active").notNull(), // active, inactive
+  notes: text("notes"),
+  metadata: json("metadata"), // Dados adicionais
+  
+  // Auditoria
   createdById: integer("created_by_id").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -382,16 +390,21 @@ export const clients = pgTable("clients", {
 
 export const contacts = pgTable("contacts", {
   id: serial("id").primaryKey(),
+  clientId: integer("client_id").references(() => clients.id, { onDelete: 'cascade' }),
   name: text("name").notNull(),
   email: text("email").notNull(),
-  phone: text("phone").notNull(),
-  position: text("position").notNull(), // Cargo
-  clientId: integer("client_id").notNull().references(() => clients.id, { onDelete: 'cascade' }),
-  role: text("role").notNull(), // Papel no processo de compra (decisor, influenciador, etc.)
+  phone: text("phone"),
+  position: text("position"), // Cargo
   department: text("department"), // Departamento
-  notes: text("notes"),
+  isPrimary: boolean("is_primary").default(false).notNull(), // Contato principal?
+  institutionId: integer("institution_id").references(() => institutions.id),
   
   // Metadados
+  status: text("status").default("active").notNull(), // active, inactive
+  notes: text("notes"),
+  
+  // Auditoria
+  createdById: integer("created_by_id").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -909,6 +922,14 @@ export const certificateSignersRelations = relations(certificateSigners, ({ one,
 
 // Relações de CRM
 export const leadsRelations = relations(leads, ({ one }) => ({
+  institution: one(institutions, {
+    fields: [leads.institutionId],
+    references: [institutions.id],
+  }),
+  assignedTo: one(users, {
+    fields: [leads.assignedToId],
+    references: [users.id],
+  }),
   createdBy: one(users, {
     fields: [leads.createdById],
     references: [users.id],
@@ -916,13 +937,20 @@ export const leadsRelations = relations(leads, ({ one }) => ({
 }));
 
 export const clientsRelations = relations(clients, ({ one, many }) => ({
-  contacts: many(contacts),
-  invoices: many(invoices),
-  contracts: many(contracts),
+  institution: one(institutions, {
+    fields: [clients.institutionId],
+    references: [institutions.id],
+  }),
+  assignedTo: one(users, {
+    fields: [clients.assignedToId],
+    references: [users.id],
+  }),
   createdBy: one(users, {
     fields: [clients.createdById],
     references: [users.id],
   }),
+  contacts: many(contacts),
+  invoices: many(invoices),
 }));
 
 export const contactsRelations = relations(contacts, ({ one }) => ({
@@ -930,9 +958,15 @@ export const contactsRelations = relations(contacts, ({ one }) => ({
     fields: [contacts.clientId],
     references: [clients.id],
   }),
+  institution: one(institutions, {
+    fields: [contacts.institutionId],
+    references: [institutions.id],
+  }),
+  createdBy: one(users, {
+    fields: [contacts.createdById],
+    references: [users.id],
+  }),
 }));
-
-// Relações de Finanças
 export const productsRelations = relations(products, ({ one, many }) => ({
   invoiceItems: many(invoiceItems),
   createdBy: one(users, {
@@ -1498,10 +1532,18 @@ export const insertLeadSchema = createInsertSchema(leads).pick({
   email: true,
   phone: true,
   company: true,
+  position: true,
   source: true,
-  interest: true,
   status: true,
+  score: true,
+  lastContactDate: true,
+  nextContactDate: true,
+  assignedToId: true,
+  institutionId: true,
   notes: true,
+  interests: true,
+  segment: true,
+  metadata: true,
   createdById: true,
 });
 export type InsertLead = z.infer<typeof insertLeadSchema>;
@@ -1512,36 +1554,42 @@ export const insertClientSchema = createInsertSchema(clients).pick({
   type: true,
   email: true,
   phone: true,
-  cpfCnpj: true,
-  rgIe: true,
-  birthDate: true,
-  zipCode: true,
-  street: true,
-  number: true,
-  complement: true,
-  neighborhood: true,
+  document: true,
+  address: true,
   city: true,
   state: true,
-  observation: true,
+  zipCode: true,
+  segment: true,
+  institutionId: true,
+  assignedToId: true,
+  contactName: true,
+  contactEmail: true,
+  contactPhone: true,
+  paymentTerms: true,
+  creditLimit: true,
+  status: true,
+  notes: true,
+  metadata: true,
   createdById: true,
 });
 export type InsertClient = z.infer<typeof insertClientSchema>;
 export type Client = typeof clients.$inferSelect;
 
 export const insertContactSchema = createInsertSchema(contacts).pick({
+  clientId: true,
   name: true,
   email: true,
   phone: true,
   position: true,
-  clientId: true,
-  role: true,
   department: true,
+  isPrimary: true,
+  institutionId: true,
+  status: true,
   notes: true,
+  createdById: true,
 });
 export type InsertContact = z.infer<typeof insertContactSchema>;
 export type Contact = typeof contacts.$inferSelect;
-
-// Schemas para o módulo Financeiro
 export const insertProductSchema = createInsertSchema(products).pick({
   name: true,
   code: true,

@@ -178,28 +178,7 @@ export interface IStorage {
   createPayment(enrollment: Enrollment, gateway: string): Promise<{externalId: string, paymentUrl: string}>;
   getPaymentStatus(externalId: string, gateway: string): Promise<string>;
   
-  // CRM - Leads
-  getLead(id: number): Promise<Lead | undefined>;
-  getLeads(search?: string, status?: string, limit?: number, offset?: number): Promise<Lead[]>;
-  createLead(lead: InsertLead): Promise<Lead>;
-  updateLead(id: number, lead: Partial<InsertLead>): Promise<Lead | undefined>;
-  deleteLead(id: number): Promise<boolean>;
-  convertLeadToClient(leadId: number, additionalData: any, createdById: number): Promise<Client>;
-  
-  // CRM - Clientes
-  getClient(id: number): Promise<Client | undefined>;
-  getClientByCPFCNPJ(cpfCnpj: string): Promise<Client | undefined>;
-  getClients(search?: string, status?: string, limit?: number, offset?: number): Promise<Client[]>;
-  createClient(client: InsertClient): Promise<Client>;
-  updateClient(id: number, client: Partial<InsertClient>): Promise<Client | undefined>;
-  deleteClient(id: number): Promise<boolean>;
-  
-  // CRM - Contatos
-  getContact(id: number): Promise<Contact | undefined>;
-  getContactsByClient(clientId: number): Promise<Contact[]>;
-  createContact(contact: InsertContact): Promise<Contact>;
-  updateContact(id: number, contact: Partial<InsertContact>): Promise<Contact | undefined>;
-  deleteContact(id: number): Promise<boolean>;
+  // CRM - Interfaces removidas temporariamente
   
   // Finanças - Produtos/Serviços
   getProduct(id: number): Promise<Product | undefined>;
@@ -1433,312 +1412,95 @@ export class DatabaseStorage implements IStorage {
   }
 
   // ==================== CRM - Leads ====================
-  async getLead(id: number): Promise<Lead | undefined> {
-    const [lead] = await db.select().from(leads).where(eq(leads.id, id));
-    return lead || undefined;
+  
+  // CRM - Métodos removidos temporariamente
+  // Leads
+  async getLead(id: number): Promise<any> {
+    console.log("CRM método temporariamente indisponível: getLead");
+    return Promise.reject("Método não implementado - CRM em reconstrução");
   }
-
-  async getLeads(search?: string, status?: string, limit: number = 50, offset: number = 0): Promise<Lead[]> {
-    let query = db.select().from(leads).limit(limit).offset(offset);
-    
-    if (search) {
-      query = query.where(
-        or(
-          like(leads.name, `%${search}%`),
-          like(leads.email, `%${search}%`),
-          like(leads.phone, `%${search}%`)
-        )
-      );
-    }
-    
-    if (status) {
-      query = query.where(eq(leads.status, status));
-    }
-    
-    return await query.orderBy(desc(leads.createdAt));
+  
+  async getLeads(search?: string, status?: string, limit: number = 50, offset: number = 0): Promise<any[]> {
+    console.log("CRM método temporariamente indisponível: getLeads");
+    return Promise.reject("Método não implementado - CRM em reconstrução");
   }
-
-  async createLead(lead: InsertLead): Promise<Lead> {
-    const [newLead] = await db
-      .insert(leads)
-      .values({
-        ...lead,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      })
-      .returning();
-    return newLead;
+  
+  async createLead(lead: any): Promise<any> {
+    console.log("CRM método temporariamente indisponível: createLead");
+    return Promise.reject("Método não implementado - CRM em reconstrução");
   }
-
-  async updateLead(id: number, leadData: Partial<InsertLead>): Promise<Lead | undefined> {
-    const [updatedLead] = await db
-      .update(leads)
-      .set({
-        ...leadData,
-        updatedAt: new Date()
-      })
-      .where(eq(leads.id, id))
-      .returning();
-    return updatedLead;
+  
+  async updateLead(id: number, lead: any): Promise<any> {
+    console.log("CRM método temporariamente indisponível: updateLead");
+    return Promise.reject("Método não implementado - CRM em reconstrução");
   }
-
+  
   async deleteLead(id: number): Promise<boolean> {
-    try {
-      const result = await db
-        .delete(leads)
-        .where(eq(leads.id, id))
-        .returning({ id: leads.id });
-      return result.length > 0;
-    } catch (error) {
-      console.error("Error deleting lead:", error);
-      return false;
-    }
+    console.log("CRM método temporariamente indisponível: deleteLead");
+    return Promise.reject("Método não implementado - CRM em reconstrução");
   }
-
-  async convertLeadToClient(leadId: number, additionalData: any, createdById: number): Promise<Client> {
-    // Iniciar transação
-    return await db.transaction(async (tx) => {
-      // Obter o lead
-      const [lead] = await tx.select().from(leads).where(eq(leads.id, leadId));
-      
-      if (!lead) {
-        throw new Error("Lead não encontrado");
-      }
-      
-      // Criar o cliente a partir do lead
-      const [client] = await tx.insert(clients).values({
-        name: lead.name,
-        email: lead.email,
-        phone: lead.phone,
-        type: additionalData.type || 'pf', // Tipo de cliente (PF ou PJ)
-        cpfCnpj: additionalData.cpfCnpj || '',
-        address: additionalData.address || lead.address || '',
-        city: additionalData.city || lead.city || '',
-        state: additionalData.state || lead.state || '',
-        zipCode: additionalData.zipCode || lead.zipCode || '',
-        notes: lead.notes,
-        createdById,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }).returning();
-      
-      // Atualizar o lead para status "convertido"
-      await tx.update(leads)
-        .set({ 
-          status: 'convertido',
-          updatedAt: new Date(),
-          convertedToClientId: client.id
-        })
-        .where(eq(leads.id, leadId));
-      
-      return client;
-    });
+  
+  async convertLeadToClient(leadId: number, additionalData: any, createdById: number): Promise<any> {
+    console.log("CRM método temporariamente indisponível: convertLeadToClient");
+    return Promise.reject("Método não implementado - CRM em reconstrução");
   }
-
-  // ==================== CRM - Clientes ====================
-  async getClient(id: number): Promise<Client | undefined> {
-    const [client] = await db.select().from(clients).where(eq(clients.id, id));
-    return client || undefined;
+  
+  // Clientes
+  async getClient(id: number): Promise<any> {
+    console.log("CRM método temporariamente indisponível: getClient");
+    return Promise.reject("Método não implementado - CRM em reconstrução");
   }
-
-  async getClientByCPFCNPJ(cpfCnpj: string): Promise<Client | undefined> {
-    const [client] = await db.select().from(clients).where(eq(clients.cpfCnpj, cpfCnpj));
-    return client || undefined;
+  
+  async getClientByCPFCNPJ(cpfCnpj: string): Promise<any> {
+    console.log("CRM método temporariamente indisponível: getClientByCPFCNPJ");
+    return Promise.reject("Método não implementado - CRM em reconstrução");
   }
-
-  async getClients(search?: string, status?: string, limit: number = 50, offset: number = 0): Promise<Client[]> {
-    let query = db.select().from(clients).limit(limit).offset(offset);
-    
-    if (search) {
-      query = query.where(
-        or(
-          like(clients.name, `%${search}%`),
-          like(clients.email, `%${search}%`),
-          like(clients.phone, `%${search}%`),
-          like(clients.cpfCnpj, `%${search}%`)
-        )
-      );
-    }
-    
-    return await query.orderBy(desc(clients.createdAt));
+  
+  async getClients(search?: string, status?: string, limit: number = 50, offset: number = 0): Promise<any[]> {
+    console.log("CRM método temporariamente indisponível: getClients");
+    return Promise.reject("Método não implementado - CRM em reconstrução");
   }
-
-  async createClient(client: InsertClient): Promise<Client> {
-    // Primeiro criamos o cliente no banco de dados
-    const [newClient] = await db
-      .insert(clients)
-      .values({
-        ...client,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      })
-      .returning();
-
-    try {
-      // Importamos e usamos o serviço do Asaas
-      const { AsaasService } = await import('./services/asaas-service');
-      
-      // Criamos o cliente no Asaas
-      const asaasResponse = await AsaasService.createCustomer(client, newClient.id);
-      
-      // Atualizamos o cliente com o ID do Asaas
-      const [updatedClient] = await db
-        .update(clients)
-        .set({
-          asaasId: asaasResponse.id,
-          updatedAt: new Date()
-        })
-        .where(eq(clients.id, newClient.id))
-        .returning();
-      
-      return updatedClient;
-    } catch (error) {
-      console.error('Erro ao integrar cliente com Asaas:', error);
-      // Retornamos o cliente mesmo sem integração com Asaas
-      return newClient;
-    }
+  
+  async createClient(client: any): Promise<any> {
+    console.log("CRM método temporariamente indisponível: createClient");
+    return Promise.reject("Método não implementado - CRM em reconstrução");
   }
-
-  async updateClient(id: number, clientData: Partial<InsertClient>): Promise<Client | undefined> {
-    // Primeiro verificamos se o cliente existe e já tem integração com Asaas
-    const existingClient = await this.getClient(id);
-    if (!existingClient) {
-      return undefined;
-    }
-
-    // Atualizamos o cliente no banco de dados
-    const [updatedClient] = await db
-      .update(clients)
-      .set({
-        ...clientData,
-        updatedAt: new Date()
-      })
-      .where(eq(clients.id, id))
-      .returning();
-
-    try {
-      // Importamos e usamos o serviço do Asaas
-      const { AsaasService } = await import('./services/asaas-service');
-      
-      if (existingClient.asaasId) {
-        // Se já existe ID do Asaas, atualizamos o cliente
-        await AsaasService.updateCustomer(existingClient.asaasId, {
-          ...existingClient,
-          ...clientData
-        });
-        console.log(`Cliente atualizado no Asaas (ID: ${existingClient.asaasId})`);
-      } else {
-        // Se não existe ID do Asaas, criamos o cliente
-        const asaasResponse = await AsaasService.createCustomer(
-          { ...existingClient, ...clientData },
-          existingClient.id
-        );
-        
-        // Atualizamos o cliente com o ID do Asaas
-        const [clientWithAsaasId] = await db
-          .update(clients)
-          .set({
-            asaasId: asaasResponse.id,
-            updatedAt: new Date()
-          })
-          .where(eq(clients.id, id))
-          .returning();
-          
-        return clientWithAsaasId;
-      }
-    } catch (error) {
-      console.error('Erro ao integrar cliente com Asaas na atualização:', error);
-      // Continuamos mesmo se houver erro na integração
-    }
-    
-    return updatedClient;
+  
+  async updateClient(id: number, client: any): Promise<any> {
+    console.log("CRM método temporariamente indisponível: updateClient");
+    return Promise.reject("Método não implementado - CRM em reconstrução");
   }
-
+  
   async deleteClient(id: number): Promise<boolean> {
-    try {
-      // Primeiro verificamos se o cliente existe e tem integração com Asaas
-      const existingClient = await this.getClient(id);
-      if (!existingClient) {
-        return false;
-      }
-      
-      // Se o cliente tem ID do Asaas, removemos ele lá também
-      if (existingClient.asaasId && process.env.ASAAS_API_KEY) {
-        try {
-          const { AsaasService } = await import('./services/asaas-service');
-          await AsaasService.deleteCustomer(existingClient.asaasId);
-          console.log(`Cliente removido no Asaas (ID: ${existingClient.asaasId})`);
-        } catch (error) {
-          console.error(`Erro ao excluir cliente no Asaas (ID: ${existingClient.asaasId}):`, error);
-          // Continuamos mesmo se houver erro na integração
-        }
-      }
-      
-      // Removemos o cliente do banco de dados local
-      const result = await db
-        .delete(clients)
-        .where(eq(clients.id, id))
-        .returning({ id: clients.id });
-        
-      return result.length > 0;
-    } catch (error) {
-      console.error("Erro ao excluir cliente:", error);
-      return false;
-    }
+    console.log("CRM método temporariamente indisponível: deleteClient");
+    return Promise.reject("Método não implementado - CRM em reconstrução");
   }
-
-  // ==================== CRM - Contatos ====================
-  async getContact(id: number): Promise<Contact | undefined> {
-    const [contact] = await db.select().from(contacts).where(eq(contacts.id, id));
-    return contact || undefined;
+  
+  // Contatos
+  async getContact(id: number): Promise<any> {
+    console.log("CRM método temporariamente indisponível: getContact");
+    return Promise.reject("Método não implementado - CRM em reconstrução");
   }
-
-  async getContactsByClient(clientId: number): Promise<Contact[]> {
-    return await db
-      .select()
-      .from(contacts)
-      .where(eq(contacts.clientId, clientId))
-      .orderBy(desc(contacts.createdAt));
+  
+  async getContactsByClient(clientId: number): Promise<any[]> {
+    console.log("CRM método temporariamente indisponível: getContactsByClient");
+    return Promise.reject("Método não implementado - CRM em reconstrução");
   }
-
-  async createContact(contact: InsertContact): Promise<Contact> {
-    const [newContact] = await db
-      .insert(contacts)
-      .values({
-        ...contact,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      })
-      .returning();
-    return newContact;
+  
+  async createContact(contact: any): Promise<any> {
+    console.log("CRM método temporariamente indisponível: createContact");
+    return Promise.reject("Método não implementado - CRM em reconstrução");
   }
-
-  async updateContact(id: number, contactData: Partial<InsertContact>): Promise<Contact | undefined> {
-    const [updatedContact] = await db
-      .update(contacts)
-      .set({
-        ...contactData,
-        updatedAt: new Date()
-      })
-      .where(eq(contacts.id, id))
-      .returning();
-    return updatedContact;
+  
+  async updateContact(id: number, contact: any): Promise<any> {
+    console.log("CRM método temporariamente indisponível: updateContact");
+    return Promise.reject("Método não implementado - CRM em reconstrução");
   }
-
+  
   async deleteContact(id: number): Promise<boolean> {
-    try {
-      const result = await db
-        .delete(contacts)
-        .where(eq(contacts.id, id))
-        .returning({ id: contacts.id });
-      return result.length > 0;
-    } catch (error) {
-      console.error("Error deleting contact:", error);
-      return false;
-    }
+    console.log("CRM método temporariamente indisponível: deleteContact");
+    return Promise.reject("Método não implementado - CRM em reconstrução");
   }
-
-  // ==================== Finanças - Produtos/Serviços ====================
   async getProduct(id: number): Promise<Product | undefined> {
     const [product] = await db.select().from(products).where(eq(products.id, id));
     return product || undefined;
