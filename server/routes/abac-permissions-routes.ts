@@ -45,7 +45,7 @@ router.post('/institution-phase', requirePermission('permissions', 'create'), as
 
     const result = schema.safeParse(req.body);
     if (!result.success) {
-      return res.status(400).json({ error: 'Dados inválidos', details: result.error.format() });
+      return res.status(400).json({ error: 'Dados inválidos', detail: result.error.format() });
     }
 
     const permission = await permissionService.createInstitutionPhasePermission(result.data);
@@ -56,7 +56,7 @@ router.post('/institution-phase', requirePermission('permissions', 'create'), as
       actionType: 'create',
       entityType: 'permission',
       entityId: permission.id,
-      details: {
+      detail: {
         type: 'institution_phase_permission',
         resource: permission.resource,
         action: permission.action,
@@ -97,7 +97,7 @@ router.delete('/institution-phase/:id', requirePermission('permissions', 'delete
       actionType: 'delete',
       entityType: 'permission',
       entityId: id,
-      details: {
+      detail: {
         type: 'institution_phase_permission',
         resource: permission.resource,
         action: permission.action,
@@ -145,7 +145,7 @@ router.post('/period-rules', requirePermission('permissions', 'create'), async (
 
     const result = schema.safeParse(req.body);
     if (!result.success) {
-      return res.status(400).json({ error: 'Dados inválidos', details: result.error.format() });
+      return res.status(400).json({ error: 'Dados inválidos', detail: result.error.format() });
     }
 
     const rule = await permissionService.createPeriodPermissionRule(result.data);
@@ -156,7 +156,7 @@ router.post('/period-rules', requirePermission('permissions', 'create'), async (
       actionType: 'create',
       entityType: 'permission',
       entityId: rule.id,
-      details: {
+      detail: {
         type: 'period_permission_rule',
         resource: rule.resource,
         action: rule.action,
@@ -197,7 +197,7 @@ router.delete('/period-rules/:id', requirePermission('permissions', 'delete'), a
       actionType: 'delete',
       entityType: 'permission',
       entityId: id,
-      details: {
+      detail: {
         type: 'period_permission_rule',
         resource: rule.resource,
         action: rule.action,
@@ -243,7 +243,7 @@ router.post('/payment-status', requirePermission('permissions', 'create'), async
 
     const result = schema.safeParse(req.body);
     if (!result.success) {
-      return res.status(400).json({ error: 'Dados inválidos', details: result.error.format() });
+      return res.status(400).json({ error: 'Dados inválidos', detail: result.error.format() });
     }
 
     const permission = await permissionService.createPaymentStatusPermission(result.data);
@@ -254,7 +254,7 @@ router.post('/payment-status', requirePermission('permissions', 'create'), async
       actionType: 'create',
       entityType: 'permission',
       entityId: permission.id,
-      details: {
+      detail: {
         type: 'payment_status_permission',
         resource: permission.resource,
         action: permission.action,
@@ -295,7 +295,7 @@ router.delete('/payment-status/:id', requirePermission('permissions', 'delete'),
       actionType: 'delete',
       entityType: 'permission',
       entityId: id,
-      details: {
+      detail: {
         type: 'payment_status_permission',
         resource: permission.resource,
         action: permission.action,
@@ -336,7 +336,7 @@ router.post('/check', requireAuth, async (req, res) => {
 
     const result = schema.safeParse(req.body);
     if (!result.success) {
-      return res.status(400).json({ error: 'Dados inválidos', details: result.error.format() });
+      return res.status(400).json({ error: 'Dados inválidos', detail: result.error.format() });
     }
 
     const data = result.data;
@@ -394,7 +394,7 @@ router.post('/check-ownership', requireAuth, async (req, res) => {
 
     const result = schema.safeParse(req.body);
     if (!result.success) {
-      return res.status(400).json({ error: 'Dados inválidos', details: result.error.format() });
+      return res.status(400).json({ error: 'Dados inválidos', detail: result.error.format() });
     }
 
     const { userId, resourceType, entityId } = result.data;
@@ -439,7 +439,7 @@ router.post('/check-institution-phase', requireAuth, async (req, res) => {
 
     const result = schema.safeParse(req.body);
     if (!result.success) {
-      return res.status(400).json({ error: 'Dados inválidos', details: result.error.format() });
+      return res.status(400).json({ error: 'Dados inválidos', detail: result.error.format() });
     }
 
     const { userId, resource, action, institutionId } = result.data;
@@ -487,7 +487,7 @@ router.post('/check-payment-status', requireAuth, async (req, res) => {
 
     const result = schema.safeParse(req.body);
     if (!result.success) {
-      return res.status(400).json({ error: 'Dados inválidos', details: result.error.format() });
+      return res.status(400).json({ error: 'Dados inválidos', detail: result.error.format() });
     }
 
     const { userId, resource, action, entityId } = result.data;
@@ -536,7 +536,7 @@ router.post('/check-period', requireAuth, async (req, res) => {
 
     const result = schema.safeParse(req.body);
     if (!result.success) {
-      return res.status(400).json({ error: 'Dados inválidos', details: result.error.format() });
+      return res.status(400).json({ error: 'Dados inválidos', detail: result.error.format() });
     }
 
     const { userId, resource, action, targetDate, institutionId } = result.data;
