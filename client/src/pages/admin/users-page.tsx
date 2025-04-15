@@ -10,6 +10,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/hooks/use-auth";
 import { getAdminSidebarItems } from "@/components/layout/admin-sidebar-items";
 import { Sidebar } from "@/components/layout/sidebar";
+import { usePermissions } from "@/hooks/use-permissions";
+import PermissionButton from "@/components/guards/permission-button";
 
 // UI Components
 import {
@@ -380,13 +382,16 @@ export default function UsersPage() {
               </p>
             </div>
             <div className="mt-4 flex space-x-2 md:mt-0">
-              <Button
+              <PermissionButton
+                resource="users"
+                action="create"
                 onClick={handleOpenCreateDialog}
                 className="flex items-center bg-blue-600 hover:bg-blue-700"
+                deniedTooltip="Você não tem permissão para criar usuários"
               >
                 <UserPlusIcon className="mr-1 h-4 w-4" />
                 Novo Usuário
-              </Button>
+              </PermissionButton>
             </div>
           </div>
 
@@ -488,23 +493,29 @@ export default function UsersPage() {
                           <TableCell>{renderPortalType(user.portalType)}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end space-x-2">
-                              <Button
+                              <PermissionButton
+                                resource="users"
+                                action="update"
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleOpenEditDialog(user)}
+                                deniedTooltip="Você não tem permissão para editar usuários"
                               >
                                 <EditIcon className="h-4 w-4" />
                                 <span className="sr-only md:not-sr-only md:ml-2">Editar</span>
-                              </Button>
-                              <Button
+                              </PermissionButton>
+                              <PermissionButton
+                                resource="users"
+                                action="delete"
                                 variant="destructive"
                                 size="sm"
                                 onClick={() => handleOpenDeleteDialog(user)}
                                 disabled={user.id === 5} // Impedir exclusão do usuário admin principal
+                                deniedTooltip="Você não tem permissão para excluir usuários"
                               >
                                 <TrashIcon className="h-4 w-4" />
                                 <span className="sr-only md:not-sr-only md:ml-2">Excluir</span>
-                              </Button>
+                              </PermissionButton>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -521,13 +532,16 @@ export default function UsersPage() {
                   <p className="mt-1 text-gray-500">
                     Cadastre seu primeiro usuário para começar.
                   </p>
-                  <Button
+                  <PermissionButton
+                    resource="users"
+                    action="create"
                     onClick={handleOpenCreateDialog}
                     className="mt-4 flex items-center"
+                    deniedTooltip="Você não tem permissão para criar usuários"
                   >
                     <UserPlusIcon className="mr-1 h-4 w-4" />
                     Criar Usuário
-                  </Button>
+                  </PermissionButton>
                 </div>
               )}
             </CardContent>
