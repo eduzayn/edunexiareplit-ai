@@ -24,20 +24,26 @@ export interface Client {
   id: number;
   name: string;
   type: 'pf' | 'pj';
-  cpfCnpj: string;
-  rgIe?: string;
+  document: string; // CPF ou CNPJ
   email: string;
   phone: string;
   birthDate?: string; // Data de nascimento
-  street: string;
-  number: string;
-  complement?: string;
-  neighborhood: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  observation?: string; // Observações
-  asaasId?: string;
+  address?: string; // Endereço completo
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  notes?: string; // Observações gerais
+  status?: string; // active ou inactive
+  segment?: string; // Segmento do cliente
+  asaasId?: string; // ID do cliente no Asaas
+  // Campos para empresas (PJ)
+  contactName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  // Campos financeiros
+  paymentTerms?: string;
+  creditLimit?: number;
+  // Metadados
   createdAt: string;
   updatedAt: string;
   createdById: number;

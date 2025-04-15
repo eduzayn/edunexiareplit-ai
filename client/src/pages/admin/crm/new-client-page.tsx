@@ -46,7 +46,7 @@ const formSchema = z.object({
   phone: z.string().min(10, { message: "Telefone inválido" }),
   
   // Documentos
-  cpfCnpj: z.string().min(11, { message: "CPF/CNPJ inválido" }).refine(val => val.length > 0, {
+  document: z.string().min(11, { message: "CPF/CNPJ inválido" }).refine(val => val.length > 0, {
     message: "CPF/CNPJ é obrigatório para integração com sistema financeiro"
   }),
   rgIe: z.string().optional().or(z.literal("")),
@@ -286,7 +286,7 @@ export default function NewClientPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <FormField
                         control={form.control}
-                        name="cpfCnpj"
+                        name="document"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>
