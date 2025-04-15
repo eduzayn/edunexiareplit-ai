@@ -35,6 +35,7 @@ import subscriptionPlansRoutes from "./routes/subscription-plans";
 import subscriptionsRoutes from "./routes/subscriptions";
 import publicRegisterRouter from "./routes/public-register";
 import permissionsRoutes from "./routes/permissions-routes";
+import auditRoutes from "./routes/audit-routes";
 // Importação das novas rotas para os módulos CRM, Financeiro e Contratos
 import crmRoutes from "./routes/crm-routes";
 import financeRoutes from "./routes/finance-routes";
