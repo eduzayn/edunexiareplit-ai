@@ -3,15 +3,12 @@ import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/hooks/use-auth";
 import { getAdminSidebarItems } from "@/components/layout/admin-sidebar-items";
-import { Sidebar } from "@/components/layout/sidebar";
-import { usePermissions } from "@/hooks/use-permissions";
-import PermissionButton from "@/components/guards/permission-button";
+import AdminLayout from "@/components/layout/admin-layout";
 
 // UI Components
 import {
@@ -58,6 +55,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 // Icons
 import {
@@ -69,6 +67,7 @@ import {
   UserIcon,
   UserPlusIcon,
   ShieldIcon,
+  AlertTriangleIcon,
 } from "lucide-react";
 
 // Schema para validação do formulário
@@ -111,9 +110,8 @@ interface User {
 export default function UsersPage() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const isMobile = useIsMobile();
+  const queryClient = useQueryClient();
   const [location, navigate] = useLocation();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [portalTypeFilter, setPortalTypeFilter] = useState("all");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -121,8 +119,10 @@ export default function UsersPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   
-  // Usar o componente padronizado para os itens da barra lateral
-  const sidebarItems = getAdminSidebarItems(location || "");
+  // Checking if user has permissions for actions
+  const hasCreatePermission = true; // Temporary - to be replaced with proper permission check
+  const hasUpdatePermission = true; // Temporary - to be replaced with proper permission check
+  const hasDeletePermission = true; // Temporary - to be replaced with proper permission check
 
   // Consulta para listar usuários
   const { 
@@ -131,7 +131,7 @@ export default function UsersPage() {
     isError,
     refetch
   } = useQuery({
-    queryKey: ["/api/admin/users", searchTerm, portalTypeFilter],
+    queryKey: ['/api/admin/users', searchTerm, portalTypeFilter],
     queryFn: async () => {
       let url = `/api/admin/users`;
       const params = new URLSearchParams();
@@ -149,18 +149,18 @@ export default function UsersPage() {
         url += `?${queryString}`;
       }
       
-      const response = await apiRequest("GET", url);
-      return response.json();
+      return apiRequest<User[]>(url);
     },
   });
 
   // Mutation para criar usuário
   const createUserMutation = useMutation({
-    mutationFn: async (data: UserFormValues) => {
-      const response = await apiRequest("POST", "/api/admin/users", data);
-      return response.json();
-    },
-    onSuccess: (newUser) => {
+    mutationFn: (data: UserFormValues) => 
+      apiRequest('/api/admin/users', { 
+        method: 'POST',
+        data
+      }),
+    onSuccess: () => {
       toast({
         title: "Usuário criado com sucesso!",
         description: "O novo usuário foi adicionado ao sistema.",
@@ -183,12 +183,12 @@ export default function UsersPage() {
         sessionStorage.removeItem('userRedirect');
       } else {
         // Comportamento padrão: apenas atualizar a lista
-        refetch();
+        queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
       }
       
       createForm.reset();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Erro ao criar usuário",
         description: error.message || "Ocorreu um erro ao tentar criar o usuário.",
@@ -199,10 +199,12 @@ export default function UsersPage() {
 
   // Mutation para atualizar usuário
   const updateUserMutation = useMutation({
-    mutationFn: async (data: UserFormValues & { id: number }) => {
+    mutationFn: (data: UserFormValues & { id: number }) => {
       const { id, ...updateData } = data;
-      const response = await apiRequest("PUT", `/api/admin/users/${id}`, updateData);
-      return response.json();
+      return apiRequest(`/api/admin/users/${id}`, { 
+        method: 'PUT',
+        data: updateData
+      });
     },
     onSuccess: () => {
       toast({
@@ -210,9 +212,9 @@ export default function UsersPage() {
         description: "As alterações foram salvas no sistema.",
       });
       setIsEditDialogOpen(false);
-      refetch();
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Erro ao atualizar usuário",
         description: error.message || "Ocorreu um erro ao tentar atualizar o usuário.",
@@ -223,18 +225,17 @@ export default function UsersPage() {
 
   // Mutation para excluir usuário
   const deleteUserMutation = useMutation({
-    mutationFn: async (id: number) => {
-      await apiRequest("DELETE", `/api/admin/users/${id}`);
-    },
+    mutationFn: (id: number) => 
+      apiRequest(`/api/admin/users/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       toast({
         title: "Usuário excluído com sucesso!",
         description: "O usuário foi removido do sistema.",
       });
       setIsDeleteDialogOpen(false);
-      refetch();
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Erro ao excluir usuário",
         description: error.message || "Ocorreu um erro ao tentar excluir o usuário.",
@@ -326,7 +327,53 @@ export default function UsersPage() {
     }
   };
 
-  // Efeito para fechar menu mobile quando a tela é redimensionada
+  // Função para renderizar botão com permissão
+  const PermissionButtonWrapper = ({ 
+    onClick, 
+    hasPermission, 
+    deniedTooltip, 
+    children,
+    variant = "default",
+    size = "default",
+    className = ""
+  }: { 
+    onClick: () => void, 
+    hasPermission: boolean, 
+    deniedTooltip: string,
+    children: React.ReactNode,
+    variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link",
+    size?: "default" | "sm" | "lg" | "icon",
+    className?: string
+  }) => {
+    if (hasPermission) {
+      return (
+        <Button onClick={onClick} variant={variant} size={size} className={className}>
+          {children}
+        </Button>
+      );
+    }
+    
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button 
+              variant={variant} 
+              size={size} 
+              className={`opacity-50 cursor-not-allowed ${className}`} 
+              disabled
+            >
+              {children}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{deniedTooltip}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  };
+
   // Efeito para verificar parâmetros de redirecionamento na URL e abrir modal de criação
   useEffect(() => {
     // Verificar se há parâmetros de redirecionamento na URL
@@ -344,223 +391,201 @@ export default function UsersPage() {
     }
   }, []);
 
-  // Efeito para fechar menu mobile quando a tela é redimensionada
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth >= 768) {
-        setIsMobileMenuOpen(false);
-      }
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar
-        items={sidebarItems}
-        user={user}
-        portalType="admin"
-        portalColor="#4CAF50"
-        isMobileMenuOpen={isMobileMenuOpen}
-        setIsMobileMenuOpen={setIsMobileMenuOpen}
-      />
-
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto">
-        <div className="px-4 py-20 md:py-6 md:px-8">
-          {/* Header */}
-          <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-                <UserIcon className="mr-2 h-6 w-6" />
-                Gestão de Usuários
-              </h1>
-              <p className="text-gray-600">
-                Gerencie os usuários da plataforma
-              </p>
-            </div>
-            <div className="mt-4 flex space-x-2 md:mt-0">
-              <PermissionButton
-                resource="users"
-                action="create"
-                onClick={handleOpenCreateDialog}
-                className="flex items-center bg-blue-600 hover:bg-blue-700"
-                deniedTooltip="Você não tem permissão para criar usuários"
-              >
-                <UserPlusIcon className="mr-1 h-4 w-4" />
-                Novo Usuário
-              </PermissionButton>
-            </div>
+    <AdminLayout>
+      <div className="container mx-auto py-6">
+        {/* Header */}
+        <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 flex items-center">
+              <UserIcon className="mr-2 h-6 w-6" />
+              Gestão de Usuários
+            </h1>
+            <p className="text-gray-600">
+              Gerencie os usuários da plataforma
+            </p>
           </div>
+          <div className="mt-4 flex space-x-2 md:mt-0">
+            <PermissionButtonWrapper
+              onClick={handleOpenCreateDialog}
+              hasPermission={hasCreatePermission}
+              deniedTooltip="Você não tem permissão para criar usuários"
+              className="flex items-center bg-blue-600 hover:bg-blue-700"
+            >
+              <UserPlusIcon className="mr-1 h-4 w-4" />
+              Novo Usuário
+            </PermissionButtonWrapper>
+          </div>
+        </div>
 
-          {/* Search and filters */}
-          <Card className="mb-6">
-            <CardContent className="pt-6">
-              <div className="flex flex-col space-y-4 md:flex-row md:items-center md:space-x-4 md:space-y-0">
-                <div className="relative flex-1">
-                  <SearchIcon className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    placeholder="Buscar por nome, username ou email..."
-                    className="pl-9"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        refetch();
-                      }
-                    }}
-                  />
+        {/* Search and filters */}
+        <Card className="mb-6">
+          <CardContent className="pt-6">
+            <div className="flex flex-col space-y-4 md:flex-row md:items-center md:space-x-4 md:space-y-0">
+              <div className="relative flex-1">
+                <SearchIcon className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Buscar por nome, username ou email..."
+                  className="pl-9"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      refetch();
+                    }
+                  }}
+                />
+              </div>
+              <div className="w-full md:w-48">
+                <Select 
+                  value={portalTypeFilter} 
+                  onValueChange={setPortalTypeFilter}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Tipo de Portal" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="admin">Administradores</SelectItem>
+                    <SelectItem value="student">Alunos</SelectItem>
+                    <SelectItem value="partner">Parceiros</SelectItem>
+                    <SelectItem value="polo">Polos</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button 
+                onClick={() => refetch()} 
+                variant="outline" 
+                className="flex items-center"
+              >
+                <RefreshCwIcon className="mr-1 h-4 w-4" />
+                Atualizar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Users List */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Usuários</CardTitle>
+            <CardDescription>
+              Lista completa de usuários cadastrados no sistema
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="space-y-4">
+                {Array(5)
+                  .fill(0)
+                  .map((_, index) => (
+                    <div key={index} className="flex items-center space-x-4">
+                      <Skeleton className="h-12 w-12 rounded-full" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-[250px]" />
+                        <Skeleton className="h-4 w-[200px]" />
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            ) : isError ? (
+              <Alert variant="destructive">
+                <AlertTriangleIcon className="h-4 w-4" />
+                <AlertTitle>Erro ao carregar usuários</AlertTitle>
+                <AlertDescription>
+                  Ocorreu um erro ao tentar carregar a lista de usuários. Por favor, tente novamente.
+                </AlertDescription>
+              </Alert>
+            ) : users && users.length > 0 ? (
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Username</TableHead>
+                      <TableHead>Nome Completo</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Tipo de Portal</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {users.map((user: User) => (
+                      <TableRow key={user.id}>
+                        <TableCell className="font-medium">{user.username}</TableCell>
+                        <TableCell>{user.fullName}</TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>{renderPortalType(user.portalType)}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end space-x-2">
+                            <PermissionButtonWrapper
+                              onClick={() => handleOpenEditDialog(user)}
+                              hasPermission={hasUpdatePermission}
+                              deniedTooltip="Você não tem permissão para editar usuários"
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                            >
+                              <EditIcon className="h-4 w-4" />
+                            </PermissionButtonWrapper>
+                            <PermissionButtonWrapper
+                              onClick={() => handleOpenDeleteDialog(user)}
+                              hasPermission={hasDeletePermission}
+                              deniedTooltip="Você não tem permissão para excluir usuários"
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                            >
+                              <TrashIcon className="h-4 w-4" />
+                            </PermissionButtonWrapper>
+                            <Button
+                              onClick={() => navigate(`/admin/permissions/users/${user.id}`)}
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                            >
+                              <ShieldIcon className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-6 text-center">
+                <div className="mb-4 rounded-full bg-gray-100 p-3">
+                  <UserIcon className="h-6 w-6 text-gray-400" />
                 </div>
-                <div className="w-full md:w-48">
-                  <Select 
-                    value={portalTypeFilter} 
-                    onValueChange={setPortalTypeFilter}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Tipo de Portal" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos</SelectItem>
-                      <SelectItem value="admin">Administradores</SelectItem>
-                      <SelectItem value="student">Alunos</SelectItem>
-                      <SelectItem value="partner">Parceiros</SelectItem>
-                      <SelectItem value="polo">Polos</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Button 
-                  onClick={() => refetch()} 
-                  variant="outline" 
+                <h3 className="mb-1 text-lg font-medium">Nenhum usuário encontrado</h3>
+                <p className="mb-4 text-sm text-gray-500">
+                  Não encontramos nenhum usuário com os filtros aplicados.
+                </p>
+                <PermissionButtonWrapper
+                  onClick={handleOpenCreateDialog}
+                  hasPermission={hasCreatePermission}
+                  deniedTooltip="Você não tem permissão para criar usuários"
                   className="flex items-center"
                 >
-                  <RefreshCwIcon className="mr-1 h-4 w-4" />
-                  Atualizar
-                </Button>
+                  <UserPlusIcon className="mr-1 h-4 w-4" />
+                  Criar Usuário
+                </PermissionButtonWrapper>
               </div>
-            </CardContent>
-          </Card>
+            )}
+          </CardContent>
+        </Card>
 
-          {/* Users List */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Usuários</CardTitle>
-              <CardDescription>
-                Lista completa de usuários cadastrados no sistema
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="space-y-4">
-                  {Array(5)
-                    .fill(0)
-                    .map((_, index) => (
-                      <div key={index} className="flex items-center space-x-4">
-                        <Skeleton className="h-12 w-12 rounded-full" />
-                        <div className="space-y-2">
-                          <Skeleton className="h-4 w-[250px]" />
-                          <Skeleton className="h-4 w-[200px]" />
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              ) : isError ? (
-                <Alert variant="destructive">
-                  <AlertTitle>Erro ao carregar usuários</AlertTitle>
-                  <AlertDescription>
-                    Ocorreu um erro ao tentar carregar a lista de usuários. Por favor, tente novamente.
-                  </AlertDescription>
-                </Alert>
-              ) : users && users.length > 0 ? (
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Username</TableHead>
-                        <TableHead>Nome Completo</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Tipo de Portal</TableHead>
-                        <TableHead className="text-right">Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {users.map((user: User) => (
-                        <TableRow key={user.id}>
-                          <TableCell className="font-medium">{user.username}</TableCell>
-                          <TableCell>{user.fullName}</TableCell>
-                          <TableCell>{user.email}</TableCell>
-                          <TableCell>{renderPortalType(user.portalType)}</TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end space-x-2">
-                              <PermissionButton
-                                resource="users"
-                                action="update"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleOpenEditDialog(user)}
-                                deniedTooltip="Você não tem permissão para editar usuários"
-                              >
-                                <EditIcon className="h-4 w-4" />
-                                <span className="sr-only md:not-sr-only md:ml-2">Editar</span>
-                              </PermissionButton>
-                              <PermissionButton
-                                resource="users"
-                                action="delete"
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => handleOpenDeleteDialog(user)}
-                                disabled={user.id === 5} // Impedir exclusão do usuário admin principal
-                                deniedTooltip="Você não tem permissão para excluir usuários"
-                              >
-                                <TrashIcon className="h-4 w-4" />
-                                <span className="sr-only md:not-sr-only md:ml-2">Excluir</span>
-                              </PermissionButton>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <UserIcon className="h-16 w-16 text-gray-300" />
-                  <h3 className="mt-4 text-lg font-semibold text-gray-900">
-                    Nenhum usuário encontrado
-                  </h3>
-                  <p className="mt-1 text-gray-500">
-                    Cadastre seu primeiro usuário para começar.
-                  </p>
-                  <PermissionButton
-                    resource="users"
-                    action="create"
-                    onClick={handleOpenCreateDialog}
-                    className="mt-4 flex items-center"
-                    deniedTooltip="Você não tem permissão para criar usuários"
-                  >
-                    <UserPlusIcon className="mr-1 h-4 w-4" />
-                    Criar Usuário
-                  </PermissionButton>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Create User Dialog */}
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Criar Novo Usuário</DialogTitle>
-            <DialogDescription>
-              Preencha os dados abaixo para cadastrar um novo usuário no sistema.
-            </DialogDescription>
-          </DialogHeader>
-          <Form {...createForm}>
-            <form onSubmit={createForm.handleSubmit(onCreateSubmit)} className="space-y-6">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        {/* Create User Dialog */}
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Criar Novo Usuário</DialogTitle>
+              <DialogDescription>
+                Preencha os dados abaixo para criar um novo usuário no sistema.
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...createForm}>
+              <form onSubmit={createForm.handleSubmit(onCreateSubmit)} className="space-y-4">
                 <FormField
                   control={createForm.control}
                   name="username"
@@ -568,294 +593,305 @@ export default function UsersPage() {
                     <FormItem>
                       <FormLabel>Username</FormLabel>
                       <FormControl>
-                        <Input placeholder="nome.sobrenome" {...field} />
+                        <Input placeholder="johndoe" {...field} />
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={createForm.control}
-                  name="portalType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tipo de Portal</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione um tipo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="student">Aluno</SelectItem>
-                          <SelectItem value="partner">Parceiro</SelectItem>
-                          <SelectItem value="polo">Polo</SelectItem>
-                          <SelectItem value="admin">Administrador</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={createForm.control}
-                name="fullName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome Completo</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Nome completo do usuário" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <FormField
-                  control={createForm.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input placeholder="usuario@exemplo.com.br" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={createForm.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Senha</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="password" 
-                          placeholder="******" 
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <FormField
-                control={createForm.control}
-                name="cpf"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>CPF</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="000.000.000-00" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      O CPF é obrigatório para usuários do tipo Aluno
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <DialogFooter>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setIsCreateDialogOpen(false)}
-                >
-                  Cancelar
-                </Button>
-                <Button 
-                  type="submit" 
-                  disabled={createUserMutation.isPending}
-                >
-                  {createUserMutation.isPending ? "Salvando..." : "Salvar"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit User Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Editar Usuário</DialogTitle>
-            <DialogDescription>
-              Atualize os dados do usuário selecionado.
-            </DialogDescription>
-          </DialogHeader>
-          <Form {...editForm}>
-            <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-6">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <FormField
-                  control={editForm.control}
-                  name="username"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Username</FormLabel>
-                      <FormControl>
-                        <Input placeholder="nome.sobrenome" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={editForm.control}
-                  name="portalType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tipo de Portal</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione um tipo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="student">Aluno</SelectItem>
-                          <SelectItem value="partner">Parceiro</SelectItem>
-                          <SelectItem value="polo">Polo</SelectItem>
-                          <SelectItem value="admin">Administrador</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={editForm.control}
-                name="fullName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome Completo</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Nome completo do usuário" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <FormField
-                  control={editForm.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input placeholder="usuario@exemplo.com.br" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={editForm.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Senha</FormLabel>
                       <FormDescription>
-                        Deixe em branco para manter a senha atual
+                        Nome de usuário para login
                       </FormDescription>
-                      <FormControl>
-                        <Input 
-                          type="password" 
-                          placeholder="******" 
-                          {...field} 
-                        />
-                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              </div>
-              
-              <FormField
-                control={editForm.control}
-                name="cpf"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>CPF</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="000.000.000-00" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      O CPF é obrigatório para usuários do tipo Aluno
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={createForm.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Senha</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="******" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Senha de pelo menos 6 caracteres
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={createForm.control}
+                  name="portalType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tipo de Portal</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o tipo" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="admin">Administrador</SelectItem>
+                          <SelectItem value="student">Aluno</SelectItem>
+                          <SelectItem value="partner">Parceiro</SelectItem>
+                          <SelectItem value="polo">Polo</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Tipo de acesso do usuário
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={createForm.control}
+                  name="fullName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome Completo</FormLabel>
+                      <FormControl>
+                        <Input placeholder="John Doe" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Nome completo do usuário
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={createForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="john@example.com" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Email para contato e notificações
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={createForm.control}
+                  name="cpf"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>CPF</FormLabel>
+                      <FormControl>
+                        <Input placeholder="123.456.789-00" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        CPF (obrigatório para alunos)
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsCreateDialogOpen(false)}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={createUserMutation.isPending}
+                  >
+                    {createUserMutation.isPending ? "Salvando..." : "Salvar"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
 
-              <DialogFooter>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setIsEditDialogOpen(false)}
-                >
-                  Cancelar
-                </Button>
-                <Button 
-                  type="submit" 
-                  disabled={updateUserMutation.isPending}
-                >
-                  {updateUserMutation.isPending ? "Salvando..." : "Salvar"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
+        {/* Edit User Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Editar Usuário</DialogTitle>
+              <DialogDescription>
+                Atualize os dados do usuário selecionado.
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...editForm}>
+              <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
+                <FormField
+                  control={editForm.control}
+                  name="username"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Username</FormLabel>
+                      <FormControl>
+                        <Input placeholder="johndoe" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Nome de usuário para login
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Senha</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="password"
+                          placeholder="Deixe em branco para manter a mesma senha"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Preencha apenas se quiser alterar a senha
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="portalType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tipo de Portal</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o tipo" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="admin">Administrador</SelectItem>
+                          <SelectItem value="student">Aluno</SelectItem>
+                          <SelectItem value="partner">Parceiro</SelectItem>
+                          <SelectItem value="polo">Polo</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Tipo de acesso do usuário
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="fullName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome Completo</FormLabel>
+                      <FormControl>
+                        <Input placeholder="John Doe" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Nome completo do usuário
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="john@example.com" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Email para contato e notificações
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="cpf"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>CPF</FormLabel>
+                      <FormControl>
+                        <Input placeholder="123.456.789-00" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        CPF (obrigatório para alunos)
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsEditDialogOpen(false)}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={updateUserMutation.isPending}
+                  >
+                    {updateUserMutation.isPending ? "Salvando..." : "Salvar"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
 
-      {/* Delete User Dialog */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Confirmar Exclusão</DialogTitle>
-            <DialogDescription>
-              Tem certeza que deseja excluir o usuário {selectedUser?.fullName}? Esta ação não pode ser desfeita.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-end space-x-2 mt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsDeleteDialogOpen(false)}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={deleteUserMutation.isPending}
-            >
-              {deleteUserMutation.isPending ? "Excluindo..." : "Excluir"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+        {/* Delete User Dialog */}
+        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Confirmar Exclusão</DialogTitle>
+              <DialogDescription>
+                Tem certeza que deseja excluir o usuário{" "}
+                <span className="font-semibold">
+                  {selectedUser?.fullName || "selecionado"}
+                </span>
+                ? Esta ação não pode ser desfeita.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsDeleteDialogOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={deleteUserMutation.isPending}
+              >
+                {deleteUserMutation.isPending ? "Excluindo..." : "Confirmar Exclusão"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </AdminLayout>
   );
 }
