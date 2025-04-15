@@ -2,7 +2,7 @@ import { db } from "../db";
 import { permissionAudit } from "../../shared/audit-schema";
 import { InsertPermissionAudit } from "../../shared/audit-schema";
 import { Request } from "express";
-import { eq, desc, gte, lte, count } from 'drizzle-orm';
+import { eq, desc, gte, lte, count, and } from 'drizzle-orm';
 
 /**
  * Extrai o canal de origem de uma requisição
@@ -483,3 +483,6 @@ class AuditService {
 
 // Exportar instância do serviço
 export const auditService = new AuditService();
+
+// Exportar função logPermissionAction para facilitar uso nas rotas
+export const logPermissionAction = auditService.logPermissionAction.bind(auditService);
