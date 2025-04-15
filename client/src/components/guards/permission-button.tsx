@@ -3,12 +3,13 @@
  */
 
 import React from 'react';
-import { Button, ButtonProps } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useABAC } from '@/hooks/use-abac';
 import { Skeleton } from '@/components/ui/skeleton';
 
-interface PermissionButtonBaseProps extends ButtonProps {
+// Usando React.ComponentPropsWithoutRef para obter as props do Button
+interface PermissionButtonProps extends React.ComponentPropsWithoutRef<typeof Button> {
   /* Recurso a ser verificado */
   resource: string;
   
@@ -32,15 +33,7 @@ interface PermissionButtonBaseProps extends ButtonProps {
   
   /* Renderiza ou não quando o acesso for negado */
   renderWhenDenied?: boolean;
-
-  /* Função callback para o clique */
-  onClick?: () => void;
-
-  /* Conteúdo do botão */
-  children: React.ReactNode;
 }
-
-type PermissionButtonProps = PermissionButtonBaseProps;
 
 export const PermissionButton: React.FC<PermissionButtonProps> = ({
   resource,
@@ -50,6 +43,8 @@ export const PermissionButton: React.FC<PermissionButtonProps> = ({
   renderWhenDenied = true,
   onClick,
   children,
+  disabled,
+  title,
   ...buttonProps
 }) => {
   const { hasPermission } = usePermissions();
@@ -98,8 +93,8 @@ export const PermissionButton: React.FC<PermissionButtonProps> = ({
     <Button
       {...buttonProps}
       onClick={isAllowed ? onClick : undefined}
-      disabled={!isAllowed || buttonProps.disabled}
-      title={!isAllowed ? deniedTooltip : buttonProps.title}
+      disabled={!isAllowed || disabled}
+      title={!isAllowed ? deniedTooltip : title}
     >
       {children}
     </Button>

@@ -4,14 +4,14 @@
 
 import React from 'react';
 import { 
-  DropdownMenuItem,
-  DropdownMenuItemProps
+  DropdownMenuItem
 } from '@/components/ui/dropdown-menu';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useABAC } from '@/hooks/use-abac';
 import { Skeleton } from '@/components/ui/skeleton';
 
-interface PermissionMenuItemProps extends DropdownMenuItemProps {
+// Estendendo React.ComponentPropsWithoutRef para obter as props do DropdownMenuItem
+interface PermissionMenuItemProps extends React.ComponentPropsWithoutRef<typeof DropdownMenuItem> {
   /* Recurso a ser verificado */
   resource: string;
   
@@ -35,12 +35,6 @@ interface PermissionMenuItemProps extends DropdownMenuItemProps {
   
   /* Renderiza ou não quando o acesso for negado */
   renderWhenDenied?: boolean;
-
-  /* Função callback para o clique */
-  onClick?: () => void;
-
-  /* Conteúdo do item de menu */
-  children: React.ReactNode;
 }
 
 export const PermissionMenuItem: React.FC<PermissionMenuItemProps> = ({
@@ -51,6 +45,8 @@ export const PermissionMenuItem: React.FC<PermissionMenuItemProps> = ({
   renderWhenDenied = false, // Por padrão, não renderiza quando negado
   onClick,
   children,
+  disabled,
+  title,
   ...menuItemProps
 }) => {
   const { hasPermission } = usePermissions();
@@ -96,14 +92,14 @@ export const PermissionMenuItem: React.FC<PermissionMenuItemProps> = ({
   }
   
   return (
-    <MenuItem
+    <DropdownMenuItem
       {...menuItemProps}
       onClick={isAllowed ? onClick : undefined}
-      disabled={!isAllowed || menuItemProps.disabled}
-      title={!isAllowed ? deniedTooltip : menuItemProps.title}
+      disabled={!isAllowed || disabled}
+      title={!isAllowed ? deniedTooltip : title}
     >
       {children}
-    </MenuItem>
+    </DropdownMenuItem>
   );
 };
 
