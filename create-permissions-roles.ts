@@ -1,18 +1,20 @@
 // Script para criar permissões e papéis (roles) padrão
-// Execute com: node create-permissions-roles.cjs
+// Execute com: npx tsx create-permissions-roles.ts
 
-const { config } = require('dotenv');
-const { drizzle } = require('drizzle-orm/postgres-js');
-const postgres = require('postgres');
-config();
-
-const DATABASE_URL = process.env.DATABASE_URL;
+import { config } from 'dotenv';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 
 // Importar schema do banco de dados
-const schema = require('./shared/schema.js');
+import * as schema from './shared/schema';
+import { PermissionAction, PermissionResource } from './shared/types';
+
+config();
+
+const DATABASE_URL = process.env.DATABASE_URL || '';
 
 // Recursos do sistema
-const RESOURCES = [
+const RESOURCES: PermissionResource[] = [
   // Recursos administrativos
   'users', 'institutions', 'polos', 
   
@@ -45,7 +47,7 @@ const RESOURCES = [
 ];
 
 // Ações possíveis
-const ACTIONS = ['create', 'read', 'update', 'delete', 'manage', 'export'];
+const ACTIONS: PermissionAction[] = ['create', 'read', 'update', 'delete', 'manage', 'export'];
 
 // Nomes de papéis (roles) padrão
 const DEFAULT_ROLES = {
@@ -63,7 +65,7 @@ const DEFAULT_ROLES = {
 };
 
 // Combinações de recursos e ações para cada papel
-const ROLE_PERMISSIONS = {
+const ROLE_PERMISSIONS: Record<string, { resource: PermissionResource, actions: PermissionAction[] }[]> = {
   [DEFAULT_ROLES.SUPER_ADMIN]: RESOURCES.map(resource => ({
     resource,
     actions: ['manage'] // Super admin tem permissão total em todos os recursos
@@ -202,7 +204,7 @@ const ROLE_PERMISSIONS = {
 };
 
 // Descrições dos papéis
-const ROLE_DESCRIPTIONS = {
+const ROLE_DESCRIPTIONS: Record<string, string> = {
   [DEFAULT_ROLES.SUPER_ADMIN]: 'Administrador com acesso total ao sistema',
   [DEFAULT_ROLES.INSTITUTION_ADMIN]: 'Administrador da instituição com acesso à maioria das funcionalidades',
   [DEFAULT_ROLES.INSTITUTION_MANAGER]: 'Gerente da instituição com permissões limitadas de administração',

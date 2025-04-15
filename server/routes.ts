@@ -56,6 +56,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/subscription-plans", subscriptionPlansRoutes);
   app.use("/api/subscriptions", subscriptionsRoutes);
   
+  // Registro das rotas de permissões e papéis (roles)
+  app.use("/api/permissions", permissionsRoutes);
+  
   // Rota pública para obter planos de assinatura
   app.use("/api/public/subscription-plans", subscriptionPlansRoutes);
   
