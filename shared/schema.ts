@@ -1515,6 +1515,7 @@ export const insertClientSchema = createInsertSchema(clients).pick({
   phone: true,
   cpfCnpj: true,
   rgIe: true,
+  birthDate: true,
   zipCode: true,
   street: true,
   number: true,
@@ -1522,9 +1523,7 @@ export const insertClientSchema = createInsertSchema(clients).pick({
   neighborhood: true,
   city: true,
   state: true,
-  segment: true,
-  website: true,
-  notes: true,
+  observation: true,
   isActive: true,
   createdById: true,
 });

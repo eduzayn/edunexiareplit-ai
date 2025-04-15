@@ -28,6 +28,7 @@ export interface Client {
   rgIe?: string;
   email: string;
   phone: string;
+  birthDate?: string; // Adicionado campo de data de nascimento
   street: string;
   number: string;
   complement?: string;
@@ -35,8 +36,7 @@ export interface Client {
   city: string;
   state: string;
   zipCode: string;
-  segment?: string;
-  notes?: string;
+  observation?: string; // Renomeado de notes para observation
   isActive: boolean;
   asaasId?: string;
   createdAt: string;
