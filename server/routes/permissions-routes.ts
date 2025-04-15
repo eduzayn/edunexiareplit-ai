@@ -340,4 +340,88 @@ router.get('/check-polo/:poloId', async (req, res) => {
   }
 });
 
+/**
+ * Obtém as permissões diretas de um usuário
+ * @route GET /api/permissions/user/:userId/permissions
+ */
+router.get('/user/:userId/permissions', requirePermission('users', 'read'), async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId, 10);
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: 'ID de usuário inválido' });
+    }
+
+    const permissions = await permissionService.getUserPermissions(userId);
+    res.json({ permissions });
+  } catch (error) {
+    console.error('Erro ao obter permissões do usuário:', error);
+    res.status(500).json({ error: 'Erro ao obter permissões do usuário' });
+  }
+});
+
+/**
+ * Adiciona uma permissão direta a um usuário
+ * @route POST /api/permissions/user/:userId/permissions
+ */
+router.post('/user/:userId/permissions', requirePermission('users', 'update'), async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId, 10);
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: 'ID de usuário inválido' });
+    }
+
+    const schema = z.object({
+      permissionId: z.number().int().positive(),
+      institutionId: z.number().int().positive().optional(),
+      poloId: z.number().int().positive().optional(),
+      expiresAt: z.string().datetime().optional().transform(val => val ? new Date(val) : undefined)
+    });
+
+    const result = schema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ error: 'Dados inválidos', details: result.error.format() });
+    }
+
+    const success = await permissionService.addPermissionToUser(
+      userId,
+      result.data.permissionId,
+      result.data.institutionId,
+      result.data.poloId,
+      result.data.expiresAt
+    );
+
+    res.json({ success });
+  } catch (error) {
+    console.error('Erro ao adicionar permissão ao usuário:', error);
+    const message = error instanceof Error ? error.message : 'Erro ao adicionar permissão ao usuário';
+    res.status(500).json({ error: message });
+  }
+});
+
+/**
+ * Remove uma permissão direta de um usuário
+ * @route DELETE /api/permissions/user/:userId/permission/:permissionId
+ */
+router.delete('/user/:userId/permission/:permissionId', requirePermission('users', 'update'), async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId, 10);
+    const permissionId = parseInt(req.params.permissionId, 10);
+    
+    if (isNaN(userId) || isNaN(permissionId)) {
+      return res.status(400).json({ error: 'IDs inválidos' });
+    }
+
+    // Parâmetros opcionais de instituição e polo
+    const institutionId = req.query.institutionId ? parseInt(req.query.institutionId as string) : undefined;
+    const poloId = req.query.poloId ? parseInt(req.query.poloId as string) : undefined;
+
+    const success = await permissionService.removePermissionFromUser(userId, permissionId, institutionId, poloId);
+    res.json({ success });
+  } catch (error) {
+    console.error('Erro ao remover permissão do usuário:', error);
+    const message = error instanceof Error ? error.message : 'Erro ao remover permissão do usuário';
+    res.status(500).json({ error: message });
+  }
+});
+
 export default router;

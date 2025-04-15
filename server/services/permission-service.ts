@@ -545,3 +545,136 @@ export async function removePermissionFromRole(roleId: number, permissionId: num
     return false;
   }
 }
+
+/**
+ * Obtém as permissões diretas de um usuário
+ * @param userId ID do usuário
+ * @returns Array de permissões
+ */
+export async function getUserPermissions(userId: number) {
+  return await db
+    .select({
+      id: schema.userPermissions.id,
+      permissionId: schema.permissions.id,
+      resource: schema.permissions.resource,
+      action: schema.permissions.action,
+      description: schema.permissions.description,
+      institutionId: schema.userPermissions.institutionId,
+      poloId: schema.userPermissions.poloId,
+      expiresAt: schema.userPermissions.expiresAt
+    })
+    .from(schema.userPermissions)
+    .innerJoin(schema.permissions, eq(schema.userPermissions.permissionId, schema.permissions.id))
+    .where(eq(schema.userPermissions.userId, userId));
+}
+
+/**
+ * Adiciona uma permissão direta a um usuário
+ * @param userId ID do usuário
+ * @param permissionId ID da permissão
+ * @param institutionId ID da instituição (opcional)
+ * @param poloId ID do polo (opcional)
+ * @param expiresAt Data de expiração (opcional)
+ * @returns boolean
+ */
+export async function addPermissionToUser(
+  userId: number, 
+  permissionId: number, 
+  institutionId?: number,
+  poloId?: number,
+  expiresAt?: Date
+): Promise<boolean> {
+  try {
+    // Verifica se o usuário existe
+    const user = await db
+      .select({ id: schema.users.id })
+      .from(schema.users)
+      .where(eq(schema.users.id, userId));
+
+    if (user.length === 0) {
+      throw new Error('Usuário não encontrado');
+    }
+
+    // Verifica se a permissão existe
+    const permission = await db
+      .select({ id: schema.permissions.id })
+      .from(schema.permissions)
+      .where(eq(schema.permissions.id, permissionId));
+
+    if (permission.length === 0) {
+      throw new Error('Permissão não encontrada');
+    }
+
+    // Verifica se a associação já existe
+    const existingPermission = await db
+      .select({ id: schema.userPermissions.id })
+      .from(schema.userPermissions)
+      .where(
+        and(
+          eq(schema.userPermissions.userId, userId),
+          eq(schema.userPermissions.permissionId, permissionId),
+          institutionId ? eq(schema.userPermissions.institutionId, institutionId) : undefined,
+          poloId ? eq(schema.userPermissions.poloId, poloId) : undefined
+        )
+      );
+
+    if (existingPermission.length > 0) {
+      // Permissão já atribuída - atualiza expiração se fornecida
+      if (expiresAt) {
+        await db
+          .update(schema.userPermissions)
+          .set({ expiresAt })
+          .where(eq(schema.userPermissions.id, existingPermission[0].id));
+      }
+      return true;
+    }
+
+    // Adiciona a permissão
+    await db.insert(schema.userPermissions).values({
+      userId,
+      permissionId,
+      institutionId: institutionId || null,
+      poloId: poloId || null,
+      expiresAt: expiresAt || null
+    });
+
+    return true;
+  } catch (error) {
+    console.error('Erro ao adicionar permissão ao usuário:', error);
+    return false;
+  }
+}
+
+/**
+ * Remove uma permissão direta de um usuário
+ * @param userId ID do usuário
+ * @param permissionId ID da permissão
+ * @param institutionId ID da instituição (opcional)
+ * @param poloId ID do polo (opcional)
+ * @returns boolean
+ */
+export async function removePermissionFromUser(
+  userId: number, 
+  permissionId: number,
+  institutionId?: number,
+  poloId?: number
+): Promise<boolean> {
+  try {
+    // Remove a permissão
+    await db
+      .delete(schema.userPermissions)
+      .where(
+        and(
+          eq(schema.userPermissions.userId, userId),
+          eq(schema.userPermissions.permissionId, permissionId),
+          institutionId ? eq(schema.userPermissions.institutionId, institutionId) : undefined,
+          poloId ? eq(schema.userPermissions.poloId, poloId) : undefined
+        )
+      );
+
+    return true;
+  } catch (error) {
+    console.error('Erro ao remover permissão do usuário:', error);
+    return false;
+  }
+}

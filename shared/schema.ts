@@ -1748,6 +1748,30 @@ export const rolePermissionsRelations = relations(rolePermissions, ({ one }) => 
   }),
 }));
 
+// Relações de atribuição de permissões diretas a usuários
+export const userPermissionsRelations = relations(userPermissions, ({ one }) => ({
+  user: one(users, {
+    fields: [userPermissions.userId],
+    references: [users.id],
+  }),
+  permission: one(permissions, {
+    fields: [userPermissions.permissionId],
+    references: [permissions.id],
+  }),
+  institution: one(institutions, {
+    fields: [userPermissions.institutionId],
+    references: [institutions.id],
+  }),
+  polo: one(polos, {
+    fields: [userPermissions.poloId],
+    references: [polos.id],
+  }),
+  createdBy: one(users, {
+    fields: [userPermissions.createdById],
+    references: [users.id],
+  }),
+}));
+
 // Relações de atribuição de papéis a usuários
 export const userRolesRelations = relations(userRoles, ({ one }) => ({
   user: one(users, {
