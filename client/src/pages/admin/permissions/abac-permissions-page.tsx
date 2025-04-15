@@ -439,6 +439,15 @@ export default function AbacPermissionsPage() {
       header: 'Descrição',
     },
     {
+      accessorKey: 'isAllowed',
+      header: 'Tipo',
+      cell: ({ row }) => (
+        <div className={`text-center font-medium ${row.original.isAllowed ? 'text-green-600' : 'text-red-600'}`}>
+          {row.original.isAllowed ? 'Permitir' : 'Negar'}
+        </div>
+      ),
+    },
+    {
       accessorKey: 'isActive',
       header: 'Ativo',
       cell: ({ row }) => (
@@ -702,6 +711,31 @@ export default function AbacPermissionsPage() {
                             Uma descrição clara do que esta regra faz.
                           </FormDescription>
                           <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={institutionPhaseForm.control}
+                      name="isAllowed"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">Tipo de Regra</FormLabel>
+                            <FormDescription>
+                              Define se esta regra permite ou nega acesso.
+                            </FormDescription>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <span className={field.value ? 'text-gray-400' : 'font-medium'}>Negar</span>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <span className={!field.value ? 'text-gray-400' : 'font-medium'}>Permitir</span>
+                          </div>
                         </FormItem>
                       )}
                     />
