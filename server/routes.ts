@@ -2794,6 +2794,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ================= Rotas para Registro Público =================
   // Rota pública para registro de novos usuários
   app.use("/api/public/register", publicRegisterRouter);
+  
+  // ================= Rotas para Módulos CRM, Financeiro e Contratos =================
+  // Registro das rotas do módulo CRM
+  app.use("/api/crm", crmRoutes);
+  
+  // Registro das rotas do módulo Financeiro
+  app.use("/api/finance", financeRoutes);
+  
+  // Registro das rotas do módulo de Contratos
+  app.use("/api/contracts", contractsRoutes);
 
   const httpServer = createServer(app);
 
