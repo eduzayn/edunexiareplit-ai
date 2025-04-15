@@ -59,8 +59,7 @@ const formSchema = z.object({
   state: z.string().length(2, { message: "Estado deve ter 2 caracteres" }),
   
   // Outras informações
-  segment: z.string().min(1, { message: "Selecione o segmento" }),
-  website: z.string().optional().or(z.literal("")),
+  segment: z.string().optional().or(z.literal("")),
   notes: z.string().optional().or(z.literal("")),
   isActive: z.boolean().default(true),
 });
@@ -89,7 +88,6 @@ export default function NewClientPage() {
       city: "",
       state: "",
       segment: "",
-      website: "",
       notes: "",
       isActive: true,
     },
@@ -109,8 +107,11 @@ export default function NewClientPage() {
         phone: data.phone,
         cpfCnpj: data.cpfCnpj,
         rgIe: data.rgIe || "",
-        // Formato esperado pela API para endereço
-        address: `${data.street}, ${data.number} ${data.complement ? '- ' + data.complement : ''}, ${data.neighborhood}`,
+        // Campos de endereço separados (conforme esperado pela API)
+        street: data.street,
+        number: data.number,
+        complement: data.complement || "",
+        neighborhood: data.neighborhood,
         zipCode: data.zipCode,
         city: data.city,
         state: data.state,
