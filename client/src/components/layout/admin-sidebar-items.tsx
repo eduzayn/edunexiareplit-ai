@@ -189,8 +189,8 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
         { 
           name: "Usuários", 
           icon: <GroupIcon className="text-muted-foreground" />, 
-          href: "/admin/users",
-          active: currentPath === "/admin/users"
+          href: "/admin/pessoas/usuarios",
+          active: currentPath === "/admin/pessoas/usuarios" || (currentPath && currentPath.includes("/admin/pessoas/usuarios/"))
         },
         { 
           name: "Papéis & Permissões", 
@@ -210,8 +210,8 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
       { 
         name: "Usuários", 
         icon: <GroupIcon className="text-muted-foreground" />, 
-        href: "/admin/users",
-        active: currentPath === "/admin/users"
+        href: "/admin/pessoas/usuarios",
+        active: currentPath === "/admin/pessoas/usuarios" || (currentPath && currentPath.includes("/admin/pessoas/usuarios/"))
       },
       { 
         name: "Papéis & Permissões", 
