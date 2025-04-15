@@ -186,7 +186,46 @@ export async function createClient(data: InsertClient): Promise<Client> {
       }
     }
     
-    return await storage.createClient(data);
+    // Criar o cliente no banco de dados
+    const newClient = await storage.createClient(data);
+    
+    // Tentar cadastrar o cliente no Asaas
+    try {
+      // Mapear dados do cliente para o formato do Asaas
+      const asaasData = {
+        name: newClient.name,
+        email: newClient.email,
+        phone: newClient.phone,
+        cpfCnpj: newClient.document, // CPF/CNPJ do cliente
+        address: newClient.street,
+        addressNumber: newClient.number || 'SN',
+        complement: newClient.complement,
+        province: newClient.neighborhood, // Bairro
+        postalCode: newClient.zipCode,
+        externalReference: `client_${newClient.id}`
+      };
+      
+      // Cadastrar no Asaas
+      const asaasResponse = await AsaasService.createCustomer(asaasData, newClient.id);
+      
+      // Se o cadastro no Asaas for bem-sucedido, atualizar o ID do Asaas no cliente
+      if (asaasResponse && asaasResponse.id) {
+        // Atualizar o cliente com o ID do Asaas
+        await storage.updateClient(newClient.id, {
+          asaasId: asaasResponse.id
+        });
+        
+        // Atualizar o objeto do cliente que será retornado
+        newClient.asaasId = asaasResponse.id;
+      }
+    } catch (asaasError) {
+      // Apenas logar o erro sem interromper o fluxo
+      console.error(`Erro ao cadastrar cliente ${newClient.id} no Asaas:`, asaasError);
+      // O cliente foi criado no banco mas não foi cadastrado no Asaas
+      // Isso pode ser tratado posteriormente com uma rotina de sincronização
+    }
+    
+    return newClient;
   } catch (error) {
     console.error("Erro ao criar cliente:", error);
     throw new Error("Falha ao criar cliente: " + (error instanceof Error ? error.message : 'Erro desconhecido'));
