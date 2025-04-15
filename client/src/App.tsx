@@ -299,6 +299,15 @@ function Router() {
         {() => user?.portalType === "admin" ? <NewContractPage /> : <Redirect to="/admin" />}
       </Route>
       
+      {/* Rotas do Módulo de Permissões */}
+      <Route path="/admin/permissions/roles">
+        {() => user?.portalType === "admin" ? <RolesPage /> : <Redirect to="/admin" />}
+      </Route>
+      
+      <Route path="/admin/permissions/roles/:id">
+        {() => user?.portalType === "admin" ? <RoleDetailPage /> : <Redirect to="/admin" />}
+      </Route>
+      
       <Route component={NotFound} />
     </Switch>
   );

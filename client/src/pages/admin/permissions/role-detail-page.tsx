@@ -441,7 +441,7 @@ export default function RoleDetailPage() {
                                 className="text-red-500 hover:text-red-700"
                                 onClick={() => handleRemovePermission(permission.permissionId)}
                               >
-                                <Cross1Icon className="h-4 w-4" />
+                                <MinusIcon className="h-4 w-4" />
                               </Button>
                             )}
                           </PermissionGuard>
