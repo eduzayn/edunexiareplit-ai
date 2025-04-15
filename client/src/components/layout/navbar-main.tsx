@@ -93,7 +93,7 @@ export default function NavbarMain() {
               {mainNavItems.map((item, index) => (
                 <NavigationMenuItem key={index}>
                   {item.items ? (
-                    <React.Fragment>
+                    <>
                       <NavigationMenuTrigger>{item.title}</NavigationMenuTrigger>
                       <NavigationMenuContent>
                         <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
@@ -108,13 +108,13 @@ export default function NavbarMain() {
                           ))}
                         </ul>
                       </NavigationMenuContent>
-                    </React.Fragment>
+                    </>
                   ) : (
-                    <Link href={item.href || '#'}>
-                      <NavigationMenuLink className="font-medium text-sm py-2 px-3 hover:text-primary">
+                    <NavigationMenuLink asChild>
+                      <Link href={item.href || '#'} className="font-medium text-sm py-2 px-3 hover:text-primary">
                         {item.title}
-                      </NavigationMenuLink>
-                    </Link>
+                      </Link>
+                    </NavigationMenuLink>
                   )}
                 </NavigationMenuItem>
               ))}
@@ -122,12 +122,12 @@ export default function NavbarMain() {
           </NavigationMenu>
 
           <div className="flex items-center gap-4">
-            <Link href="/login">
-              <Button variant="ghost">Login</Button>
-            </Link>
-            <Link href="/cadastro">
-              <Button>Experimente Grátis</Button>
-            </Link>
+            <Button variant="ghost" asChild>
+              <Link href="/login">Login</Link>
+            </Button>
+            <Button asChild>
+              <Link href="/cadastro">Experimente Grátis</Link>
+            </Button>
           </div>
         </div>
 
@@ -151,20 +151,29 @@ export default function NavbarMain() {
                   {mainNavItems.map((item, index) => (
                     <div key={index} className="pb-2">
                       {item.href ? (
-                        <Link href={item.href}>
-                          <Button variant="ghost" className="w-full justify-start font-medium">
+                        <Button 
+                          variant="ghost" 
+                          className="w-full justify-start font-medium"
+                          asChild
+                        >
+                          <Link href={item.href}>
                             {item.title}
-                          </Button>
-                        </Link>
+                          </Link>
+                        </Button>
                       ) : (
                         <div className="space-y-3">
                           <div className="font-medium text-blue-950">{item.title}</div>
                           {item.items?.map((subItem, subIndex) => (
-                            <Link key={subIndex} href={subItem.href}>
-                              <Button variant="ghost" className="w-full justify-start text-sm pl-4">
+                            <Button 
+                              key={subIndex} 
+                              variant="ghost" 
+                              className="w-full justify-start text-sm pl-4"
+                              asChild
+                            >
+                              <Link href={subItem.href}>
                                 {subItem.title}
-                              </Button>
-                            </Link>
+                              </Link>
+                            </Button>
                           ))}
                         </div>
                       )}
@@ -173,16 +182,16 @@ export default function NavbarMain() {
                 </div>
 
                 <div className="mt-auto space-y-2">
-                  <Link href="/login">
-                    <Button variant="outline" className="w-full">
+                  <Button variant="outline" className="w-full" asChild>
+                    <Link href="/login">
                       Login
-                    </Button>
-                  </Link>
-                  <Link href="/cadastro">
-                    <Button className="w-full">
+                    </Link>
+                  </Button>
+                  <Button className="w-full" asChild>
+                    <Link href="/cadastro">
                       Experimente Grátis
-                    </Button>
-                  </Link>
+                    </Link>
+                  </Button>
                 </div>
               </nav>
             </SheetContent>
