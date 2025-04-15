@@ -6,9 +6,39 @@ import { Request, Response, NextFunction } from 'express';
 import { checkUserPermission } from '../services/permission-service';
 
 /**
+ * Mapeamento de recursos alternativos para verificação
+ * Contém equivalências entre nomes em português/inglês e singular/plural
+ */
+const RESOURCE_ALTERNATIVES: Record<string, string[]> = {
+  'cliente': ['clients'],     // cliente (pt) <-> clients (en)
+  'clients': ['cliente'],     // clients (en) <-> cliente (pt)
+  'lead': ['leads'],          // lead (singular) <-> leads (plural)
+  'leads': ['lead'],          // leads (plural) <-> lead (singular)
+  'contato': ['contacts'],    // contato (pt) <-> contacts (en)
+  'contacts': ['contato']     // contacts (en) <-> contato (pt)
+};
+
+/**
+ * Mapeamento de ações alternativas para verificação
+ * Contém equivalências entre nomes em português/inglês
+ */
+const ACTION_ALTERNATIVES: Record<string, string[]> = {
+  'ler': ['read'],            // ler (pt) <-> read (en)
+  'read': ['ler'],            // read (en) <-> ler (pt)
+  'criar': ['create'],        // criar (pt) <-> create (en)
+  'create': ['criar'],        // create (en) <-> criar (pt)
+  'atualizar': ['update'],    // atualizar (pt) <-> update (en)
+  'update': ['atualizar'],    // update (en) <-> atualizar (pt)
+  'deletar': ['delete'],      // deletar (pt) <-> delete (en)
+  'delete': ['deletar']       // delete (en) <-> deletar (pt)
+};
+
+/**
  * Middleware para exigir permissão específica
- * @param resource Nome do recurso (ex: "users", "institutions", etc)
- * @param action Ação desejada (ex: "read", "create", "update", "delete", "manage")
+ * Verifica múltiplas variações do recurso e ação
+ * 
+ * @param resource Nome do recurso (ex: "users", "institutions", "cliente", etc)
+ * @param action Ação desejada (ex: "read", "create", "ler", "criar", etc)
  * @returns Middleware Express
  */
 export function requirePermission(resource: string, action: string) {
@@ -18,9 +48,35 @@ export function requirePermission(resource: string, action: string) {
         return res.status(401).json({ error: 'Autenticação necessária' });
       }
 
-      const hasPermission = await checkUserPermission(req.user.id, resource, action);
+      // Lista de recursos para verificar (o original + alternativas)
+      const resourcesToCheck = [resource];
+      if (RESOURCE_ALTERNATIVES[resource]) {
+        resourcesToCheck.push(...RESOURCE_ALTERNATIVES[resource]);
+      }
       
+      // Lista de ações para verificar (a original + alternativas)
+      const actionsToCheck = [action];
+      if (ACTION_ALTERNATIVES[action]) {
+        actionsToCheck.push(...ACTION_ALTERNATIVES[action]);
+      }
+      
+      // Verifica todas as combinações possíveis
+      let hasPermission = false;
+      for (const res of resourcesToCheck) {
+        for (const act of actionsToCheck) {
+          // Tenta cada combinação de recurso e ação
+          const result = await checkUserPermission(req.user.id, res, act);
+          if (result) {
+            hasPermission = true;
+            break;
+          }
+        }
+        if (hasPermission) break;
+      }
+      
+      // Se nenhuma permissão foi encontrada
       if (!hasPermission) {
+        console.log(`Acesso negado: Usuário ${req.user.username} (${req.user.id}) tentou acessar recurso "${resource}" com ação "${action}"`);
         return res.status(403).json({
           error: 'Acesso negado',
           message: `Você não tem permissão para ${action} ${resource}`
@@ -127,7 +183,38 @@ export async function attachPermissions(req: Request, res: Response, next: NextF
     // Verifica cada permissão
     for (const { resource, action } of permissionsToCheck) {
       const key = `${resource}:${action}`;
-      userPermissions[key] = await checkUserPermission(req.user.id, resource, action);
+      
+      // Verifica a permissão principal
+      let hasPermission = await checkUserPermission(req.user.id, resource, action);
+      
+      // Se não encontrou a permissão principal, verifica alternativas
+      if (!hasPermission) {
+        // Verificar recursos alternativos
+        if (RESOURCE_ALTERNATIVES[resource]) {
+          for (const altResource of RESOURCE_ALTERNATIVES[resource]) {
+            if (ACTION_ALTERNATIVES[action]) {
+              // Verificar todas as combinações de recursos e ações alternativas
+              for (const altAction of ACTION_ALTERNATIVES[action]) {
+                hasPermission = await checkUserPermission(req.user.id, altResource, altAction);
+                if (hasPermission) break;
+              }
+            } else {
+              // Verificar apenas recursos alternativos com a ação original
+              hasPermission = await checkUserPermission(req.user.id, altResource, action);
+            }
+            if (hasPermission) break;
+          }
+        }
+        // Verificar ações alternativas com o recurso original
+        else if (ACTION_ALTERNATIVES[action]) {
+          for (const altAction of ACTION_ALTERNATIVES[action]) {
+            hasPermission = await checkUserPermission(req.user.id, resource, altAction);
+            if (hasPermission) break;
+          }
+        }
+      }
+      
+      userPermissions[key] = hasPermission;
     }
 
     // Adiciona as permissões verificadas ao request para uso nas rotas
