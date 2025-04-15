@@ -366,8 +366,8 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
         { 
           name: "Contratos", 
           icon: <ContractIcon />, 
-          href: "/admin/contracts",
-          active: currentPath === "/admin/contracts" || (currentPath && currentPath.includes("/admin/contracts/"))
+          href: "/admin/contratos/contratos",
+          active: currentPath === "/admin/contratos/contratos" || (currentPath && currentPath.includes("/admin/contratos/contratos/"))
         },
       ]
     }, currentPath),
@@ -414,8 +414,8 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
       { 
         name: "Contratos", 
         icon: <ContractIcon />, 
-        href: "/admin/contracts",
-        active: currentPath === "/admin/contracts" || (currentPath && currentPath.includes("/admin/contracts/"))
+        href: "/admin/contratos/contratos",
+        active: currentPath === "/admin/contratos/contratos" || (currentPath && currentPath.includes("/admin/contratos/contratos/"))
       },
     ]
   };
@@ -431,20 +431,20 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
         { 
           name: "CANAIS", 
           icon: <InboxIcon />, 
-          href: "/admin/inbox",
-          active: currentPath === "/admin/inbox" || (currentPath && currentPath.includes("/admin/inbox/"))
+          href: "/admin/comunicacao/inbox",
+          active: currentPath === "/admin/comunicacao/inbox" || (currentPath && currentPath.includes("/admin/comunicacao/inbox/"))
         },
         { 
           name: "WhatsApp", 
           icon: <WhatsAppIcon />, 
-          href: "/admin/whatsapp",
-          active: currentPath === "/admin/whatsapp" || (currentPath && currentPath.includes("/admin/whatsapp/"))
+          href: "/admin/comunicacao/whatsapp",
+          active: currentPath === "/admin/comunicacao/whatsapp" || (currentPath && currentPath.includes("/admin/comunicacao/whatsapp/"))
         },
         { 
           name: "Email", 
           icon: <MailIcon />, 
-          href: "/admin/email",
-          active: currentPath === "/admin/email" || (currentPath && currentPath.includes("/admin/email/"))
+          href: "/admin/comunicacao/email",
+          active: currentPath === "/admin/comunicacao/email" || (currentPath && currentPath.includes("/admin/comunicacao/email/"))
         },
       ]
     }, currentPath),
@@ -452,20 +452,20 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
       { 
         name: "CANAIS", 
         icon: <InboxIcon />, 
-        href: "/admin/inbox",
-        active: currentPath === "/admin/inbox" || (currentPath && currentPath.includes("/admin/inbox/"))
+        href: "/admin/comunicacao/inbox",
+        active: currentPath === "/admin/comunicacao/inbox" || (currentPath && currentPath.includes("/admin/comunicacao/inbox/"))
       },
       { 
         name: "WhatsApp", 
         icon: <WhatsAppIcon />, 
-        href: "/admin/whatsapp",
-        active: currentPath === "/admin/whatsapp" || (currentPath && currentPath.includes("/admin/whatsapp/"))
+        href: "/admin/comunicacao/whatsapp",
+        active: currentPath === "/admin/comunicacao/whatsapp" || (currentPath && currentPath.includes("/admin/comunicacao/whatsapp/"))
       },
       { 
         name: "Email", 
         icon: <MailIcon />, 
-        href: "/admin/email",
-        active: currentPath === "/admin/email" || (currentPath && currentPath.includes("/admin/email/"))
+        href: "/admin/comunicacao/email",
+        active: currentPath === "/admin/comunicacao/email" || (currentPath && currentPath.includes("/admin/comunicacao/email/"))
       },
     ]
   };
@@ -481,14 +481,14 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
         { 
           name: "Integrações", 
           icon: <CloudIcon />, 
-          href: "/admin/integrations",
-          active: currentPath === "/admin/integrations"
+          href: "/admin/integracoes/integrations",
+          active: currentPath === "/admin/integracoes/integrations" || (currentPath && currentPath.includes("/admin/integracoes/"))
         },
         { 
           name: "Segurança", 
           icon: <SecurityIcon />, 
-          href: "/admin/security",
-          active: currentPath === "/admin/security"
+          href: "/admin/sistema/security",
+          active: currentPath === "/admin/sistema/security" || (currentPath && currentPath.includes("/admin/sistema/security"))
         },
         { 
           name: "Auditoria", 
@@ -499,8 +499,8 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
         { 
           name: "Configurações", 
           icon: <SettingsIcon />, 
-          href: "/admin/settings",
-          active: currentPath === "/admin/settings"
+          href: "/admin/sistema/settings",
+          active: currentPath === "/admin/sistema/settings" || (currentPath && currentPath.includes("/admin/sistema/settings"))
         },
       ]
     }, currentPath),
@@ -508,14 +508,14 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
       { 
         name: "Integrações", 
         icon: <CloudIcon />, 
-        href: "/admin/integrations",
-        active: currentPath === "/admin/integrations"
+        href: "/admin/integracoes/integrations",
+        active: currentPath === "/admin/integracoes/integrations" || (currentPath && currentPath.includes("/admin/integracoes/"))
       },
       { 
         name: "Segurança", 
         icon: <SecurityIcon />, 
-        href: "/admin/security",
-        active: currentPath === "/admin/security"
+        href: "/admin/sistema/security",
+        active: currentPath === "/admin/sistema/security" || (currentPath && currentPath.includes("/admin/sistema/security"))
       },
       { 
         name: "Auditoria", 
@@ -526,8 +526,8 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
       { 
         name: "Configurações", 
         icon: <SettingsIcon />, 
-        href: "/admin/settings",
-        active: currentPath === "/admin/settings"
+        href: "/admin/sistema/settings",
+        active: currentPath === "/admin/sistema/settings" || (currentPath && currentPath.includes("/admin/sistema/settings"))
       },
     ]
   };
