@@ -80,6 +80,7 @@ const institutionPhaseSchema = z.object({
   action: z.string().min(1, { message: 'Ação é obrigatória' }),
   phase: z.string().min(1, { message: 'Fase é obrigatória' }),
   description: z.string().min(3, { message: 'Descrição deve ter pelo menos 3 caracteres' }),
+  isAllowed: z.boolean().default(true),
   isActive: z.boolean().default(true)
 });
 
@@ -353,6 +354,7 @@ export default function AbacPermissionsPage() {
       action: '',
       phase: '',
       description: '',
+      isAllowed: true,
       isActive: true
     }
   });
@@ -672,11 +674,11 @@ export default function AbacPermissionsPage() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
+                              <SelectItem value="trial">Trial</SelectItem>
                               <SelectItem value="setup">Configuração</SelectItem>
                               <SelectItem value="active">Ativa</SelectItem>
-                              <SelectItem value="inactive">Inativa</SelectItem>
                               <SelectItem value="suspended">Suspensa</SelectItem>
-                              <SelectItem value="closed">Fechada</SelectItem>
+                              <SelectItem value="cancelled">Cancelada</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormDescription>
