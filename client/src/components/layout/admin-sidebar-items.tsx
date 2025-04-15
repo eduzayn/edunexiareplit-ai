@@ -479,6 +479,12 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
           active: currentPath === "/admin/security"
         },
         { 
+          name: "Auditoria", 
+          icon: <FileCheckIcon />, 
+          href: "/admin/auditoria/logs",
+          active: currentPath === "/admin/auditoria/logs" || (currentPath && currentPath.includes("/admin/auditoria/"))
+        },
+        { 
           name: "Configurações", 
           icon: <SettingsIcon />, 
           href: "/admin/settings",
@@ -498,6 +504,12 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
         icon: <SecurityIcon />, 
         href: "/admin/security",
         active: currentPath === "/admin/security"
+      },
+      { 
+        name: "Auditoria", 
+        icon: <FileCheckIcon />, 
+        href: "/admin/auditoria/logs",
+        active: currentPath === "/admin/auditoria/logs" || (currentPath && currentPath.includes("/admin/auditoria/"))
       },
       { 
         name: "Configurações", 
