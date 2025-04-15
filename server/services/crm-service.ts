@@ -220,7 +220,7 @@ export async function getClients(
       SELECT 
         id, name, type, email, phone, cpf_cnpj, rg_ie, birth_date,
         zip_code, street, number_address as number, complement, neighborhood, city, state,
-        observation, is_active, asaas_id, created_by_id, created_at, updated_at
+        observation, asaas_id, created_by_id, created_at, updated_at
       FROM clients
       WHERE 1=1
     `;
@@ -228,13 +228,7 @@ export async function getClients(
     const params: any[] = [];
     let paramIndex = 1;
     
-    // Adicionar filtro por status se fornecido
-    if (status) {
-      const isActive = status === 'active';
-      queryStr += ` AND is_active = $${paramIndex}`;
-      params.push(isActive);
-      paramIndex++;
-    }
+    // Filtro por status removido - coluna is_active não existe no banco
     
     // Adicionar filtro por criador se fornecido
     if (userId) {
@@ -287,7 +281,6 @@ export async function getClients(
         city: client.city,
         state: client.state,
         observation: client.observation,
-        isActive: client.is_active,
         asaasId: client.asaas_id,
         createdById: client.created_by_id,
         createdAt: client.created_at,
@@ -314,7 +307,7 @@ export async function getClient(id: number) {
       SELECT 
         id, name, type, email, phone, cpf_cnpj, rg_ie, birth_date,
         zip_code, street, number_address as number, complement, neighborhood, city, state,
-        observation, is_active, asaas_id, created_by_id, created_at, updated_at
+        observation, asaas_id, created_by_id, created_at, updated_at
       FROM clients
       WHERE id = $1
       LIMIT 1
@@ -347,7 +340,6 @@ export async function getClient(id: number) {
       city: result[0].city,
       state: result[0].state,
       observation: result[0].observation,
-      isActive: result[0].is_active,
       asaasId: result[0].asaas_id,
       createdById: result[0].created_by_id,
       createdAt: result[0].created_at,
