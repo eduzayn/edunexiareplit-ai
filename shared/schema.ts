@@ -357,21 +357,20 @@ export const clients = pgTable("clients", {
   // Documentos
   cpfCnpj: text("cpf_cnpj").notNull(), // CPF ou CNPJ
   rgIe: text("rg_ie"), // RG ou Inscrição Estadual
+  birthDate: timestamp("birth_date"), // Data de nascimento
   
   // Endereço
   zipCode: text("zip_code").notNull(),
   street: text("street").notNull(),
-  number: text("number").notNull(),
+  number: text("number_address").notNull(), // Renamed to match DB structure
   complement: text("complement"),
   neighborhood: text("neighborhood").notNull(),
   city: text("city").notNull(),
   state: text("state").notNull(),
   
   // Informações adicionais
-  segment: text("segment"), // Segmento de atuação
-  website: text("website"),
-  notes: text("notes"),
-  isActive: boolean("is_active").default(true).notNull(),
+  observation: text("observation"), // Renamed from notes to match DB structure
+  isActive: boolean("is_active", { mode: "boolean" }).default(true).notNull(),
   
   // Integrações
   asaasId: text("asaas_id"), // ID do cliente no Asaas
