@@ -273,6 +273,47 @@ export default function UsersPage() {
     },
   });
 
+  // Consulta para listar papéis (roles)
+  const { 
+    data: roles, 
+    isLoading: isLoadingRoles 
+  } = useQuery({
+    queryKey: ['/api/admin/roles'],
+    queryFn: () => apiRequest<Array<{id: number, name: string, description: string, scope: string}>>('/api/admin/roles'),
+    // Não buscar roles quando o modal não estiver aberto para reduzir chamadas desnecessárias
+    enabled: isCreateDialogOpen || isEditDialogOpen,
+  });
+
+  // Consulta para listar instituições
+  const { 
+    data: institutions, 
+    isLoading: isLoadingInstitutions 
+  } = useQuery({
+    queryKey: ['/api/admin/institutions'],
+    queryFn: () => apiRequest<Array<{id: number, name: string, code: string}>>('/api/admin/institutions'),
+    // Não buscar quando o modal não estiver aberto
+    enabled: isCreateDialogOpen || isEditDialogOpen,
+  });
+
+  // Consulta para listar polos (filtrada por instituição selecionada)
+  const [selectedInstitutionId, setSelectedInstitutionId] = useState<number | null>(null);
+  
+  const { 
+    data: polos, 
+    isLoading: isLoadingPolos 
+  } = useQuery({
+    queryKey: ['/api/admin/polos', selectedInstitutionId],
+    queryFn: () => {
+      let url = `/api/admin/polos`;
+      if (selectedInstitutionId) {
+        url += `?institutionId=${selectedInstitutionId}`;
+      }
+      return apiRequest<Array<{id: number, name: string, code: string}>>(url);
+    },
+    // Só buscar polos se tiver uma instituição selecionada e modal aberto
+    enabled: !!selectedInstitutionId && (isCreateDialogOpen || isEditDialogOpen),
+  });
+
   // Form para criar usuário
   const createForm = useForm<UserFormValues>({
     resolver: zodResolver(userFormSchema),
@@ -283,6 +324,16 @@ export default function UsersPage() {
       fullName: "",
       email: "",
       cpf: "",
+      // Novos campos RBAC/ABAC
+      roleId: undefined,
+      institutionId: undefined,
+      poloId: undefined,
+      // Outros campos
+      phone: "",
+      address: "",
+      city: "",
+      state: "",
+      zipCode: "",
     },
   });
 
@@ -296,6 +347,16 @@ export default function UsersPage() {
       fullName: "",
       email: "",
       cpf: "",
+      // Novos campos RBAC/ABAC
+      roleId: undefined,
+      institutionId: undefined,
+      poloId: undefined,
+      // Outros campos
+      phone: "",
+      address: "",
+      city: "",
+      state: "",
+      zipCode: "",
     },
   });
 
@@ -724,6 +785,213 @@ export default function UsersPage() {
                     </FormItem>
                   )}
                 />
+
+                {/* Campos RBAC/ABAC */}
+                <div className="border-t border-gray-200 pt-4 mt-4">
+                  <h3 className="text-sm font-medium text-gray-500 mb-3">Sistema de Permissionamento</h3>
+                  
+                  {/* Seleção de Papel/Função (RBAC) */}
+                  <FormField
+                    control={createForm.control}
+                    name="roleId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Papel/Função</FormLabel>
+                        <Select
+                          onValueChange={(value) => field.onChange(parseInt(value))}
+                          value={field.value?.toString() || ""}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione um papel" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {isLoadingRoles ? (
+                              <SelectItem value="loading" disabled>Carregando papéis...</SelectItem>
+                            ) : roles && roles.length > 0 ? (
+                              roles.map((role) => (
+                                <SelectItem key={role.id} value={role.id.toString()}>
+                                  {role.name}
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <SelectItem value="none" disabled>Nenhum papel encontrado</SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Atribua um papel ao usuário para definir suas permissões básicas
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Seleção de Instituição (ABAC) */}
+                  <FormField
+                    control={createForm.control}
+                    name="institutionId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Instituição</FormLabel>
+                        <Select
+                          onValueChange={(value) => {
+                            const id = parseInt(value);
+                            field.onChange(id);
+                            setSelectedInstitutionId(id);
+                            // Reset poloId when institution changes
+                            createForm.setValue('poloId', undefined);
+                          }}
+                          value={field.value?.toString() || ""}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione uma instituição" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {isLoadingInstitutions ? (
+                              <SelectItem value="loading" disabled>Carregando instituições...</SelectItem>
+                            ) : institutions && institutions.length > 0 ? (
+                              institutions.map((institution) => (
+                                <SelectItem key={institution.id} value={institution.id.toString()}>
+                                  {institution.name} ({institution.code})
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <SelectItem value="none" disabled>Nenhuma instituição encontrada</SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Associe o usuário a uma instituição (obrigatório para parceiros e polos)
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Seleção de Polo (ABAC) - condicionalmente exibido baseado na instituição selecionada */}
+                  {selectedInstitutionId && (
+                    <FormField
+                      control={createForm.control}
+                      name="poloId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Polo</FormLabel>
+                          <Select
+                            onValueChange={(value) => field.onChange(parseInt(value))}
+                            value={field.value?.toString() || ""}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione um polo" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {isLoadingPolos ? (
+                                <SelectItem value="loading" disabled>Carregando polos...</SelectItem>
+                              ) : polos && polos.length > 0 ? (
+                                polos.map((polo) => (
+                                  <SelectItem key={polo.id} value={polo.id.toString()}>
+                                    {polo.name} ({polo.code})
+                                  </SelectItem>
+                                ))
+                              ) : (
+                                <SelectItem value="none" disabled>Nenhum polo encontrado para esta instituição</SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            Associe o usuário a um polo específico (obrigatório para usuários do tipo polo)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                </div>
+
+                {/* Campos adicionais opcionais */}
+                <div className="border-t border-gray-200 pt-4 mt-4">
+                  <Accordion type="single" collapsible className="w-full">
+                    <AccordionItem value="additional-info">
+                      <AccordionTrigger className="text-sm">
+                        Informações adicionais
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          <FormField
+                            control={createForm.control}
+                            name="phone"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Telefone</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="(00) 00000-0000" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={createForm.control}
+                            name="address"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Endereço</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Rua, número" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={createForm.control}
+                            name="city"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Cidade</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Cidade" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={createForm.control}
+                            name="state"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Estado</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="UF" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={createForm.control}
+                            name="zipCode"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>CEP</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="00000-000" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                </div>
                 <DialogFooter>
                   <Button
                     type="button"
@@ -868,6 +1136,213 @@ export default function UsersPage() {
                     </FormItem>
                   )}
                 />
+
+                {/* Campos RBAC/ABAC */}
+                <div className="border-t border-gray-200 pt-4 mt-4">
+                  <h3 className="text-sm font-medium text-gray-500 mb-3">Sistema de Permissionamento</h3>
+                  
+                  {/* Seleção de Papel/Função (RBAC) */}
+                  <FormField
+                    control={editForm.control}
+                    name="roleId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Papel/Função</FormLabel>
+                        <Select
+                          onValueChange={(value) => field.onChange(parseInt(value))}
+                          value={field.value?.toString() || ""}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione um papel" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {isLoadingRoles ? (
+                              <SelectItem value="loading" disabled>Carregando papéis...</SelectItem>
+                            ) : roles && roles.length > 0 ? (
+                              roles.map((role) => (
+                                <SelectItem key={role.id} value={role.id.toString()}>
+                                  {role.name}
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <SelectItem value="none" disabled>Nenhum papel encontrado</SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Atribua um papel ao usuário para definir suas permissões básicas
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Seleção de Instituição (ABAC) */}
+                  <FormField
+                    control={editForm.control}
+                    name="institutionId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Instituição</FormLabel>
+                        <Select
+                          onValueChange={(value) => {
+                            const id = parseInt(value);
+                            field.onChange(id);
+                            setSelectedInstitutionId(id);
+                            // Reset poloId when institution changes
+                            editForm.setValue('poloId', undefined);
+                          }}
+                          value={field.value?.toString() || ""}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione uma instituição" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {isLoadingInstitutions ? (
+                              <SelectItem value="loading" disabled>Carregando instituições...</SelectItem>
+                            ) : institutions && institutions.length > 0 ? (
+                              institutions.map((institution) => (
+                                <SelectItem key={institution.id} value={institution.id.toString()}>
+                                  {institution.name} ({institution.code})
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <SelectItem value="none" disabled>Nenhuma instituição encontrada</SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Associe o usuário a uma instituição (obrigatório para parceiros e polos)
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Seleção de Polo (ABAC) - condicionalmente exibido baseado na instituição selecionada */}
+                  {selectedInstitutionId && (
+                    <FormField
+                      control={editForm.control}
+                      name="poloId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Polo</FormLabel>
+                          <Select
+                            onValueChange={(value) => field.onChange(parseInt(value))}
+                            value={field.value?.toString() || ""}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione um polo" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {isLoadingPolos ? (
+                                <SelectItem value="loading" disabled>Carregando polos...</SelectItem>
+                              ) : polos && polos.length > 0 ? (
+                                polos.map((polo) => (
+                                  <SelectItem key={polo.id} value={polo.id.toString()}>
+                                    {polo.name} ({polo.code})
+                                  </SelectItem>
+                                ))
+                              ) : (
+                                <SelectItem value="none" disabled>Nenhum polo encontrado para esta instituição</SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            Associe o usuário a um polo específico (obrigatório para usuários do tipo polo)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                </div>
+
+                {/* Campos adicionais opcionais */}
+                <div className="border-t border-gray-200 pt-4 mt-4">
+                  <Accordion type="single" collapsible className="w-full">
+                    <AccordionItem value="additional-info">
+                      <AccordionTrigger className="text-sm">
+                        Informações adicionais
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          <FormField
+                            control={editForm.control}
+                            name="phone"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Telefone</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="(00) 00000-0000" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={editForm.control}
+                            name="address"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Endereço</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Rua, número" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={editForm.control}
+                            name="city"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Cidade</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Cidade" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={editForm.control}
+                            name="state"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Estado</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="UF" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={editForm.control}
+                            name="zipCode"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>CEP</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="00000-000" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                </div>
                 <DialogFooter>
                   <Button
                     type="button"
