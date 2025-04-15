@@ -16,6 +16,23 @@ import { InsertInstitutionPhasePermission, InsertPeriodPermissionRule, InsertPay
  * @returns boolean
  */
 export async function checkUserPermission(userId: number, resource: string, action: string): Promise<boolean> {
+  // Primeiro verifica se o usuário é super_admin (acesso total a tudo)
+  const superAdmin = await db
+    .select({ id: schema.userRoles.id })
+    .from(schema.userRoles)
+    .innerJoin(schema.roles, eq(schema.userRoles.roleId, schema.roles.id))
+    .where(
+      and(
+        eq(schema.userRoles.userId, userId),
+        eq(schema.roles.name, 'super_admin')
+      )
+    );
+
+  if (superAdmin.length > 0) {
+    console.log(`Usuário ${userId} é super_admin, acesso garantido para ${resource}:${action}`);
+    return true;
+  }
+
   // Primeiro verifique se o usuário tem a permissão explicitamente
   const userPermission = await db
     .select({ id: schema.userPermissions.id })
