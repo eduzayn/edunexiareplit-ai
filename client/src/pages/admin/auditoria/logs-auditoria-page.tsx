@@ -178,14 +178,33 @@ export const LogsAuditoriaPage = () => {
 
   // Função para exportar logs
   const exportLogs = async (format: 'csv' | 'json') => {
+    // Remover limitações de paginação para exportar todos os logs que correspondem aos filtros
     const params = new URLSearchParams(buildQueryParams());
     params.set('format', format);
+    // Remover offset para buscar a partir do primeiro registro
+    params.delete('offset');
+    // Aumentar o limite para pegar mais registros na exportação
+    params.set('limit', '1000');
     
     const url = `/api/audit/logs?${params.toString()}`;
     
-    // Se for CSV, baixar como arquivo
-    if (format === 'csv') {
-      window.open(url, '_blank');
+    try {
+      // Se for CSV, redirecionar para download
+      if (format === 'csv') {
+        // Mostrar mensagem de carregamento
+        console.log('Iniciando exportação dos logs para CSV...');
+        
+        // Abrir em uma nova aba/janela para download
+        window.open(url, '_blank');
+        
+        // Notificar usuário
+        console.log('Exportação iniciada. O arquivo CSV deve começar a ser baixado automaticamente.');
+      } else {
+        // Para outros formatos (ex: JSON), pode implementar outras lógicas
+        console.log(`Formato de exportação ${format} não implementado completamente.`);
+      }
+    } catch (error) {
+      console.error('Erro ao exportar logs:', error);
     }
   };
 

@@ -42,9 +42,35 @@ router.get('/logs', requireAuth, async (req, res) => {
 
     // Se formato é CSV, exportar como CSV
     if (validatedParams.format === 'csv') {
+      // Criar nome de arquivo com data
+      const now = new Date();
+      const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+      const timeStr = now.toISOString().slice(11, 19).replace(/:/g, '');
+      const filename = `logs_auditoria_${dateStr}_${timeStr}.csv`;
+      
+      // Formatar filtros para nome do arquivo (opcional)
+      let filterInfo = '';
+      if (validatedParams.entityType) {
+        filterInfo += `_${validatedParams.entityType}`;
+      }
+      if (validatedParams.actionType) {
+        filterInfo += `_${validatedParams.actionType}`;
+      }
+      
+      // Nome final do arquivo
+      const safeFilename = filename.replace(/[^a-zA-Z0-9_.-]/g, '_') + (filterInfo ? filterInfo : '');
+      
+      // Gerar CSV
       const csvData = await auditService.exportAuditLogs(validatedParams, 'csv');
-      res.setHeader('Content-Type', 'text/csv');
-      res.setHeader('Content-Disposition', 'attachment; filename=audit_logs.csv');
+      
+      // Configurar headers para download seguro
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="${safeFilename}"`);
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      
+      // Enviar arquivo
       return res.send(csvData);
     }
 
