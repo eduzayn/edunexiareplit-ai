@@ -356,6 +356,15 @@ function Router() {
         {() => user?.portalType === "admin" ? <LogsAuditoriaPage /> : <Redirect to="/admin" />}
       </Route>
       
+      {/* Rotas do Módulo de Sistema */}
+      <Route path="/admin/sistema/security">
+        {() => user?.portalType === "admin" ? <SecurityPage /> : <Redirect to="/admin" />}
+      </Route>
+      
+      <Route path="/admin/sistema/settings">
+        {() => user?.portalType === "admin" ? <SettingsPage /> : <Redirect to="/admin" />}
+      </Route>
+      
       <Route component={NotFound} />
     </Switch>
   );

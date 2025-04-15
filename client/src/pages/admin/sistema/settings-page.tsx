@@ -7,8 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
-import { Helmet } from "react-helmet";
-import { AdminLayout } from "@/components/layout/admin-layout";
+import AdminLayout from "@/components/layout/admin-layout";
 import { Loader2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
@@ -49,9 +48,7 @@ export default function SettingsPage() {
 
   return (
     <AdminLayout>
-      <Helmet>
-        <title>Configurações | EdunexIA</title>
-      </Helmet>
+      <title>Configurações | EdunexIA</title>
 
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Configurações do Sistema</h1>

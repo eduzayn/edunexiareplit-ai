@@ -3,14 +3,90 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
-import { Helmet } from "react-helmet";
-import { AdminLayout } from "@/components/layout/admin-layout";
 import { Loader2 } from "lucide-react";
-import { DataTable } from "@/components/data-table";
-import { columns as permissionColumns } from "@/components/tables/permission-columns";
-import { columns as rolesColumns } from "@/components/tables/role-columns";
-import { columns as userColumns } from "@/components/tables/user-columns";
+import AdminLayout from "@/components/layout/admin-layout";
 import { toast } from "@/hooks/use-toast";
+import { Table, TableHeader, TableBody, TableRow, TableCell, TableHead } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { 
+  DropdownMenu, 
+  DropdownMenuTrigger, 
+  DropdownMenuContent, 
+  DropdownMenuCheckboxItem
+} from "@/components/ui/dropdown-menu";
+
+// Componente DataTable simplificado
+function DataTable({ data, columns, searchColumn, filterColumn }) {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <Input
+          placeholder={`Buscar por ${searchColumn}...`}
+          className="max-w-sm"
+        />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline">Filtrar</Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuCheckboxItem checked>
+              Todos
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem>
+              Ativos
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem>
+              Inativos
+            </DropdownMenuCheckboxItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              {columns.map((column) => (
+                <TableHead key={column.id}>{column.header}</TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {data.map((row, rowIndex) => (
+              <TableRow key={rowIndex}>
+                {columns.map((column) => (
+                  <TableCell key={column.id}>{row[column.accessorKey]}</TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+}
+
+// Definição das colunas para cada tabela
+const permissionColumns = [
+  { id: "name", header: "Nome", accessorKey: "name" },
+  { id: "description", header: "Descrição", accessorKey: "description" },
+  { id: "type", header: "Tipo", accessorKey: "type" },
+  { id: "status", header: "Status", accessorKey: "status" },
+];
+
+const rolesColumns = [
+  { id: "name", header: "Nome", accessorKey: "name" },
+  { id: "description", header: "Descrição", accessorKey: "description" },
+  { id: "type", header: "Tipo", accessorKey: "type" },
+  { id: "status", header: "Status", accessorKey: "status" },
+];
+
+const userColumns = [
+  { id: "name", header: "Nome", accessorKey: "name" },
+  { id: "email", header: "Email", accessorKey: "email" },
+  { id: "role", header: "Papel", accessorKey: "role" },
+  { id: "status", header: "Status", accessorKey: "status" },
+  { id: "lastLogin", header: "Último Login", accessorKey: "lastLogin" },
+];
 
 export default function SecurityPage() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -48,9 +124,7 @@ export default function SecurityPage() {
 
   return (
     <AdminLayout>
-      <Helmet>
-        <title>Segurança | EdunexIA</title>
-      </Helmet>
+      <title>Segurança | EdunexIA</title>
 
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Segurança</h1>
