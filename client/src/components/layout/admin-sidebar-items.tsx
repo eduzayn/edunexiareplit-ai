@@ -100,13 +100,13 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
       items: [
         { 
           name: "Disciplinas", 
-          icon: <BookIcon />, 
+          icon: <BookIcon className="text-muted-foreground" />, 
           href: "/admin/disciplines",
           active: currentPath === "/admin/disciplines" || (currentPath && currentPath.includes("/admin/disciplines/"))
         },
         { 
           name: "Cursos", 
-          icon: <GraduationCapIcon />, 
+          icon: <GraduationCapIcon className="text-muted-foreground" />, 
           href: "/admin/courses",
           active: currentPath === "/admin/courses" || (currentPath && currentPath.includes("/admin/courses/"))
         },
@@ -138,19 +138,19 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
       items: [
         { 
           name: "Instituições", 
-          icon: <BusinessIcon />, 
+          icon: <BusinessIcon className="text-muted-foreground" />, 
           href: "/admin/institutions",
           active: currentPath === "/admin/institutions"
         },
         { 
           name: "Polos", 
-          icon: <StorefrontIcon />, 
+          icon: <StorefrontIcon className="text-muted-foreground" />, 
           href: "/admin/polos",
           active: currentPath === "/admin/polos"
         },
         { 
           name: "Parceiros", 
-          icon: <HandshakeIcon />, 
+          icon: <HandshakeIcon className="text-muted-foreground" />, 
           href: "/admin/partners",
           active: currentPath === "/admin/partners"
         },
