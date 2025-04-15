@@ -597,6 +597,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   institutionsCreated: many(institutions),
   polosCreated: many(polos),
   userRoles: many(userRoles), // Relação com papéis (roles) atribuídos ao usuário
+  userPermissions: many(userPermissions), // Relação com permissões atribuídas diretamente ao usuário
   polo: one(polos, { // Relação com o polo associado ao usuário (para usuários do tipo "polo")
     fields: [users.poloId],
     references: [polos.id],
@@ -1647,6 +1648,18 @@ export const userRoles = pgTable("user_roles", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Tabela de atribuição de permissões diretamente a usuários
+export const userPermissions = pgTable("user_permissions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  permissionId: integer("permission_id").notNull().references(() => permissions.id, { onDelete: 'cascade' }),
+  institutionId: integer("institution_id").references(() => institutions.id),
+  poloId: integer("polo_id").references(() => polos.id),
+  createdById: integer("created_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at"), // Permissão temporária, se aplicável
+});
+
 // Tabela de registros de auditoria de permissões
 export const permissionAudits = pgTable("permission_audits", {
   id: serial("id").primaryKey(),
@@ -1690,6 +1703,13 @@ export const insertUserRoleSchema = createInsertSchema(userRoles).omit({
 export type InsertUserRole = z.infer<typeof insertUserRoleSchema>;
 export type UserRole = typeof userRoles.$inferSelect;
 
+export const insertUserPermissionSchema = createInsertSchema(userPermissions).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertUserPermission = z.infer<typeof insertUserPermissionSchema>;
+export type UserPermission = typeof userPermissions.$inferSelect;
+
 // -------------------- Relacionamentos do Sistema de Permissões --------------------
 
 // Relações de papéis
@@ -1709,6 +1729,7 @@ export const rolesRelations = relations(roles, ({ one, many }) => ({
 // Relações de permissões
 export const permissionsRelations = relations(permissions, ({ many }) => ({
   rolePermissions: many(rolePermissions),
+  userPermissions: many(userPermissions),
 }));
 
 // Relações de atribuição de permissões a papéis
