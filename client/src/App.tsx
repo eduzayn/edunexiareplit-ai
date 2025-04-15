@@ -24,8 +24,9 @@ import PolosPage from "@/pages/admin/institucional/polos-page";
 import PartnersPage from "@/pages/admin/institucional/partners-page";
 import FinancialPage from "@/pages/admin/finance/financial-page";
 import ReportsPage from "@/pages/admin/relatorios/reports-page";
+import NewReportsPage from "@/pages/admin/relatorios/new-reports-page";
 // Módulo de Matrículas removido (substituído pelo CRM e Gestão Financeira)
-import IntegrationsPage from "@/pages/admin/integrations-page";
+import IntegrationsPage from "@/pages/admin/integracoes/integrations-page";
 import CertificationTemplatesPage from "@/pages/admin/certification/templates-page";
 import CertificationIssuePage from "@/pages/admin/certification/issue-page";
 import CertificationSignersPage from "@/pages/admin/certification/signers-page";
