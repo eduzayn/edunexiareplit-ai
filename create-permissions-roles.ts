@@ -3,6 +3,7 @@
 
 import { config } from 'dotenv';
 import { drizzle } from 'drizzle-orm/postgres-js';
+import { eq, and } from 'drizzle-orm';
 import postgres from 'postgres';
 
 // Importar schema do banco de dados
@@ -250,9 +251,9 @@ async function createPermissionsAndRoles() {
       const existingPermissions = await db.select()
         .from(schema.permissions)
         .where(
-          db.and(
-            db.eq(schema.permissions.resource, permission.resource),
-            db.eq(schema.permissions.action, permission.action)
+          and(
+            eq(schema.permissions.resource, permission.resource),
+            eq(schema.permissions.action, permission.action)
           )
         );
       
@@ -270,7 +271,7 @@ async function createPermissionsAndRoles() {
     for (const [roleName, description] of Object.entries(ROLE_DESCRIPTIONS)) {
       const existingRoles = await db.select()
         .from(schema.roles)
-        .where(db.eq(schema.roles.name, roleName));
+        .where(eq(schema.roles.name, roleName));
       
       if (existingRoles.length === 0) {
         // Inserir o papel
@@ -293,9 +294,9 @@ async function createPermissionsAndRoles() {
               const permissions = await db.select()
                 .from(schema.permissions)
                 .where(
-                  db.and(
-                    db.eq(schema.permissions.resource, resource),
-                    db.eq(schema.permissions.action, action)
+                  and(
+                    eq(schema.permissions.resource, resource),
+                    eq(schema.permissions.action, action)
                   )
                 );
               
