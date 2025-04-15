@@ -1,70 +1,65 @@
-import { useLocation } from "wouter";
-import Header from "@/components/layout/header";
-import Footer from "@/components/layout/footer";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle } from "lucide-react";
+import { Link } from "wouter";
+import NavbarMain from "@/components/layout/navbar-main";
+import FooterMain from "@/components/layout/footer-main";
 
 export default function CadastroSucessoPage() {
-  const [, navigate] = useLocation();
-
   return (
     <div className="flex flex-col min-h-screen">
-      <Header onLogin={() => navigate("/portal-selection")} />
-      
-      <main className="flex-grow flex items-center justify-center">
-        <div className="max-w-2xl mx-auto px-4 py-16 text-center">
-          <div className="mb-6 flex justify-center">
-            <CheckCircle className="h-20 w-20 text-green-500" />
-          </div>
-          
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Cadastro realizado com sucesso!
-          </h1>
-          
-          <div className="mb-8 text-lg text-gray-600 space-y-4">
-            <p>
-              Parabéns! Seu cadastro foi realizado e seu período de teste foi iniciado.
-            </p>
-            <p>
-              Enviamos um email de confirmação para o endereço informado. Por favor, verifique sua caixa de entrada (e também a pasta de spam) e siga as instruções para ativar sua conta.
-            </p>
-          </div>
-          
-          <div className="bg-blue-50 p-6 rounded-lg mb-10">
-            <h3 className="text-xl font-semibold text-blue-800 mb-3">Próximos passos</h3>
-            <ol className="text-left text-blue-700 space-y-3">
-              <li className="flex">
-                <span className="font-bold mr-2">1.</span>
-                <span>Ative sua conta através do link enviado ao seu email.</span>
-              </li>
-              <li className="flex">
-                <span className="font-bold mr-2">2.</span>
-                <span>Acesse o Portal Administrativo com as credenciais criadas.</span>
-              </li>
-              <li className="flex">
-                <span className="font-bold mr-2">3.</span>
-                <span>Configure sua instituição e comece a explorar todas as funcionalidades disponíveis no seu plano.</span>
-              </li>
-              <li className="flex">
-                <span className="font-bold mr-2">4.</span>
-                <span>Entre em contato com nossa equipe de suporte caso precise de ajuda durante o período de teste.</span>
-              </li>
-            </ol>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button onClick={() => navigate("/portal-selection")}>
-              Acessar Portal Administrativo
-            </Button>
-            
-            <Button variant="outline" onClick={() => navigate("/")}>
-              Voltar para a página inicial
-            </Button>
-          </div>
+      <NavbarMain />
+      <main className="flex-1 container mx-auto py-20 px-4">
+        <div className="max-w-2xl mx-auto text-center">
+          <Card className="w-full">
+            <CardHeader>
+              <div className="flex justify-center mb-4">
+                <CheckCircle className="h-16 w-16 text-green-500" />
+              </div>
+              <CardTitle className="text-2xl">Cadastro Realizado com Sucesso!</CardTitle>
+              <CardDescription className="text-lg mt-2">
+                Parabéns! Seu período de teste gratuito de 14 dias foi iniciado.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4 text-center">
+                <p>
+                  Um e-mail de confirmação foi enviado para você com as instruções de acesso.
+                </p>
+                <p>
+                  Você já pode acessar a plataforma utilizando as credenciais que você cadastrou.
+                </p>
+              </div>
+
+              <div className="space-y-4 pt-4 pb-2">
+                <div className="border rounded-md p-4 bg-blue-50">
+                  <h3 className="font-medium text-blue-700 mb-2">O que acontece agora?</h3>
+                  <ul className="list-disc pl-5 space-y-2 text-sm">
+                    <li>Você tem acesso completo ao sistema por 14 dias.</li>
+                    <li>Durante este período, você poderá explorar todas as funcionalidades disponíveis.</li>
+                    <li>Não é necessário cartão de crédito para o período de teste.</li>
+                    <li>Antes do término do período, você receberá um lembrete para escolher um plano.</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="flex flex-col md:flex-row gap-4 pt-4">
+                <Button asChild className="flex-1">
+                  <Link href="/admin">
+                    Acessar o Sistema
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" className="flex-1">
+                  <Link href="/planos">
+                    Ver Nossos Planos
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </main>
-      
-      <Footer />
+      <FooterMain />
     </div>
   );
 }

@@ -2783,6 +2783,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await WebhookController.handleAsaasWebhook(req, res);
   });
 
+  // ================= Rotas para Registro Público =================
+  // Rota pública para registro de novos usuários
+  app.use("/api/public/register", publicRegisterRouter);
+
   const httpServer = createServer(app);
 
   return httpServer;

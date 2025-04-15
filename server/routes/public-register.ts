@@ -7,9 +7,6 @@ import { AsaasService } from '../services/asaas-service';
 
 const router = express.Router();
 
-// Serviço Asaas para integração financeira
-const asaasService = new AsaasService();
-
 // Rota para registro de novos usuários com instituição e inscrição no trial
 router.post('/', async (req, res) => {
   try {
@@ -132,7 +129,7 @@ router.post('/', async (req, res) => {
             externalReference: `inst_${instituicao.nome.substring(0, 10).replace(/\\s/g, '_').toLowerCase()}`
           };
           
-          const asaasResponse = await asaasService.createCustomer(customerData);
+          const asaasResponse = await AsaasService.createCustomer(customerData);
           if (asaasResponse && asaasResponse.id) {
             asaasCustomerId = asaasResponse.id;
           }

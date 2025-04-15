@@ -1,0 +1,842 @@
+﻿Relatório: Sistema de Permissões Hierárquico EdunexIA - Especificação Técnica e Plano de ImplementaçãoIntrodução
+Propósito: Fornecer uma especificação técnica abrangente para o design, implementação, teste e administração de um sistema de permissões hierárquico e multilocatário refinado para a plataforma EdunexIA.
+Contexto: Este documento baseia-se na análise anterior (ID: ab792634-9dfa-4228-9b30-156389993e6e) e incorpora as melhores práticas de segurança, escalabilidade e manutenibilidade em ambientes SaaS multilocatários.
+Arquitetura Central: Adota-se um modelo híbrido de Controle de Acesso Baseado em Papéis (RBAC) e Controle de Acesso Baseado em Atributos (ABAC). Este modelo suporta multilocação hierárquica (estrutura Instituição-Polo) com isolamento robusto de dados, autenticação/autorização seguras via JWT, auditoria detalhada e capacidades de administração delegada. A integração com o sistema de pagamentos Asaas é uma consideração chave.
+Objetivos de Alto Nível: Melhorar a postura de segurança, fornecer controle granular sobre os recursos da plataforma, suportar diversos modelos operacionais institucionais através das fases do ciclo de vida, habilitar a autoadministração por parte dos tenants e garantir a escalabilidade para crescimento futuro.
+I. Modelo de Permissão Hierárquico Refinado
+
+
+A. Fundação Híbrida RBAC/ABAC:
+
+
+Justificativa: A combinação de RBAC e ABAC oferece um equilíbrio entre a facilidade de gerenciamento para papéis comuns e a flexibilidade necessária para regras de granularidade fina e dependentes de contexto.1 O RBAC lida com as permissões de linha de base ligadas a funções de trabalho (por exemplo, 'Gestor de Polo', 'Instrutor', 'Aluno'), enquanto o ABAC adiciona camadas de condições específicas (por exemplo, acesso a dados financeiros condicionado ao status do pagamento, acesso baseado em tempo).3
+Comparação: Embora o RBAC simplifique a configuração inicial 3, pode levar à "explosão de papéis" em cenários complexos, tornando o gerenciamento difícil.4 O ABAC fornece granularidade 1, mas aumenta a complexidade no design inicial, gerenciamento e auditoria.1 O modelo híbrido visa mitigar as desvantagens de cada um.3
+Consideração sobre ReBAC (Relationship-Based Access Control): Embora o modelo primário seja RBAC/ABAC, é importante reconhecer o poder dos modelos ReBAC como Google Zanzibar/SpiceDB.11 O ReBAC se destaca na modelagem de relacionamentos complexos (por exemplo, usuário 'é membro de' equipe, equipe 'pode visualizar' pasta, pasta 'contém' documento) e oferece alta escalabilidade e flexibilidade, especialmente ao adicionar novos tipos de recursos.10 Uma implementação completa de ReBAC pode ser excessiva inicialmente, mas seus conceitos (relacionamentos como cidadãos de primeira classe) podem informar o design de papéis customizados e regras ABAC, potencialmente abrindo caminho para uma evolução futura.12 A escolha entre RBAC, ABAC, ReBAC ou um híbrido não afeta apenas os recursos, mas impacta fundamentalmente a manutenibilidade e a escalabilidade a longo prazo. Um sistema RBAC puro pode ser mais simples agora, mas pode se tornar um gargalo mais tarde devido à explosão de papéis.9 O ABAC oferece flexibilidade, mas exige um gerenciamento rigoroso de políticas.1 O ReBAC 11 oferece a maior flexibilidade estrutural para relacionamentos complexos e em evolução, mas requer uma mentalidade diferente e, potencialmente, ferramentas especializadas.11 O híbrido RBAC/ABAC escolhido é pragmático. No entanto, projetar a parte ABAC com conceitos de relacionamento em mente (mesmo sem um motor ReBAC completo) pode facilitar uma migração futura potencial, se necessário. Por exemplo, regras ABAC que modelam implicitamente relacionamentos (como user.department == resource.department) são preferíveis a atributos arbitrários. Considerar explicitamente os princípios do ReBAC durante o design do ABAC oferece um elemento de preparação para o futuro.
+
+
+
+
+
+
+B. Mapeamento de Permissões para o Ciclo de Vida Institucional:
+
+
+Fases do Ciclo de Vida: Definir explicitamente as permissões necessárias para cada fase: Trial, Configuração, Assinatura, Operação Regular, Ciclo Financeiro/Acadêmico, Gestão, Renovação/Cancelamento.
+Permissões Granulares (Pares Ação/Recurso): Definir uma lista abrangente de permissões atômicas usando o formato Ação:Recurso. Exemplos: matricula:criar, matricula:ler, matricula:atualizar, matricula:cancelar, pagamento:gerar_cobranca, pagamento:confirmar, pagamento:ler_historico, curso:criar, curso:editar_grade, curso:publicar, polo:criar, polo:definir_comissao, usuario:convidar, papel:atribuir, relatorio:gerar_financeiro, configuracao:editar_instituicao.
+Transições do Ciclo de Vida: Detalhar como os conjuntos de permissões mudam à medida que uma instituição transita entre as fases.
+
+
+Trial: Conjunto limitado de funcionalidades (por exemplo, sem ações em massa, número limitado de cursos/usuários, sem transações financeiras reais). Foco em *:ler, configuracao:editar_basica, usuario:convidar_limitado.
+Configuração: Permissões expandidas para configuração após a assinatura, mas potencialmente antes da ativação completa. Acesso a curso:criar, polo:criar, integracao:configurar_asaas.
+Assinatura/Operação Regular (Ativo): Conjunto completo de permissões com base nos papéis atribuídos e no nível de assinatura. Todas as permissões *:* relevantes tornam-se potencialmente disponíveis com base nos papéis.
+Ciclo Financeiro/Acadêmico: Permissões específicas podem ser ativadas ou restringidas durante esses períodos (por exemplo, bloquear a edição de notas após o fechamento do ciclo acadêmico - potencialmente uma regra ABAC baseada em data/status).
+Gestão: Permissões relacionadas à administração geral, relatórios, gerenciamento de usuários (usuario:*, papel:*, relatorio:*).
+Renovação/Cancelamento: As permissões podem ser restringidas antes do cancelamento (por exemplo, acesso somente leitura, incapacidade de criar novas entidades). Pós-cancelamento pode envolver apenas permissões de exportação de dados.
+
+
+
+
+(Tabela 1: Matriz de Permissões por Fase do Ciclo de Vida)
+
+
+Conteúdo: Linhas = Permissões Granulares (Ação:Recurso), Colunas = Fases do Ciclo de Vida Institucional, Células = Indicam se a permissão é relevante/disponível naquela fase (potencialmente ligada a papéis padrão específicos). Adicionar uma coluna para 'Requer Interação Asaas'.
+Relatório: Sistema de Permissões Hierárquico EdunexIA - Especificação Técnica e Plano de ImplementaçãoIntroduçãoPropósito:
+
+
+Fornecer uma especificação técnica abrangente para o design, implementação, teste e administração de um sistema de permissões hierárquico e multilocatário refinado para a plataforma EdunexIA.Contexto:
+
+
+Este documento baseia-se na análise anterior (ID: ab792634-9dfa-4228-9b30-156389993e6e) e incorpora as melhores práticas de segurança, escalabilidade e manutenibilidade em ambientes SaaS multilocatários.Arquitetura Central:
+
+
+Adota-se um modelo híbrido de Controle de Acesso Baseado em Papéis (RBAC) e Controle de Acesso Baseado em Atributos (ABAC). Este modelo suporta multilocação hierárquica (estrutura Instituição-Polo) com isolamento robusto de dados, autenticação/autorização seguras via JWT, auditoria detalhada e capacidades de administração delegada. A integração com o sistema de pagamentos Asaas é uma consideração chave.Objetivos de Alto Nível:
+* Melhorar a postura de segurança
+* Fornecer controle granular sobre os recursos da plataforma
+* Suportar diversos modelos operacionais institucionais através das fases do ciclo de vida
+* Habilitar a autoadministração por parte dos tenants
+* Garantir a escalabilidade para crescimento futuro.
+I. Modelo de Permissão Hierárquico RefinadoA. Fundação Híbrida RBAC/ABAC:Justificativa:
+
+
+A combinação de RBAC e ABAC oferece um equilíbrio entre a facilidade de gerenciamento para papéis comuns e a flexibilidade necessária para regras de granularidade fina e dependentes de contexto.1 O RBAC lida com as permissões de linha de base ligadas a funções de trabalho (por exemplo, 'Gestor de Polo', 'Instrutor', 'Aluno'), enquanto o ABAC adiciona camadas de condições específicas (por exemplo, acesso a dados financeiros condicionado ao status do pagamento, acesso baseado em tempo).3Comparação:
+
+
+Embora o RBAC simplifique a configuração inicial, pode levar à "explosão de papéis" em cenários complexos, tornando o gerenciamento difícil.4 O ABAC fornece granularidade, mas aumenta a complexidade no design inicial, gerenciamento e auditoria.1 O modelo híbrido visa mitigar as desvantagens de cada um.3Consideração sobre ReBAC (Relationship-Based Access Control):
+
+
+Embora o modelo primário seja RBAC/ABAC, é importante reconhecer o poder dos modelos ReBAC como Google Zanzibar/SpiceDB.11 O ReBAC se destaca na modelagem de relacionamentos complexos (por exemplo, usuário 'é membro de' equipe, equipe 'pode visualizar' pasta, pasta 'contém' documento) e oferece alta escalabilidade e flexibilidade, especialmente ao adicionar novos tipos de recursos.10 Uma implementação completa de ReBAC pode ser excessiva inicialmente, mas seus conceitos (relacionamentos como cidadãos de primeira classe) podem informar o design de papéis customizados e regras ABAC, potencialmente abrindo caminho para uma evolução futura.12 A escolha entre RBAC, ABAC, ReBAC ou um híbrido não afeta apenas os recursos, mas impacta fundamentalmente a manutenibilidade e a escalabilidade a longo prazo. Um sistema RBAC puro pode ser mais simples agora, mas pode se tornar um gargalo mais tarde devido à explosão de papéis.9 O ABAC oferece flexibilidade, mas exige um gerenciamento rigoroso de políticas.1 O ReBAC 11 oferece a maior flexibilidade estrutural para relacionamentos complexos e em evolução, mas requer uma mentalidade diferente e, potencialmente, ferramentas especializadas.11 O híbrido RBAC/ABAC escolhido é pragmático. No entanto, projetar a parte ABAC com conceitos de relacionamento em mente (mesmo sem um motor ReBAC completo) pode facilitar uma migração futura potencial, se necessário. Por exemplo, regras ABAC que modelam implicitamente relacionamentos (como user.department == resource.department) são preferíveis a atributos arbitrários. Considerar explicitamente os princípios do ReBAC durante o design do ABAC oferece um elemento de preparação para o futuro.B. Mapeamento de Permissões para o Ciclo de Vida Institucional:Fases do Ciclo de Vida:
+
+
+Definir explicitamente as permissões necessárias para cada fase: Trial, Configuração, Assinatura, Operação Regular, Ciclo Financeiro/Acadêmico, Gestão, Renovação/Cancelamento.Permissões Granulares (Pares Ação/Recurso):
+
+
+Definir uma lista abrangente de permissões atômicas usando o formato Ação:Recurso.
+Exemplos:
+* matricula:criar
+* matricula:ler
+* matricula:atualizar
+* matricula:cancelar
+* pagamento:gerar_cobranca
+* pagamento:confirmar
+* pagamento:ler_historico
+* curso:criar
+* curso:editar_grade
+* curso:publicar
+* polo:criar
+* polo:definir_comissao
+* usuario:convidar
+* papel:atribuir
+* relatorio:gerar_financeiro
+* configuracao:editar_instituicao
+Transições do Ciclo de Vida:
+
+
+Detalhar como os conjuntos de permissões mudam à medida que uma instituição transita entre as fases.Trial:
+
+
+Conjunto limitado de funcionalidades (por exemplo, sem ações em massa, número limitado de cursos/usuários, sem transações financeiras reais). Foco em *:ler, configuracao:editar_basica, usuario:convidar_limitado.Configuração:
+
+
+Permissões expandidas para configuração após a assinatura, mas potencialmente antes da ativação completa. Acesso a curso:criar, polo:criar, integracao:configurar_asaas.Assinatura/Operação Regular (Ativo):
+
+
+Conjunto completo de permissões com base nos papéis atribuídos e no nível de assinatura. Todas as permissões : relevantes tornam-se potencialmente disponíveis com base nos papéis.Ciclo Financeiro/Acadêmico:
+
+
+Permissões específicas podem ser ativadas ou restringidas durante esses períodos (por exemplo, bloquear a edição de notas após o fechamento do ciclo acadêmico - potencialmente uma regra ABAC baseada em data/status).Gestão:
+
+
+Permissões relacionadas à administração geral, relatórios, gerenciamento de usuários (usuario:, papel:, relatorio:*).Renovação/Cancelamento:
+
+
+As permissões podem ser restringidas antes do cancelamento (por exemplo, acesso somente leitura, incapacidade de criar novas entidades). Pós-cancelamento pode envolver apenas permissões de exportação de dados.(Tabela 1: Matriz de Permissões por Fase do Ciclo de Vida)Conteúdo:
+* Linhas = Permissões Granulares (Ação:Recurso)
+* Colunas = Fases do Ciclo de Vida Institucional
+* Células = Indicam se a permissão é relevante/disponível naquela fase (potencialmente ligada a papéis padrão específicos). Adicionar uma coluna para 'Requer Interação Asaas'.
+Valor:
+
+
+Fornece uma referência clara e centralizada para desenvolvedores e administradores, mostrando quais ações são possíveis em cada estágio da jornada da instituição. Aborda diretamente os pontos (1a) e (1b) da consulta e auxilia nos testes.
+Valor: Fornece uma referência clara e centralizada para desenvolvedores e administradores, mostrando quais ações são possíveis em cada estágio da jornada da instituição. Aborda diretamente os pontos (1a) e (1b) da consulta e auxilia nos testes.
+
+
+
+
+
+
+
+
+PermissãoTrialConfiguraçãoAssinatura/OperaçãoCiclo Fin/AcadGestãoRenov/CancelRequer Asaasmatricula:criarSimSimSimSimNãoNãoNãomatricula:lerSimSimSimSimSimSim (Leitura)Nãopagamento:gerar_cobrancaNãoSimSimSimNãoNãoSimpagamento:confirmarNãoNãoSimSimNãoNãoSimcurso:criarSimSimSimSimNãoNãoNãocurso:editar_gradeNãoSimSimRestrito¹NãoNãoNãopolo:criarNãoSimSimNãoNãoNãoNãopolo:definir_comissaoNãoSimSimSimNãoNãoNãousuario:convidarLimit.²SimSimSimSimNãoNãopapel:atribuirNãoSimSimSimSimNãoNãorelatorio:gerar_financeiroNãoNãoSimSimSimSim (Leitura)Pot. Sim³integracao:configurar_asaasNãoSimSimNãoSimNãoSim........................    *¹ Restrito: Pode ser bloqueado após o fechamento do ciclo acadêmico via regra ABAC.*
+
+Tabela 1: Permissões em Relação à Matrícula e Pagamento
+Permissão
+	Trial
+	Configuração
+	Assinatura/Operação
+	Ciclo Fin/Acad
+	Gestão
+	Renov/Cancel
+	Requer Asaas
+	matricula:criar
+	Sim
+	Sim
+	Sim
+	Sim
+	Não
+	Não
+	Não
+	matricula:ler
+	Sim
+	Sim
+	Sim
+	Sim
+	Sim
+	Sim (Leitura)
+	Não
+	pagamento:gerar_cobranca
+	Não
+	Sim
+	Sim
+	Sim
+	Não
+	Não
+	Sim
+	pagamento:confirmar
+	Não
+	Não
+	Sim
+	Sim
+	Não
+	Não
+	Sim
+	Tabela 2: Permissões em Relação a Cursos e Polos
+Permissão
+	Trial
+	Configuração
+	Assinatura/Operação
+	Ciclo Fin/Acad
+	Gestão
+	Renov/Cancel
+	Requer Asaas
+	curso:criar
+	Sim
+	Sim
+	Sim
+	Sim
+	Não
+	Não
+	Não
+	curso:editar_grade
+	Não
+	Sim
+	Sim
+	Restrito¹
+	Não
+	Não
+	Não
+	polo:criar
+	Não
+	Sim
+	Sim
+	Não
+	Não
+	Não
+	Não
+	polo:definir_comissao
+	Não
+	Sim
+	Sim
+	Sim
+	Não
+	Não
+	Não
+	Tabela 3: Permissões em Relação a Usuários, Papéis e Relatórios
+Permissão
+	Trial
+	Configuração
+	Assinatura/Operação
+	Ciclo Fin/Acad
+	Gestão
+	Renov/Cancel
+	Requer Asaas
+	usuario:convidar
+	Limit²
+	Sim
+	Sim
+	Sim
+	Sim
+	Não
+	Não
+	papel:atribuir
+	Não
+	Sim
+	Sim
+	Sim
+	Sim
+	Não
+	Não
+	relatorio:gerar_financeiro
+	Não
+	Não
+	Sim
+	Sim
+	Sim
+	Sim (Leitura)
+	Pot. Sim³
+	integracao:configurar_asaas
+	Não
+	Sim
+	Sim
+	Não
+	Sim
+	Não
+	Sim
+	
+
+Notas:
+* ¹ Restrito: Pode ser bloqueado após o fechamento do ciclo acadêmico via regra ABAC.
+* ² Limitado: Número restrito de convites durante o Trial.
+* ³ Potencialmente Sim: Se o relatório busca dados diretamente do Asaas.
+    *² Limitado: Número restrito de convites durante o Trial.*
+    *³ Potencialmente Sim: Se o relatório busca dados diretamente do Asaas.*
+
+
+
+
+C. Papéis Customizados e Contexto ABAC:
+
+
+Papéis Customizados por Tenant: As instituições devem poder definir seus próprios papéis além dos padrões do sistema (por exemplo, 'Coordenador de Curso Específico', 'Assistente Financeiro Polo X'). Esses papéis customizados herdam permissões de papéis base ou são compostos por permissões granulares. Isso se alinha à necessidade de flexibilidade destacada nas melhores práticas multilocatárias.22
+ABAC para Regras Contextuais: Implementar regras ABAC para condições dinâmicas.
+
+
+Exemplo Integração Asaas: O acesso a pagamento:confirmar pode ser condicional a user.role == 'Financeiro' E asaas.payment_status == 'CONFIRMED'.
+Exemplo Baseado em Tempo: O acesso a nota:editar pode ser restringido com base na data atual em relação ao calendário acadêmico (current_date < academic_cycle.grade_lock_date).3
+Exemplo Propriedade/Relacionamento do Recurso: Um usuário com o papel 'Instrutor' só pode nota:editar para registros de matricula onde matricula.curso_id está associado a um curso que o instrutor leciona (modelando implicitamente um relacionamento). Isso toca em ideias de ReBAC.11 As "caveated relationships" no SpiceDB 12 fornecem uma maneira formal de modelar isso, mas pode ser aproximado com regras ABAC consultando dados de relacionamento.
+
+
+
+
+A implementação de papéis customizados por tenant aumenta significativamente a complexidade do gerenciamento e auditoria de permissões. O sistema necessita de ferramentas administrativas robustas (Seção VIII) para gerenciar esses papéis sem erros e uma auditoria clara (Seção VI) para rastrear quem definiu qual papel com quais permissões. Além disso, a interação entre papéis customizados e regras ABAC precisa de definição cuidadosa. As regras ABAC se aplicam universalmente ou podem ser sobrescritas ou modificadas por papéis customizados? O comportamento padrão deve ser que as regras ABAC se aplicam universalmente, a menos que explicitamente projetado de outra forma. Esta decisão de design é crucial para evitar comportamentos inesperados e brechas de segurança.
+
+
+
+
+
+
+D. Permissões de Integração Asaas:
+
+
+Mapeamento Explícito: Listar claramente as ações da EdunexIA que acionam interações com o Asaas e as permissões específicas necessárias dentro da EdunexIA para realizar essas ações.
+
+
+pagamento:gerar_cobranca (Requer permissão para criar cobrança Asaas)
+pagamento:confirmar (Requer permissão para verificar status de pagamento Asaas, potencialmente atualizar status interno)
+pagamento:cancelar_cobranca (Requer permissão para cancelar cobrança Asaas)
+pagamento:reembolsar (Requer permissão para iniciar reembolso Asaas)
+integracao:configurar_asaas (Requer permissão para armazenar/atualizar chaves API/webhooks Asaas para o tenant)
+relatorio:ler_financeiro_asaas (Requer permissão para buscar dados de pagamento do Asaas)
+
+
+
+
+Segurança: Permissões relacionadas à configuração do Asaas (integracao:configurar_asaas) devem ser altamente restritas (por exemplo, apenas Admin do Tenant). Ações que envolvem movimentação financeira (pagamento:gerar_cobranca, pagamento:reembolsar) também exigem atribuição cuidadosa de papéis.
+
+
+
+
+II. Design do Schema do Banco de Dados
+
+
+A. Isolamento Hierárquico de Dados (DataKey):
+
+
+Implementação: Adotar o padrão DataKey conforme descrito em 24 e.24 Adicionar uma coluna de string não nula (por exemplo, DataKey, TenantHierarchyKey) a todas as tabelas de dados específicas do tenant (por exemplo, Cursos, Matriculas, Pagamentos, Usuarios, Polos - excluindo tabelas verdadeiramente globais como configurações do sistema ou potencialmente a própria tabela Instituicoes de nível superior, que pode usar apenas seu próprio ID).
+Formato: instituicao_id. para instituições de nível superior, instituicao_id.polo_id. para polos. Usar um delimitador consistente (por exemplo, .) e garantir que o formato permita consultas StartsWith eficientes. instituicao_id e polo_id devem ser as chaves primárias (ou identificadores únicos) das respectivas entidades.
+Indexação: Criar um índice de banco de dados na coluna DataKey para desempenho, conforme recomendado em.24 O tamanho sugerido de varchar(250) 24, permitindo ~25 níveis, parece suficiente.
+Justificativa: Este padrão fornece um mecanismo robusto para impor a visibilidade de dados dentro da hierarquia usando filtros de consulta do banco de dados (Seção V). Um usuário associado a instituicao_1.polo_A. verá automaticamente os dados desse polo e de quaisquer subentidades (se a hierarquia se estender ainda mais), enquanto um usuário em instituicao_1. poderia potencialmente ver dados de todos os polos dentro dessa instituição (dependendo do design da lógica do filtro de consulta). 24 detalha explicitamente essa abordagem StartsWith para tenants hierárquicos. 25 discute diferentes estratégias de banco de dados multilocatário (BD compartilhado com ID do tenant, BD por tenant), e a abordagem DataKey se encaixa no modelo "Single Application, Single Database" 26 com isolamento lógico.
+
+
+
+
+
+
+B. Tabelas Centrais do Sistema de Permissão:
+
+
+
+
+Tabela Permissions:
+
+
+Colunas: PermissionID (PK), Action (string, ex: 'criar', 'ler'), Resource (string, ex: 'matricula', 'curso'), Description (string, opcional).
+Propósito: Define o universo de permissões granulares possíveis no sistema. Preenchida pelos desenvolvedores.
+
+
+
+
+
+
+Tabela Roles:
+
+
+Colunas: RoleID (PK), RoleName (string), Description (string, opcional), IsSystemRole (boolean), TenantID (FK para Instituicoes, Nullable - Null para papéis do sistema, não nulo para papéis customizados do tenant), DataKey (string, para escopo de visibilidade de papéis customizados se necessário, embora primariamente papéis se liguem a usuários que têm DataKeys).
+Propósito: Define papéis de nível de sistema (Admin, Instrutor, etc.) e papéis customizados definidos pelo tenant.23
+
+
+
+
+
+
+Tabela RolePermissions (Tabela de Junção):
+
+
+Colunas: RoleID (FK para Roles), PermissionID (FK para Permissions). PK Composta (RoleID, PermissionID).
+Propósito: Mapeia quais permissões granulares são concedidas a cada papel (do sistema ou customizado).
+
+
+
+
+
+
+Tabela UserRoles (Tabela de Junção):
+
+
+Colunas: UserID (FK para Users), RoleID (FK para Roles). PK Composta (UserID, RoleID).
+Propósito: Atribui papéis a usuários específicos.
+
+
+
+
+
+
+Tabela AuditLogs:
+
+
+Colunas: LogID (PK, BigInt/UUID), Timestamp (DateTimeOffset), UserID (FK para Users, Nullable para ações do sistema), ImpersonatorUserID (FK para Users, Nullable), UserIPAddress (string), TenantDataKey (string, representando o contexto do tenant da ação), Action (string, ex: 'login', 'matricula:criar', 'role:assign'), ResourceIdentifier (string, ex: matricula_id=123, user_id=456), Parameters (JSON/Text, armazenando dados relevantes da requisição, sanitizados), Result (string, ex: 'Success', 'Failure_Unauthorized', 'Failure_Error'), Details (Text, informações adicionais opcionais).
+Propósito: Log detalhado para segurança, conformidade e depuração, conforme recomendado em.27 Captura quem fez o quê, quando, em quais dados de tenant, e o resultado.
+
+
+
+
+
+
+(Tabela 2: Schemas Detalhados (Exemplos Chave))
+
+
+Conteúdo: Definições tipo SQL DDL para Permissions, Roles, RolePermissions, UserRoles e AuditLogs, incluindo tipos de dados, restrições (PK, FK, Not Null) e índices.
+Valor: Fornece aos desenvolvedores o blueprint exato necessário para criar ou modificar a estrutura do banco de dados, garantindo consistência e cobrindo todos os campos necessários para os sistemas de permissão e auditoria. Aborda o ponto (2b) da consulta.
+
+
+SQL-- Tabela de Permissões Atômicas
+CREATE TABLE Permissions (
+    PermissionID INT PRIMARY KEY IDENTITY(1,1),
+    Action VARCHAR(100) NOT NULL,
+    Resource VARCHAR(100) NOT NULL,
+    Description NVARCHAR(500) NULL,
+    CONSTRAINT UK_Permission_ActionResource UNIQUE (Action, Resource)
+);
+
+
+-- Tabela de Papéis (Sistema e Customizados por Tenant)
+CREATE TABLE Roles (
+    RoleID INT PRIMARY KEY IDENTITY(1,1),
+    RoleName NVARCHAR(100) NOT NULL,
+    Description NVARCHAR(500) NULL,
+    IsSystemRole BIT NOT NULL DEFAULT 0,
+    TenantID INT NULL, -- FK para Instituicoes, NULL para papéis do sistema
+    DataKey VARCHAR(250) NULL, -- Para escopo, se necessário
+    CONSTRAINT FK_Roles_Instituicoes FOREIGN KEY (TenantID) REFERENCES Instituicoes(InstituicaoID)
+    -- Unique constraint para nomes de papéis dentro de um tenant ou globalmente para papéis do sistema
+);
+
+
+-- Tabela de Junção: Papéis x Permissões
+CREATE TABLE RolePermissions (
+    RoleID INT NOT NULL,
+    PermissionID INT NOT NULL,
+    PRIMARY KEY (RoleID, PermissionID),
+    CONSTRAINT FK_RolePermissions_Roles FOREIGN KEY (RoleID) REFERENCES Roles(RoleID) ON DELETE CASCADE,
+    CONSTRAINT FK_RolePermissions_Permissions FOREIGN KEY (PermissionID) REFERENCES Permissions(PermissionID) ON DELETE CASCADE
+);
+
+
+-- Tabela de Junção: Usuários x Papéis
+CREATE TABLE UserRoles (
+    UserID INT NOT NULL, -- FK para Users
+    RoleID INT NOT NULL,
+    PRIMARY KEY (UserID, RoleID),
+    CONSTRAINT FK_UserRoles_Users FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE,
+    CONSTRAINT FK_UserRoles_Roles FOREIGN KEY (RoleID) REFERENCES Roles(RoleID) ON DELETE CASCADE
+);
+
+
+-- Tabela de Logs de Auditoria Detalhada
+CREATE TABLE AuditLogs (
+    LogID BIGINT PRIMARY KEY IDENTITY(1,1),
+    Timestamp DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
+    UserID INT NULL, -- FK para Users, NULL para ações do sistema
+    ImpersonatorUserID INT NULL, -- FK para Users
+    UserIPAddress VARCHAR(50) NULL,
+    TenantDataKey VARCHAR(250) NULL, -- Contexto do Tenant da ação
+    Action VARCHAR(200) NOT NULL, -- Ex: 'login', 'matricula:criar'
+    ResourceIdentifier VARCHAR(500) NULL, -- Ex: 'matricula_id=123'
+    Parameters NVARCHAR(MAX) NULL, -- JSON ou Texto, sanitizado
+    Result VARCHAR(100) NOT NULL, -- Ex: 'Success', 'Failure_Unauthorized'
+    Details NVARCHAR(MAX) NULL,
+    CONSTRAINT FK_AuditLogs_Users FOREIGN KEY (UserID) REFERENCES Users(UserID),
+    CONSTRAINT FK_AuditLogs_Impersonator FOREIGN KEY (ImpersonatorUserID) REFERENCES Users(UserID)
+);
+CREATE INDEX IX_AuditLogs_Timestamp ON AuditLogs(Timestamp);
+CREATE INDEX IX_AuditLogs_UserID ON AuditLogs(UserID);
+CREATE INDEX IX_AuditLogs_TenantDataKey ON AuditLogs(TenantDataKey);
+CREATE INDEX IX_AuditLogs_Action ON AuditLogs(Action);
+
+
+
+
+
+
+
+
+
+
+C. Representando a Hierarquia Instituição-Polo:
+
+
+Tabela Instituicoes: InstituicaoID (PK), Nome, Status (Trial, Ativo, etc.), AsaasApiKey (Criptografado), ...outros detalhes da instituição.
+Tabela Polos: PoloID (PK), InstituicaoID (FK para Instituicoes), Nome, DataKey (string, ex: instituicao_id.polo_id.), ...outros detalhes do polo.
+Tabela Users: UserID (PK), Nome, Email, PasswordHash, TenantID (FK para Instituicoes), PoloID (FK para Polos, Nullable - Usuário pode estar associado diretamente à Instituição ou a um Polo específico), DataKey (string, derivada de TenantID e PoloID, ex: instituicao_id. ou instituicao_id.polo_id.).
+Relacionamentos: A DataKey no registro do User determina sua posição na hierarquia e o escopo dos dados que ele pode acessar via filtros de consulta (Seção V). A tabela UserRoles liga usuários a papéis, e RolePermissions liga papéis a permissões granulares. A lógica de autorização (Seção III) usa esses relacionamentos.
+A DataKey no registro do usuário torna-se uma peça crítica de informação de segurança. Sua geração deve ser precisa e diretamente ligada à Instituição/Polo atribuído ao usuário. Atualizações na atribuição de Polo de um usuário devem acionar uma atualização da DataKey. Além disso, a relação entre a DataKey de um usuário e os papéis que lhe podem ser atribuídos precisa de consideração. Um usuário com DataKey=inst1.poloA. só deveria poder receber papéis com escopo inst1 ou inst1.poloA? A resposta mais segura é sim, para prevenir escalonamento de privilégios através das fronteiras dos tenants. Este controle deve ser implementado na lógica de atribuição de papéis.
+
+
+
+
+III. Middleware de Autenticação e Autorização
+
+
+A. Fluxo de Autenticação:
+
+
+Processo: Usuário submete credenciais -> Backend valida credenciais contra a tabela Users (usando hash seguro de senha) -> Em caso de sucesso, gerar JWT contendo UserID, DataKey, RoleIDs (ou uma referência para buscar papéis), exp, iss, aud, etc. -> Retornar token de acesso JWT (e potencialmente token de atualização) para o cliente.
+Multilocação: O processo de login deve identificar o contexto correto do tenant (por exemplo, via subdomínio, domínio de email do usuário ou seleção explícita do tenant) para validar credenciais contra o pool de usuários correto, se o isolamento do tenant for extremamente rigoroso (embora o schema atual sugira uma tabela de usuários compartilhada com TenantID).26
+
+
+
+
+
+
+B. Lógica de Autorização no Middleware:
+
+
+Posicionamento: Implementar verificações de autorização dentro do middleware do ASP.NET Core, executado após a autenticação, mas antes da action do controller.31 Isso garante que as verificações sejam executadas em cada requisição protegida.33
+Passos de Verificação:
+
+
+Extrair JWT do cabeçalho da requisição.
+Validar assinatura, expiração, emissor, audiência do JWT (Seção IV).
+Extrair UserID, DataKey e RoleIDs do payload do JWT validado.
+(Opcional/Cacheado) Buscar permissões detalhadas associadas aos RoleIDs do usuário do banco de dados/cache.
+Determinar a(s) permissão(ões) necessária(s) para a rota/ação de destino (por exemplo, via atributos customizados nas actions do controller como ``).
+Verificar se as permissões combinadas do usuário (de todos os seus papéis) incluem a(s) permissão(ões) necessária(s).
+Realizar verificações ABAC: Avaliar regras ABAC relevantes com base em atributos do usuário (do JWT ou BD), atributos do recurso (potencialmente buscados com base em parâmetros de rota) e contexto ambiental (por exemplo, hora, IP).4
+Se todas as verificações passarem, permitir que a requisição prossiga (next() no middleware).
+Se alguma verificação falhar, negar acesso (ver tratamento seguro de falhas).
+
+
+
+
+Granularidade: O middleware pode lidar com verificações de nível de rota com base em papéis/permissões. Verificações mais finas (por exemplo, verificar a propriedade de um ID de recurso específico passado na URL) podem ocorrer dentro do próprio middleware (se o contexto estiver disponível) ou ser delegadas à camada de serviço/lógica de negócios. No entanto, a decisão de permitir/negar deve idealmente ser aplicada de forma consistente, potencialmente usando um serviço/biblioteca de autorização dedicado chamado tanto pelo middleware quanto pela lógica de negócios. 34 adverte contra colocar lógica de política complexa diretamente no middleware, sugerindo um serviço dedicado. 35 mostra um exemplo usando atributos de filtro para acionar verificações.
+
+
+
+
+
+
+C. Cache de Permissões:
+
+
+Estratégia: Cachear permissões resolvidas por usuário ou por papel para evitar buscas no banco de dados em cada requisição. A chave do cache pode ser UserID ou uma combinação de RoleIDs.
+Armazenamento do Cache: Usar um cache em memória (por exemplo, IMemoryCache no ASP.NET Core) para implantações de instância única ou um cache distribuído (por exemplo, Redis, Memcached) para implantações multi-instância/escaláveis.
+Invalidação: Crucial para a segurança. Invalidar entradas de cache quando:
+
+
+Os papéis do usuário mudam (UserRoles atualizado).
+As permissões de um papel mudam (RolePermissions atualizado).
+Uma definição de papel customizado muda (Roles atualizado).
+Uma política global que afeta regras ABAC muda.
+
+
+
+
+Implementação: Usar mensagens de invalidação de cache (por exemplo, via um message bus como RabbitMQ/Kafka se distribuído) ou expiração baseada em tempo com um TTL razoavelmente curto (por exemplo, 5-15 minutos) como fallback, aceitando um pequeno atraso na propagação da permissão. 12 menciona as capacidades de cache do SpiceDB. 27 menciona validar em cada requisição, implicando que buscas em cache são aceitáveis se mantidas consistentes.
+A invalidação de cache em um sistema distribuído não é trivial e é uma fonte comum de bugs sutis ou problemas de segurança. Se a invalidação falhar, os usuários podem reter permissões antigas ou não obter novas prontamente. Confiar apenas no TTL simplifica as coisas, mas introduz latência. Um mecanismo robusto de pub/sub para eventos de invalidação acionados por mudanças nas tabelas de permissão (Roles, UserRoles, RolePermissions) é geralmente mais confiável para consistência imediata, embora mais complexo de implementar. A escolha entre consistência imediata (event-based) e simplicidade (TTL) deve ser feita com base nos requisitos de segurança e tolerância à latência da aplicação.
+
+
+
+
+
+
+D. Tratamento Seguro de Falhas:
+
+
+Negar por Padrão: O princípio fundamental. Se qualquer verificação falhar ou ocorrer um erro durante a verificação, o acesso deve ser negado.27
+Logging: Registrar cada falha de autorização na tabela AuditLogs com detalhes suficientes (UserID, IP, recurso solicitado, permissão necessária, motivo da falha).27
+Mensagens de Erro Seguras: Retornar respostas de erro genéricas para o cliente (por exemplo, HTTP 403 Forbidden). Não revelar detalhes sobre por que a autorização falhou (por exemplo, "Permissão 'X' ausente" ou "Regra ABAC 'Y' falhou"), pois isso vaza informações.27
+Saída Segura: Garantir que as falhas não deixem a aplicação em um estado inconsistente.27
+
+
+
+
+IV. Segurança de JWT e Sessão
+
+
+A. Configuração e Validação de JWT:
+
+
+Algoritmo: Usar um algoritmo assimétrico como RS256 (Assinatura RSA com SHA-256). Isso requer um par de chaves pública/privada. A chave privada é mantida secreta no servidor para assinatura, e a chave pública é usada pelos servidores de recursos/middleware para verificação. Evitar algoritmos simétricos (HS256) a menos que o emissor e o validador do token sejam o mesmo sistema fortemente acoplado e o gerenciamento de chaves seja impecável, pois o comprometimento da chave secreta é catastrófico.3638 recomenda fortemente assimétricos para a maioria dos cenários.
+Validação Rigorosa: Implementar validação rigorosa no middleware:
+
+
+Verificar a assinatura usando a chave pública conhecida correspondente ao emissor. Crucialmente, NÃO confiar no cabeçalho alg no próprio JWT para determinar o método de verificação. Configurar explicitamente o middleware/biblioteca para apenas aceitar RS256 (ou o algoritmo escolhido).30 Isso previne ataques de confusão de algoritmo (por exemplo, forçar 'none' ou mudar para HMAC usando a chave pública como segredo).
+Validar iss (Emissor): Deve corresponder à URL do emissor de token confiável configurado.30
+Validar aud (Audiência): Deve corresponder ao identificador da API/recurso sendo acessado.30
+Validar exp (Tempo de Expiração): O token não deve estar expirado.30
+Validar nbf (Não Antes De): O token deve ser atualmente válido (se a claim nbf estiver presente).30
+Validar estrutura e codificação do token.36
+
+
+
+
+Escolha da Biblioteca: Usar bibliotecas bem mantidas e respeitáveis para manipulação de JWT que suportem essas práticas de validação.36
+
+
+
+
+
+
+B. Gerenciamento de Refresh Token:
+
+
+Propósito: Permitir que os usuários obtenham novos tokens de acesso sem reautenticar repetidamente. Refresh tokens são tipicamente de vida mais longa que os tokens de acesso.
+Armazenamento: Armazenar refresh tokens de forma segura. Opções:
+
+
+Banco de Dados no Servidor: Armazenar refresh tokens (com hash) em uma tabela de banco de dados ligada ao usuário e sessão. O cliente recebe um identificador opaco (por exemplo, um cookie seguro, HttpOnly) para identificar o token no lado do servidor. Isso é geralmente considerado mais seguro, pois o refresh token real não reside no lado do cliente a longo prazo.
+Lado do Cliente (Cookie HttpOnly): Armazenar o refresh token em um cookie HttpOnly, Secure, SameSite=Strict. Isso previne acesso via JavaScript, mas requer proteção CSRF. Menos seguro que o armazenamento no servidor se o próprio token for comprometido. 39 sugere cookies HttpOnly para uma string de "contexto do usuário" relacionada.
+Evitar LocalStorage/SessionStorage: São acessíveis via JavaScript, tornando-os vulneráveis a ataques XSS.39
+
+
+
+
+Rotação: Implementar rotação de refresh token.40 Quando um refresh token é usado com sucesso para obter um novo token de acesso, invalidar o refresh token usado e emitir um novo refresh token junto com o novo token de acesso. Isso limita a vida útil de qualquer refresh token potencialmente comprometido.
+Revogação/Denylist: Implementar um mecanismo para revogar refresh tokens imediatamente, se necessário (por exemplo, logout do usuário, mudança de senha, suspeita de comprometimento).
+
+
+Armazenamento no Servidor: Simplesmente excluir ou marcar o token como inválido no banco de dados.
+Denylist (para armazenamento no cliente ou validação stateless): Manter uma denylist no lado do servidor (por exemplo, no Redis ou tabela de BD) de identificadores de refresh token revogados (por exemplo, claim jti - JWT ID). Verificar esta lista sempre que um refresh token for apresentado.30
+
+
+
+
+A rotação de refresh token combinada com a detecção automática de reutilização fornece um aumento significativo de segurança sobre refresh tokens estáticos. Se um invasor roubar e usar um refresh token antes do usuário legítimo, o mecanismo de rotação emite um novo token para o invasor e invalida o antigo. Quando o usuário legítimo tenta usar posteriormente o token roubado (agora invalidado), o servidor detecta essa reutilização de um token invalidado. Essa detecção é um forte sinal de comprometimento da sessão, permitindo que o servidor invalide todas as sessões/tokens ativos para aquele usuário e force a reautenticação.40 Isso transforma um simples mecanismo de rotação em uma ferramenta de monitoramento de segurança proativa, elevando a rotação de uma prática de higiene simples para um mecanismo de defesa ativo.
+
+
+
+
+
+
+C. Timeouts de Sessão vs. Expiração de JWT:
+
+
+Claim exp do JWT: Define a expiração rígida do próprio token de acesso. O middleware deve rejeitar tokens expirados. Tempo de vida típico: curto (por exemplo, 15-60 minutos).
+Tempo de Vida do Refresh Token: Define por quanto tempo um usuário pode obter novos tokens de acesso sem login completo. Tempo de vida mais longo (por exemplo, horas, dias, semanas).
+Timeout de Sessão Inativa (Nível da Aplicação): Se necessário, implementar lógica de timeout de inatividade no nível da aplicação (por exemplo, timer JavaScript no cliente reiniciando com atividade, potencialmente chamando um endpoint de backend para manter o refresh token vivo se sessões no servidor forem usadas). Isso é separado da exp do JWT. Se um timeout de inatividade for atingido, o cliente deve limpar tokens/estado locais e exigir novo login, mesmo que o refresh token tecnicamente não tenha expirado.
+Interação: A duração efetiva da sessão é determinada pelo menor entre o tempo de vida do refresh token e qualquer timeout de inatividade imposto. A expiração do token de acesso (exp) força atualizações periódicas dentro de uma sessão ativa.
+
+
+
+
+V. Implementação da Lógica de Isolamento de Dados
+
+
+A. Técnica de Filtragem de Consulta:
+
+
+Método: Utilizar os Filtros de Consulta Globais do Entity Framework Core. Isso fornece uma maneira automatizada de aplicar lógica de filtragem a consultas LINQ.24
+Lógica do Filtro: Aplicar um filtro com base na DataKey do usuário obtida do JWT validado durante a requisição. O filtro deve usar DataKey.StartsWith(currentUserDataKey).
+
+
+Exemplo (em OnModelCreating):
+C#// Assumindo que a propriedade 'DataKey' existe na entidade
+// e 'userDataKey' é injetado/disponível representando o escopo do usuário atual
+entityTypeBuilder.HasQueryFilter(e => EF.Property<string>(e, "DataKey").StartsWith(userDataKey));
+
+
+24 fornece um helper AddHierarchicalTenantReadOnlyQueryFilter que encapsula essa lógica.
+
+
+
+
+Justificativa: Isso garante que as consultas retornem automaticamente apenas dados pertencentes ao escopo da hierarquia do tenant do usuário atual (Instituição ou Polo específico), prevenindo vazamento acidental de dados entre tenants. 24 recomenda explicitamente StartsWith para tenants hierárquicos.
+
+
+
+
+
+
+B. Aplicação Consistente e Automatizada:
+
+
+Aplicação Global: Definir o filtro de consulta uma vez no método DbContext.OnModelCreating e aplicá-lo a todos os tipos de entidade específicos do tenant relevantes. 24 mostra a iteração através dos tipos de entidade e a aplicação do filtro se eles implementarem uma interface específica (por exemplo, IDataKeyFilterReadOnly). Essa automação evita que os desenvolvedores esqueçam de aplicar o filtro manualmente em cada consulta.
+Prevenção de Bypass: Ser cauteloso com cenários onde filtros globais podem ser contornados (por exemplo, consultas SQL brutas, chamadas específicas IgnoreQueryFilters()). Estabelecer diretrizes de codificação rigorosas e processos de revisão de código para prevenir bypasses não intencionais. Consultas SQL brutas devem incorporar manualmente a cláusula WHERE DataKey LIKE @userDataKey + '%'.
+Testes: Implementar testes de integração específicos para verificar se os filtros de consulta são aplicados corretamente e previnem o acesso a dados fora do escopo da DataKey do usuário (Seção VII).
+Embora os filtros de consulta globais sejam poderosos, eles não são infalíveis. Consultas complexas, stored procedures ou acesso direto ao banco de dados fora do ORM podem contorná-los. Uma abordagem de defesa em profundidade é necessária. Isso significa confiar não apenas nos filtros de consulta, mas também garantir que as verificações de autorização (Seção III) previnam ações em recursos fora do escopo do usuário, mesmo que uma consulta de alguma forma retorne os dados errados. Adicionalmente, a segurança em nível de banco de dados (como Row-Level Security, se o BD suportar e o desempenho permitir) poderia ser uma camada adicional, embora o filtro DataKey seja frequentemente suficiente se aplicado rigorosamente na camada da aplicação. Esta abordagem multicamadas é mais segura do que depender exclusivamente dos filtros do EF Core.
+
+
+
+
+VI. Sistema de Log de Auditoria
+
+
+A. Confirmação do Schema do Log:
+
+
+Schema: Reconfirmar o schema detalhado definido na Seção II.B (Tabela AuditLogs). Campos chave: LogID, Timestamp, UserID, ImpersonatorUserID, UserIPAddress, TenantDataKey, Action, ResourceIdentifier, Parameters (JSON/Text, sanitizado), Result, Details.
+Justificativa: Este schema captura os elementos essenciais para auditoria de segurança e conformidade: Quem, O Quê, Quando, Onde (Contexto do Tenant), Resultado e detalhes de suporte.11 Incluir TenantDataKey é crucial para auditoria multilocatária. ImpersonatorUserID é importante se Super Admins puderem agir como usuários do tenant.
+
+
+
+
+
+
+B. Geração e Armazenamento de Logs:
+
+
+Pontos de Geração:
+
+
+Middleware: Registrar tentativas de autenticação (sucesso/falha), falhas de autorização.
+Lógica de Negócios/Camada de Serviço: Registrar operações de negócios bem-sucedidas (criações, atualizações, exclusões), mudanças significativas de estado e, potencialmente, eventos de acesso a dados sensíveis. Registrar antes e depois de eventos relacionados à segurança, quando apropriado.30
+Serviço de Auditoria Dedicado/Programação Orientada a Aspectos (AOP): Considerar centralizar a lógica de criação de logs usando AOP ou um serviço dedicado para manter as preocupações de auditoria separadas da lógica de negócios (relacionado à Separação de Preocupações 9).
+
+
+
+
+Armazenamento:
+
+
+Primário: Tabela AuditLogs dedicada dentro do banco de dados principal da aplicação, conforme projetado na Seção II.B.
+Secundário (Opcional, mas Recomendado): Encaminhar logs para um sistema de logging centralizado e externo (por exemplo, stack ELK, Splunk, Datadog). Isso fornece melhores capacidades de análise, armazenamento de longo prazo e separação do banco de dados principal da aplicação.27
+
+
+
+
+
+
+
+
+
+
+C. Proteção Contra Adulteração:
+
+
+Segurança do Banco de Dados: Implementar permissões de banco de dados rigorosas. Contas de serviço da aplicação devem ter permissões INSERT em AuditLogs, mas permissões UPDATE/DELETE restritas ou inexistentes. Apenas papéis de DBA altamente privilegiados devem poder modificar dados de auditoria.
+Armazenamento Write-Once (Sistema Externo): Se usar um sistema de logging centralizado, configurá-lo para características de armazenamento append-only ou write-once, se possível.
+Hashing/Encadeamento (Avançado): Para garantia muito alta, considerar técnicas como hashing criptográfico de entradas de log ou criação de cadeias de logs, tornando a adulteração detectável, embora isso adicione complexidade.
+Backups Regulares: Garantir que backups regulares e seguros dos dados de log de auditoria sejam feitos e armazenados separadamente.28
+Logs de auditoria são úteis apenas se forem confiáveis e acessíveis para análise. Garantir a evidência de adulteração é crítico, mas o desempenho também é. Escrever logs detalhados para cada ação pode impactar o desempenho da aplicação. Portanto, um equilíbrio é necessário. Registrar eventos críticos de segurança (login, falha de autenticação, mudanças de permissão, acesso/modificação de dados sensíveis) com alto detalhe, mas potencialmente amostrar ou resumir operações de leitura menos críticas se o desempenho se tornar um problema. A escolha do que registrar requer consideração cuidadosa com base na avaliação de risco e necessidades de conformidade.27 Uma estratégia de logging é necessária, não apenas um schema. Priorizar o logging abrangente de eventos de alto risco e, potencialmente, ser mais seletivo para eventos de alto volume e baixo risco, garantindo ao mesmo tempo mecanismos de evidência de adulteração para os logs críticos.
+
+
+
+
+VII. Plano de Testes e Migração
+
+
+A. Estratégia de Testes:
+
+
+Testes Unitários: Testar componentes individuais como lógica de verificação de permissão dentro dos serviços, geração de DataKey, funções de validação de JWT.
+Testes de Integração:
+
+
+Verificação de Permissão: Criar usuários de teste com diferentes papéis (do sistema e customizados) em diferentes tenants/polos. Verificar se eles podem acessar recursos/ações esperados e são negados acesso a outros em todas as fases do ciclo de vida. Testar herança e avaliação de regras ABAC.9
+Isolamento de Dados: Criar dados em múltiplos tenants/polos. Testar se as consultas feitas por usuários de um tenant/polo apenas retornam dados associados ao escopo de sua DataKey (usando lógica StartsWith). Testar casos de borda (por exemplo, usuários no nível da instituição vs. nível do polo).
+Testes de Middleware: Testar o pipeline de middleware de autenticação e autorização, garantindo validação correta de JWT, verificação de permissão, tratamento de falhas e logging.
+Testes de Endpoint de API: Testar endpoints de API de ponta a ponta com diferentes papéis de usuário e JWTs para verificar a aplicação da segurança.
+
+
+
+
+Testes de Segurança:
+
+
+Testes de Penetração: Contratar especialistas em segurança para realizar testes de penetração visando especificamente:
+
+
+Vulnerabilidades de JWT (bypass de assinatura, confusão de algoritmo, chaves fracas, divulgação de informações no payload 36).
+Bypass de autorização (tentativa de acessar recursos/ações sem permissões necessárias, testando bypasses de regras ABAC).
+Bypass de isolamento de dados (tentativa de acessar dados de outros tenants).
+Falhas de gerenciamento de sessão (manipulação de refresh token, segurança de cookies).
+
+
+
+
+Varredura de Segurança Automatizada (SAST/DAST): Integrar ferramentas de varredura de segurança no pipeline de CI/CD.
+
+
+
+
+Testes de Log de Auditoria: Verificar se os logs de auditoria são gerados corretamente para ações chave e contêm informações precisas.
+
+
+
+
+
+
+B. Plano de Migração:
+
+
+Premissa: Assume que existe um sistema de permissão anterior ou que precisa ser formalizado.
+Passos:
+
+
+Implantação do Schema: Aplicar mudanças no schema do banco de dados (novas tabelas, adições da coluna DataKey). Lidar cuidadosamente com valores padrão para DataKey em linhas existentes (requer backfilling).
+Backfilling de Dados (DataKey): Desenvolver e executar scripts para preencher a coluna DataKey para todos os dados específicos de tenant existentes com base em seus relacionamentos Instituição/Polo. Isso deve ser feito com precisão e testado exaustivamente em um ambiente de homologação. 24 menciona a necessidade do ITenantChangeService lidar com atualizações de DataKey, implicando que migração/atualizações são chave.
+População de Dados de Permissão: Popular as tabelas Permissions, Roles e RolePermissions com as permissões do sistema definidas e papéis padrão.
+Atribuição de Papéis de Usuário: Migrar atribuições de papéis de usuário existentes para a nova tabela UserRoles. Se papéis customizados estiverem substituindo conceitos anteriores, mapear papéis/permissões antigos para a nova estrutura.
+Implantação do Código: Implantar o código da aplicação incluindo o novo middleware, filtros de consulta, lógica de autorização, manipulação de JWT e logging de auditoria.
+Feature Flagging: Considerar implantar os novos componentes do sistema por trás de feature flags para permitir rollout gradual e rollback se surgirem problemas. Habilitar o novo middleware de autorização e filtros de consulta incrementalmente ou por grupo de tenants.
+Testes (Pós-Migração): Realizar testes de regressão completos e os testes específicos delineados em VII.A no ambiente de produção (ou um ambiente de homologação quase idêntico) após a migração.
+Monitoramento: Monitorar de perto logs da aplicação, logs de auditoria e métricas de desempenho pós-migração.
+
+
+
+
+
+
+
+
+VIII. Requisitos das Ferramentas Administrativas
+
+
+A. Interface do Super Admin:
+
+
+Funcionalidade:
+
+
+Gerenciar Instituições (Criar, Visualizar, Atualizar Status - Trial, Ativo, etc., Configurar definições globais).
+Gerenciar Papéis do Sistema e suas permissões base.
+Visualizar Logs de Auditoria em todos os tenants (potencialmente filtrados).
+Ferramentas de solução de problemas (por exemplo, personificar admin do tenant - requer auditoria cuidadosa).
+Gerenciar políticas/regras ABAC globais, se aplicável.
+Visualizar saúde do sistema e estatísticas relacionadas a permissões/tenants.
+
+
+
+
+Controle de Acesso: Restrito a um número muito pequeno de Super Administradores altamente confiáveis.
+
+
+
+
+
+
+B. Interface de Administração Delegada do Tenant (Nível Instituição/Polo):
+
+
+Funcionalidade:
+
+
+Gerenciar Usuários dentro de seu escopo (DataKey): Convidar, Suspender, Excluir, Atribuir Papéis.23
+Gerenciar Papéis Customizados dentro de seu escopo: Criar, Editar (atribuindo permissões granulares da lista permitida), Excluir papéis específicos do tenant.23
+Atribuir usuários a Papéis do Sistema e Papéis Customizados relevantes ao seu escopo.
+Visualizar Logs de Auditoria filtrados para seu escopo de tenant (TenantDataKey).23
+Gerenciar configurações específicas do Polo (se aplicável).
+Configurar detalhes de integração Asaas (chaves API) para seu tenant.
+
+
+
+
+Controle de Acesso: Acessível a usuários atribuídos ao papel 'Admin do Tenant' (ou papéis customizados similares com privilégios administrativos) dentro de uma Instituição ou Polo específico. Suas ações e visibilidade devem ser estritamente limitadas por sua DataKey. 24 discute recursos de admin de tenant como listar usuários/tenants dentro de sua hierarquia. 23 enfatiza a restrição do escopo do admin de tenant.
+(Tabela 3: Matriz de Funcionalidades das Ferramentas Administrativas)
+
+
+Conteúdo: Linhas = Funcionalidades Administrativas (ex: Criar Usuário, Atribuir Papel, Definir Papel Customizado, Ver Log de Auditoria, Gerenciar Status da Instituição), Colunas = Papéis de Admin (Super Admin, Admin Tenant - Instituição, Admin Tenant - Polo), Células = Indicam nível de acesso (Total, Escopo, Somente Leitura, Nenhum).
+Valor: Define claramente a separação de deveres e capacidades entre diferentes níveis de administradores, guiando o desenvolvimento das UIs de administração e sua autorização de backend. Aborda o ponto (8) da consulta.
+
+
+
+
+
+
+
+
+FuncionalidadeSuper AdminAdmin Tenant (Instituição)Admin Tenant (Polo)Gerenciar Instituições (Status)TotalNenhumNenhumGerenciar Polos (Criar/Editar)TotalEscopo¹NenhumGerenciar UsuáriosTotalEscopo¹Escopo²Gerenciar Papéis SistemaTotalNenhumNenhumGerenciar Papéis CustomizadosTotalEscopo¹Escopo²Atribuir Papéis a UsuáriosTotalEscopo¹Escopo²Ver Logs de AuditoriaTotalEscopo¹Escopo²Configurar Integração AsaasTotalEscopo¹NenhumPersonificar Admin TenantTotalNenhumNenhumGerenciar Configs GlobaisTotalNenhumNenhum    *¹ Escopo: Limitado à própria Instituição e seus Polos/Usuários/Papéis Customizados.*
+    *² Escopo: Limitado ao próprio Polo e seus Usuários/Papéis Customizados.*
+Conclusão
+Sumário: Recapitulando as principais decisões de design: modelo híbrido RBAC/ABAC mapeado ao ciclo de vida, DataKey para isolamento hierárquico, segurança robusta de JWT com RS256 e rotação de refresh token, filtros de consulta globais, auditoria detalhada e ferramentas administrativas dedicadas com delegação.
+Roteiro de Implementação: Esboçar brevemente as principais fases (Refinamento do Design -> Schema BD -> Lógica Backend/Middleware -> UI Admin Frontend -> Testes -> Migração -> Monitoramento).
+Considerações Finais: Enfatizar a importância de revisões contínuas de segurança, testes e monitoramento para manter um sistema de permissões seguro e eficaz na plataforma EdunexIA em evolução. A complexidade inerente a sistemas de permissão multilocatários exige vigilância constante e adesão às melhores práticas delineadas neste documento.

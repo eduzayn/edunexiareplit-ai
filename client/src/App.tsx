@@ -6,6 +6,8 @@ import AuthPage from "@/pages/auth-page";
 import PortalSelectionPage from "@/pages/portal-selection-page";
 import ModulosPage from "@/pages/modulos-page";
 import PlanosPage from "@/pages/planos-page";
+import CadastroPage from "@/pages/cadastro-page";
+import CadastroSucessoPage from "@/pages/cadastro-sucesso-page";
 import SobrePage from "@/pages/sobre-page";
 import ContatoPage from "@/pages/contato-page";
 import BlogPage from "@/pages/blog-page";
@@ -107,6 +109,8 @@ function Router() {
       
       <Route path="/modulos" component={ModulosPage} />
       <Route path="/planos" component={PlanosPage} />
+      <Route path="/cadastro" component={CadastroPage} />
+      <Route path="/cadastro-sucesso" component={CadastroSucessoPage} />
       <Route path="/sobre" component={SobrePage} />
       <Route path="/contato" component={ContatoPage} />
       <Route path="/blog" component={BlogPage} />
