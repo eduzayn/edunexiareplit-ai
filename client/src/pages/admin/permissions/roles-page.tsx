@@ -161,8 +161,13 @@ export default function RolesPage() {
     }
   });
 
+  // Debug para ver a estrutura dos dados
+  console.log("rolesQuery.data:", rolesQuery.data);
+
   // Garantir que roles é sempre um array
-  const roles = rolesQuery.data || [];
+  const roles = Array.isArray(rolesQuery.data) 
+    ? rolesQuery.data 
+    : rolesQuery.data?.roles || [];
 
   // Filtrar papéis com base no termo de pesquisa
   const filteredRoles = searchTerm 
@@ -384,7 +389,7 @@ export default function RolesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredRoles.map((role) => (
+                  {Array.isArray(filteredRoles) ? filteredRoles.map((role) => (
                     <TableRow key={role.id}>
                       <TableCell className="font-medium">
                         {role.name}
@@ -459,7 +464,13 @@ export default function RolesPage() {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )) : (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-4">
+                        Erro ao carregar papéis: Os dados retornados não são um array
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             )}
