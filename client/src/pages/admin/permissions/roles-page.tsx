@@ -1,5 +1,19 @@
-import React from "react";
+/**
+ * Página de Gerenciamento de Papéis (Roles)
+ * Esta página permite visualizar, criar, editar e excluir papéis de usuário no sistema
+ */
+
+import React, { useState, useEffect } from "react";
 import AdminLayout from "@/components/layout/admin-layout";
+import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+
+// Componentes de UI
 import { 
   Card, 
   CardContent, 
@@ -18,16 +32,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { 
-  PlusIcon,
-  SearchIcon,
-  EyeIcon,
-  RefreshCwIcon,
-  PencilIcon,
-  TrashIcon
-} from "@/components/ui/icons";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useLocation } from "wouter";
 import { 
   Dialog,
   DialogContent,
@@ -53,11 +58,30 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-import { useRoles, usePermissionsList } from "@/hooks/use-permissions";
-import { usePermissions, PermissionGuard } from "@/hooks/use-permissions";
+
+// Ícones
+import { 
+  Plus as PlusIcon,
+  Search as SearchIcon,
+  Eye as EyeIcon,
+  RefreshCw as RefreshCwIcon,
+  Pencil as PencilIcon,
+  Trash as TrashIcon,
+  AlertTriangle
+} from "lucide-react";
+
+// Tipos de dados
+interface Role {
+  id: number;
+  name: string;
+  description: string;
+  scope: string;
+  isSystem: boolean;
+  institutionId?: number;
+  createdAt: string;
+  updatedAt: string;
+  createdById: number;
+}
 
 // Schema para o formulário de criação de papel
 const roleFormSchema = z.object({
@@ -69,33 +93,85 @@ const roleFormSchema = z.object({
 type RoleFormValues = z.infer<typeof roleFormSchema>;
 
 export default function RolesPage() {
+  const { toast } = useToast();
   const [, navigate] = useLocation();
-  const [searchTerm, setSearchTerm] = React.useState("");
-  const [isOpen, setIsOpen] = React.useState(false);
+  const queryClient = useQueryClient();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
   
-  // Hooks de permissões
-  const { hasPermission } = usePermissions();
-  const { 
-    roles, 
-    isLoading, 
-    isError, 
-    error,
-    createRole,
-    isPendingCreate,
-    deleteRole
-  } = useRoles();
+  // Verificar se o usuário tem permissão para criar papéis
+  const permissionsQuery = useQuery({
+    queryKey: ['/api/permissions/user'],
+    queryFn: () => apiRequest<Record<string, boolean>>('/api/permissions/user'),
+  });
+
+  const hasCreatePermission = React.useMemo(() => {
+    if (!permissionsQuery.data) return false;
+    return permissionsQuery.data['roles:criar'] === true || permissionsQuery.data['roles:manage'] === true;
+  }, [permissionsQuery.data]);
+
+  // Consulta para buscar todos os papéis
+  const rolesQuery = useQuery({
+    queryKey: ['/api/permissions/roles'],
+    queryFn: () => apiRequest<Role[]>('/api/permissions/roles'),
+  });
+
+  // Mutação para criar um novo papel
+  const createRoleMutation = useMutation({
+    mutationFn: (data: RoleFormValues) => 
+      apiRequest<Role>('/api/permissions/roles', { 
+        method: 'POST', 
+        data 
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/permissions/roles'] });
+      toast({
+        title: "Papel criado",
+        description: "O papel foi criado com sucesso.",
+      });
+      setIsOpen(false);
+      form.reset();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao criar papel",
+        description: error.message || "Ocorreu um erro ao criar o papel.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Mutação para excluir um papel
+  const deleteRoleMutation = useMutation({
+    mutationFn: (id: number) => 
+      apiRequest<{}>(`/api/permissions/roles/${id}`, { method: 'DELETE' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/permissions/roles'] });
+      toast({
+        title: "Papel excluído",
+        description: "O papel foi excluído com sucesso.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao excluir papel",
+        description: error.message || "Ocorreu um erro ao excluir o papel.",
+        variant: "destructive",
+      });
+    }
+  });
 
   // Garantir que roles é sempre um array
-  const rolesArray = Array.isArray(roles) ? roles : [];
+  const roles = rolesQuery.data || [];
 
   // Filtrar papéis com base no termo de pesquisa
   const filteredRoles = searchTerm 
-    ? rolesArray.filter(role => 
+    ? roles.filter(role => 
         role.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         role.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
         role.scope.toLowerCase().includes(searchTerm.toLowerCase())
       )
-    : rolesArray;
+    : roles;
 
   // Formulário para criação de papel
   const form = useForm<RoleFormValues>({
@@ -109,14 +185,22 @@ export default function RolesPage() {
 
   // Função para lidar com a submissão do formulário
   function onSubmit(values: RoleFormValues) {
-    createRole(values);
-    setIsOpen(false);
-    form.reset();
+    createRoleMutation.mutate(values);
   }
 
   // Função para buscar dados com base no termo de pesquisa
   const handleSearch = (value: string) => {
     setSearchTerm(value);
+  };
+
+  // Verificar se o usuário tem permissão para uma ação específica
+  const hasPermission = (action: string): boolean => {
+    if (!permissionsQuery.data) return false;
+    
+    const key = `roles:${action}`;
+    const manageKey = 'roles:manage';
+    
+    return permissionsQuery.data[key] === true || permissionsQuery.data[manageKey] === true;
   };
 
   return (
@@ -130,16 +214,7 @@ export default function RolesPage() {
             </p>
           </div>
           
-          <PermissionGuard
-            resource="roles"
-            action="criar"
-            fallback={
-              <Button disabled title="Você não tem permissão para criar papéis">
-                <PlusIcon className="mr-2 h-4 w-4" />
-                Novo Papel
-              </Button>
-            }
-          >
+          {hasCreatePermission ? (
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
               <DialogTrigger asChild>
                 <Button>
@@ -230,9 +305,9 @@ export default function RolesPage() {
                       </Button>
                       <Button 
                         type="submit"
-                        disabled={isPendingCreate}
+                        disabled={createRoleMutation.isPending}
                       >
-                        {isPendingCreate && (
+                        {createRoleMutation.isPending && (
                           <RefreshCwIcon className="mr-2 h-4 w-4 animate-spin" />
                         )}
                         Criar Papel
@@ -242,7 +317,12 @@ export default function RolesPage() {
                 </Form>
               </DialogContent>
             </Dialog>
-          </PermissionGuard>
+          ) : (
+            <Button disabled title="Você não tem permissão para criar papéis">
+              <PlusIcon className="mr-2 h-4 w-4" />
+              Novo Papel
+            </Button>
+          )}
         </div>
 
         <Card>
@@ -265,7 +345,7 @@ export default function RolesPage() {
             </div>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
+            {rolesQuery.isLoading ? (
               // Estado de carregamento
               <div className="space-y-2">
                 {Array(5)
@@ -280,10 +360,11 @@ export default function RolesPage() {
                     </div>
                   ))}
               </div>
-            ) : isError ? (
+            ) : rolesQuery.isError ? (
               // Estado de erro
-              <div className="text-center py-8 text-red-500">
-                Erro ao carregar papéis: {(error as any)?.message || 'Erro desconhecido'}
+              <div className="text-center py-8 text-red-500 flex flex-col items-center">
+                <AlertTriangle className="h-8 w-8 mb-2" />
+                <p>Erro ao carregar papéis: {(rolesQuery.error as any)?.message || 'Erro desconhecido'}</p>
               </div>
             ) : filteredRoles.length === 0 ? (
               // Estado vazio
@@ -330,7 +411,7 @@ export default function RolesPage() {
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           {/* Verificar permissão de leitura */}
-                          <PermissionGuard resource="roles" action="ler">
+                          {hasPermission('ler') && (
                             <Button
                               variant="outline"
                               size="sm"
@@ -339,48 +420,42 @@ export default function RolesPage() {
                               <EyeIcon className="mr-2 h-4 w-4" />
                               Detalhes
                             </Button>
-                          </PermissionGuard>
+                          )}
                           
                           {/* Verificar permissão de atualização */}
-                          <PermissionGuard 
-                            resource="roles" 
-                            action="atualizar"
-                            fallback={null}
-                          >
-                            {!role.isSystem && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => navigate(`/admin/permissions/roles/${role.id}/edit`)}
-                              >
-                                <PencilIcon className="mr-2 h-4 w-4" />
-                                Editar
-                              </Button>
-                            )}
-                          </PermissionGuard>
+                          {hasPermission('atualizar') && !role.isSystem && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => navigate(`/admin/permissions/roles/${role.id}/edit`)}
+                            >
+                              <PencilIcon className="mr-2 h-4 w-4" />
+                              Editar
+                            </Button>
+                          )}
                           
                           {/* Verificar permissão de exclusão */}
-                          <PermissionGuard 
-                            resource="roles" 
-                            action="deletar"
-                            fallback={null}
-                          >
-                            {!role.isSystem && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="text-red-500 hover:text-red-700"
-                                onClick={() => {
-                                  if (window.confirm('Tem certeza que deseja excluir este papel? Esta ação não pode ser desfeita.')) {
-                                    deleteRole(role.id);
-                                  }
-                                }}
-                              >
+                          {hasPermission('deletar') && !role.isSystem && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-red-500 hover:text-red-700"
+                              onClick={() => {
+                                if (window.confirm('Tem certeza que deseja excluir este papel? Esta ação não pode ser desfeita.')) {
+                                  deleteRoleMutation.mutate(role.id);
+                                }
+                              }}
+                              disabled={deleteRoleMutation.isPending}
+                            >
+                              {deleteRoleMutation.isPending && (
+                                <RefreshCwIcon className="mr-2 h-4 w-4 animate-spin" />
+                              )}
+                              {!deleteRoleMutation.isPending && (
                                 <TrashIcon className="mr-2 h-4 w-4" />
-                                Excluir
-                              </Button>
-                            )}
-                          </PermissionGuard>
+                              )}
+                              Excluir
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
