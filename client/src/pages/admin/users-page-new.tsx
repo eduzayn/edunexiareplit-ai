@@ -96,11 +96,14 @@ export default function UsersPageNew() {
   const [portalTypeFilter, setPortalTypeFilter] = useState("all");
 
   // Verificar permissões
-  const hasReadPermission = hasPermission('usuarios', 'ler');
-  const hasCreatePermission = hasPermission('usuarios', 'criar');
-  const hasUpdatePermission = hasPermission('usuarios', 'atualizar');
-  const hasDeletePermission = hasPermission('usuarios', 'deletar');
-  const hasManagePermissionPermission = hasPermission('permissoes', 'gerenciar');
+  const hasReadPermission = hasPermission('users', 'read');
+  const hasCreatePermission = hasPermission('users', 'create');
+  const hasUpdatePermission = hasPermission('users', 'update');
+  const hasDeletePermission = hasPermission('users', 'delete');
+  const hasManagePermissionPermission = hasPermission('permissions', 'manage');
+  
+  // Log para debug de permissões
+  console.log("Permissões de usuário:", { hasReadPermission, hasCreatePermission, hasUpdatePermission, hasDeletePermission, hasManagePermissionPermission });
 
   // Dummy data para testes - para garantir que a visualização funcione
   const dummyUsers: User[] = [
