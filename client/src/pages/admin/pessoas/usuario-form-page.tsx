@@ -697,6 +697,45 @@ export default function UsuarioFormPage() {
                 </Card>
               </TabsContent>
             </Tabs>
+            
+            {/* Botões de ação no rodapé do formulário */}
+            <div className="mt-6 flex justify-end gap-2 sticky bottom-4 py-3 px-4 bg-background/80 backdrop-blur-sm rounded-lg shadow-md z-10">
+              <Button 
+                type="button"
+                variant="outline"
+                onClick={() => navigate("/admin/pessoas/usuarios")}
+              >
+                Cancelar
+              </Button>
+              
+              {isEditing && (
+                <Button 
+                  type="button"
+                  variant="destructive"
+                  onClick={() => setConfirmDelete(true)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Excluir
+                </Button>
+              )}
+              
+              <Button 
+                type="submit"
+                disabled={saveUserMutation.isPending}
+              >
+                {saveUserMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Salvando...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Salvar
+                  </>
+                )}
+              </Button>
+            </div>
           </form>
         </Form>
       )}
