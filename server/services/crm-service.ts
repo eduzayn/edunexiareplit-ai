@@ -220,7 +220,7 @@ export async function getClients(
       SELECT 
         id, name, type, email, phone, cpf_cnpj, rg_ie,
         zip_code, street, number, complement, neighborhood, city, state,
-        website, notes, is_active, asaas_id, created_by_id, created_at, updated_at
+        notes, is_active, asaas_id, created_by_id, created_at, updated_at
       FROM clients
       WHERE 1=1
     `;
@@ -310,12 +310,12 @@ export async function getClient(id: number) {
   try {
     console.log('Usando consulta SQL segura para obter cliente por ID:', id);
     
-    // Usar SQL customizado para evitar o campo segment
+    // Usar SQL customizado para evitar o campo segment e website
     const queryStr = `
       SELECT 
         id, name, type, email, phone, cpf_cnpj, rg_ie,
         zip_code, street, number, complement, neighborhood, city, state,
-        website, notes, is_active, asaas_id, created_by_id, created_at, updated_at
+        notes, is_active, asaas_id, created_by_id, created_at, updated_at
       FROM clients
       WHERE id = $1
       LIMIT 1
@@ -346,8 +346,7 @@ export async function getClient(id: number) {
       neighborhood: result[0].neighborhood,
       city: result[0].city,
       state: result[0].state,
-      // segment não existe
-      website: result[0].website,
+      // segment e website não existem
       notes: result[0].notes,
       isActive: result[0].is_active,
       asaasId: result[0].asaas_id,
@@ -407,7 +406,7 @@ export async function createClient(data: InsertClient): Promise<Client> {
       RETURNING 
         id, name, type, email, phone, cpf_cnpj, rg_ie,
         zip_code, street, number, complement, neighborhood, city, state,
-        website, notes, is_active, asaas_id, created_by_id, created_at, updated_at
+        notes, is_active, asaas_id, created_by_id, created_at, updated_at
     `;
     
     console.log('Query SQL para inserção:', queryStr);
@@ -434,8 +433,7 @@ export async function createClient(data: InsertClient): Promise<Client> {
         neighborhood: result[0].neighborhood,
         city: result[0].city,
         state: result[0].state,
-        // segment não vai existir
-        website: result[0].website,
+        // segment e website não existem
         notes: result[0].notes,
         isActive: result[0].is_active,
         asaasId: result[0].asaas_id,
@@ -493,7 +491,7 @@ export async function updateClient(id: number, data: Partial<InsertClient>): Pro
       RETURNING 
         id, name, type, email, phone, cpf_cnpj, rg_ie,
         zip_code, street, number, complement, neighborhood, city, state,
-        website, notes, is_active, asaas_id, created_by_id, created_at, updated_at
+        notes, is_active, asaas_id, created_by_id, created_at, updated_at
     `;
     
     console.log('Query SQL para atualização:', queryStr);
@@ -520,8 +518,7 @@ export async function updateClient(id: number, data: Partial<InsertClient>): Pro
         neighborhood: result[0].neighborhood,
         city: result[0].city,
         state: result[0].state,
-        // segment não existe
-        website: result[0].website,
+        // segment e website não existem
         notes: result[0].notes,
         isActive: result[0].is_active,
         asaasId: result[0].asaas_id,
@@ -574,7 +571,7 @@ export async function findClientByCpfCnpj(cpfCnpj: string): Promise<Client | nul
       SELECT 
         id, name, type, email, phone, cpf_cnpj, rg_ie,
         zip_code, street, number, complement, neighborhood, city, state,
-        website, notes, is_active, asaas_id, created_by_id, created_at, updated_at
+        notes, is_active, asaas_id, created_by_id, created_at, updated_at
       FROM clients
       WHERE cpf_cnpj = $1
       LIMIT 1
@@ -601,8 +598,7 @@ export async function findClientByCpfCnpj(cpfCnpj: string): Promise<Client | nul
         neighborhood: result[0].neighborhood,
         city: result[0].city,
         state: result[0].state,
-        // segment não existe
-        website: result[0].website,
+        // segment e website não existem
         notes: result[0].notes,
         isActive: result[0].is_active,
         asaasId: result[0].asaas_id,
