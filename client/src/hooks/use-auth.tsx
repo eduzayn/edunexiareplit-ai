@@ -106,6 +106,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
+      
+      // Adicionar logs para debug
+      console.log("Login bem-sucedido. Dados do usuário:", user);
+      console.log("Portal type:", user.portalType);
+      console.log("Redirecionando para:", getNavigationPath(`/${user.portalType}/dashboard`));
+      
       toast({
         title: "Login bem-sucedido",
         description: `Bem-vindo(a) de volta, ${user.fullName}!`,
