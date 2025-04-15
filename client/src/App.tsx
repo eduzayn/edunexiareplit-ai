@@ -18,12 +18,12 @@ import DisciplinesPage from "@/pages/admin/academico/disciplines-page";
 import CoursesPage from "@/pages/admin/academico/courses-page";
 import CourseFormPage from "@/pages/admin/academico/course-form-page";
 import DisciplineContentPage from "@/pages/admin/academico/discipline-content-page";
-import InstitutionsPage from "@/pages/admin/institutions-page";
+import InstitutionsPage from "@/pages/admin/institucional/institutions-page";
 // import UsersPage from "@/pages/admin/users-page";
-import PolosPage from "@/pages/admin/polos-page";
-import PartnersPage from "@/pages/admin/partners-page";
+import PolosPage from "@/pages/admin/institucional/polos-page";
+import PartnersPage from "@/pages/admin/institucional/partners-page";
 import FinancialPage from "@/pages/admin/financial-page";
-import ReportsPage from "@/pages/admin/reports-page";
+import ReportsPage from "@/pages/admin/relatorios/reports-page";
 // Módulo de Matrículas removido (substituído pelo CRM e Gestão Financeira)
 import IntegrationsPage from "@/pages/admin/integrations-page";
 import CertificationTemplatesPage from "@/pages/admin/certification/templates-page";
