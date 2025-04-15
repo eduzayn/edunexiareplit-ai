@@ -7,20 +7,43 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-export async function apiRequest(
-  method: string,
+/**
+ * Função para fazer requisições à API com tipagem
+ * @param url URL da requisição
+ * @param options Opções da requisição (method, data, etc.)
+ * @returns Resposta convertida para o tipo T
+ */
+export async function apiRequest<T = any>(
   url: string,
-  data?: unknown | undefined,
-): Promise<Response> {
+  options?: {
+    method?: string;
+    data?: unknown;
+    headers?: Record<string, string>;
+  }
+): Promise<T> {
+  const method = options?.method || 'GET';
+  const data = options?.data;
+  const customHeaders = options?.headers || {};
+
   const res = await fetch(url, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
+    headers: {
+      ...(data ? { "Content-Type": "application/json" } : {}),
+      ...customHeaders
+    },
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
 
   await throwIfResNotOk(res);
-  return res;
+  
+  // Para requisições DELETE que não retornam conteúdo
+  if (res.status === 204) {
+    return {} as T;
+  }
+  
+  // Retorna os dados convertidos para o tipo T
+  return await res.json() as T;
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";

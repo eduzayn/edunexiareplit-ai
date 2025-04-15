@@ -204,7 +204,7 @@ export function useRoles() {
   // Excluir papel
   const deleteRoleMutation = useMutation({
     mutationFn: (id: number) => 
-      apiRequest(`/api/permissions/roles/${id}`, { method: 'DELETE' }),
+      apiRequest<{}>(`/api/permissions/roles/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/permissions/roles'] });
       toast({
@@ -224,7 +224,7 @@ export function useRoles() {
   // Adicionar permissão a um papel
   const addPermissionToRoleMutation = useMutation({
     mutationFn: ({ roleId, permissionId }: { roleId: number, permissionId: number }) => 
-      apiRequest(`/api/permissions/roles/${roleId}/permissions/${permissionId}`, { method: 'POST' }),
+      apiRequest<{}>(`/api/permissions/roles/${roleId}/permissions/${permissionId}`, { method: 'POST' }),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['/api/permissions/roles', variables.roleId, 'permissions'] });
       toast({
@@ -244,7 +244,7 @@ export function useRoles() {
   // Remover permissão de um papel
   const removePermissionFromRoleMutation = useMutation({
     mutationFn: ({ roleId, permissionId }: { roleId: number, permissionId: number }) => 
-      apiRequest(`/api/permissions/roles/${roleId}/permissions/${permissionId}`, { method: 'DELETE' }),
+      apiRequest<{}>(`/api/permissions/roles/${roleId}/permissions/${permissionId}`, { method: 'DELETE' }),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['/api/permissions/roles', variables.roleId, 'permissions'] });
       toast({
@@ -324,7 +324,7 @@ export function useUserRoles(userId: number) {
       institutionId?: number,
       poloId?: number
     }) => 
-      apiRequest(`/api/permissions/users/${userId}/roles`, { 
+      apiRequest<{}>(`/api/permissions/users/${userId}/roles`, { 
         method: 'POST', 
         data: { roleId, institutionId, poloId } 
       }),
@@ -356,7 +356,7 @@ export function useUserRoles(userId: number) {
       institutionId?: number,
       poloId?: number
     }) => 
-      apiRequest(`/api/permissions/users/${userId}/roles`, { 
+      apiRequest<{}>(`/api/permissions/users/${userId}/roles`, { 
         method: 'DELETE', 
         data: { roleId, institutionId, poloId } 
       }),
@@ -416,7 +416,7 @@ export function useUserPermissions(userId: number) {
       poloId?: number,
       expiresAt?: string
     }) => 
-      apiRequest(`/api/permissions/users/${userId}/permissions`, { 
+      apiRequest<{}>(`/api/permissions/users/${userId}/permissions`, { 
         method: 'POST', 
         data: { permissionId, institutionId, poloId, expiresAt } 
       }),
@@ -440,7 +440,7 @@ export function useUserPermissions(userId: number) {
   // Remover permissão direta do usuário
   const removePermissionFromUserMutation = useMutation({
     mutationFn: (permissionId: number) => 
-      apiRequest(`/api/permissions/users/${userId}/permissions/${permissionId}`, { method: 'DELETE' }),
+      apiRequest<{}>(`/api/permissions/users/${userId}/permissions/${permissionId}`, { method: 'DELETE' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/permissions/users', userId, 'permissions'] });
       queryClient.invalidateQueries({ queryKey: ['/api/permissions/user'] });

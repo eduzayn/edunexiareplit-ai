@@ -114,7 +114,7 @@ export function useLeads(search?: string, status?: string) {
   // Excluir lead
   const deleteLeadMutation = useMutation({
     mutationFn: (id: number) => 
-      apiRequest(`/api/crm/leads/${id}`, { method: 'DELETE' }),
+      apiRequest<{}>(`/api/crm/leads/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/crm/leads'] });
       toast({
@@ -233,7 +233,7 @@ export function useClients(search?: string, status?: string) {
   // Excluir cliente
   const deleteClientMutation = useMutation({
     mutationFn: (id: number) => 
-      apiRequest(`/api/crm/clients/${id}`, { method: 'DELETE' }),
+      apiRequest<{}>(`/api/crm/clients/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/crm/clients'] });
       toast({
@@ -337,7 +337,7 @@ export function useContacts(clientId?: number) {
   // Excluir contato
   const deleteContactMutation = useMutation({
     mutationFn: (id: number) => 
-      apiRequest(`/api/crm/contacts/${id}`, { method: 'DELETE' }),
+      apiRequest<{}>(`/api/crm/contacts/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/crm/contacts'] });
       if (clientId) {
