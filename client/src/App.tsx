@@ -70,6 +70,9 @@ import LibraryPage from "@/pages/student/library-page";
 import SecretariaPage from "@/pages/student/secretaria-page";
 import CredencialPage from "@/pages/student/credencial-page";
 import LearningPage from "@/pages/student/learning-page";
+// Módulo de Sistema
+import SecurityPage from "@/pages/admin/sistema/security-page";
+import SettingsPage from "@/pages/admin/sistema/settings-page";
 // Import polo pages
 import PoloEnrollmentsPage from "@/pages/polo/enrollments-page";
 import PoloNewEnrollmentPage from "@/pages/polo/new-enrollment-page";
