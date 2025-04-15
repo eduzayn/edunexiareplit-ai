@@ -115,28 +115,28 @@ export default function AbacPermissionsPage() {
 
   // Lista fixa de recursos do sistema
   const fixedResources = [
-    'users',
-    'roles',
-    'permissions',
-    'institutions',
+    'usuarios',
+    'papeis',
+    'permissoes',
+    'instituicoes',
     'polos',
-    'courses',
-    'enrollments',
-    'financial_transactions',
+    'cursos',
+    'matriculas',
+    'transacoes_financeiras',
     'leads',
-    'clients',
-    'contracts',
-    'products',
-    'invoices',
-    'payments',
-    'certificates',
-    'certificate_templates',
-    'certificate_signers',
-    'subscription_plans',
-    'subscriptions',
-    'reports',
-    'settings',
-    'communications'
+    'clientes',
+    'contratos',
+    'produtos',
+    'faturas',
+    'pagamentos',
+    'certificados',
+    'modelos_certificados',
+    'signatarios_certificados',
+    'planos_assinatura',
+    'assinaturas',
+    'relatorios',
+    'configuracoes',
+    'comunicacoes'
   ];
 
   // Consulta para buscar permissões disponíveis
@@ -157,25 +157,25 @@ export default function AbacPermissionsPage() {
     }
   }, [permissionsQuery.data]);
 
-  // Lista fixa de ações comuns
+  // Lista fixa de ações comuns em português
   const commonActions = [
-    { value: 'read', label: 'Visualizar' },
-    { value: 'create', label: 'Criar' },
-    { value: 'update', label: 'Atualizar' },
-    { value: 'delete', label: 'Excluir' },
-    { value: 'manage', label: 'Gerenciar' },
-    { value: 'approve', label: 'Aprovar' },
-    { value: 'reject', label: 'Rejeitar' },
-    { value: 'cancel', label: 'Cancelar' },
-    { value: 'assign', label: 'Atribuir' },
-    { value: 'unassign', label: 'Desatribuir' },
-    { value: 'export', label: 'Exportar' },
-    { value: 'import', label: 'Importar' },
-    { value: 'activate', label: 'Ativar' },
-    { value: 'deactivate', label: 'Desativar' },
-    { value: 'generate', label: 'Gerar' },
-    { value: 'validate', label: 'Validar' },
-    { value: 'finalize', label: 'Finalizar' }
+    { value: 'ler', label: 'Visualizar' },
+    { value: 'criar', label: 'Criar' },
+    { value: 'atualizar', label: 'Atualizar' },
+    { value: 'deletar', label: 'Excluir' },
+    { value: 'gerenciar', label: 'Gerenciar' },
+    { value: 'aprovar', label: 'Aprovar' },
+    { value: 'rejeitar', label: 'Rejeitar' },
+    { value: 'cancelar', label: 'Cancelar' },
+    { value: 'atribuir', label: 'Atribuir' },
+    { value: 'desatribuir', label: 'Desatribuir' },
+    { value: 'exportar', label: 'Exportar' },
+    { value: 'importar', label: 'Importar' },
+    { value: 'ativar', label: 'Ativar' },
+    { value: 'desativar', label: 'Desativar' },
+    { value: 'gerar', label: 'Gerar' },
+    { value: 'validar', label: 'Validar' },
+    { value: 'finalizar', label: 'Finalizar' }
   ];
 
   // Função para obter ações disponíveis para um recurso específico
