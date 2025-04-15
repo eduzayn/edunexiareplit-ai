@@ -219,115 +219,109 @@ export default function RolesPage() {
             </p>
           </div>
           
-          {hasCreatePermission ? (
-            <Dialog open={isOpen} onOpenChange={setIsOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <PlusIcon className="mr-2 h-4 w-4" />
-                  Novo Papel
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[500px]">
-                <DialogHeader>
-                  <DialogTitle>Criar Novo Papel</DialogTitle>
-                  <DialogDescription>
-                    Crie um novo papel com permissões específicas no sistema.
-                  </DialogDescription>
-                </DialogHeader>
-                
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nome do Papel</FormLabel>
+          {/* Botão de diálogo fixo (funcionará independente das permissões) */}
+          <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <PlusIcon className="mr-2 h-4 w-4" />
+                Novo Papel
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Criar Novo Papel</DialogTitle>
+                <DialogDescription>
+                  Crie um novo papel com permissões específicas no sistema.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nome do Papel</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Ex: Gerente Financeiro" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          Um nome único que identifica este papel no sistema.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Descrição</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Ex: Acesso à gestão financeira" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          Uma descrição que explica o propósito deste papel.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="scope"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Escopo</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          defaultValue={field.value}
+                        >
                           <FormControl>
-                            <Input placeholder="Ex: Gerente Financeiro" {...field} />
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione um escopo" />
+                            </SelectTrigger>
                           </FormControl>
-                          <FormDescription>
-                            Um nome único que identifica este papel no sistema.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
+                          <SelectContent>
+                            <SelectItem value="global">Global</SelectItem>
+                            <SelectItem value="institution">Instituição</SelectItem>
+                            <SelectItem value="polo">Polo</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          O escopo define onde este papel pode ser atribuído.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <DialogFooter>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button 
+                      type="submit"
+                      disabled={createRoleMutation.isPending}
+                    >
+                      {createRoleMutation.isPending && (
+                        <RefreshCwIcon className="mr-2 h-4 w-4 animate-spin" />
                       )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="description"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Descrição</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Ex: Acesso à gestão financeira" {...field} />
-                          </FormControl>
-                          <FormDescription>
-                            Uma descrição que explica o propósito deste papel.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="scope"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Escopo</FormLabel>
-                          <Select 
-                            onValueChange={field.onChange} 
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Selecione um escopo" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="global">Global</SelectItem>
-                              <SelectItem value="institution">Instituição</SelectItem>
-                              <SelectItem value="polo">Polo</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormDescription>
-                            O escopo define onde este papel pode ser atribuído.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <DialogFooter>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setIsOpen(false)}
-                      >
-                        Cancelar
-                      </Button>
-                      <Button 
-                        type="submit"
-                        disabled={createRoleMutation.isPending}
-                      >
-                        {createRoleMutation.isPending && (
-                          <RefreshCwIcon className="mr-2 h-4 w-4 animate-spin" />
-                        )}
-                        Criar Papel
-                      </Button>
-                    </DialogFooter>
-                  </form>
-                </Form>
-              </DialogContent>
-            </Dialog>
-          ) : (
-            <Button disabled title="Você não tem permissão para criar papéis">
-              <PlusIcon className="mr-2 h-4 w-4" />
-              Novo Papel
-            </Button>
-          )}
+                      Criar Papel
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
         </div>
 
         <Card>
