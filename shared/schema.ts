@@ -28,6 +28,19 @@ export const paymentStatusEnum = pgEnum("payment_status", ["completed", "pending
 export const paymentMethodEnum = pgEnum("payment_method", ["credit_card", "debit_card", "bank_slip", "bank_transfer", "pix", "cash", "other"]);
 export const subscriptionStatusEnum = pgEnum("subscription_status", ["trial", "active", "cancelled", "expired"]);
 
+// Enums para o sistema de permissões
+export const permissionResourceEnum = pgEnum("permission_resource", [
+  "matricula", "pagamento", "curso", "disciplina", "polo", 
+  "usuario", "papel", "relatorio", "configuracao", "instituicao",
+  "lead", "cliente", "contato", "fatura", "assinatura", "certificado"
+]);
+export const permissionActionEnum = pgEnum("permission_action", [
+  "criar", "ler", "atualizar", "deletar", "listar", "aprovar", 
+  "rejeitar", "cancelar", "gerar_cobranca", "confirmar", "ler_historico", 
+  "editar_grade", "publicar", "definir_comissao", "convidar", 
+  "atribuir", "gerar_financeiro", "editar_instituicao"
+]);
+
 // Tipos de curso
 export const courseTypes = pgTable("course_types", {
   id: serial("id").primaryKey(),
@@ -583,6 +596,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   disciplinesCreated: many(disciplines),
   institutionsCreated: many(institutions),
   polosCreated: many(polos),
+  userRoles: many(userRoles), // Relação com papéis (roles) atribuídos ao usuário
   polo: one(polos, { // Relação com o polo associado ao usuário (para usuários do tipo "polo")
     fields: [users.poloId],
     references: [polos.id],
@@ -1586,3 +1600,161 @@ export const insertPaymentSchema = createInsertSchema(payments).pick({
 });
 export type InsertPayment = z.infer<typeof insertPaymentSchema>;
 export type Payment = typeof payments.$inferSelect;
+
+// -------------------- Sistema de Permissões --------------------
+
+// Tabela de papéis (roles)
+export const roles = pgTable("roles", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  isSystem: boolean("is_system").default(false).notNull(), // Papel do sistema não pode ser excluído
+  scope: text("scope").notNull(), // 'global', 'institution', 'polo'
+  institutionId: integer("institution_id").references(() => institutions.id), // Nulo para papéis globais
+  createdById: integer("created_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Tabela de permissões
+export const permissions = pgTable("permissions", {
+  id: serial("id").primaryKey(),
+  resource: permissionResourceEnum("resource").notNull(), // matricula, pagamento, curso, etc.
+  action: permissionActionEnum("action").notNull(), // criar, ler, atualizar, etc.
+  description: text("description"),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Tabela de atribuição de permissões a papéis
+export const rolePermissions = pgTable("role_permissions", {
+  id: serial("id").primaryKey(),
+  roleId: integer("role_id").notNull().references(() => roles.id, { onDelete: 'cascade' }),
+  permissionId: integer("permission_id").notNull().references(() => permissions.id, { onDelete: 'cascade' }),
+  createdById: integer("created_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Tabela de atribuição de papéis a usuários
+export const userRoles = pgTable("user_roles", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  roleId: integer("role_id").notNull().references(() => roles.id, { onDelete: 'cascade' }),
+  institutionId: integer("institution_id").references(() => institutions.id),
+  poloId: integer("polo_id").references(() => polos.id),
+  createdById: integer("created_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Tabela de registros de auditoria de permissões
+export const permissionAudits = pgTable("permission_audits", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  action: text("action").notNull(), // 'grant', 'revoke', 'modify_role'
+  resource: text("resource").notNull(), // Nome do recurso afetado
+  details: json("details"), // Detalhes específicos da ação
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+});
+
+// Schemas de inserção
+export const insertRoleSchema = createInsertSchema(roles).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertRole = z.infer<typeof insertRoleSchema>;
+export type Role = typeof roles.$inferSelect;
+
+export const insertPermissionSchema = createInsertSchema(permissions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertPermission = z.infer<typeof insertPermissionSchema>;
+export type Permission = typeof permissions.$inferSelect;
+
+export const insertRolePermissionSchema = createInsertSchema(rolePermissions).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertRolePermission = z.infer<typeof insertRolePermissionSchema>;
+export type RolePermission = typeof rolePermissions.$inferSelect;
+
+export const insertUserRoleSchema = createInsertSchema(userRoles).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertUserRole = z.infer<typeof insertUserRoleSchema>;
+export type UserRole = typeof userRoles.$inferSelect;
+
+// -------------------- Relacionamentos do Sistema de Permissões --------------------
+
+// Relações de papéis
+export const rolesRelations = relations(roles, ({ one, many }) => ({
+  institution: one(institutions, {
+    fields: [roles.institutionId],
+    references: [institutions.id],
+  }),
+  createdBy: one(users, {
+    fields: [roles.createdById],
+    references: [users.id],
+  }),
+  rolePermissions: many(rolePermissions),
+  userRoles: many(userRoles),
+}));
+
+// Relações de permissões
+export const permissionsRelations = relations(permissions, ({ many }) => ({
+  rolePermissions: many(rolePermissions),
+}));
+
+// Relações de atribuição de permissões a papéis
+export const rolePermissionsRelations = relations(rolePermissions, ({ one }) => ({
+  role: one(roles, {
+    fields: [rolePermissions.roleId],
+    references: [roles.id],
+  }),
+  permission: one(permissions, {
+    fields: [rolePermissions.permissionId],
+    references: [permissions.id],
+  }),
+  createdBy: one(users, {
+    fields: [rolePermissions.createdById],
+    references: [users.id],
+  }),
+}));
+
+// Relações de atribuição de papéis a usuários
+export const userRolesRelations = relations(userRoles, ({ one }) => ({
+  user: one(users, {
+    fields: [userRoles.userId],
+    references: [users.id],
+  }),
+  role: one(roles, {
+    fields: [userRoles.roleId],
+    references: [roles.id],
+  }),
+  institution: one(institutions, {
+    fields: [userRoles.institutionId],
+    references: [institutions.id],
+  }),
+  polo: one(polos, {
+    fields: [userRoles.poloId],
+    references: [polos.id],
+  }),
+  createdBy: one(users, {
+    fields: [userRoles.createdById],
+    references: [users.id],
+  }),
+}));
+
+// Relações de registros de auditoria de permissões
+export const permissionAuditsRelations = relations(permissionAudits, ({ one }) => ({
+  user: one(users, {
+    fields: [permissionAudits.userId],
+    references: [users.id],
+  }),
+}));
