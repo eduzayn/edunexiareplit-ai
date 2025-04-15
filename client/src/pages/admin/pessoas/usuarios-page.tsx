@@ -49,15 +49,33 @@ import {
 export default function UsuariosPage() {
   // Estado para pesquisa, filtros e paginação
   const [searchTerm, setSearchTerm] = useState("");
-  const [portalTypeFilter, setPortalTypeFilter] = useState("");
+  const [portalTypeFilter, setPortalTypeFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [perPage] = useState(10);
   const [, navigate] = useLocation();
 
+  // Preparar os parâmetros de filtro (convertendo 'all' para string vazia)
+  const actualPortalTypeFilter = portalTypeFilter === 'all' ? '' : portalTypeFilter;
+
+  // Tipo para resposta da API de usuários
+  interface UsersResponse {
+    data: Array<{
+      id: number;
+      username: string;
+      fullName: string;
+      email: string;
+      portalType: string;
+      isActive: boolean;
+    }>;
+    totalPages: number;
+    currentPage: number;
+    totalItems: number;
+  }
+
   // Buscar lista de usuários
-  const { data: users, isLoading } = useQuery({
-    queryKey: ['/api/users', page, perPage, searchTerm, portalTypeFilter],
-    keepPreviousData: true,
+  const { data: users, isLoading } = useQuery<UsersResponse>({
+    queryKey: ['/api/users', page, perPage, searchTerm, actualPortalTypeFilter],
+    placeholderData: (prevData) => prevData, // Substitui keepPreviousData
   });
 
   // Navegar para a página de cadastro de novo usuário
@@ -135,7 +153,7 @@ export default function UsuariosPage() {
                   </div>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="all">Todos</SelectItem>
                   <SelectItem value="admin">Administrador</SelectItem>
                   <SelectItem value="student">Aluno</SelectItem>
                   <SelectItem value="polo">Polo</SelectItem>
