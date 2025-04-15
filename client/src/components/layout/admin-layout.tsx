@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { getAdminSidebarItems } from "./admin-sidebar-items";
 import { Sidebar } from "./sidebar";
 import { useAuth } from "@/hooks/use-auth";
+import { PageTransition } from "@/components/ui/page-transition";
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -43,7 +44,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       
       {/* Conteúdo principal */}
       <div className="flex-1 overflow-auto">
-        <main>{children}</main>
+        <main>
+          <PageTransition>{children}</PageTransition>
+        </main>
       </div>
     </div>
   );
