@@ -1229,6 +1229,7 @@ export async function getAllInstitutionPhasePermissions() {
       action: abacSchema.institutionPhasePermissions.action,
       phase: abacSchema.institutionPhasePermissions.phase,
       description: abacSchema.institutionPhasePermissions.description,
+      isAllowed: abacSchema.institutionPhasePermissions.isAllowed,
       isActive: abacSchema.institutionPhasePermissions.isActive,
       createdAt: abacSchema.institutionPhasePermissions.createdAt,
       updatedAt: abacSchema.institutionPhasePermissions.updatedAt
@@ -1254,6 +1255,7 @@ export async function getInstitutionPhasePermissionById(id: number) {
       action: abacSchema.institutionPhasePermissions.action,
       phase: abacSchema.institutionPhasePermissions.phase,
       description: abacSchema.institutionPhasePermissions.description,
+      isAllowed: abacSchema.institutionPhasePermissions.isAllowed,
       isActive: abacSchema.institutionPhasePermissions.isActive,
       createdAt: abacSchema.institutionPhasePermissions.createdAt,
       updatedAt: abacSchema.institutionPhasePermissions.updatedAt
@@ -1278,6 +1280,7 @@ export async function createInstitutionPhasePermission(data: abacSchema.InsertIn
         action: data.action,
         phase: data.phase,
         description: data.description,
+        isAllowed: data.isAllowed ?? true,
         isActive: data.isActive ?? true
       })
       .returning();
@@ -1307,6 +1310,7 @@ export async function updateInstitutionPhasePermission(
         action: data.action,
         phase: data.phase,
         description: data.description,
+        isAllowed: data.isAllowed,
         isActive: data.isActive
       })
       .where(eq(abacSchema.institutionPhasePermissions.id, id))
@@ -1526,6 +1530,7 @@ export async function createPaymentStatusPermission(data: abacSchema.InsertPayme
         action: data.action,
         paymentStatus: data.paymentStatus,
         description: data.description,
+        isAllowed: data.isAllowed ?? true,
         isActive: data.isActive ?? true
       })
       .returning();
@@ -1555,6 +1560,7 @@ export async function updatePaymentStatusPermission(
         action: data.action,
         paymentStatus: data.paymentStatus,
         description: data.description,
+        isAllowed: data.isAllowed,
         isActive: data.isActive
       })
       .where(eq(abacSchema.paymentStatusPermissions.id, id))

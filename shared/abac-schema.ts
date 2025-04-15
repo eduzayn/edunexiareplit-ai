@@ -49,6 +49,7 @@ export const institutionPhasePermissions = pgTable('institution_phase_permission
   action: permissionActionEnum('action').notNull(),
   phase: varchar('phase', { enum: institutionPhaseEnum }).notNull(),
   description: text('description').notNull(),
+  isAllowed: boolean('is_allowed').default(true).notNull(),
   isActive: boolean('is_active').default(true).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull()
