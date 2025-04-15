@@ -30,22 +30,31 @@ import {
   PhoneIcon
 } from "@/components/ui/icons";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useClients } from "@/hooks/use-crm";
 
 export default function ClientsPage() {
   const [, navigate] = useLocation();
   const [searchTerm, setSearchTerm] = React.useState("");
-
-  // Quando tivermos a API real, este useQuery será usado para carregar os dados
-  // Por enquanto, definimos como isLoading para mostrar o estado de carregamento
-  const { data: clients, isLoading } = useQuery({
-    queryKey: ["/api/crm/clients"],
-    enabled: false, // Desabilitado até termos a API real
-  });
+  const { clients, isLoading } = useClients();
+  
+  // Filtragem de clientes com base no termo de busca
+  const filteredClients = React.useMemo(() => {
+    if (!clients) return [];
+    
+    if (!searchTerm) return clients;
+    
+    const search = searchTerm.toLowerCase();
+    return clients.filter(client => 
+      client.name.toLowerCase().includes(search) ||
+      client.email.toLowerCase().includes(search) ||
+      client.cpfCnpj.toLowerCase().includes(search)
+    );
+  }, [clients, searchTerm]);
 
   const getClientTypeBadge = (type: string) => {
     const typeMap: Record<string, React.ReactNode> = {
-      individual: <Badge className="bg-blue-500">Pessoa Física</Badge>,
-      business: <Badge className="bg-purple-500">Pessoa Jurídica</Badge>,
+      pf: <Badge className="bg-blue-500">Pessoa Física</Badge>,
+      pj: <Badge className="bg-purple-500">Pessoa Jurídica</Badge>,
     };
 
     return typeMap[type] || <Badge>{type}</Badge>;
@@ -120,109 +129,50 @@ export default function ClientsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {/* Dados de exemplo - serão substituídos por dados da API */}
-                  <TableRow>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center">
-                        <UserIcon className="mr-2 h-4 w-4" />
-                        João Carlos da Silva
-                      </div>
-                    </TableCell>
-                    <TableCell>123.456.789-10</TableCell>
-                    <TableCell>
-                      <div className="flex items-center">
-                        <MailIcon className="mr-2 h-4 w-4 text-gray-500" />
-                        joao.silva@empresa.com.br
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center">
-                        <PhoneIcon className="mr-2 h-4 w-4 text-gray-500" />
-                        (11) 98765-4321
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {getClientTypeBadge('individual')}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigate("/admin/crm/clients/1")}
-                      >
-                        <EyeIcon className="mr-2 h-4 w-4" />
-                        Detalhes
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center">
-                        <UserIcon className="mr-2 h-4 w-4" />
-                        Empresa ABC Ltda
-                      </div>
-                    </TableCell>
-                    <TableCell>12.345.678/0001-90</TableCell>
-                    <TableCell>
-                      <div className="flex items-center">
-                        <MailIcon className="mr-2 h-4 w-4 text-gray-500" />
-                        contato@empresaabc.com.br
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center">
-                        <PhoneIcon className="mr-2 h-4 w-4 text-gray-500" />
-                        (21) 3456-7890
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {getClientTypeBadge('business')}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigate("/admin/crm/clients/2")}
-                      >
-                        <EyeIcon className="mr-2 h-4 w-4" />
-                        Detalhes
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center">
-                        <UserIcon className="mr-2 h-4 w-4" />
-                        Maria Oliveira
-                      </div>
-                    </TableCell>
-                    <TableCell>987.654.321-00</TableCell>
-                    <TableCell>
-                      <div className="flex items-center">
-                        <MailIcon className="mr-2 h-4 w-4 text-gray-500" />
-                        maria.oliveira@email.com
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center">
-                        <PhoneIcon className="mr-2 h-4 w-4 text-gray-500" />
-                        (31) 99876-5432
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {getClientTypeBadge('individual')}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigate("/admin/crm/clients/3")}
-                      >
-                        <EyeIcon className="mr-2 h-4 w-4" />
-                        Detalhes
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+                  {filteredClients.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-6 text-gray-500">
+                        Nenhum cliente encontrado.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredClients.map((client) => (
+                      <TableRow key={client.id}>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center">
+                            <UserIcon className="mr-2 h-4 w-4" />
+                            {client.name}
+                          </div>
+                        </TableCell>
+                        <TableCell>{client.cpfCnpj}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center">
+                            <MailIcon className="mr-2 h-4 w-4 text-gray-500" />
+                            {client.email}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center">
+                            <PhoneIcon className="mr-2 h-4 w-4 text-gray-500" />
+                            {client.phone}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {getClientTypeBadge(client.type)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => navigate(`/admin/crm/clients/${client.id}`)}
+                          >
+                            <EyeIcon className="mr-2 h-4 w-4" />
+                            Detalhes
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             )}

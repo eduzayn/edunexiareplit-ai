@@ -70,6 +70,7 @@ type FormValues = z.infer<typeof formSchema>;
 export default function NewClientPage() {
   const [, navigate] = useLocation();
   const queryClient = useQueryClient();
+  const { createClient, isPendingCreate } = useClients();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -98,27 +99,29 @@ export default function NewClientPage() {
 
   const onSubmit = async (data: FormValues) => {
     try {
-      // Quando tivermos a API, enviaremos a requisição para o servidor
       console.log("Enviando dados do formulário:", data);
-
-      /*
-      // Exemplo de como será a implementação da API
-      await apiRequest({
-        url: "/api/crm/clients",
-        method: "POST",
-        data,
-      });
       
-      // Invalidar cache para forçar recarregamento dos clientes
-      queryClient.invalidateQueries({ queryKey: ["/api/crm/clients"] });
-      */
+      // Adaptar os dados do formulário para o formato esperado pela API
+      const clientData = {
+        name: data.name,
+        type: data.type,
+        email: data.email,
+        phone: data.phone,
+        cpfCnpj: data.cpfCnpj,
+        rgIe: data.rgIe || "",
+        // Formato esperado pela API para endereço
+        address: `${data.street}, ${data.number} ${data.complement ? '- ' + data.complement : ''}, ${data.neighborhood}`,
+        zipCode: data.zipCode,
+        city: data.city,
+        state: data.state,
+        isActive: data.isActive,
+        notes: data.notes || ""
+      };
 
-      toast({
-        title: "Cliente cadastrado com sucesso",
-        description: `Cliente ${data.name} foi cadastrado com sucesso.`,
-      });
-
-      // Redirecionar para a lista de clientes
+      // Enviar dados para a API
+      await createClient(clientData);
+      
+      // Redirecionar para a lista de clientes após sucesso
       navigate("/admin/crm/clients");
     } catch (error) {
       console.error("Erro ao cadastrar cliente:", error);
@@ -532,12 +535,25 @@ export default function NewClientPage() {
                     type="button" 
                     variant="outline" 
                     onClick={() => navigate("/admin/crm/clients")}
+                    disabled={isPendingCreate}
                   >
                     Cancelar
                   </Button>
-                  <Button type="submit">
-                    <SaveIcon className="mr-2 h-4 w-4" />
-                    Salvar Cliente
+                  <Button type="submit" disabled={isPendingCreate}>
+                    {isPendingCreate ? (
+                      <span className="flex items-center">
+                        <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Salvando...
+                      </span>
+                    ) : (
+                      <span className="flex items-center">
+                        <SaveIcon className="mr-2 h-4 w-4" />
+                        Salvar Cliente
+                      </span>
+                    )}
                   </Button>
                 </div>
               </form>
