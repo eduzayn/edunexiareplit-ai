@@ -377,6 +377,9 @@ export const clients = pgTable("clients", {
   paymentTerms: text("payment_terms"), // Termos de pagamento padrão
   creditLimit: doublePrecision("credit_limit"), // Limite de crédito
   
+  // Integração com gateway de pagamento
+  asaasId: text("asaas_id"), // ID do cliente no Asaas
+  
   // Metadados
   status: text("status").default("active").notNull(), // active, inactive
   notes: text("notes"),
