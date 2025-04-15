@@ -254,19 +254,47 @@ router.post('/leads/:id/convert', requirePermission('lead', 'atualizar'), async 
  */
 router.get('/clients', requirePermission('cliente', 'ler'), async (req, res) => {
   try {
+    console.log('GET /api/crm/clients - Requisição recebida');
+    
     const search = req.query.search?.toString();
     const status = req.query.status?.toString();
     const limit = parseInt(req.query.limit?.toString() || '50');
     const offset = parseInt(req.query.offset?.toString() || '0');
     
+    console.log('Parâmetros:', { search, status, limit, offset });
+    
     // Se não for admin, filtrar por criador (usuário logado)
     const userId = req.user.portalType === 'admin' ? undefined : req.user.id;
+    console.log('Filtro por usuário:', { userId, portalType: req.user.portalType });
     
-    const clients = await crmService.getClients(search, status, userId, limit, offset);
-    res.json({ clients });
+    try {
+      const clients = await crmService.getClients(search, status, userId, limit, offset);
+      console.log(`${clients.length} clientes encontrados`);
+      res.json({ clients });
+    } catch (serviceError) {
+      console.error('Erro no serviço getClients:', serviceError);
+      // Formatação melhorada da mensagem de erro
+      let errorMessage = 'Erro ao obter clientes';
+      let errorDetails = null;
+      
+      if (serviceError instanceof Error) {
+        errorMessage = serviceError.message;
+        errorDetails = serviceError.stack;
+      }
+      
+      res.status(500).json({ 
+        error: errorMessage, 
+        details: errorDetails,
+        timestamp: new Date().toISOString()
+      });
+    }
   } catch (error) {
-    console.error('Erro ao obter clientes:', error);
-    res.status(500).json({ error: 'Erro ao obter clientes' });
+    console.error('Erro ao processar requisição de clientes:', error);
+    res.status(500).json({ 
+      error: 'Erro ao processar requisição de clientes',
+      message: error instanceof Error ? error.message : 'Erro desconhecido',
+      timestamp: new Date().toISOString()
+    });
   }
 });
 
@@ -305,6 +333,9 @@ router.get('/clients/:id', requirePermission('cliente', 'ler'), async (req, res)
  */
 router.post('/clients', requirePermission('cliente', 'criar'), async (req, res) => {
   try {
+    console.log('POST /api/crm/clients - Requisição recebida');
+    console.log('Dados recebidos:', JSON.stringify(req.body));
+    
     const schema = insertClientSchema.extend({
       name: z.string().min(3, 'Nome deve ter pelo menos 3 caracteres'),
       email: z.string().email('Email inválido'),
@@ -312,30 +343,65 @@ router.post('/clients', requirePermission('cliente', 'criar'), async (req, res) 
       cpfCnpj: z.string().min(11, 'CPF/CNPJ deve ter pelo menos 11 dígitos'),
     });
 
-    const validationResult = schema.safeParse({
+    // Adicionar ID do criador
+    const dataToValidate = {
       ...req.body,
-      createdById: req.user.id
-    });
+      createdById: req.user.id,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    console.log('Dados formatados para validação:', JSON.stringify(dataToValidate));
+
+    const validationResult = schema.safeParse(dataToValidate);
 
     if (!validationResult.success) {
+      console.log('Erro de validação:', validationResult.error.format());
       return res.status(400).json({ 
         error: 'Dados inválidos', 
         details: validationResult.error.format() 
       });
     }
+    
+    console.log('Validação bem-sucedida, dados validados:', JSON.stringify(validationResult.data));
 
-    // Verificar se já existe cliente com esse CPF/CNPJ
-    const existingClient = await crmService.findClientByCpfCnpj(validationResult.data.cpfCnpj);
-    if (existingClient) {
-      return res.status(400).json({ error: 'Já existe um cliente cadastrado com este CPF/CNPJ' });
+    try {
+      // Verificar se já existe cliente com esse CPF/CNPJ
+      const existingClient = await crmService.findClientByCpfCnpj(validationResult.data.cpfCnpj);
+      if (existingClient) {
+        console.log('CPF/CNPJ já cadastrado:', validationResult.data.cpfCnpj);
+        return res.status(400).json({ error: 'Já existe um cliente cadastrado com este CPF/CNPJ' });
+      }
+      
+      console.log('CPF/CNPJ disponível, criando cliente');
+      const client = await crmService.createClient(validationResult.data);
+      console.log('Cliente criado com sucesso, ID:', client.id);
+      res.status(201).json({ client });
+    } catch (serviceError) {
+      console.error('Erro no serviço de criação de cliente:', serviceError);
+      // Formatação melhorada da mensagem de erro
+      let errorMessage = 'Erro ao criar cliente';
+      let errorDetails = null;
+      
+      if (serviceError instanceof Error) {
+        errorMessage = serviceError.message;
+        errorDetails = serviceError.stack;
+      }
+      
+      res.status(500).json({ 
+        error: errorMessage, 
+        details: errorDetails,
+        timestamp: new Date().toISOString()
+      });
     }
-
-    const client = await crmService.createClient(validationResult.data);
-    res.status(201).json({ client });
   } catch (error) {
-    console.error('Erro ao criar cliente:', error);
+    console.error('Erro ao processar requisição de criação de cliente:', error);
     const message = error instanceof Error ? error.message : 'Erro ao criar cliente';
-    res.status(500).json({ error: message });
+    res.status(500).json({ 
+      error: message,
+      details: error instanceof Error ? error.stack : null, 
+      timestamp: new Date().toISOString()
+    });
   }
 });
 
