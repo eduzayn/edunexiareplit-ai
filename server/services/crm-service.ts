@@ -9,6 +9,7 @@ import {
   Client, InsertClient,
   Contact, InsertContact 
 } from '@shared/schema';
+import { AsaasService } from './asaas-service';
 
 // ==================== LEADS ====================
 
