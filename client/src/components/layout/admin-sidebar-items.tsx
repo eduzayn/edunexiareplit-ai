@@ -207,6 +207,12 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
         href: "/admin/users",
         active: currentPath === "/admin/users"
       },
+      { 
+        name: "Papéis & Permissões", 
+        icon: <SecurityIcon />, 
+        href: "/admin/permissions/roles",
+        active: currentPath === "/admin/permissions/roles" || (currentPath && currentPath.includes("/admin/permissions/"))
+      },
     ]
   };
 
