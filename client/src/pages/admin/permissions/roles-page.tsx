@@ -132,7 +132,7 @@ export default function RolesPage() {
           
           <PermissionGuard
             resource="roles"
-            action="create"
+            action="criar"
             fallback={
               <Button disabled title="Você não tem permissão para criar papéis">
                 <PlusIcon className="mr-2 h-4 w-4" />
