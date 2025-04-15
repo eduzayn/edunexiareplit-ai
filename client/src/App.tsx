@@ -48,6 +48,8 @@ import InboxPage from "@/pages/admin/inbox";
 // Módulo de Permissões
 import RolesPage from "@/pages/admin/permissions/roles-page";
 import RoleDetailPage from "@/pages/admin/permissions/role-detail-page";
+// Módulo de Auditoria
+import LogsAuditoriaPage from "@/pages/admin/auditoria/logs-auditoria-page";
 // Import student pages
 import StudentCoursesPage from "@/pages/student/courses-page";
 import CourseDetailPage from "@/pages/student/course-detail-page";
@@ -306,6 +308,11 @@ function Router() {
       
       <Route path="/admin/permissions/roles/:id">
         {() => user?.portalType === "admin" ? <RoleDetailPage /> : <Redirect to="/admin" />}
+      </Route>
+      
+      {/* Rotas do Módulo de Auditoria */}
+      <Route path="/admin/auditoria/logs">
+        {() => user?.portalType === "admin" ? <LogsAuditoriaPage /> : <Redirect to="/admin" />}
       </Route>
       
       <Route component={NotFound} />

@@ -35,7 +35,7 @@ import {
   PaginationPrevious 
 } from "@/components/ui/pagination";
 import { Badge } from "@/components/ui/badge";
-import { AdminLayout } from "@/components/layout/admin-layout";
+import AdminLayout from "@/components/layout/admin-layout";
 import { CalendarIcon, DownloadIcon, RefreshCw, SearchIcon } from "lucide-react";
 import { DateRange } from "react-day-picker";
 import { format } from "date-fns";
@@ -160,12 +160,15 @@ export const LogsAuditoriaPage = () => {
     return params;
   };
 
+  // Tipo para resposta da API
+  interface AuditLogResponse {
+    logs: AuditLog[];
+    totalCount: number;
+  }
+
   // Consulta para obter logs de auditoria
-  const { data, isLoading, refetch } = useQuery({
-    queryKey: ['/api/audit/logs', buildQueryParams()],
-    queryFn: { 
-      enabled: true,
-    }
+  const { data, isLoading, refetch } = useQuery<AuditLogResponse>({
+    queryKey: ['/api/audit/logs', buildQueryParams()]
   });
 
   const logs = data?.logs || [];
