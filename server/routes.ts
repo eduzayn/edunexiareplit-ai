@@ -34,6 +34,7 @@ import { WebhookController } from "./controllers/webhook-controller";
 import subscriptionPlansRoutes from "./routes/subscription-plans";
 import subscriptionsRoutes from "./routes/subscriptions";
 import publicRegisterRouter from "./routes/public-register";
+import permissionsRoutes from "./routes/permissions-routes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
