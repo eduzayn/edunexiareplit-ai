@@ -105,7 +105,7 @@ export default function UsersPage() {
 
   // Consulta de usuários
   const { data: users = [], isLoading, isError } = useQuery({
-    queryKey: ['/api/users'],
+    queryKey: ['/api/admin/users'],
     enabled: hasReadPermission,
   });
 
@@ -129,13 +129,13 @@ export default function UsersPage() {
   // Mutação para excluir usuário
   const deleteUserMutation = useMutation({
     mutationFn: (userId: number) => 
-      apiRequest(`/api/users/${userId}`, { method: 'DELETE' }),
+      apiRequest(`/api/admin/users/${userId}`, { method: 'DELETE' }),
     onSuccess: () => {
       toast({
         title: "Usuário excluído",
         description: "O usuário foi excluído com sucesso.",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
       setIsDeleteDialogOpen(false);
       setSelectedUser(null);
     },
