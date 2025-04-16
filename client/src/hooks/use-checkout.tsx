@@ -23,6 +23,7 @@ export interface CheckoutLink {
   expirationTime: number;
   status: string;
   url: string;
+  is_used?: boolean;
   createdAt: string;
   updatedAt?: string;
 }

@@ -520,6 +520,9 @@ export default function ClientDetailsPage() {
                                 Status
                               </th>
                               <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Expiração
+                              </th>
+                              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Ações
                               </th>
                             </tr>
@@ -557,6 +560,13 @@ export default function ClientDetailsPage() {
                                   {!['pending', 'confirmed', 'received', 'overdue', 'cancelled',
                                      'PENDING', 'CONFIRMED', 'RECEIVED', 'OVERDUE', 'CANCELLED'].includes(checkout.status) && (
                                     <Badge>{checkout.status}</Badge>
+                                  )}
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm">
+                                  {checkout.is_used ? (
+                                    <Badge variant="outline" className="bg-gray-100">Expirado</Badge>
+                                  ) : (
+                                    <Badge className="bg-blue-100 text-blue-800">Ativo</Badge>
                                   )}
                                 </td>
                                 <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
