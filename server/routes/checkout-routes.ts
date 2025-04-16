@@ -12,9 +12,13 @@ router.use(requireAuth);
 router.use(requirePermission('checkout', 'manage'));
 
 // Rota para criar novo link de checkout
-router.post('/leads/:leadId/checkout', checkoutController.createCheckoutLink);
+router.post('/checkout/links', checkoutController.createCheckoutLink);
+router.post('/checkout/links/:leadId', checkoutController.createCheckoutLink);
 
 // Rota para verificar status de checkout
-router.get('/checkout/:checkoutId', checkoutController.checkCheckoutStatus);
+router.get('/checkout/status/:checkoutId', checkoutController.checkCheckoutStatus);
+
+// Rota para cancelar link de checkout
+router.post('/checkout/links/:checkoutId/cancel', checkoutController.cancelCheckoutLink);
 
 export default router;

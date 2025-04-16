@@ -241,3 +241,77 @@ export async function checkCheckoutStatus(req: Request, res: Response) {
     return res.status(500).json({ error: 'Erro ao verificar status de checkout' });
   }
 }
+
+/**
+ * Cancela um link de checkout ativo
+ */
+export async function cancelCheckoutLink(req: Request, res: Response) {
+  try {
+    const { checkoutId } = req.params;
+    console.log(`Iniciando cancelamento do link de checkout ${checkoutId}...`);
+
+    // Verifica se o link de checkout existe no banco
+    const checkout = await db.execute(sql.raw(
+      `SELECT * FROM checkout_links WHERE id = ? OR asaas_checkout_id = ?`,
+      [checkoutId, checkoutId]
+    ));
+
+    if (!checkout.rows.length) {
+      return res.status(404).json({ error: 'Link de checkout não encontrado' });
+    }
+
+    const checkoutData = checkout.rows[0];
+    
+    // Verifica se já está cancelado ou vencido
+    if (checkoutData.status === 'canceled' || checkoutData.status === 'expired') {
+      return res.status(400).json({ 
+        error: 'Link de checkout já cancelado ou expirado',
+        status: checkoutData.status
+      });
+    }
+
+    try {
+      // Cancelar o link no Asaas
+      await asaasCheckoutService.cancelCheckoutLink(checkoutData.asaas_checkout_id);
+      
+      // Atualiza o status no banco
+      await db.execute(sql.raw(`
+        UPDATE checkout_links
+        SET status = 'canceled', updated_at = NOW()
+        WHERE id = ?
+      `, [checkoutData.id]));
+
+      return res.json({
+        success: true,
+        message: 'Link de checkout cancelado com sucesso'
+      });
+    } catch (asaasError) {
+      console.error('Erro ao cancelar link no Asaas:', asaasError);
+      
+      // Se o erro for "já cancelado" no Asaas, atualizamos nosso banco também
+      if (asaasError instanceof Error && 
+          (asaasError.message.includes('already cancelled') || 
+          asaasError.message.includes('already canceled'))) {
+        
+        await db.execute(sql.raw(`
+          UPDATE checkout_links
+          SET status = 'canceled', updated_at = NOW()
+          WHERE id = ?
+        `, [checkoutData.id]));
+        
+        return res.json({
+          success: true,
+          message: 'Link de checkout já estava cancelado no Asaas'
+        });
+      }
+      
+      return res.status(500).json({ 
+        error: 'Erro ao cancelar link no Asaas', 
+        details: asaasError instanceof Error ? asaasError.message : 'Erro desconhecido'
+      });
+    }
+  } catch (error) {
+    console.error('Erro ao cancelar link de checkout:', error);
+    return res.status(500).json({ error: 'Erro ao cancelar link de checkout' });
+  }
+}
