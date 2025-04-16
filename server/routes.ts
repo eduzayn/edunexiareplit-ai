@@ -31,7 +31,7 @@ import certificatesRoutes from "./routes/certificates";
 import certificateTemplatesRoutes from "./routes/certificate-templates";
 import certificateSignersRoutes from "./routes/certificate-signers";
 import { WebhookController } from "./controllers/webhook-controller";
-import { checkoutSuccessCallback, checkoutNotificationCallback } from "./controllers/checkout-callback-controller";
+import { checkoutSuccessCallback, checkoutNotificationCallback, checkAndConvertPendingLeads } from "./controllers/checkout-callback-controller";
 import subscriptionPlansRoutes from "./routes/subscription-plans";
 import subscriptionsRoutes from "./routes/subscriptions";
 import publicRegisterRouter from "./routes/public-register";
@@ -2809,6 +2809,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Callback de notificação - chamado pelo Asaas para atualizar o status do pagamento
   app.post("/api/v2/checkout/notification", async (req, res) => {
     await checkoutNotificationCallback(req, res);
+  });
+  
+  // Verificar e converter leads com checkout preenchido para clientes (endpoint administrativo autenticado)
+  app.post("/api/v2/checkout/convert-pending-leads", requireAuth, async (req, res) => {
+    await checkAndConvertPendingLeads(req, res);
   });
 
   // ================= Rotas para Registro Público =================
