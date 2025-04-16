@@ -243,6 +243,32 @@ export async function checkCheckoutStatus(req: Request, res: Response) {
                 SET status = 'converted', converted_to_client_id = ?, updated_at = NOW()
                 WHERE id = ?
               `, [client.rows[0].id, leadData.id]));
+              
+              // Atualiza a cobrança para vincular ao cliente recém-criado
+              await db.execute(sql.raw(`
+                UPDATE checkout_links
+                SET client_id = ?, updated_at = NOW()
+                WHERE id = ?
+              `, [client.rows[0].id, checkoutData.id]));
+            } else {
+              // Cliente já existe, apenas vincula a cobrança ao cliente existente
+              const existingClientData = existingClient.rows[0];
+              
+              // Verifica se o lead já foi convertido, se não, atualiza
+              if (leadData.status !== 'converted') {
+                await db.execute(sql.raw(`
+                  UPDATE leads
+                  SET status = 'converted', converted_to_client_id = ?, updated_at = NOW()
+                  WHERE id = ?
+                `, [existingClientData.id, leadData.id]));
+              }
+              
+              // Atualiza a cobrança para vincular ao cliente existente
+              await db.execute(sql.raw(`
+                UPDATE checkout_links
+                SET client_id = ?, updated_at = NOW()
+                WHERE id = ?
+              `, [existingClientData.id, checkoutData.id]));
             }
           }
         }
@@ -336,5 +362,65 @@ export async function cancelCheckoutLink(req: Request, res: Response) {
   } catch (error) {
     console.error('Erro ao cancelar link de checkout:', error);
     return res.status(500).json({ error: 'Erro ao cancelar link de checkout' });
+  }
+}
+
+/**
+ * Lista todos os links de checkout associados a um cliente
+ */
+export async function getClientCheckoutLinks(req: Request, res: Response) {
+  try {
+    const { clientId } = req.params;
+    
+    // Verifica se o cliente existe
+    const clientResult = await db.execute(sql.raw(
+      `SELECT * FROM clients WHERE id = ?`,
+      [clientId]
+    ));
+    
+    if (!clientResult.rows.length) {
+      return res.status(404).json({ error: 'Cliente não encontrado' });
+    }
+    
+    // Busca todos os links de checkout do cliente
+    const checkoutsResult = await db.execute(sql.raw(
+      `SELECT cl.*, l.name as lead_name, l.email as lead_email 
+       FROM checkout_links cl
+       LEFT JOIN leads l ON cl.lead_id = l.id
+       WHERE cl.client_id = ?
+       ORDER BY cl.created_at DESC`,
+      [clientId]
+    ));
+    
+    // Formata os dados para o frontend (converter snake_case para camelCase)
+    const checkouts = checkoutsResult.rows.map(checkout => ({
+      id: checkout.id,
+      leadId: checkout.lead_id,
+      leadName: checkout.lead_name,
+      leadEmail: checkout.lead_email,
+      clientId: checkout.client_id,
+      courseId: checkout.course_id,
+      productId: checkout.product_id,
+      asaasCheckoutId: checkout.asaas_checkout_id,
+      description: checkout.description,
+      value: checkout.value,
+      dueDate: checkout.due_date,
+      expirationTime: checkout.expiration_time,
+      status: checkout.status,
+      url: checkout.url,
+      createdAt: checkout.created_at,
+      updatedAt: checkout.updated_at
+    }));
+    
+    return res.json({
+      success: true,
+      data: checkouts
+    });
+  } catch (error) {
+    console.error(`Erro ao buscar links de checkout do cliente ${req.params.clientId}:`, error);
+    return res.status(500).json({ 
+      error: 'Erro ao buscar links de checkout',
+      details: error instanceof Error ? error.message : 'Erro desconhecido'
+    });
   }
 }

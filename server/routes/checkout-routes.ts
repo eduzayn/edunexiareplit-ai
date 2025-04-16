@@ -21,4 +21,7 @@ router.get('/checkout/status/:checkoutId', checkoutController.checkCheckoutStatu
 // Rota para cancelar link de checkout
 router.post('/checkout/links/:checkoutId/cancel', checkoutController.cancelCheckoutLink);
 
+// Rota para listar links de checkout de um cliente
+router.get('/clients/:clientId/checkout-links', checkoutController.getClientCheckoutLinks);
+
 export default router;
