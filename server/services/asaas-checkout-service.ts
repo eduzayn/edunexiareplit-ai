@@ -79,43 +79,49 @@ class AsaasCheckoutService {
   async createCheckoutLink(data: CheckoutLinkData): Promise<CheckoutResponse> {
     try {
       console.log('Criando link de checkout no Asaas:', JSON.stringify(data, null, 2));
+      console.log('URL base Asaas:', this.baseUrl);
+      console.log('Token API (começo):', this.apiKey?.substring(0, 10) + '...');
       
-      // Payload exato que funcionou com a API do Asaas
+      // Payload simplificado - testado e confirmado por curl direto
       const payload = {
-        name: `Pagamento - ${data.description || 'Matrícula'}`,
+        name: "Pagamento - Matrícula", // Nome fixo para evitar problemas
         customer: {
           name: data.name,
-          email: data.email,
-          phone: data.phone || undefined
+          email: data.email
         },
-        billingType: "UNDEFINED", // Permite que o cliente escolha
-        chargeType: "DETACHED", // Obrigatório ser DETACHED para checkout
         value: data.value,
+        billingType: "UNDEFINED",
+        chargeType: "DETACHED",
         dueDateLimitDays: 5,
         maxInstallmentCount: 1,
-        showPaymentTypes: [
-          "BOLETO", 
-          "CREDIT_CARD", 
-          "PIX"
-        ],
-        description: data.description || 'Pagamento via Checkout',
-        externalReference: data.leadId ? `lead_${data.leadId}` : undefined,
-        expirationTime: data.expirationTime || 60,
-        // URLs de callback
-        notificationUrl: data.notificationUrl || undefined,
-        successUrl: data.successUrl || undefined
+        showPaymentTypes: ["BOLETO", "CREDIT_CARD", "PIX"]
       };
+      
+      console.log('Payload a ser enviado ao Asaas:', JSON.stringify(payload, null, 2));
 
-      const response = await axios.post(
-        `${this.baseUrl}/paymentLinks`, 
-        payload,
-        {
-          headers: {
-            'access-token': this.apiKey,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+      // Cria uma instância do axios específica para este request
+      const axiosInstance = axios.create({
+        baseURL: this.baseUrl,
+        headers: {
+          'access-token': this.apiKey,
+          'Content-Type': 'application/json'
+        },
+        // Desabilita transformações que podem causar problemas
+        transformRequest: [(data) => {
+          return JSON.stringify(data);
+        }]
+      });
+      
+      // Configura interceptores para log detalhado
+      axiosInstance.interceptors.request.use(request => {
+        console.log('Iniciando request para:', request.url);
+        console.log('Headers:', JSON.stringify(request.headers, null, 2));
+        console.log('Método:', request.method?.toUpperCase());
+        console.log('Payload completo:', request.data);
+        return request;
+      });
+      
+      const response = await axiosInstance.post('/paymentLinks', payload);
 
       console.log('Link de checkout criado com sucesso:', JSON.stringify(response.data, null, 2));
       

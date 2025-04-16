@@ -4,16 +4,13 @@ import { Client, InsertClient } from '../../shared/schema';
 // Configurações da API do Asaas
 // IMPORTANTE: Usamos a nova chave ASAAS_ZAYN_KEY (nos secrets do Replit)
 const ASAAS_API_KEY = process.env.ASAAS_ZAYN_KEY;
-// Verificamos se a API key começa com $aact_prod_ para decidir qual ambiente usar
-const isProductionToken = ASAAS_API_KEY?.startsWith('$aact_prod_');
-const ASAAS_API_URL = process.env.ASAAS_API_URL || (
-  isProductionToken
-  ? 'https://api.asaas.com/v3'
-  : 'https://sandbox.asaas.com/v3'
-);
+// Forçamos o uso do ambiente de produção conforme orientação
+const ASAAS_API_URL = 'https://api.asaas.com/v3';
+// Verificamos se a API key está presente
+const isValidToken = ASAAS_API_KEY && ASAAS_API_KEY.startsWith('$aact_');
 
 // Log para rastrear qual ambiente está sendo usado
-console.log(`[ASAAS SERVICE] Utilizando ambiente: ${isProductionToken ? 'Produção' : 'Sandbox'} - ${ASAAS_API_URL}`);
+console.log(`[ASAAS SERVICE] Utilizando ambiente: Produção - ${ASAAS_API_URL}`);
 console.log(`[ASAAS SERVICE] Token da API (ASAAS_API_KEY): ${ASAAS_API_KEY?.substring(0, 10)}...`);
 console.log(`[ASAAS SERVICE] ⚠️ Atenção: Configuração atualizada com a chave correta do Asaas`);
 
@@ -139,7 +136,7 @@ export const AsaasService = {
       
       // Registrar informações sobre o ambiente da API em uso
       console.log(`[Asaas] Usando API URL: ${ASAAS_API_URL}`);
-      console.log(`[Asaas] Ambiente: ${isProductionToken ? 'Produção' : 'Sandbox'}`);
+      console.log(`[Asaas] Ambiente: Produção`);
       
       // Criar o cliente no Asaas
       const response = await asaasClient.post('/customers', customerData);
