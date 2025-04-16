@@ -132,7 +132,7 @@ export default function PublicCreateChargePage() {
       
       // Redirecionar para a página de cobranças
       setTimeout(() => {
-        navigate("/public/charges");
+        navigate("/charges");
       }, 1500);
     },
     onError: (error: Error) => {
