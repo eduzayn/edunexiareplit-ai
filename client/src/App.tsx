@@ -89,6 +89,7 @@ import PoloSalesLinksPage from "@/pages/polo/sales-links-page";
 // Páginas públicas de cobranças
 import PublicChargesPage from "@/pages/public-charges";
 import PublicCreateChargePage from "@/pages/public-create-charge";
+import SimpleChargesPage from "@/pages/charges";
 import { ProtectedRoute } from "./lib/protected-route";
 import { useAuth, AuthProvider } from "./hooks/use-auth";
 
@@ -140,7 +141,7 @@ function Router() {
       <Route path="/contato" component={ContatoPage} />
       <Route path="/blog" component={BlogPage} />
       <Route path="/privacidade" component={PrivacidadePage} />
-      <Route path="/charges" component={PublicChargesPage} />
+      <Route path="/charges" component={SimpleChargesPage} />
       <Route path="/create-charge" component={PublicCreateChargePage} />
       
       <ProtectedRoute path="/student/dashboard" portalType="student" />
