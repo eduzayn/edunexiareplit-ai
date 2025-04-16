@@ -27,7 +27,7 @@ import {
   CopyIcon,
   EditIcon,
   EyeIcon,
-  ExternalLink,
+  ExternalLinkIcon,
   FilterIcon,
   InfoIcon,
   InvoiceIcon, 
