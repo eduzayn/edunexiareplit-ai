@@ -226,7 +226,11 @@ export default function ChargesPage() {
     });
   };
 
-  const formatCurrency = (value: number) => {
+  // Formatação de moeda com tratamento de valores inválidos
+  const formatCurrency = (value: number | undefined) => {
+    if (value === undefined || isNaN(value)) {
+      return 'R$ 0,00';
+    }
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL'
@@ -283,12 +287,19 @@ export default function ChargesPage() {
   // Mapear dados do Asaas
   const asaasChargesList = mapAsaasToCharges(asaasCharges || []);
   
-  // Filtrar cobranças com base na pesquisa
-  const filteredCharges = asaasChargesList.filter(charge => 
-    charge.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (charge.description && charge.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    formatCurrency(charge.value).includes(searchTerm)
-  );
+  // Filtrar cobranças com base na pesquisa (com verificação segura de propriedades)
+  const filteredCharges = asaasChargesList.filter(charge => {
+    const nameMatch = charge.name ? 
+      charge.name.toLowerCase().includes(searchTerm.toLowerCase()) : false;
+    
+    const descriptionMatch = charge.description ? 
+      charge.description.toLowerCase().includes(searchTerm.toLowerCase()) : false;
+    
+    const valueMatch = charge.value ? 
+      formatCurrency(charge.value).includes(searchTerm) : false;
+    
+    return nameMatch || descriptionMatch || valueMatch;
+  });
 
   // Ordenação dos resultados
   const sortedCharges = [...filteredCharges].sort((a, b) => {
@@ -297,17 +308,34 @@ export default function ChargesPage() {
     let comparison = 0;
     
     if (sortField === 'name') {
-      comparison = a.name.localeCompare(b.name);
+      // Verificação de segurança para propriedades que podem ser undefined
+      const nameA = a.name || '';
+      const nameB = b.name || '';
+      comparison = nameA.localeCompare(nameB);
     } else if (sortField === 'value') {
-      comparison = a.value - b.value;
+      // Verificação de segurança para valores numéricos
+      const valueA = a.value || 0;
+      const valueB = b.value || 0;
+      comparison = valueA - valueB;
     } else if (sortField === 'dueDate') {
-      const dateA = new Date(a.dueDate.split('/').reverse().join('-'));
-      const dateB = new Date(b.dueDate.split('/').reverse().join('-'));
-      comparison = dateA.getTime() - dateB.getTime();
+      // Verificação de segurança para datas
+      try {
+        const dateA = a.dueDate ? new Date(a.dueDate.split('/').reverse().join('-')) : new Date(0);
+        const dateB = b.dueDate ? new Date(b.dueDate.split('/').reverse().join('-')) : new Date(0);
+        comparison = dateA.getTime() - dateB.getTime();
+      } catch (error) {
+        comparison = 0; // Em caso de erro no formato da data
+      }
     } else if (sortField === 'description') {
-      comparison = (a.description || '').localeCompare(b.description || '');
+      // Descrição pode ser null ou undefined
+      const descA = a.description || '';
+      const descB = b.description || '';
+      comparison = descA.localeCompare(descB);
     } else if (sortField === 'paymentType') {
-      comparison = a.paymentType.localeCompare(b.paymentType);
+      // Tipo de pagamento pode ser undefined
+      const typeA = a.paymentType || '';
+      const typeB = b.paymentType || '';
+      comparison = typeA.localeCompare(typeB);
     }
     
     return sortDirection === 'asc' ? comparison : -comparison;
