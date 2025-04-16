@@ -35,13 +35,14 @@ interface CheckoutStatus {
   description: string;
   billingType?: string;
   dueDate: string;
+  active?: boolean;
   customer?: {
     id: string;
     name: string;
     email: string;
     phone?: string;
     document?: string;
-  };
+  } | null;
   payment?: {
     id: string;
     status: string;
@@ -51,7 +52,7 @@ interface CheckoutStatus {
     billingType: string;
     dueDate: string;
     paymentDate?: string;
-  };
+  } | null;
 }
 
 class AsaasCheckoutService {
@@ -171,15 +172,19 @@ class AsaasCheckoutService {
 
       console.log('Status do checkout obtido com sucesso:', JSON.stringify(response.data, null, 2));
       
+      // Mapeamos a resposta do Asaas para nossa interface
+      // A API do Asaas pode retornar diferentes estruturas dependendo do tipo de checkout
       return {
         id: response.data.id,
-        status: response.data.status,
+        status: response.data.status || (response.data.active ? 'active' : 'inactive'),
         value: response.data.value,
-        description: response.data.description,
-        billingType: response.data.billingType,
-        dueDate: response.data.dueDate,
-        customer: response.data.customer,
-        payment: response.data.payment
+        description: response.data.description || response.data.name || '',
+        billingType: response.data.billingType || 'UNDEFINED',
+        dueDate: response.data.dueDate || '',
+        customer: response.data.customer || null,
+        payment: response.data.payment || null,
+        // Incluímos o campo active que pode ser usado para determinar o status
+        active: response.data.active
       };
     } catch (error) {
       console.error(`Erro ao consultar status do checkout ${checkoutId}:`, error);
