@@ -231,6 +231,10 @@ export const AsaasPaymentService = {
     try {
       console.log(`Buscando cobranças pelo nome do cliente: "${customerName}"`);
       
+      // Extrai o primeiro nome para busca mais ampla
+      const firstName = customerName.split(' ')[0];
+      console.log(`Usando primeiro nome para busca mais ampla: "${firstName}"`);
+      
       // Primeiro, busca todos os pagamentos (limitado aos últimos 100)
       const response = await asaasClient.get('/payments', {
         params: { 
@@ -244,18 +248,45 @@ export const AsaasPaymentService = {
         return [];
       }
       
+      console.log(`Total de pagamentos encontrados no Asaas: ${response.data.data.length}`);
+      
+      // Vamos imprimir todos os nomes de clientes para debug
+      console.log('Lista de todos os clientes com pagamentos:');
+      response.data.data.forEach((payment: any) => {
+        if (payment.customerName) {
+          console.log(`- Cliente: ${payment.customerName} (ID: ${payment.customer})`);
+        }
+      });
+      
       // Filtra os pagamentos pelo nome do cliente (case insensitive)
+      // Usa duas estratégias: nome completo ou apenas primeiro nome
       const matchingPayments = response.data.data.filter((payment: AsaasPaymentResponse) => {
         if (!payment.customer || !payment.customerName) return false;
         
         // Verifica se o nome do cliente contém o termo buscado
         const paymentCustomerName = payment.customerName.toLowerCase();
-        const searchTerm = customerName.toLowerCase();
+        const searchTermFull = customerName.toLowerCase();
+        const searchTermFirst = firstName.toLowerCase();
         
-        return paymentCustomerName.includes(searchTerm);
+        // Aceita se contém o nome completo OU apenas o primeiro nome
+        return paymentCustomerName.includes(searchTermFull) || 
+               paymentCustomerName.includes(searchTermFirst);
       });
       
-      console.log(`Encontradas ${matchingPayments.length} cobranças para clientes com nome contendo "${customerName}"`);
+      console.log(`Encontradas ${matchingPayments.length} cobranças para clientes com nome contendo "${firstName}" ou "${customerName}"`);
+      
+      // Vamos imprimir informações detalhadas dos pagamentos encontrados
+      if (matchingPayments.length > 0) {
+        matchingPayments.forEach((payment, index) => {
+          console.log(`Pagamento ${index + 1}:`);
+          console.log(`- ID: ${payment.id}`);
+          console.log(`- Cliente: ${payment.customerName}`);
+          console.log(`- Valor: ${payment.value}`);
+          console.log(`- Status: ${payment.status}`);
+          console.log(`- Data: ${payment.dateCreated}`);
+          console.log(`- URL da Fatura: ${payment.invoiceUrl || 'Não disponível'}`);
+        });
+      }
       
       return matchingPayments;
     } catch (error) {
