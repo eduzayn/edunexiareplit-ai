@@ -207,7 +207,7 @@ export const AsaasPaymentService = {
   },
   
   /**
-   * Busca cobranças de um cliente no Asaas
+   * Busca cobranças de um cliente no Asaas pelo ID do cliente
    */
   async getCustomerPayments(asaasCustomerId: string): Promise<AsaasPaymentResponse[]> {
     try {
@@ -219,6 +219,47 @@ export const AsaasPaymentService = {
     } catch (error) {
       console.error(`Erro ao buscar cobranças do cliente (ID: ${asaasCustomerId}):`, error);
       throw error;
+    }
+  },
+
+  /**
+   * Busca cobranças de um cliente no Asaas pelo nome ou email
+   * Útil quando não temos o ID do cliente no Asaas
+   */
+  async getPaymentsByCustomerName(customerName: string): Promise<AsaasPaymentResponse[]> {
+    try {
+      console.log(`Buscando cobranças pelo nome do cliente: "${customerName}"`);
+      
+      // Primeiro, busca todos os pagamentos (limitado aos últimos 100)
+      const response = await asaasClient.get('/payments', {
+        params: { 
+          limit: 100,
+          offset: 0
+        }
+      });
+      
+      if (!response.data.data || !Array.isArray(response.data.data)) {
+        console.log('Nenhum pagamento encontrado na resposta do Asaas');
+        return [];
+      }
+      
+      // Filtra os pagamentos pelo nome do cliente (case insensitive)
+      const matchingPayments = response.data.data.filter((payment: AsaasPaymentResponse) => {
+        if (!payment.customer || !payment.customerName) return false;
+        
+        // Verifica se o nome do cliente contém o termo buscado
+        const paymentCustomerName = payment.customerName.toLowerCase();
+        const searchTerm = customerName.toLowerCase();
+        
+        return paymentCustomerName.includes(searchTerm);
+      });
+      
+      console.log(`Encontradas ${matchingPayments.length} cobranças para clientes com nome contendo "${customerName}"`);
+      
+      return matchingPayments;
+    } catch (error) {
+      console.error(`Erro ao buscar cobranças pelo nome do cliente (${customerName}):`, error);
+      return [];
     }
   },
   
