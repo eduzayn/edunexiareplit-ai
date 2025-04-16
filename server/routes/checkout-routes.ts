@@ -27,4 +27,7 @@ router.post('/checkout/links/:checkoutId/cancel', checkoutController.cancelCheck
 // Rota para listar links de checkout de um cliente
 router.get('/clients/:clientId/checkout-links', checkoutController.getClientCheckoutLinks);
 
+// Rota para obter todos os pagamentos de um cliente através de seus checkouts
+router.get('/clients/:clientId/checkout-payments', checkoutController.getClientPaymentsFromCheckouts);
+
 export default router;

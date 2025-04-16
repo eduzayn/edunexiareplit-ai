@@ -2823,7 +2823,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await checkAndConvertPendingLeads(req, res);
   });
   
-  // Rota para testar busca de pagamentos
+  // Rota para testar busca de pagamentos por checkout
   app.get("/api/v2/checkout/test-payments/:checkoutId", async (req, res) => {
     try {
       const { checkoutId } = req.params;
@@ -2844,6 +2844,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Erro ao buscar pagamentos:", error);
       return res.status(500).json({
         error: "Erro ao buscar pagamentos",
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // Rota para testar busca de pagamentos de um cliente
+  app.get("/api/v2/checkout/test-client-payments/:clientId", async (req, res) => {
+    try {
+      const { clientId } = req.params;
+      
+      if (!clientId || isNaN(parseInt(clientId))) {
+        return res.status(400).json({ error: "ID do cliente inválido" });
+      }
+      
+      // Buscar checkouts associados ao cliente
+      const db = require("./db").db;
+      const sql = require("drizzle-orm").sql;
+      
+      const checkouts = await db.execute(sql.raw(
+        `SELECT * FROM checkout_links WHERE client_id = ?`,
+        [clientId]
+      ));
+      
+      if (!checkouts.rows.length) {
+        return res.json({
+          success: true,
+          message: "Cliente não possui checkouts",
+          clientId,
+          checkouts: []
+        });
+      }
+      
+      // Para cada checkout, buscar pagamentos
+      let allPayments = [];
+      const checkoutsWithPayments = [];
+      
+      for (const checkout of checkouts.rows) {
+        if (checkout.asaas_checkout_id) {
+          try {
+            console.log(`Buscando pagamentos para o checkout ${checkout.id} (Asaas ID: ${checkout.asaas_checkout_id})`);
+            const checkoutPayments = await asaasCheckoutService.getCheckoutPayments(checkout.asaas_checkout_id);
+            
+            if (checkoutPayments && checkoutPayments.length) {
+              allPayments = [...allPayments, ...checkoutPayments];
+              checkoutsWithPayments.push({
+                ...checkout,
+                payments: checkoutPayments
+              });
+            } else {
+              checkoutsWithPayments.push({
+                ...checkout,
+                payments: []
+              });
+            }
+          } catch (error) {
+            console.error(`Erro ao buscar pagamentos do checkout ${checkout.id}:`, error);
+          }
+        }
+      }
+      
+      return res.json({
+        success: true,
+        clientId,
+        checkoutsCount: checkouts.rows.length,
+        checkoutsWithPayments,
+        payments: allPayments
+      });
+    } catch (error) {
+      console.error("Erro ao buscar pagamentos do cliente:", error);
+      return res.status(500).json({
+        error: "Erro ao buscar pagamentos do cliente",
         details: error instanceof Error ? error.message : String(error)
       });
     }

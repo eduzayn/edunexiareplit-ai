@@ -475,3 +475,79 @@ export async function getCheckoutPayments(req: Request, res: Response) {
     });
   }
 }
+
+/**
+ * Obtém todos os pagamentos associados a um cliente através de seus checkouts
+ * Esta função busca todos os checkouts vinculados ao cliente e, para cada um,
+ * consulta os pagamentos associados no Asaas
+ */
+export async function getClientPaymentsFromCheckouts(req: Request, res: Response) {
+  try {
+    const { clientId } = req.params;
+    
+    if (!clientId || isNaN(parseInt(clientId))) {
+      return res.status(400).json({ 
+        error: 'ID do cliente inválido'
+      });
+    }
+    
+    // Buscar todos os checkouts associados ao cliente
+    const checkouts = await db.execute(sql.raw(
+      `SELECT * FROM checkout_links WHERE client_id = ?`,
+      [clientId]
+    ));
+    
+    if (!checkouts.rows.length) {
+      return res.json({
+        success: true,
+        message: 'Cliente não possui checkouts',
+        checkouts: [],
+        payments: []
+      });
+    }
+    
+    // Armazenar todos os pagamentos encontrados
+    let allPayments: any[] = [];
+    const checkoutsWithPayments = [];
+    
+    // Para cada checkout, buscar os pagamentos associados
+    for (const checkout of checkouts.rows) {
+      if (checkout.asaas_checkout_id) {
+        try {
+          console.log(`Buscando pagamentos para o checkout ${checkout.id} (Asaas ID: ${checkout.asaas_checkout_id})`);
+          const checkoutPayments = await asaasCheckoutService.getCheckoutPayments(checkout.asaas_checkout_id);
+          
+          if (checkoutPayments && checkoutPayments.length) {
+            allPayments = [...allPayments, ...checkoutPayments];
+            checkoutsWithPayments.push({
+              ...checkout,
+              payments: checkoutPayments
+            });
+          } else {
+            checkoutsWithPayments.push({
+              ...checkout,
+              payments: []
+            });
+          }
+        } catch (error) {
+          console.error(`Erro ao buscar pagamentos do checkout ${checkout.id}:`, error);
+          // Continuar mesmo se um checkout falhar
+        }
+      }
+    }
+    
+    return res.json({
+      success: true,
+      clientId,
+      checkoutsCount: checkouts.rows.length,
+      checkoutsWithPayments,
+      payments: allPayments
+    });
+  } catch (error) {
+    console.error('Erro ao buscar pagamentos do cliente:', error);
+    return res.status(500).json({
+      error: 'Erro ao buscar pagamentos do cliente',
+      details: error instanceof Error ? error.message : 'Erro desconhecido'
+    });
+  }
+}
