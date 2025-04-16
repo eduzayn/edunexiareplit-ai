@@ -591,15 +591,15 @@ export default function LeadDetailV2Page() {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                           <div>
                             <p className="text-sm font-medium text-gray-500">Valor</p>
-                            <p className="mt-1">R$ {checkout.value.toFixed(2).replace('.', ',')}</p>
+                            <p className="mt-1">R$ {(typeof checkout.value === 'number' ? checkout.value.toFixed(2) : parseFloat(String(checkout.value)).toFixed(2)).replace('.', ',')}</p>
                           </div>
                           <div>
                             <p className="text-sm font-medium text-gray-500">Vencimento</p>
-                            <p className="mt-1">{format(new Date(checkout.due_date), "dd/MM/yyyy", { locale: ptBR })}</p>
+                            <p className="mt-1">{format(new Date(checkout.dueDate || checkout.due_date), "dd/MM/yyyy", { locale: ptBR })}</p>
                           </div>
                           <div>
                             <p className="text-sm font-medium text-gray-500">Expiração</p>
-                            <p className="mt-1">{checkout.expiration_time} minutos</p>
+                            <p className="mt-1">{checkout.expirationTime || checkout.expiration_time} minutos</p>
                           </div>
                         </div>
                         
@@ -632,7 +632,7 @@ export default function LeadDetailV2Page() {
                             <Button 
                               size="sm" 
                               variant="destructive"
-                              onClick={() => handleCancelCheckout(checkout.asaas_checkout_id)}
+                              onClick={() => handleCancelCheckout(checkout.asaasCheckoutId || checkout.asaas_checkout_id)}
                               disabled={isCancelingCheckoutLink}
                             >
                               {isCancelingCheckoutLink ? (
