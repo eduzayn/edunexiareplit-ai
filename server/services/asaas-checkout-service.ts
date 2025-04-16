@@ -89,11 +89,23 @@ class AsaasCheckoutService {
         payment: {
           value: data.value,
           dueDate: data.dueDate,
-          description: data.description || 'Pagamento via Checkout'
+          description: data.description || 'Pagamento via Checkout',
+          billingType: 'UNDEFINED', // Cliente escolhe a forma de pagamento no checkout
+          discount: {
+            value: 0,
+            dueDateLimitDays: 0
+          },
+          interest: {
+            value: 0
+          },
+          fine: {
+            value: 0
+          }
         },
+        dueDateLimitDays: 5, // Dias úteis para vencimento
+        maxInstallmentCount: 1, // Parcelas
+        chargingType: 'DETACHED', // Para checkout, deve ser DETACHED conforme a documentação
         expirationTime: data.expirationTime || 60, // Em minutos
-        billingType: 'UNDEFINED',  // Permite que o cliente escolha a forma de pagamento
-        chargingType: 'NORMAL',    // Cobrança padrão
         successUrl: data.successUrl || undefined,
         notificationUrl: data.notificationUrl || undefined
       };
@@ -120,11 +132,21 @@ class AsaasCheckoutService {
     } catch (error) {
       console.error('Erro ao criar link de checkout no Asaas:', error);
       
-      if (axios.isAxiosError(error) && error.response) {
-        console.error('Detalhes da resposta do Asaas:', JSON.stringify(error.response.data, null, 2));
-        throw new Error(`Erro Asaas: ${JSON.stringify(error.response.data)}`);
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          // Erro com resposta do servidor
+          console.error(`[Asaas Checkout] Erro HTTP ${error.response.status}:`, JSON.stringify(error.response.data, null, 2));
+          console.error(`[Asaas Checkout] Headers:`, JSON.stringify(error.response.headers, null, 2));
+          throw new Error(`Erro Asaas: ${JSON.stringify(error.response.data)}`);
+        } else if (error.request) {
+          // Requisição feita mas sem resposta
+          console.error('[Asaas Checkout] Erro sem resposta (timeout ou rede):', error.request);
+          throw new Error('Erro de conexão com o Asaas: sem resposta do servidor');
+        }
       }
       
+      // Para outros tipos de erro
+      console.error('[Asaas Checkout] Erro inesperado:', error);
       throw error;
     }
   }
