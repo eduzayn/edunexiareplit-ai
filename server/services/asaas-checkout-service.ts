@@ -177,7 +177,7 @@ class AsaasCheckoutService {
         `${this.baseUrl}/paymentLinks/${checkoutId}`,
         {
           headers: {
-            'access_token': this.apiKey
+            'access-token': this.apiKey
           }
         }
       );
