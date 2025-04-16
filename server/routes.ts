@@ -44,6 +44,7 @@ import financeRoutes from "./routes/finance-routes";
 import contractsRoutes from "./routes/contracts-routes";
 import leadsRoutes from "./routes/leads-routes";
 import checkoutRoutes from "./routes/checkout-routes";
+import { asaasCheckoutService } from "./services/asaas-checkout-service";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
@@ -2843,7 +2844,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Erro ao buscar pagamentos:", error);
       return res.status(500).json({
         error: "Erro ao buscar pagamentos",
-        details: error instanceof Error ? error.message : "Erro desconhecido"
+        details: error instanceof Error ? error.message : String(error)
       });
     }
   });
