@@ -275,15 +275,83 @@ function Router() {
         {() => user?.portalType === "admin" ? <div className="p-8">
           <h1 className="text-2xl font-bold mb-4">Módulo de Leads em Reconstrução</h1>
           <p className="mb-2">Estamos reconstruindo o módulo de leads com integração ao Asaas Checkout.</p>
-          <p>Esta funcionalidade estará disponível em breve.</p>
+          <p className="mb-4">Esta nova versão permitirá enviar links de pagamento diretamente para leads e converter automaticamente em clientes após o pagamento.</p>
+          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-yellow-700">
+                  Durante a atualização, você pode continuar gerenciando clientes pela área de <a href="/admin/crm/clients" className="font-medium underline text-yellow-700 hover:text-yellow-600">Clientes</a>.
+                </p>
+              </div>
+            </div>
+          </div>
+          <p className="text-sm text-gray-500">Previsão de disponibilidade: Em breve</p>
         </div> : <Redirect to="/admin" />}
       </Route>
       
       <Route path="/admin/crm/leads/new">
         {() => user?.portalType === "admin" ? <div className="p-8">
-          <h1 className="text-2xl font-bold mb-4">Módulo de Leads em Reconstrução</h1>
-          <p className="mb-2">Estamos reconstruindo o módulo de leads com integração ao Asaas Checkout.</p>
-          <p>Esta funcionalidade estará disponível em breve.</p>
+          <h1 className="text-2xl font-bold mb-4">Novo Sistema de Leads com Asaas Checkout</h1>
+          <p className="mb-2">Estamos implementando um novo fluxo para captura e conversão de leads:</p>
+          
+          <ol className="list-decimal pl-8 mb-4 space-y-2">
+            <li>Cadastro de leads com informações básicas</li>
+            <li>Geração de links de pagamento do Asaas</li>
+            <li>O lead recebe o link e completa seus próprios dados</li>
+            <li>Após o pagamento, conversão automática para cliente</li>
+          </ol>
+          
+          <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-blue-700">
+                  Este novo sistema eliminará a necessidade de cobranças manuais e reduzirá erros de digitação de dados dos clientes.
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <p className="text-sm text-gray-500">Obrigado pela sua paciência durante esta transição.</p>
+        </div> : <Redirect to="/admin" />}
+      </Route>
+      
+      <Route path="/admin/crm/checkout">
+        {() => user?.portalType === "admin" ? <div className="p-8">
+          <h1 className="text-2xl font-bold mb-4">Links de Checkout Asaas</h1>
+          <p className="mb-4">A funcionalidade de geração de links de pagamento estará disponível em breve nesta área.</p>
+          
+          <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.121-1.121A2 2 0 0011.172 2H8.828a2 2 0 00-1.414.586L6.293 3.707A1 1 0 015.586 4H4zm6 9a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-green-700">
+                  Principais benefícios:
+                </p>
+                <ul className="mt-2 list-disc pl-5 text-sm text-green-700">
+                  <li>Geração de links de pagamento personalizados</li>
+                  <li>Cliente preenche os próprios dados no checkout</li>
+                  <li>Acompanhamento de status em tempo real</li>
+                  <li>Conversão automática para cliente após pagamento</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          
+          <p className="text-sm text-gray-500">Previsão de disponibilidade: Em breve</p>
         </div> : <Redirect to="/admin" />}
       </Route>
       
