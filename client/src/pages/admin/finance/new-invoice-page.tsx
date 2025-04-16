@@ -198,25 +198,25 @@ export default function NewInvoicePage() {
 
     try {
       // Preparar dados da cobrança completa
-      const invoiceData = {
+      const chargeData = {
         ...data,
         items,
         total: calculateChargeTotal(),
       };
 
       // Quando tivermos a API, enviaremos a requisição para o servidor
-      console.log("Enviando dados da cobrança:", invoiceData);
+      console.log("Enviando dados da cobrança:", chargeData);
 
       /*
       // Exemplo de como será a implementação da API
       await apiRequest({
-        url: "/api/finance/invoices",
+        url: "/api/finance/charges",
         method: "POST",
-        data: invoiceData,
+        data: chargeData,
       });
       
       // Invalidar cache para forçar recarregamento das cobranças
-      queryClient.invalidateQueries({ queryKey: ["/api/finance/invoices"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/finance/charges"] });
       */
 
       toast({
@@ -225,7 +225,7 @@ export default function NewInvoicePage() {
       });
 
       // Redirecionar para a lista de cobranças
-      navigate("/admin/finance/invoices");
+      navigate("/admin/finance/charges");
     } catch (error) {
       console.error("Erro ao criar cobrança:", error);
       toast({
@@ -244,7 +244,7 @@ export default function NewInvoicePage() {
             <Button 
               variant="ghost" 
               className="mr-4" 
-              onClick={() => navigate("/admin/finance/invoices")}
+              onClick={() => navigate("/admin/finance/charges")}
             >
               <ArrowLeftIcon className="mr-2 h-4 w-4" />
               Voltar
@@ -590,7 +590,7 @@ export default function NewInvoicePage() {
             <Button 
               type="button" 
               variant="outline" 
-              onClick={() => navigate("/admin/finance/invoices")}
+              onClick={() => navigate("/admin/finance/charges")}
             >
               Cancelar
             </Button>
