@@ -272,7 +272,11 @@ export default function ChargesPage() {
   };
 
   // Usar os dados da API Asaas em vez dos dados simulados
-  const asaasChargesList = mapAsaasToCharges(asaasCharges?.data || []);
+  // Mapear dados do Asaas. O serviço retorna os dados no formato { success: true, data: [] }
+  // então primeiro verificamos se temos success: true e depois acessamos o array data
+  const asaasChargesList = mapAsaasToCharges(
+    asaasCharges?.success ? asaasCharges.data : []
+  );
   
   // Filtrar cobranças com base na pesquisa
   const filteredCharges = asaasChargesList.filter(charge => 
@@ -515,6 +519,22 @@ export default function ChargesPage() {
                                 </TooltipTrigger>
                                 <TooltipContent>
                                   <p>Copiar link de pagamento</p>
+                                </TooltipContent>
+                              </Tooltip>
+                              
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-8 w-8 text-gray-500 hover:text-blue-600"
+                                    onClick={() => openPaymentLink(charge.invoiceUrl)}
+                                  >
+                                    <ExternalLinkIcon className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Abrir em nova aba</p>
                                 </TooltipContent>
                               </Tooltip>
                               
