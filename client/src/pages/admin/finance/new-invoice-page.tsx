@@ -113,7 +113,7 @@ export default function NewInvoicePage() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       clientId: "",
-      invoiceNumber: generateInvoiceNumber(),
+      invoiceNumber: generateChargeNumber(),
       issueDate: new Date(),
       dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Padrão: 30 dias após hoje
       status: "pending",
@@ -122,7 +122,7 @@ export default function NewInvoicePage() {
   });
 
   // Função para gerar número de cobrança automático
-  function generateInvoiceNumber() {
+  function generateChargeNumber() {
     const now = new Date();
     const year = now.getFullYear().toString().slice(2);
     const month = (now.getMonth() + 1).toString().padStart(2, '0');
@@ -137,7 +137,7 @@ export default function NewInvoicePage() {
   };
 
   // Função para calcular o total da cobrança
-  const calculateInvoiceTotal = () => {
+  const calculateChargeTotal = () => {
     return items.reduce((total, item) => {
       const itemSubtotal = calculateItemSubtotal(item);
       const itemTax = (item.tax || 0) / 100 * itemSubtotal;
@@ -146,7 +146,7 @@ export default function NewInvoicePage() {
   };
 
   // Função para adicionar item à cobrança
-  const addItemToInvoice = () => {
+  const addItemToCharge = () => {
     if (!currentItem.description || !currentItem.quantity || !currentItem.unitPrice) {
       toast({
         title: "Informações incompletas",
@@ -201,7 +201,7 @@ export default function NewInvoicePage() {
       const invoiceData = {
         ...data,
         items,
-        total: calculateInvoiceTotal(),
+        total: calculateChargeTotal(),
       };
 
       // Quando tivermos a API, enviaremos a requisição para o servidor
@@ -510,7 +510,7 @@ export default function NewInvoicePage() {
                   <div className="md:col-span-1">
                     <Button 
                       type="button" 
-                      onClick={addItemToInvoice}
+                      onClick={addItemToCharge}
                       className="w-full"
                     >
                       <PlusIcon className="h-4 w-4" />
@@ -580,7 +580,7 @@ export default function NewInvoicePage() {
               <div className="text-right">
                 <p className="text-sm text-gray-500">Total da Cobrança:</p>
                 <p className="text-xl font-bold">
-                  {calculateInvoiceTotal().toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  {calculateChargeTotal().toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                 </p>
               </div>
             </CardFooter>
