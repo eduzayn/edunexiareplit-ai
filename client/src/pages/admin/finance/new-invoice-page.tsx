@@ -53,7 +53,7 @@ import { ArrowLeftIcon, CalendarIcon, InvoiceIcon, PlusIcon, SaveIcon, TrashIcon
 // Schema de validação para criação de cobrança
 const formSchema = z.object({
   clientId: z.string().min(1, { message: "Selecione o cliente" }),
-  invoiceNumber: z.string().min(1, { message: "Número da cobrança é obrigatório" }),
+  chargeNumber: z.string().min(1, { message: "Número da cobrança é obrigatório" }),
   issueDate: z.date({
     required_error: "Data de emissão é obrigatória",
   }),
@@ -113,7 +113,7 @@ export default function NewInvoicePage() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       clientId: "",
-      invoiceNumber: generateChargeNumber(),
+      chargeNumber: generateChargeNumber(),
       issueDate: new Date(),
       dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Padrão: 30 dias após hoje
       status: "pending",
@@ -221,7 +221,7 @@ export default function NewInvoicePage() {
 
       toast({
         title: "Cobrança criada com sucesso",
-        description: `Cobrança ${data.invoiceNumber} foi criada com sucesso.`,
+        description: `Cobrança ${data.chargeNumber} foi criada com sucesso.`,
       });
 
       // Redirecionar para a lista de cobranças
@@ -300,7 +300,7 @@ export default function NewInvoicePage() {
 
                     <FormField
                       control={form.control}
-                      name="invoiceNumber"
+                      name="chargeNumber"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Número da Cobrança*</FormLabel>
