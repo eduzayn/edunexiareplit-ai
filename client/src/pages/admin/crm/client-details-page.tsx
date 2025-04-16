@@ -537,22 +537,23 @@ export default function ClientDetailsPage() {
                                   {formatDate(checkout.dueDate)}
                                 </td>
                                 <td className="px-4 py-4 whitespace-nowrap text-sm">
-                                  {checkout.status === 'PENDING' && (
+                                  {(checkout.status === 'pending' || checkout.status === 'PENDING') && (
                                     <Badge className="bg-yellow-400">Pendente</Badge>
                                   )}
-                                  {checkout.status === 'CONFIRMED' && (
+                                  {(checkout.status === 'confirmed' || checkout.status === 'CONFIRMED') && (
                                     <Badge className="bg-green-500">Confirmado</Badge>
                                   )}
-                                  {checkout.status === 'RECEIVED' && (
+                                  {(checkout.status === 'received' || checkout.status === 'RECEIVED') && (
                                     <Badge className="bg-green-600">Recebido</Badge>
                                   )}
-                                  {checkout.status === 'OVERDUE' && (
+                                  {(checkout.status === 'overdue' || checkout.status === 'OVERDUE') && (
                                     <Badge className="bg-red-500">Vencido</Badge>
                                   )}
-                                  {checkout.status === 'CANCELLED' && (
+                                  {(checkout.status === 'cancelled' || checkout.status === 'CANCELLED') && (
                                     <Badge variant="outline">Cancelado</Badge>
                                   )}
-                                  {!['PENDING', 'CONFIRMED', 'RECEIVED', 'OVERDUE', 'CANCELLED'].includes(checkout.status) && (
+                                  {!['pending', 'confirmed', 'received', 'overdue', 'cancelled',
+                                     'PENDING', 'CONFIRMED', 'RECEIVED', 'OVERDUE', 'CANCELLED'].includes(checkout.status) && (
                                     <Badge>{checkout.status}</Badge>
                                   )}
                                 </td>

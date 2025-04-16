@@ -42,7 +42,7 @@ export function useClientCheckouts(clientId?: number) {
   
   // Listar cobranças do cliente
   const checkoutsQuery = useQuery({
-    queryKey: ['/api/clients/checkout-links', clientId],
+    queryKey: [`/api/clients/${clientId}/checkout-links`],
     queryFn: async () => {
       if (!clientId) return [];
       const response = await apiRequest<ClientCheckoutsResponse>(`/api/clients/${clientId}/checkout-links`);
@@ -56,7 +56,7 @@ export function useClientCheckouts(clientId?: number) {
     mutationFn: (checkoutId: string | number) => 
       apiRequest(`/api/checkout/status/${checkoutId}`),
     onSuccess: (response) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/clients/checkout-links', clientId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/clients/${clientId}/checkout-links`] });
       toast({
         title: "Status atualizado",
         description: "O status da cobrança foi atualizado com sucesso.",
@@ -76,7 +76,7 @@ export function useClientCheckouts(clientId?: number) {
     mutationFn: (checkoutId: string | number) => 
       apiRequest(`/api/checkout/links/${checkoutId}/cancel`, { method: 'POST' }),
     onSuccess: (response) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/clients/checkout-links', clientId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/clients/${clientId}/checkout-links`] });
       toast({
         title: "Cobrança cancelada",
         description: response.message || "A cobrança foi cancelada com sucesso.",
