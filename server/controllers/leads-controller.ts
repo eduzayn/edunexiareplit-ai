@@ -38,7 +38,7 @@ export async function getLeads(req: Request, res: Response) {
       search, 
       page = '1', 
       limit = '20',
-      sortBy = 'createdAt',
+      sortBy = 'created_at',
       sortOrder = 'desc'
     } = req.query;
 
@@ -61,7 +61,7 @@ export async function getLeads(req: Request, res: Response) {
     const params: any[] = [];
 
     // Adicionar filtros se fornecidos
-    if (status) {
+    if (status && status !== 'all') {
       conditions += ` AND status = ?`;
       params.push(status);
     }
