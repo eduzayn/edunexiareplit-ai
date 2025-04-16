@@ -66,7 +66,7 @@ const formSchema = z.object({
 });
 
 // Schema para item da cobrança
-const invoiceItemSchema = z.object({
+const chargeItemSchema = z.object({
   id: z.string(),
   description: z.string().min(1, { message: "Descrição do item é obrigatória" }),
   quantity: z.number().min(1, { message: "Quantidade deve ser pelo menos 1" }),
@@ -76,13 +76,13 @@ const invoiceItemSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
-type InvoiceItem = z.infer<typeof invoiceItemSchema>;
+type ChargeItem = z.infer<typeof chargeItemSchema>;
 
 export default function NewInvoicePage() {
   const [, navigate] = useLocation();
   const queryClient = useQueryClient();
-  const [items, setItems] = useState<InvoiceItem[]>([]);
-  const [currentItem, setCurrentItem] = useState<Partial<InvoiceItem>>({
+  const [items, setItems] = useState<ChargeItem[]>([]);
+  const [currentItem, setCurrentItem] = useState<Partial<ChargeItem>>({
     id: crypto.randomUUID(),
     description: "",
     quantity: 1,
@@ -131,7 +131,7 @@ export default function NewInvoicePage() {
   }
 
   // Função para calcular o subtotal do item
-  const calculateItemSubtotal = (item: Partial<InvoiceItem>) => {
+  const calculateItemSubtotal = (item: Partial<ChargeItem>) => {
     if (!item.quantity || !item.unitPrice) return 0;
     return (item.quantity * item.unitPrice) - (item.discount || 0);
   };
@@ -156,7 +156,7 @@ export default function NewInvoicePage() {
       return;
     }
 
-    setItems([...items, currentItem as InvoiceItem]);
+    setItems([...items, currentItem as ChargeItem]);
     
     // Resetar o item atual
     setCurrentItem({
