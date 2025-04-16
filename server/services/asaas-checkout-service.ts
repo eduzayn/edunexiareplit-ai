@@ -192,6 +192,50 @@ class AsaasCheckoutService {
       throw error;
     }
   }
+  
+  /**
+   * Obtém as cobranças associadas a um link de checkout
+   * Isso é importante para obter os pagamentos criados via checkout
+   */
+  async getCheckoutPayments(checkoutId: string): Promise<any[]> {
+    try {
+      console.log(`Buscando cobranças associadas ao checkout ${checkoutId}`);
+      
+      // Primeiro obtemos os detalhes do checkout para verificar se há um pagamento
+      const checkoutStatus = await this.getCheckoutStatus(checkoutId);
+      
+      if (checkoutStatus.payment) {
+        console.log(`Checkout ${checkoutId} tem um pagamento associado:`, checkoutStatus.payment.id);
+        
+        // Se encontrou um pagamento associado, obtém os detalhes completos
+        try {
+          const paymentResponse = await axios.get(
+            `${this.baseUrl}/payments/${checkoutStatus.payment.id}`,
+            {
+              headers: {
+                'access-token': this.apiKey
+              }
+            }
+          );
+          
+          console.log(`Detalhes do pagamento ${checkoutStatus.payment.id} obtidos:`, 
+                     JSON.stringify(paymentResponse.data, null, 2));
+          
+          return [paymentResponse.data];
+        } catch (paymentError) {
+          console.error(`Erro ao obter detalhes do pagamento ${checkoutStatus.payment.id}:`, paymentError);
+          // Mesmo com erro, retornamos o pagamento básico que temos
+          return [checkoutStatus.payment];
+        }
+      }
+      
+      console.log(`Checkout ${checkoutId} não tem pagamentos associados`);
+      return [];
+    } catch (error) {
+      console.error(`Erro ao buscar cobranças do checkout ${checkoutId}:`, error);
+      return [];
+    }
+  }
 
   /**
    * Cancela um link de checkout ativo

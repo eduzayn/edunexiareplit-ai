@@ -18,6 +18,9 @@ router.post('/checkout/links/:leadId', checkoutController.createCheckoutLink);
 // Rota para verificar status de checkout
 router.get('/checkout/status/:checkoutId', checkoutController.checkCheckoutStatus);
 
+// Rota para obter pagamentos de um checkout
+router.get('/checkout/payments/:checkoutId', checkoutController.getCheckoutPayments);
+
 // Rota para cancelar link de checkout
 router.post('/checkout/links/:checkoutId/cancel', checkoutController.cancelCheckoutLink);
 

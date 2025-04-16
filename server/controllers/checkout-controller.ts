@@ -424,3 +424,54 @@ export async function getClientCheckoutLinks(req: Request, res: Response) {
     });
   }
 }
+
+/**
+ * Obtém os pagamentos associados a um link de checkout
+ * Consulta a API do Asaas para obter informações atualizadas de pagamentos
+ */
+export async function getCheckoutPayments(req: Request, res: Response) {
+  try {
+    const { checkoutId } = req.params;
+    
+    if (!checkoutId) {
+      return res.status(400).json({ 
+        error: 'ID do checkout inválido'
+      });
+    }
+    
+    // Buscar detalhes do checkout no banco de dados
+    const checkout = await db.execute(sql.raw(
+      `SELECT * FROM checkout_links WHERE id = ?`,
+      [checkoutId]
+    ));
+    
+    if (!checkout.rows.length) {
+      return res.status(404).json({ 
+        error: 'Checkout não encontrado'
+      });
+    }
+    
+    const checkoutData = checkout.rows[0];
+    
+    if (!checkoutData.asaas_checkout_id) {
+      return res.status(404).json({
+        error: 'Checkout sem ID do Asaas'
+      });
+    }
+    
+    // Buscar pagamentos associados ao checkout no Asaas
+    const payments = await asaasCheckoutService.getCheckoutPayments(checkoutData.asaas_checkout_id);
+    
+    return res.json({
+      success: true,
+      checkout: checkoutData,
+      payments
+    });
+  } catch (error) {
+    console.error('Erro ao buscar pagamentos do checkout:', error);
+    return res.status(500).json({
+      error: 'Erro ao buscar pagamentos do checkout',
+      details: error instanceof Error ? error.message : 'Erro desconhecido'
+    });
+  }
+}
