@@ -130,6 +130,9 @@ export default function ChargesPage() {
   const { data: asaasCharges, isLoading, error } = useQuery({
     queryKey: ["/api/debug/asaas-charges"],
     enabled: true,
+    retry: 3, // Tentar 3 vezes em caso de erro
+    retryDelay: 1000, // Esperar 1 segundo entre as tentativas
+    refetchOnWindowFocus: false // Evitar refetch automático ao focar na janela
   });
 
   // Mapeamento dos dados do Asaas para o formato da UI

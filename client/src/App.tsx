@@ -141,7 +141,7 @@ function Router() {
       <Route path="/contato" component={ContatoPage} />
       <Route path="/blog" component={BlogPage} />
       <Route path="/privacidade" component={PrivacidadePage} />
-      <Route path="/charges" component={SimpleChargesPage} />
+      <Route path="/public-view/charges" component={SimpleChargesPage} />
       <Route path="/create-charge" component={PublicCreateChargePage} />
       
       <ProtectedRoute path="/student/dashboard" portalType="student" />
