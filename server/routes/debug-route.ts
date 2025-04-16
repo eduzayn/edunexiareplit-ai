@@ -5,6 +5,7 @@
 import express from 'express';
 import axios from 'axios';
 import asaasChargesService from '../services/asaas-charges-service';
+import asaasCustomersService from '../services/asaas-customers-service';
 
 const router = express.Router();
 
@@ -63,6 +64,65 @@ router.get('/asaas-test', async (req, res) => {
 });
 
 // Rota para testar o serviço de cobrança diretamente
+// Rota para buscar detalhes de um cliente específico pelo ID
+router.get('/asaas-customer/:id', async (req, res) => {
+  try {
+    const customerId = req.params.id;
+    console.log(`Buscando detalhes do cliente ${customerId} no Asaas:`);
+    
+    try {
+      // Usar o serviço para buscar o cliente
+      const customer = await asaasCustomersService.getCustomerById(customerId);
+      
+      res.json({
+        success: true,
+        message: 'Detalhes do cliente obtidos com sucesso',
+        data: customer
+      });
+    } catch (apiError) {
+      console.error(`Erro na API do Asaas ao buscar cliente ${customerId}:`, apiError.message);
+      
+      // Se a API estiver com problemas, retornar um cliente de exemplo para desenvolvimento
+      const demoCustomer = {
+        id: customerId,
+        name: 'Cliente de Demonstração',
+        email: 'cliente.demo@example.com',
+        cpfCnpj: '12345678901',
+        phone: '31999999999',
+        mobilePhone: '31999999999',
+        address: 'Rua Exemplo',
+        addressNumber: '123',
+        complement: 'Apto 101',
+        province: 'Centro',
+        postalCode: '30000000',
+        personType: 'FISICA',
+        deleted: false,
+        additionalEmails: '',
+        externalReference: '',
+        city: 10000,
+        state: 'MG',
+        country: 'Brasil',
+        observations: 'Cliente de demonstração'
+      };
+      
+      res.json({
+        success: true,
+        message: 'Cliente de demonstração. A API do Asaas retornou erro: ' + apiError.message,
+        data: demoCustomer
+      });
+    }
+  } catch (error) {
+    console.error('Erro ao processar a rota de detalhes do cliente:', error);
+    
+    // Erro genérico
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno ao processar a requisição',
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+});
+
 router.get('/asaas-charges', async (req, res) => {
   try {
     console.log('Testando serviço de cobranças do Asaas:');
@@ -71,6 +131,28 @@ router.get('/asaas-charges', async (req, res) => {
     console.log('Chamando método getAllCharges do serviço');
     try {
       const charges = await asaasChargesService.getAllCharges();
+      
+      // Para cada cobrança, vamos enriquecer com dados adicionais do cliente
+      for (const charge of charges) {
+        try {
+          // Tentativa de buscar mais detalhes do cliente
+          if (charge.customer) {
+            const customerDetails = await asaasCustomersService.getCustomerById(charge.customer);
+            if (customerDetails) {
+              // Adicionar CPF/CNPJ e outros detalhes relevantes
+              charge.customerDetails = {
+                cpfCnpj: customerDetails.cpfCnpj,
+                phone: customerDetails.phone || customerDetails.mobilePhone,
+                address: `${customerDetails.address}, ${customerDetails.addressNumber}`,
+                city: customerDetails.city,
+                state: customerDetails.state
+              };
+            }
+          }
+        } catch (customerError) {
+          console.log(`Não foi possível obter detalhes extras do cliente ${charge.customer}:`, customerError.message);
+        }
+      }
       
       res.json({
         success: true,
@@ -201,37 +283,16 @@ router.get('/asaas-customers', async (req, res) => {
   try {
     console.log('Buscando clientes do Asaas:');
     
-    const ASAAS_API_URL = process.env.ASAAS_API_URL || 'https://api.asaas.com/v3';
-    const ASAAS_API_KEY = process.env.ASAAS_ZAYN_KEY;
-    
-    if (!ASAAS_API_KEY) {
-      return res.status(500).json({
-        success: false,
-        message: 'Chave da API Asaas não está configurada'
-      });
-    }
-    
     try {
-      // Criar cliente Axios para o Asaas
-      const asaasApi = axios.create({
-        baseURL: ASAAS_API_URL,
-        headers: {
-          'access_token': ASAAS_API_KEY,
-          'Content-Type': 'application/json'
-        }
-      });
+      // Usar o serviço para buscar clientes
+      const customers = await asaasCustomersService.getAllCustomers();
       
-      // Buscar clientes
-      const response = await asaasApi.get('/customers', {
-        params: { limit: 50 }
-      });
-      
-      console.log(`Encontrados ${response.data.totalCount} clientes no Asaas`);
+      console.log(`Encontrados ${customers.length} clientes no Asaas`);
       
       res.json({
         success: true,
         message: 'Clientes obtidos com sucesso',
-        data: response.data.data
+        data: customers
       });
     } catch (apiError) {
       console.error('Erro na API do Asaas, usando dados de demonstração:', apiError.message);
