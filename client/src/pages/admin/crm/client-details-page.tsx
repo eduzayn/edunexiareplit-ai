@@ -31,7 +31,7 @@ import {
   TrashIcon,
 } from "@/components/ui/icons";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useClient, useContacts } from "@/hooks/use-crm";
+import { useClients, useContacts } from "@/hooks/use-crm";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -41,11 +41,12 @@ export default function ClientDetailsPage() {
   const clientId = parseInt(id);
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const { useClient } = useClients();
   const { data, isLoading, isError, error } = useClient(clientId);
   const { contacts } = useContacts(clientId);
   
   // Hook para excluir cliente
-  const { deleteClient, isPendingDelete } = useClient(clientId);
+  const { deleteClient, isPendingDelete } = useClients();
 
   if (isError) {
     return (

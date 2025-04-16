@@ -39,6 +39,7 @@ import LeadsPage from "@/pages/admin/crm/leads-page";
 import NewLeadPage from "@/pages/admin/crm/new-lead-page";
 import ClientsPage from "@/pages/admin/crm/clients-page";
 import NewClientPage from "@/pages/admin/crm/new-client-page";
+import ClientDetailsPage from "@/pages/admin/crm/client-details-page";
 import ContactsPage from "@/pages/admin/crm/contacts-page";
 import NewContactPage from "@/pages/admin/crm/new-contact-page";
 import ProductsPage from "@/pages/admin/finance/products-page";
@@ -282,6 +283,10 @@ function Router() {
       
       <Route path="/admin/crm/clients/new">
         {() => user?.portalType === "admin" ? <NewClientPage /> : <Redirect to="/admin" />}
+      </Route>
+      
+      <Route path="/admin/crm/clients/:id">
+        {() => user?.portalType === "admin" ? <ClientDetailsPage /> : <Redirect to="/admin" />}
       </Route>
       
       <Route path="/admin/crm/contacts">
