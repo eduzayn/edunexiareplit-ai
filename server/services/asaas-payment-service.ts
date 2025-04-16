@@ -128,7 +128,7 @@ export const AsaasPaymentService = {
   ): Promise<AsaasPaymentResponse> {
     try {
       // Preparar descrição da cobrança com itens
-      let description = `Fatura #${invoice.invoiceNumber}`;
+      let description = `Cobrança #${invoice.invoiceNumber}`;
       if (invoiceItems.length > 0) {
         description += ': ';
         description += invoiceItems.map(item => `${item.description} (${item.quantity}x)`).join(', ');
@@ -146,7 +146,7 @@ export const AsaasPaymentService = {
         value: invoice.totalAmount,
         dueDate: formatDate(invoice.dueDate),
         description: description,
-        externalReference: `invoice_${invoice.id}`
+        externalReference: `charge_${invoice.id}`
       };
       
       // Para cobranças parceladas (cartão de crédito)
