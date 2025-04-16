@@ -303,7 +303,7 @@ export async function checkAndConvertPendingLeads(req: Request, res: Response) {
       SELECT l.*, c.id as checkout_id, c.asaas_checkout_id, c.status as checkout_status, c.client_id
       FROM leads l
       JOIN checkout_links c ON l.id = c.lead_id
-      WHERE l.status != 'converted' 
+      WHERE l.status != 'won' 
       AND c.status != 'canceled'
       AND c.client_id IS NULL
       ORDER BY l.id
