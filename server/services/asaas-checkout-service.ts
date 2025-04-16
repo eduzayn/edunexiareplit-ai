@@ -79,35 +79,30 @@ class AsaasCheckoutService {
     try {
       console.log('Criando link de checkout no Asaas:', JSON.stringify(data, null, 2));
       
-      // Formata os dados para a API do Asaas conforme documentação v3
+      // Formata os dados para a API do Asaas exatamente conforme a documentação do Checkout
       const payload = {
+        name: `Pagamento - ${data.description || 'Matrícula'}`,
         customer: {
           name: data.name,
           email: data.email,
           phone: data.phone || undefined
         },
-        payment: {
-          value: data.value,
-          dueDate: data.dueDate,
-          description: data.description || 'Pagamento via Checkout',
-          billingType: 'UNDEFINED', // Cliente escolhe a forma de pagamento no checkout
-          discount: {
-            value: 0,
-            dueDateLimitDays: 0
-          },
-          interest: {
-            value: 0
-          },
-          fine: {
-            value: 0
-          }
-        },
-        dueDateLimitDays: 5, // Dias úteis para vencimento
-        maxInstallmentCount: 1, // Parcelas
-        chargingType: 'DETACHED', // Para checkout, deve ser DETACHED conforme a documentação
-        expirationTime: data.expirationTime || 60, // Em minutos
-        successUrl: data.successUrl || undefined,
-        notificationUrl: data.notificationUrl || undefined
+        value: data.value,
+        billingType: "UNDEFINED", // Permite que o cliente escolha
+        chargeType: "DETACHED", // Conforme documentação para checkout
+        dueDateLimitDays: 5,
+        dueDate: data.dueDate,
+        description: data.description || 'Pagamento via Checkout',
+        externalReference: `lead_${data.leadId || 'novo'}`,
+        maxInstallmentCount: 1,
+        showPaymentTypes: [
+          "BOLETO", 
+          "CREDIT_CARD", 
+          "PIX"
+        ],
+        expirationTime: data.expirationTime || 60,
+        callbackUrl: data.notificationUrl || undefined,
+        returnUrl: data.successUrl || undefined
       };
 
       const response = await axios.post(
