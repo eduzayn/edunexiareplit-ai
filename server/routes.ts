@@ -45,6 +45,8 @@ import contractsRoutes from "./routes/contracts-routes";
 import leadsRoutes from "./routes/leads-routes";
 import checkoutRoutes from "./routes/checkout-routes";
 import { asaasCheckoutService } from "./services/asaas-checkout-service";
+import { db } from "./db";
+import { sql } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
@@ -2859,13 +2861,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Buscar checkouts associados ao cliente
-      const db = require("./db").db;
-      const sql = require("drizzle-orm").sql;
-      
-      const checkouts = await db.execute(sql.raw(
-        `SELECT * FROM checkout_links WHERE client_id = ?`,
-        [clientId]
-      ));
+      const checkouts = await db.execute(sql`
+        SELECT * FROM checkout_links WHERE client_id = ${clientId}
+      `);
       
       if (!checkouts.rows.length) {
         return res.json({
@@ -2877,8 +2875,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Para cada checkout, buscar pagamentos
-      let allPayments = [];
-      const checkoutsWithPayments = [];
+      let allPayments: any[] = [];
+      const checkoutsWithPayments: any[] = [];
       
       for (const checkout of checkouts.rows) {
         if (checkout.asaas_checkout_id) {
