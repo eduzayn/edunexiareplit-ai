@@ -559,13 +559,23 @@ export default function ClientDetailsPage() {
                                 </td>
                                 <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                                   <div className="flex space-x-2">
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm"
-                                      onClick={() => window.open(checkout.url, '_blank')}
-                                    >
-                                      Visualizar
-                                    </Button>
+                                    {(checkout.status === 'pending' || checkout.status === 'PENDING') ? (
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm"
+                                        onClick={() => window.open(checkout.url, '_blank')}
+                                      >
+                                        Visualizar Link
+                                      </Button>
+                                    ) : (
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm"
+                                        onClick={() => checkStatus(checkout.id)}
+                                      >
+                                        Ver Pagamento
+                                      </Button>
+                                    )}
                                     <Button 
                                       variant="outline" 
                                       size="sm"
@@ -595,9 +605,9 @@ export default function ClientDetailsPage() {
                       </div>
                     ) : (
                       <div className="bg-gray-50 rounded-lg p-6 text-center">
-                        <p className="text-gray-500">
+                        <span className="text-gray-500">
                           Nenhuma cobrança encontrada para este cliente.
-                        </p>
+                        </span>
                       </div>
                     )}
                   </div>
@@ -620,9 +630,9 @@ export default function ClientDetailsPage() {
                     </div>
                   ) : (
                     <div className="py-12 flex items-center justify-center">
-                      <p className="text-gray-500">
+                      <span className="text-gray-500">
                         Nenhuma anotação registrada para este cliente.
-                      </p>
+                      </span>
                     </div>
                   )}
                 </CardContent>
