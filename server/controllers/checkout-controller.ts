@@ -172,10 +172,11 @@ export async function checkCheckoutStatus(req: Request, res: Response) {
     const { checkoutId } = req.params;
 
     // Verifica se o link de checkout existe no banco
-    const checkout = await db.execute(sql.raw(
-      `SELECT * FROM checkout_links WHERE id = ? OR asaas_checkout_id = ?`,
-      [checkoutId, checkoutId]
-    ));
+    const checkout = await db.execute(sql`
+      SELECT * FROM checkout_links 
+      WHERE id = ${checkoutId} 
+      OR asaas_checkout_id = ${checkoutId}
+    `);
 
     if (!checkout.rows.length) {
       return res.status(404).json({ error: 'Link de checkout não encontrado' });
@@ -196,30 +197,28 @@ export async function checkCheckoutStatus(req: Request, res: Response) {
           asaasCheckoutStatus.status.toLowerCase() === 'confirmed' || 
           asaasCheckoutStatus.status.toLowerCase() === 'paid';
         
-        await db.execute(sql.raw(`
+        await db.execute(sql`
           UPDATE checkout_links
           SET 
-            status = ?, 
-            is_used = ?,
+            status = ${asaasCheckoutStatus.status}, 
+            is_used = ${isConfirmedOrPaid ? true : checkoutData.is_used || false},
             updated_at = NOW()
-          WHERE id = ?
-        `, [asaasCheckoutStatus.status, isConfirmedOrPaid ? true : checkoutData.is_used || false, checkoutData.id]));
+          WHERE id = ${checkoutData.id}
+        `);
 
         // Se foi pago, criar o cliente e converter o lead
         if (asaasCheckoutStatus.status === 'confirmed' || asaasCheckoutStatus.status === 'paid') {
-          const lead = await db.execute(sql.raw(
-            `SELECT * FROM leads WHERE id = ?`,
-            [checkoutData.lead_id]
-          ));
+          const lead = await db.execute(sql`
+            SELECT * FROM leads WHERE id = ${checkoutData.lead_id}
+          `);
 
           if (lead.rows.length) {
             const leadData = lead.rows[0];
             
             // Verifica se o cliente já existe
-            const existingClient = await db.execute(sql.raw(
-              `SELECT * FROM clients WHERE email = ?`,
-              [leadData.email]
-            ));
+            const existingClient = await db.execute(sql`
+              SELECT * FROM clients WHERE email = ${leadData.email}
+            `);
 
             if (!existingClient.rows.length) {
               // Cria cliente no Asaas (se ainda não existir)
@@ -312,10 +311,11 @@ export async function cancelCheckoutLink(req: Request, res: Response) {
     console.log(`Iniciando cancelamento do link de checkout ${checkoutId}...`);
 
     // Verifica se o link de checkout existe no banco
-    const checkout = await db.execute(sql.raw(
-      `SELECT * FROM checkout_links WHERE id = ? OR asaas_checkout_id = ?`,
-      [checkoutId, checkoutId]
-    ));
+    const checkout = await db.execute(sql`
+      SELECT * FROM checkout_links 
+      WHERE id = ${checkoutId} 
+      OR asaas_checkout_id = ${checkoutId}
+    `);
 
     if (!checkout.rows.length) {
       return res.status(404).json({ error: 'Link de checkout não encontrado' });
@@ -336,11 +336,11 @@ export async function cancelCheckoutLink(req: Request, res: Response) {
       await asaasCheckoutService.cancelCheckoutLink(checkoutData.asaas_checkout_id);
       
       // Atualiza o status no banco
-      await db.execute(sql.raw(`
+      await db.execute(sql`
         UPDATE checkout_links
         SET status = 'canceled', updated_at = NOW()
-        WHERE id = ?
-      `, [checkoutData.id]));
+        WHERE id = ${checkoutData.id}
+      `);
 
       return res.json({
         success: true,
