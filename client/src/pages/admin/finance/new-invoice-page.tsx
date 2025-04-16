@@ -50,10 +50,10 @@ import {
 } from "@/components/ui/table";
 import { ArrowLeftIcon, CalendarIcon, InvoiceIcon, PlusIcon, SaveIcon, TrashIcon } from "@/components/ui/icons";
 
-// Schema de validação para criação de fatura
+// Schema de validação para criação de cobrança
 const formSchema = z.object({
   clientId: z.string().min(1, { message: "Selecione o cliente" }),
-  invoiceNumber: z.string().min(1, { message: "Número da fatura é obrigatório" }),
+  invoiceNumber: z.string().min(1, { message: "Número da cobrança é obrigatório" }),
   issueDate: z.date({
     required_error: "Data de emissão é obrigatória",
   }),
@@ -250,9 +250,9 @@ export default function NewInvoicePage() {
               Voltar
             </Button>
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Nova Fatura</h1>
+              <h1 className="text-3xl font-bold tracking-tight">Nova Cobrança</h1>
               <p className="text-gray-500">
-                Crie uma nova fatura para cobrança
+                Crie uma nova cobrança para pagamento
               </p>
             </div>
           </div>
@@ -263,7 +263,7 @@ export default function NewInvoicePage() {
             <CardHeader>
               <CardTitle className="flex items-center">
                 <InvoiceIcon className="mr-2 h-5 w-5" />
-                Informações da Fatura
+                Informações da Cobrança
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -303,7 +303,7 @@ export default function NewInvoicePage() {
                       name="invoiceNumber"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Número da Fatura*</FormLabel>
+                          <FormLabel>Número da Cobrança*</FormLabel>
                           <FormControl>
                             <Input {...field} readOnly />
                           </FormControl>
@@ -440,7 +440,7 @@ export default function NewInvoicePage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Itens da Fatura</CardTitle>
+              <CardTitle>Itens da Cobrança</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
