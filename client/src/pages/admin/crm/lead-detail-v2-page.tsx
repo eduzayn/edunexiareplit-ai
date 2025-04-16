@@ -4,7 +4,7 @@ import { useLeadsV2 } from '@/hooks/use-leads-v2';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Tab, TabsContent, TabsList, TabsTrigger, Tabs } from '@/components/ui/tabs';
+import { TabsContent, TabsList, TabsTrigger, Tabs } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,10 +14,12 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { useToast } from "@/hooks/use-toast";
 import { Loader2, ArrowLeft, Calendar, Check, Clock, ClipboardList, Link, ExternalLink, AlertCircle, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CreateLeadActivityData, CheckoutLinkData } from '@/lib/api/leads-api';
+import { CreateLeadActivityData } from '@/lib/api/leads-api';
+import { CheckoutLinkData } from '@/lib/api/checkout-api';
 
 // Schema de validação para formulário de atividade
 const activityFormSchema = z.object({
@@ -76,6 +78,7 @@ export default function LeadDetailV2Page() {
   const [, setLocation] = useLocation();
   const [activityDialogOpen, setActivityDialogOpen] = useState(false);
   const [checkoutDialogOpen, setCheckoutDialogOpen] = useState(false);
+  const { toast } = useToast();
   
   const { 
     useLead, 
@@ -568,8 +571,20 @@ export default function LeadDetailV2Page() {
                               Link gerado em {format(new Date(checkout.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                             </p>
                           </div>
-                          <Badge className={checkoutStatusFormat[checkout.status]?.color || 'bg-gray-100'}>
-                            {checkoutStatusFormat[checkout.status]?.label || checkout.status}
+                          <Badge 
+                            className={
+                              checkout.status && 
+                              checkoutStatusFormat[checkout.status as keyof typeof checkoutStatusFormat] 
+                                ? checkoutStatusFormat[checkout.status as keyof typeof checkoutStatusFormat].color 
+                                : 'bg-gray-100'
+                            }
+                          >
+                            {
+                              checkout.status && 
+                              checkoutStatusFormat[checkout.status as keyof typeof checkoutStatusFormat] 
+                                ? checkoutStatusFormat[checkout.status as keyof typeof checkoutStatusFormat].label 
+                                : checkout.status
+                            }
                           </Badge>
                         </div>
                         
