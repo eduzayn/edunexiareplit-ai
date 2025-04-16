@@ -49,7 +49,7 @@ import NewContactPage from "@/pages/admin/crm/new-contact-page";
 import ProductsPage from "@/pages/admin/finance/products-page";
 import NewProductPage from "@/pages/admin/finance/new-product-page";
 import ChargesPage from "@/pages/admin/finance/charges-page";
-import NewChargePage from "@/pages/admin/finance/new-charge-page";
+import SimpleNewChargePage from "@/pages/admin/finance/simple-new-charge-page";
 import PaymentsPage from "@/pages/admin/finance/payments-page";
 import NewPaymentPage from "@/pages/admin/finance/new-payment-page";
 import ContractsPage from "@/pages/admin/contracts";
@@ -428,7 +428,7 @@ function Router() {
       </Route>
       
       <Route path="/admin/finance/charges/new">
-        {() => user?.portalType === "admin" ? <NewChargePage /> : <Redirect to="/admin" />}
+        {() => user?.portalType === "admin" ? <SimpleNewChargePage /> : <Redirect to="/admin" />}
       </Route>
       
       <Route path="/admin/finance/payments">
