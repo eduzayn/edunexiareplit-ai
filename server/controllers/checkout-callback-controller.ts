@@ -409,10 +409,10 @@ export async function checkAndConvertPendingLeads(req: Request, res: Response) {
             isNewClient = false;
           }
           
-          // Atualizar lead para "converted"
+          // Atualizar lead para "won" (indicando conversão bem-sucedida)
           await db.execute(sql`
             UPDATE leads
-            SET status = ${'converted'}, converted_to_client_id = ${clientId}, updated_at = NOW()
+            SET status = ${'won'}, converted_to_client_id = ${clientId}, updated_at = NOW()
             WHERE id = ${leadData.id}
           `);
           
