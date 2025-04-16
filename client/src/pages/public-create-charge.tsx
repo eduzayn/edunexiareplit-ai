@@ -37,7 +37,7 @@ import {
   AlertCircleIcon,
   CheckIcon, 
   InfoIcon,
-  LoaderIcon,
+  Loader2Icon,
   SearchIcon,
 } from "@/components/ui/icons";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -145,7 +145,7 @@ export default function PublicCreateChargePage() {
   });
 
   // Filtrar clientes baseado na busca
-  const customers: AsaasCustomer[] = customersData?.data || [];
+  const customers: AsaasCustomer[] = customersData && 'data' in customersData ? customersData.data : [];
   const filteredCustomers = customers.filter(
     (customer) =>
       customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -219,7 +219,7 @@ export default function PublicCreateChargePage() {
 
             {isLoadingCustomers ? (
               <div className="flex items-center justify-center p-4">
-                <LoaderIcon className="h-6 w-6 animate-spin text-gray-500" />
+                <Loader2Icon className="h-6 w-6 animate-spin text-gray-500" />
                 <span className="ml-2 text-gray-500">Carregando clientes...</span>
               </div>
             ) : (
