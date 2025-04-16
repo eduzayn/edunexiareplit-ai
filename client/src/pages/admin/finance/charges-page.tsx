@@ -94,6 +94,14 @@ interface AsaasCharge {
   invoiceNumber: string | null;
   externalReference: string | null;
   deleted: boolean;
+  customerDetails?: {
+    name: string;
+    cpfCnpj: string;
+    phone: string;
+    address: string;
+    city: string | number;
+    state: string;
+  };
 }
 
 // Tipo para as cobranças exibidas na UI
@@ -376,6 +384,58 @@ export default function ChargesPage() {
     return sortDirection === 'asc' ? <ArrowUpIcon className="h-4 w-4" /> : <ArrowDownIcon className="h-4 w-4" />;
   };
 
+  // Verifica se há algum filtro ativo
+  const isFilterActive = (): boolean => {
+    // Verificar filtros de data
+    if (dueDateFilterStart || dueDateFilterEnd || 
+        receiveDateFilterStart || receiveDateFilterEnd || 
+        createDateFilterStart || createDateFilterEnd) {
+      return true;
+    }
+    
+    // Verificar filtros de tipo de cobrança
+    if (chargeTypeFilters.avulsas || chargeTypeFilters.assinaturas || chargeTypeFilters.parceladas) {
+      return true;
+    }
+    
+    // Verificar filtros de status
+    if (chargeStatusFilters.aguardandoPagamento || chargeStatusFilters.vencida || 
+        chargeStatusFilters.recebida || chargeStatusFilters.confirmada || 
+        chargeStatusFilters.estornadaCompleta || chargeStatusFilters.estornadoParcial || 
+        chargeStatusFilters.pagamentoAnalise || chargeStatusFilters.chargeback) {
+      return true;
+    }
+    
+    return false;
+  };
+  
+  // Conta quantos filtros estão ativos para exibir no badge
+  const countActiveFilters = (): number => {
+    let count = 0;
+    
+    // Contar filtros de data (cada par conta como 1)
+    if (dueDateFilterStart || dueDateFilterEnd) count++;
+    if (receiveDateFilterStart || receiveDateFilterEnd) count++;
+    if (createDateFilterStart || createDateFilterEnd) count++;
+    
+    // Contar filtros de tipo de cobrança
+    if (chargeTypeFilters.avulsas) count++;
+    if (chargeTypeFilters.assinaturas) count++;
+    if (chargeTypeFilters.parceladas) count++;
+    
+    // Contar filtros de status
+    if (chargeStatusFilters.aguardandoPagamento) count++;
+    if (chargeStatusFilters.vencida) count++;
+    if (chargeStatusFilters.recebida) count++;
+    if (chargeStatusFilters.confirmada) count++;
+    if (chargeStatusFilters.estornadaCompleta) count++;
+    if (chargeStatusFilters.estornadoParcial) count++;
+    if (chargeStatusFilters.pagamentoAnalise) count++;
+    if (chargeStatusFilters.chargeback) count++;
+    
+    return count;
+  };
+
   // Usar os dados da API Asaas em vez dos dados simulados
   // Mapear dados do Asaas
   const asaasChargesList = mapAsaasToCharges(asaasCharges || []);
@@ -589,9 +649,17 @@ export default function ChargesPage() {
             <div className="flex space-x-2">
               <Dialog open={isFilterDialogOpen} onOpenChange={setIsFilterDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" className="flex items-center text-gray-600">
+                  <Button 
+                    variant="outline" 
+                    className={`flex items-center ${isFilterActive() ? "text-blue-600 border-blue-600" : "text-gray-600"}`}
+                  >
                     <FilterIcon className="mr-2 h-4 w-4" />
                     Filtros
+                    {isFilterActive() && (
+                      <span className="ml-1 bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                        {countActiveFilters()}
+                      </span>
+                    )}
                     <ChevronDownIcon className="ml-2 h-4 w-4" />
                   </Button>
                 </DialogTrigger>
