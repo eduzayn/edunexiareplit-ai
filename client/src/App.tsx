@@ -48,8 +48,8 @@ import ContactsPage from "@/pages/admin/crm/contacts-page";
 import NewContactPage from "@/pages/admin/crm/new-contact-page";
 import ProductsPage from "@/pages/admin/finance/products-page";
 import NewProductPage from "@/pages/admin/finance/new-product-page";
-import InvoicesPage from "@/pages/admin/finance/invoices-page";
-import NewInvoicePage from "@/pages/admin/finance/new-invoice-page";
+import ChargesPage from "@/pages/admin/finance/charges-page";
+import NewChargePage from "@/pages/admin/finance/new-charge-page";
 import PaymentsPage from "@/pages/admin/finance/payments-page";
 import NewPaymentPage from "@/pages/admin/finance/new-payment-page";
 import ContractsPage from "@/pages/admin/contracts";
@@ -414,12 +414,12 @@ function Router() {
         {() => user?.portalType === "admin" ? <NewProductPage /> : <Redirect to="/admin" />}
       </Route>
       
-      <Route path="/admin/finance/invoices">
-        {() => user?.portalType === "admin" ? <InvoicesPage /> : <Redirect to="/admin" />}
+      <Route path="/admin/finance/charges">
+        {() => user?.portalType === "admin" ? <ChargesPage /> : <Redirect to="/admin" />}
       </Route>
       
-      <Route path="/admin/finance/invoices/new">
-        {() => user?.portalType === "admin" ? <NewInvoicePage /> : <Redirect to="/admin" />}
+      <Route path="/admin/finance/charges/new">
+        {() => user?.portalType === "admin" ? <NewChargePage /> : <Redirect to="/admin" />}
       </Route>
       
       <Route path="/admin/finance/payments">
