@@ -473,7 +473,8 @@ export default function ChargesPage() {
           phone: customerDetails?.phone || '',
           address: customerDetails?.address || '',
           city: customerDetails?.city || '',
-          state: customerDetails?.state || ''
+          state: customerDetails?.state || '',
+          email: 'cliente@exemplo.com' // Simulação para teste, em produção seria obtido da API Asaas
         }
       };
     });
