@@ -220,17 +220,17 @@ export default function NewInvoicePage() {
       */
 
       toast({
-        title: "Fatura criada com sucesso",
-        description: `Fatura ${data.invoiceNumber} foi criada com sucesso.`,
+        title: "Cobrança criada com sucesso",
+        description: `Cobrança ${data.invoiceNumber} foi criada com sucesso.`,
       });
 
-      // Redirecionar para a lista de faturas
+      // Redirecionar para a lista de cobranças
       navigate("/admin/finance/invoices");
     } catch (error) {
-      console.error("Erro ao criar fatura:", error);
+      console.error("Erro ao criar cobrança:", error);
       toast({
-        title: "Erro ao criar fatura",
-        description: "Ocorreu um erro ao criar a fatura. Tente novamente.",
+        title: "Erro ao criar cobrança",
+        description: "Ocorreu um erro ao criar a cobrança. Tente novamente.",
         variant: "destructive",
       });
     }
@@ -423,7 +423,7 @@ export default function NewInvoicePage() {
                           <FormLabel>Observações</FormLabel>
                           <FormControl>
                             <Textarea 
-                              placeholder="Informações adicionais sobre a fatura"
+                              placeholder="Informações adicionais sobre a cobrança"
                               className="min-h-[80px]" 
                               {...field} 
                             />
@@ -568,7 +568,7 @@ export default function NewInvoicePage() {
                   </Table>
                 ) : (
                   <div className="text-center py-8 text-gray-500">
-                    Nenhum item adicionado à fatura
+                    Nenhum item adicionado à cobrança
                   </div>
                 )}
               </div>
@@ -578,7 +578,7 @@ export default function NewInvoicePage() {
                 <p className="text-sm text-gray-500">Total de itens: {items.length}</p>
               </div>
               <div className="text-right">
-                <p className="text-sm text-gray-500">Total da Fatura:</p>
+                <p className="text-sm text-gray-500">Total da Cobrança:</p>
                 <p className="text-xl font-bold">
                   {calculateInvoiceTotal().toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                 </p>
@@ -600,7 +600,7 @@ export default function NewInvoicePage() {
               disabled={items.length === 0}
             >
               <SaveIcon className="mr-2 h-4 w-4" />
-              Salvar Fatura
+              Salvar Cobrança
             </Button>
           </div>
         </div>
