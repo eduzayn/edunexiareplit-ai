@@ -16,6 +16,7 @@ interface CheckoutLinkData {
   successUrl?: string;
   notificationUrl?: string;
   additionalInfo?: string;
+  leadId?: number; // ID do lead para referência
 }
 
 // Interface para resposta de criação de checkout
@@ -79,7 +80,7 @@ class AsaasCheckoutService {
     try {
       console.log('Criando link de checkout no Asaas:', JSON.stringify(data, null, 2));
       
-      // Formata os dados para a API do Asaas exatamente conforme a documentação do Checkout
+      // Payload exato que funcionou com a API do Asaas
       const payload = {
         name: `Pagamento - ${data.description || 'Matrícula'}`,
         customer: {
@@ -87,22 +88,22 @@ class AsaasCheckoutService {
           email: data.email,
           phone: data.phone || undefined
         },
-        value: data.value,
         billingType: "UNDEFINED", // Permite que o cliente escolha
-        chargeType: "DETACHED", // Conforme documentação para checkout
+        chargeType: "DETACHED", // Obrigatório ser DETACHED para checkout
+        value: data.value,
         dueDateLimitDays: 5,
-        dueDate: data.dueDate,
-        description: data.description || 'Pagamento via Checkout',
-        externalReference: `lead_${data.leadId || 'novo'}`,
         maxInstallmentCount: 1,
         showPaymentTypes: [
           "BOLETO", 
           "CREDIT_CARD", 
           "PIX"
         ],
+        description: data.description || 'Pagamento via Checkout',
+        externalReference: data.leadId ? `lead_${data.leadId}` : undefined,
         expirationTime: data.expirationTime || 60,
-        callbackUrl: data.notificationUrl || undefined,
-        returnUrl: data.successUrl || undefined
+        // URLs de callback
+        notificationUrl: data.notificationUrl || undefined,
+        successUrl: data.successUrl || undefined
       };
 
       const response = await axios.post(

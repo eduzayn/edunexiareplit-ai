@@ -60,7 +60,8 @@ export async function createCheckoutLink(req: Request, res: Response) {
         expirationTime: validatedData.expirationTime, // Tempo de expiração do link em minutos
         successUrl: `${baseUrl}/api/v2/checkout/success`,
         notificationUrl: `${baseUrl}/api/v2/checkout/notification`,
-        additionalInfo: validatedData.additionalInfo || ''
+        additionalInfo: validatedData.additionalInfo || '',
+        leadId: parseInt(leadId, 10) // Inclui o ID do lead para referência
       });
 
       // Salva o link de checkout no banco
