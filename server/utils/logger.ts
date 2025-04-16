@@ -1,24 +1,28 @@
 /**
- * Utilitário para logging da aplicação
+ * Utilitário de logging simples para o sistema
  */
 
-/**
- * Logger simplificado com níveis de log
- */
-export const logger = {
+// Interface para as funções de log
+export interface Logger {
+  info: (message: string) => void;
+  error: (message: string) => void;
+  warn: (message: string) => void;
+  debug: (message: string) => void;
+}
+
+// Implementação simples do logger
+export const logger: Logger = {
   info: (message: string) => {
-    console.log(`INFO: ${message}`);
+    console.log(`[INFO] ${message}`);
   },
   error: (message: string) => {
-    console.error(`ERROR: ${message}`);
+    console.error(`[ERROR] ${message}`);
   },
   warn: (message: string) => {
-    console.warn(`WARN: ${message}`);
+    console.warn(`[WARN] ${message}`);
   },
   debug: (message: string) => {
-    if (process.env.NODE_ENV === 'development') {
-      console.debug(`DEBUG: ${message}`);
-    }
+    console.debug(`[DEBUG] ${message}`);
   }
 };
 
