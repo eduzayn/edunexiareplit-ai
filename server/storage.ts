@@ -1784,44 +1784,31 @@ export class DatabaseStorage implements IStorage {
 
   async getInvoicesByClient(clientId: number): Promise<Invoice[]> {
     try {
-      // Usando Drizzle ORM, selecionando apenas as colunas que sabemos que existem
-      return await db
-        .select({
-          id: invoices.id,
-          invoiceNumber: invoices.invoiceNumber,
-          clientId: invoices.clientId,
-          issueDate: invoices.issueDate,
-          dueDate: invoices.dueDate,
-          status: invoices.status,
-          totalAmount: invoices.totalAmount,
-          notes: invoices.notes,
-          createdById: invoices.createdById,
-          createdAt: invoices.createdAt,
-          updatedAt: invoices.updatedAt
-        })
-        .from(invoices)
-        .where(eq(invoices.clientId, clientId))
-        .orderBy(desc(invoices.createdAt));
+      // Usando SQL direto para compatibilidade com o banco de dados atual
+      const { neon } = await import('@neondatabase/serverless');
+      const sql = neon(process.env.DATABASE_URL);
+      const result = await sql`
+        SELECT 
+          id, 
+          invoice_number as "invoiceNumber", 
+          client_id as "clientId", 
+          issue_date as "issueDate", 
+          due_date as "dueDate", 
+          status,
+          total as "totalAmount", 
+          notes, 
+          created_by_id as "createdById", 
+          created_at as "createdAt", 
+          updated_at as "updatedAt"
+        FROM invoices 
+        WHERE client_id = ${clientId}
+        ORDER BY created_at DESC
+      `;
+      return result;
     } catch (error) {
       console.error(`Erro ao buscar faturas do cliente ${clientId}:`, error);
-      // Fallback: se falhar, tentamos com SQL direto para garantir compatibilidade
-      try {
-        const { neon } = await import('@neondatabase/serverless');
-        const sql = neon(process.env.DATABASE_URL);
-        const result = await sql`
-          SELECT id, invoice_number as "invoiceNumber", client_id as "clientId", 
-                 issue_date as "issueDate", due_date as "dueDate", status,
-                 total_amount as "totalAmount", notes, created_by_id as "createdById", 
-                 created_at as "createdAt", updated_at as "updatedAt"
-          FROM invoices 
-          WHERE client_id = ${clientId}
-          ORDER BY created_at DESC
-        `;
-        return result;
-      } catch (sqlError) {
-        console.error(`Erro no fallback SQL para faturas do cliente ${clientId}:`, sqlError);
-        return []; // Retornar array vazio se tudo falhar
-      }
+      // Se ocorrer erro, retornamos array vazio para evitar bloqueio do processo
+      return []; 
     }
   }
 
