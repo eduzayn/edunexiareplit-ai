@@ -431,6 +431,10 @@ function Router() {
         {() => user?.portalType === "admin" ? <SimpleNewChargePage /> : <Redirect to="/admin" />}
       </Route>
       
+      <Route path="/admin/finance/charges/advanced">
+        {() => user?.portalType === "admin" ? <AdvancedChargePage /> : <Redirect to="/admin" />}
+      </Route>
+      
       <Route path="/admin/finance/payments">
         {() => user?.portalType === "admin" ? <PaymentsPage /> : <Redirect to="/admin" />}
       </Route>

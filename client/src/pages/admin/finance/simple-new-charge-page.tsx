@@ -1,3 +1,22 @@
+/**
+ * =========================================================================
+ * ATENÇÃO: PONTO DE ESTABILIDADE COM INTEGRAÇÃO ASAAS
+ * =========================================================================
+ * 
+ * Este arquivo contém uma implementação estável da integração com a API Asaas
+ * para criação de cobranças. Ele foi criado como uma solução simplificada
+ * para resolver problemas de renderização e erros de tipagem encontrados
+ * na implementação anterior.
+ * 
+ * NÃO MODIFIQUE ESTE ARQUIVO SEM AUTORIZAÇÃO EXPRESSA!
+ * 
+ * Qualquer alteração neste código pode afetar a capacidade do sistema
+ * de criar cobranças no Asaas, impactando diretamente a operação financeira.
+ * 
+ * Data da estabilização: 16/04/2025
+ * =========================================================================
+ */
+
 import React, { useState } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";

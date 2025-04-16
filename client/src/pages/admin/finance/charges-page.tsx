@@ -1,3 +1,21 @@
+/**
+ * =========================================================================
+ * ATENÇÃO: PONTO DE ESTABILIDADE COM INTEGRAÇÃO ASAAS
+ * =========================================================================
+ * 
+ * Este arquivo contém uma implementação estável da integração com a API Asaas
+ * para listagem de cobranças. Ele foi otimizado para exibir corretamente os
+ * dados de cobrança e nomes de clientes do Asaas.
+ * 
+ * NÃO MODIFIQUE ESTE ARQUIVO SEM AUTORIZAÇÃO EXPRESSA!
+ * 
+ * Qualquer alteração neste código pode afetar a capacidade do sistema
+ * de exibir cobranças do Asaas, impactando diretamente a operação financeira.
+ * 
+ * Data da estabilização: 16/04/2025
+ * =========================================================================
+ */
+
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";

@@ -397,18 +397,52 @@ router.post('/asaas-create-charge', async (req, res) => {
         value, 
         dueDate, 
         description, 
-        externalReference
+        externalReference,
+        // Novos campos para parcelamento e configurações avançadas
+        installmentCount,
+        installmentValue,
+        discount,
+        interest,
+        fine
       } = req.body;
       
-      // Enviar para Asaas
-      const response = await asaasApi.post('/payments', {
+      // Preparar o payload base
+      const payloadBase = {
         customer: customerId,
         billingType,
         value,
         dueDate,
         description,
         externalReference
-      });
+      };
+      
+      // Adicionar campos de parcelamento se estiverem presentes
+      if (installmentCount && installmentCount > 1) {
+        Object.assign(payloadBase, {
+          installmentCount: parseInt(installmentCount),
+          installmentValue: installmentValue || (value / installmentCount)
+        });
+      }
+      
+      // Adicionar configurações de desconto se presentes
+      if (discount) {
+        Object.assign(payloadBase, { discount });
+      }
+      
+      // Adicionar configurações de juros se presentes
+      if (interest) {
+        Object.assign(payloadBase, { interest });
+      }
+      
+      // Adicionar configurações de multa se presentes
+      if (fine) {
+        Object.assign(payloadBase, { fine });
+      }
+      
+      console.log('Enviando para Asaas:', payloadBase);
+      
+      // Enviar para Asaas
+      const response = await asaasApi.post('/payments', payloadBase);
       
       res.json({
         success: true,
