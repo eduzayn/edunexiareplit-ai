@@ -199,6 +199,38 @@ class AsaasCheckoutService {
   }
   
   /**
+   * Obtém detalhes de um pagamento específico
+   * Usado para obter a URL da fatura (invoiceUrl) para pagamentos
+   */
+  async getPaymentDetails(paymentId: string): Promise<any> {
+    try {
+      console.log(`Consultando detalhes do pagamento ${paymentId} no Asaas`);
+      
+      const response = await axios.get(
+        `${this.baseUrl}/payments/${paymentId}`,
+        {
+          headers: {
+            'access-token': this.apiKey
+          }
+        }
+      );
+
+      console.log('Detalhes do pagamento obtidos com sucesso:', JSON.stringify(response.data, null, 2));
+      
+      return response.data;
+    } catch (error) {
+      console.error(`Erro ao consultar detalhes do pagamento ${paymentId}:`, error);
+      
+      if (axios.isAxiosError(error) && error.response) {
+        console.error('Detalhes da resposta do Asaas:', JSON.stringify(error.response.data, null, 2));
+        throw new Error(`Erro Asaas: ${JSON.stringify(error.response.data)}`);
+      }
+      
+      throw error;
+    }
+  }
+  
+  /**
    * Obtém as cobranças associadas a um link de checkout
    * Isso é importante para obter os pagamentos criados via checkout
    */

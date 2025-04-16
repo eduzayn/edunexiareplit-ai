@@ -292,20 +292,49 @@ export async function checkCheckoutStatus(req: Request, res: Response) {
 
       // Buscar pagamentos associados a este checkout
       let paymentUrl = null;
+      let invoiceUrl = null;
+      
       try {
-        if (checkoutData.client_id) {
-          // Verificamos na tabela de pagamentos
-          const payments = await db.execute(sql`
-            SELECT p.* 
-            FROM payments p
-            JOIN invoices i ON p.invoice_id = i.id
-            WHERE i.client_id = ${checkoutData.client_id}
-            ORDER BY p.created_at DESC
-            LIMIT 1
-          `);
+        // Primeiro buscamos se há pagamentos no Asaas associados a este checkout
+        const asaasPayments = await asaasCheckoutService.getCheckoutPayments(checkoutData.asaas_checkout_id);
+        
+        if (asaasPayments && asaasPayments.length > 0) {
+          console.log(`Encontrado pagamentos Asaas associados ao checkout: ${asaasPayments.length}`);
           
-          if (payments.rows.length > 0) {
-            paymentUrl = payments.rows[0].payment_url;
+          // Obter detalhes do primeiro pagamento
+          const firstPayment = asaasPayments[0];
+          
+          if (firstPayment.id) {
+            try {
+              // Obtém detalhes completos do pagamento para pegar a URL correta
+              const paymentDetails = await asaasCheckoutService.getPaymentDetails(firstPayment.id);
+              
+              if (paymentDetails && paymentDetails.invoiceUrl) {
+                invoiceUrl = paymentDetails.invoiceUrl;
+                console.log(`URL da fatura encontrada: ${invoiceUrl}`);
+              }
+            } catch (detailError) {
+              console.error(`Erro ao buscar detalhes do pagamento ${firstPayment.id}:`, detailError);
+            }
+          }
+        } else {
+          console.log('Nenhum pagamento Asaas encontrado, buscando no banco...');
+          
+          // Se não encontrar no Asaas, verifica na tabela payments local
+          if (checkoutData.client_id) {
+            const payments = await db.execute(sql`
+              SELECT p.* 
+              FROM payments p
+              JOIN invoices i ON p.invoice_id = i.id
+              WHERE i.client_id = ${checkoutData.client_id}
+              ORDER BY p.created_at DESC
+              LIMIT 1
+            `);
+            
+            if (payments.rows.length > 0) {
+              paymentUrl = payments.rows[0].payment_url;
+              console.log(`URL de pagamento encontrada no banco: ${paymentUrl}`);
+            }
           }
         }
       } catch (paymentError) {
@@ -318,7 +347,7 @@ export async function checkCheckoutStatus(req: Request, res: Response) {
         data: {
           checkout: checkoutData,
           asaasStatus: asaasCheckoutStatus,
-          paymentUrl: paymentUrl
+          paymentUrl: paymentUrl || invoiceUrl || null
         }
       });
     } catch (asaasError) {
