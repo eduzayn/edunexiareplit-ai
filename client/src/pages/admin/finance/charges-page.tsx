@@ -27,7 +27,7 @@ import {
   CopyIcon,
   EditIcon,
   EyeIcon,
-  ExternalLink as ExternalLinkIcon,
+  ExternalLink,
   FilterIcon,
   InfoIcon,
   InvoiceIcon, 
@@ -477,12 +477,17 @@ export default function ChargesPage() {
                               
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-gray-800">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-8 w-8 text-gray-500 hover:text-gray-800"
+                                    onClick={() => openPaymentLink(charge.invoiceUrl)}
+                                  >
                                     <EyeIcon className="h-4 w-4" />
                                   </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                  <p>Visualizar</p>
+                                  <p>Visualizar pagamento</p>
                                 </TooltipContent>
                               </Tooltip>
                               

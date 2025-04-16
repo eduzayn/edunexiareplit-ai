@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Download,
   Eye,
+  ExternalLink,
   Printer,
   Mail,
   Phone,
@@ -55,6 +56,7 @@ export const ChevronDownIcon = ChevronDown;
 export const ChevronRightIcon = ChevronRight;
 export const DownloadIcon = Download;
 export const EyeIcon = Eye;
+export const ExternalLinkIcon = ExternalLink;
 export const PrinterIcon = Printer;
 export const MailIcon = Mail;
 export const PhoneIcon = Phone;
