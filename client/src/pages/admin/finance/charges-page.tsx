@@ -129,6 +129,7 @@ type Charge = {
     address: string;
     city: string | number;
     state: string;
+    email: string;
   };
 };
 
@@ -217,6 +218,11 @@ export default function ChargesPage() {
         // Aqui seria implementado o download real
         break;
         
+      case 'email':
+        // Enviar e-mails para as cobranças selecionadas
+        handleBulkEmails(selectedChargeIds);
+        break;
+        
       case 'modify':
         // Abrir modal para modificar as cobranças selecionadas
         setIsBulkModifyDialogOpen(true);
@@ -259,6 +265,89 @@ export default function ChargesPage() {
   // Contar quantas cobranças estão selecionadas
   const countSelectedCharges = () => {
     return Object.values(selectedCharges).filter(Boolean).length;
+  };
+  
+  // Função para enviar emails em lote
+  const handleBulkEmails = async (selectedIds: string[]) => {
+    // Encontrar as cobranças selecionadas
+    const selectedCharges = asaasChargesList.filter(charge => selectedIds.includes(charge.id));
+    
+    if (selectedCharges.length === 0) {
+      toast({
+        title: "Nenhuma cobrança válida",
+        description: "Não foi possível encontrar as cobranças selecionadas.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Contadores para rastrear o progresso
+    let successCount = 0;
+    let errorCount = 0;
+    
+    // Notificar início do processo
+    toast({
+      title: "Enviando e-mails",
+      description: `Iniciando envio de ${selectedCharges.length} e-mails...`,
+    });
+    
+    // Enviar e-mails para cada cobrança sequencialmente
+    for (const charge of selectedCharges) {
+      try {
+        if (!charge.customer?.email) {
+          errorCount++;
+          console.warn(`Cobrança ${charge.id} não possui email de cliente`);
+          continue;
+        }
+        
+        // Preparar dados do email
+        const emailData = {
+          to: charge.customer.email,
+          customerName: charge.name,
+          chargeId: charge.id,
+          chargeValue: charge.value,
+          dueDate: charge.dueDate,
+          paymentLink: charge.invoiceUrl || "",
+          bankSlipLink: charge.bankSlipUrl || undefined
+        };
+        
+        // Enviar o email
+        const response = await fetch("/api/emails/send-invoice-email", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(emailData)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          successCount++;
+        } else {
+          errorCount++;
+          console.error(`Erro ao enviar email para cobrança ${charge.id}:`, result.message);
+        }
+      } catch (error) {
+        errorCount++;
+        console.error(`Erro ao processar envio para cobrança ${charge.id}:`, error);
+      }
+    }
+    
+    // Reportar resultado final
+    if (successCount > 0) {
+      toast({
+        title: "E-mails enviados",
+        description: `${successCount} e-mails enviados com sucesso${errorCount > 0 ? ` (${errorCount} falhas)` : ''}.`,
+        variant: errorCount > 0 ? "default" : "default"
+      });
+    } else {
+      toast({
+        title: "Falha no envio",
+        description: `Não foi possível enviar nenhum email. Verifique os logs para mais detalhes.`,
+        variant: "destructive"
+      });
+    }
   };
   
   // Função para enviar fatura por e-mail
@@ -1225,6 +1314,10 @@ export default function ChargesPage() {
                   <DropdownMenuItem className="flex items-center cursor-pointer" onClick={() => handleBulkAction('download')}>
                     <DownloadIcon className="mr-2 h-4 w-4" />
                     Baixar boletos
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="flex items-center cursor-pointer" onClick={() => handleBulkAction('email')}>
+                    <MailIcon className="mr-2 h-4 w-4" />
+                    Enviar e-mails
                   </DropdownMenuItem>
                   <DropdownMenuItem className="flex items-center cursor-pointer" onClick={() => handleBulkAction('modify')}>
                     <EditIcon className="mr-2 h-4 w-4" />
