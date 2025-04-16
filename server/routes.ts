@@ -2798,6 +2798,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/webhooks/asaas", async (req, res) => {
     await WebhookController.handleAsaasWebhook(req, res);
   });
+  
+  // ================= Rotas públicas de callback do Asaas Checkout =================
+  // Estas rotas precisam ser públicas (sem autenticação) para receberem os callbacks do Asaas
+  // Callback de sucesso - chamado quando o usuário preenche o formulário do checkout
+  app.get("/api/v2/checkout/success", async (req, res) => {
+    await checkoutSuccessCallback(req, res);
+  });
+  
+  // Callback de notificação - chamado pelo Asaas para atualizar o status do pagamento
+  app.post("/api/v2/checkout/notification", async (req, res) => {
+    await checkoutNotificationCallback(req, res);
+  });
 
   // ================= Rotas para Registro Público =================
   // Rota pública para registro de novos usuários

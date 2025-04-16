@@ -26,10 +26,9 @@ export async function checkoutSuccessCallback(req: Request, res: Response) {
     }
 
     // Buscar informações do checkout no banco de dados
-    const checkout = await db.execute(sql.raw(
-      `SELECT * FROM checkout_links WHERE asaas_checkout_id = ?`,
-      [checkoutId]
-    ));
+    const checkout = await db.execute(sql`
+      SELECT * FROM checkout_links WHERE asaas_checkout_id = ${String(checkoutId)}
+    `);
 
     if (!checkout.rows.length) {
       console.error(`Checkout ${checkoutId} não encontrado no banco de dados`);
@@ -46,10 +45,9 @@ export async function checkoutSuccessCallback(req: Request, res: Response) {
     // Verificar se o checkout tem customer preenchido (significa que o form foi preenchido)
     if (asaasCheckoutStatus.customer) {
       // Buscar o lead associado a este checkout
-      const lead = await db.execute(sql.raw(
-        `SELECT * FROM leads WHERE id = ?`,
-        [checkoutData.lead_id]
-      ));
+      const lead = await db.execute(sql`
+        SELECT * FROM leads WHERE id = ${checkoutData.lead_id}
+      `);
 
       if (!lead.rows.length) {
         console.error(`Lead ${checkoutData.lead_id} não encontrado`);
@@ -61,28 +59,21 @@ export async function checkoutSuccessCallback(req: Request, res: Response) {
 
       // Atualizar os dados do lead com as informações do customer
       // (caso o usuário tenha modificado seus dados no form do Asaas)
-      await db.execute(sql.raw(`
+      await db.execute(sql`
         UPDATE leads
         SET 
-          name = ?,
-          email = ?,
-          phone = ?,
-          document = ?,
+          name = ${asaasCheckoutStatus.customer.name},
+          email = ${asaasCheckoutStatus.customer.email},
+          phone = ${asaasCheckoutStatus.customer.phone || leadData.phone},
+          document = ${asaasCheckoutStatus.customer.document || leadData.document},
           updated_at = NOW()
-        WHERE id = ?
-      `, [
-        asaasCheckoutStatus.customer.name,
-        asaasCheckoutStatus.customer.email,
-        asaasCheckoutStatus.customer.phone || leadData.phone,
-        asaasCheckoutStatus.customer.document || leadData.document,
-        leadData.id
-      ]));
+        WHERE id = ${leadData.id}
+      `);
 
       // Verificar se o cliente já existe com o mesmo email
-      const existingClient = await db.execute(sql.raw(
-        `SELECT * FROM clients WHERE email = ?`,
-        [asaasCheckoutStatus.customer.email]
-      ));
+      const existingClient = await db.execute(sql`
+        SELECT * FROM clients WHERE email = ${asaasCheckoutStatus.customer.email}
+      `);
 
       let clientId;
 
@@ -92,12 +83,13 @@ export async function checkoutSuccessCallback(req: Request, res: Response) {
         
         if (!asaasCustomerId) {
           try {
+            // Criar cliente no Asaas
             const asaasCustomer = await AsaasService.createCustomer({
               name: asaasCheckoutStatus.customer.name,
               email: asaasCheckoutStatus.customer.email,
               phone: asaasCheckoutStatus.customer.phone || null,
-              cpfCnpj: asaasCheckoutStatus.customer.document || null,
-              notificationDisabled: false
+              document: asaasCheckoutStatus.customer.document || null,
+              status: 'active',
             });
             asaasCustomerId = asaasCustomer.id;
           } catch (asaasError) {
@@ -107,40 +99,42 @@ export async function checkoutSuccessCallback(req: Request, res: Response) {
         }
 
         // Criar cliente local
-        const newClient = await db.execute(sql.raw(`
+        const newClient = await db.execute(sql`
           INSERT INTO clients (
             name, email, phone, document, status, segment, 
             asaas_id, created_from_lead_id, created_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
+          ) VALUES (
+            ${asaasCheckoutStatus.customer.name},
+            ${asaasCheckoutStatus.customer.email},
+            ${asaasCheckoutStatus.customer.phone || null},
+            ${asaasCheckoutStatus.customer.document || null},
+            ${'active'},
+            ${leadData.segment || 'default'},
+            ${asaasCustomerId || null},
+            ${leadData.id},
+            NOW()
+          )
           RETURNING *
-        `, [
-          asaasCheckoutStatus.customer.name,
-          asaasCheckoutStatus.customer.email,
-          asaasCheckoutStatus.customer.phone || null,
-          asaasCheckoutStatus.customer.document || null,
-          'active',
-          leadData.segment || 'default',
-          asaasCustomerId || null,
-          leadData.id
-        ]));
+        `);
 
         clientId = newClient.rows[0].id;
         
         // Registrar atividade para o cliente
-        await db.execute(sql.raw(`
+        await db.execute(sql`
           INSERT INTO client_activities (
             client_id, type, description, metadata, created_at
-          ) VALUES (?, ?, ?, ?, NOW())
-        `, [
-          clientId,
-          'conversion',
-          'Cliente criado a partir de lead',
-          JSON.stringify({
-            leadId: leadData.id,
-            checkoutId: checkoutData.id,
-            asaasCheckoutId: checkoutId
-          }),
-        ]));
+          ) VALUES (
+            ${clientId},
+            ${'conversion'},
+            ${'Cliente criado a partir de lead'},
+            ${JSON.stringify({
+              leadId: leadData.id,
+              checkoutId: checkoutData.id,
+              asaasCheckoutId: checkoutId
+            })},
+            NOW()
+          )
+        `);
       } else {
         // Usar cliente existente
         clientId = existingClient.rows[0].id;
@@ -148,42 +142,39 @@ export async function checkoutSuccessCallback(req: Request, res: Response) {
 
       // Atualizar lead para "converted" se ainda não foi convertido
       if (leadData.status !== 'converted') {
-        await db.execute(sql.raw(`
+        await db.execute(sql`
           UPDATE leads
-          SET status = 'converted', converted_to_client_id = ?, updated_at = NOW()
-          WHERE id = ?
-        `, [clientId, leadData.id]));
+          SET status = ${'converted'}, converted_to_client_id = ${clientId}, updated_at = NOW()
+          WHERE id = ${leadData.id}
+        `);
         
         // Registrar atividade para o lead
-        await db.execute(sql.raw(`
+        await db.execute(sql`
           INSERT INTO lead_activities (
             lead_id, type, description, metadata, created_at
-          ) VALUES (?, ?, ?, ?, NOW())
-        `, [
-          leadData.id,
-          'conversion',
-          'Lead convertido para cliente',
-          JSON.stringify({
-            clientId,
-            checkoutId: checkoutData.id,
-            asaasCheckoutId: checkoutId
-          }),
-        ]));
+          ) VALUES (
+            ${leadData.id},
+            ${'conversion'},
+            ${'Lead convertido para cliente'},
+            ${JSON.stringify({
+              clientId,
+              checkoutId: checkoutData.id,
+              asaasCheckoutId: checkoutId
+            })},
+            NOW()
+          )
+        `);
       }
 
       // Atualizar o checkout para vincular ao cliente
-      await db.execute(sql.raw(`
+      await db.execute(sql`
         UPDATE checkout_links
         SET 
-          client_id = ?,
-          status = ?,
+          client_id = ${clientId},
+          status = ${asaasCheckoutStatus.status},
           updated_at = NOW()
-        WHERE id = ?
-      `, [
-        clientId,
-        asaasCheckoutStatus.status,
-        checkoutData.id
-      ]));
+        WHERE id = ${checkoutData.id}
+      `);
 
       // Redirecionar para a página de sucesso
       return res.redirect('/sucesso');
@@ -217,10 +208,9 @@ export async function checkoutNotificationCallback(req: Request, res: Response) 
     }
 
     // Buscar informações do checkout no banco de dados
-    const checkout = await db.execute(sql.raw(
-      `SELECT * FROM checkout_links WHERE asaas_checkout_id = ?`,
-      [checkoutId]
-    ));
+    const checkout = await db.execute(sql`
+      SELECT * FROM checkout_links WHERE asaas_checkout_id = ${String(checkoutId)}
+    `);
 
     if (!checkout.rows.length) {
       console.error(`Checkout ${checkoutId} não encontrado no banco de dados`);
@@ -233,37 +223,37 @@ export async function checkoutNotificationCallback(req: Request, res: Response) 
     const asaasCheckoutStatus = await asaasCheckoutService.getCheckoutStatus(String(checkoutId));
     
     // Atualizar o status do checkout local
-    await db.execute(sql.raw(`
+    await db.execute(sql`
       UPDATE checkout_links
-      SET status = ?, updated_at = NOW()
-      WHERE id = ?
-    `, [asaasCheckoutStatus.status, checkoutData.id]));
+      SET status = ${asaasCheckoutStatus.status}, updated_at = NOW()
+      WHERE id = ${checkoutData.id}
+    `);
 
     // Se o checkout está vinculado a um cliente, verificar se deve criar o pagamento
     if (checkoutData.client_id && asaasCheckoutStatus.payment) {
       // Verificar se já existe um pagamento para este checkout
-      const existingPayment = await db.execute(sql.raw(
-        `SELECT * FROM payments WHERE external_id = ?`,
-        [asaasCheckoutStatus.payment.id]
-      ));
+      const existingPayment = await db.execute(sql`
+        SELECT * FROM payments WHERE external_id = ${asaasCheckoutStatus.payment.id}
+      `);
 
       if (!existingPayment.rows.length && ['CONFIRMED', 'RECEIVED', 'PAID'].includes(asaasCheckoutStatus.payment.status.toUpperCase())) {
         // Criar pagamento no sistema
-        await db.execute(sql.raw(`
+        await db.execute(sql`
           INSERT INTO payments (
             client_id, type, status, value, payment_method,
             external_id, external_data, description, created_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
-        `, [
-          checkoutData.client_id,
-          'payment',
-          'completed',
-          asaasCheckoutStatus.payment.value,
-          asaasCheckoutStatus.payment.billingType,
-          asaasCheckoutStatus.payment.id,
-          JSON.stringify(asaasCheckoutStatus.payment),
-          asaasCheckoutStatus.payment.description || `Pagamento via Checkout ${checkoutId}`,
-        ]));
+          ) VALUES (
+            ${checkoutData.client_id},
+            ${'payment'},
+            ${'completed'},
+            ${asaasCheckoutStatus.payment.value},
+            ${asaasCheckoutStatus.payment.billingType},
+            ${asaasCheckoutStatus.payment.id},
+            ${JSON.stringify(asaasCheckoutStatus.payment)},
+            ${asaasCheckoutStatus.payment.description || `Pagamento via Checkout ${checkoutId}`},
+            NOW()
+          )
+        `);
       } else if (existingPayment.rows.length) {
         // Atualizar status do pagamento existente
         let paymentStatus = 'pending';
@@ -278,11 +268,11 @@ export async function checkoutNotificationCallback(req: Request, res: Response) 
           paymentStatus = 'refunded';
         }
         
-        await db.execute(sql.raw(`
+        await db.execute(sql`
           UPDATE payments
-          SET status = ?, updated_at = NOW()
-          WHERE id = ?
-        `, [paymentStatus, existingPayment.rows[0].id]));
+          SET status = ${paymentStatus}, updated_at = NOW()
+          WHERE id = ${existingPayment.rows[0].id}
+        `);
       }
     }
 
