@@ -3,8 +3,25 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
-app.use(express.json());
+app.use(express.json({
+  // Adiciona uma configuração mais rigorosa para o JSON parser
+  strict: true,
+  limit: '10mb'
+}));
 app.use(express.urlencoded({ extended: false }));
+
+// Middleware para garantir propriedades limpas nos objetos JSON
+app.use((req, res, next) => {
+  if (req.body && typeof req.body === 'object') {
+    // Remove propriedades undefined que podem causar erros de serialização
+    Object.keys(req.body).forEach(key => {
+      if (req.body[key] === undefined) {
+        delete req.body[key];
+      }
+    });
+  }
+  next();
+});
 
 app.use((req, res, next) => {
   const start = Date.now();

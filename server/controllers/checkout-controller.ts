@@ -31,7 +31,21 @@ const createCheckoutSchema = z.object({
 export async function createCheckoutLink(req: Request, res: Response) {
   try {
     const { leadId } = req.params;
+    // Validação mais rigorosa
+    console.log('Dados recebidos para criação de checkout:', JSON.stringify(req.body, null, 2));
     const validatedData = createCheckoutSchema.parse(req.body);
+    
+    // Garantir que o valor é um número
+    const parsedValue = typeof validatedData.value === 'string' 
+      ? parseFloat(validatedData.value) 
+      : validatedData.value;
+      
+    if (isNaN(parsedValue) || parsedValue <= 0) {
+      return res.status(400).json({
+        error: 'Valor inválido',
+        details: 'O valor do pagamento deve ser um número positivo'
+      });
+    }
 
     // Verifica se o lead existe
     const lead = await db.execute(sql.raw(
@@ -50,19 +64,24 @@ export async function createCheckoutLink(req: Request, res: Response) {
       console.log('Iniciando criação de link de checkout no Asaas...');
       const baseUrl = process.env.APP_URL || 'https://app.edunexia.com.br';
       console.log('Dados do lead para checkout:', JSON.stringify(leadData, null, 2));
-      const checkoutResponse = await asaasCheckoutService.createCheckoutLink({
-        name: leadData.name,
-        email: leadData.email,
-        phone: leadData.phone || '',
-        value: validatedData.value,
-        dueDate: validatedData.dueDate, // Formato: YYYY-MM-DD
-        description: validatedData.description,
+      
+      // Limpar dados antes de enviar para a API
+      const checkoutPayload = {
+        name: String(leadData.name).trim(),
+        email: String(leadData.email).trim(),
+        phone: leadData.phone ? String(leadData.phone).trim() : '',
+        value: parsedValue,
+        dueDate: String(validatedData.dueDate).trim(), // Formato: YYYY-MM-DD
+        description: String(validatedData.description).trim(),
         expirationTime: validatedData.expirationTime, // Tempo de expiração do link em minutos
         successUrl: `${baseUrl}/api/v2/checkout/success`,
         notificationUrl: `${baseUrl}/api/v2/checkout/notification`,
-        additionalInfo: validatedData.additionalInfo || '',
+        additionalInfo: validatedData.additionalInfo ? String(validatedData.additionalInfo).trim() : '',
         leadId: parseInt(leadId, 10) // Inclui o ID do lead para referência
-      });
+      };
+      
+      console.log('Enviando payload para o Asaas:', JSON.stringify(checkoutPayload, null, 2));
+      const checkoutResponse = await asaasCheckoutService.createCheckoutLink(checkoutPayload);
 
       // Salva o link de checkout no banco
       const result = await db.execute(sql.raw(`
