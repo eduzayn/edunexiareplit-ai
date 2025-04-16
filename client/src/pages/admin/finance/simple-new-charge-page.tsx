@@ -21,7 +21,7 @@ import {
   CardFooter 
 } from "@/components/ui/card";
 import { ArrowLeftIcon, InvoiceIcon, SaveIcon } from "@/components/ui/icons";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 // Tipo para cliente
 type AsaasCustomer = {
@@ -143,18 +143,29 @@ export default function SimpleNewChargePage() {
 
       console.log("Enviando cobrança:", chargeData);
 
-      // Enviar requisição para criar cobrança usando rota de debug
-      const response = await apiRequest({
-        url: "/api/debug/asaas-create-charge",
+      // Usar fetch diretamente para evitar problemas com o tipo da requisição
+      const response = await fetch("/api/debug/asaas-create-charge", {
         method: "POST",
-        data: chargeData,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(chargeData),
       });
+      
+      const responseData = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(responseData.message || "Erro ao criar cobrança");
+      }
 
-      console.log("Resposta da criação de cobrança:", response);
+      console.log("Resposta da criação de cobrança:", responseData);
+      
+      // Invalidar o cache para forçar recarregamento dos dados
+      queryClient.invalidateQueries({ queryKey: ["/api/debug/asaas-charges"] });
 
       toast({
         title: "Cobrança criada com sucesso",
-        description: `A cobrança foi criada com o ID: ${response.data.id}`,
+        description: `A cobrança foi criada com o ID: ${responseData.data.id}`,
       });
 
       // Redirecionar para a lista de cobranças
@@ -164,7 +175,7 @@ export default function SimpleNewChargePage() {
       console.error("Erro ao criar cobrança:", error);
       toast({
         title: "Erro ao criar cobrança",
-        description: "Ocorreu um erro ao criar a cobrança. Tente novamente.",
+        description: error instanceof Error ? error.message : "Ocorreu um erro ao criar a cobrança. Tente novamente.",
         variant: "destructive",
       });
     } finally {
