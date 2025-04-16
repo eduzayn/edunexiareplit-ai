@@ -2,6 +2,7 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
+import debugRoutes from "./routes/debug-route";
 import { 
   insertDisciplineSchema, 
   insertCourseSchema, 
@@ -3014,6 +3015,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Registro das rotas do módulo Financeiro
   app.use("/api/finance", financeRoutes);
+  app.use("/api/debug", debugRoutes);
   
   // Registro das rotas do módulo de Contratos
   app.use("/api/contracts", contractsRoutes);
