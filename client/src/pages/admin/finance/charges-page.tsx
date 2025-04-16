@@ -26,6 +26,7 @@ import {
   CopyIcon,
   EditIcon,
   EyeIcon,
+  ExternalLinkIcon,
   FilterIcon,
   InfoIcon,
   InvoiceIcon, 
@@ -48,19 +49,42 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-// Tipo para as cobranças
+// Tipo para as cobranças da API Asaas
+interface AsaasCharge {
+  id: string;
+  dateCreated: string;
+  customer: string;
+  customerName: string;
+  value: number;
+  netValue: number;
+  status: string;
+  dueDate: string;
+  description: string | null;
+  installment: number | null;
+  installmentCount: number | null;
+  billingType: string;
+  invoiceUrl: string;
+  bankSlipUrl: string | null;
+  invoiceNumber: string | null;
+  externalReference: string | null;
+  deleted: boolean;
+}
+
+// Tipo para as cobranças exibidas na UI
 type Charge = {
   id: string;
   name: string;
   value: number;
   description: string | null;
-  paymentType: 'Pix' | 'Boleto Bancário / Pix';
+  paymentType: string;
   dueDate: string;
   status: 'pending' | 'paid' | 'overdue' | 'cancelled' | 'partial';
   installment?: {
     number: number;
     total: number;
   };
+  invoiceUrl?: string;
+  bankSlipUrl?: string | null;
 };
 
 export default function ChargesPage() {
@@ -69,116 +93,89 @@ export default function ChargesPage() {
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
-  // Estado para mock de dados até que tenhamos a API
-  const [mockCharges] = useState<Charge[]>([
-    {
-      id: "1",
-      name: "Ana Lúcia Moreira Gonçalves",
-      value: 10.00,
-      description: null,
-      paymentType: 'Pix',
-      dueDate: "25/04/2025",
-      status: 'pending'
-    },
-    {
-      id: "2",
-      name: "Ruan Moreira Pereira",
-      value: 110.00,
-      description: null,
-      paymentType: 'Pix',
-      dueDate: "25/04/2025",
-      status: 'pending'
-    },
-    {
-      id: "3",
-      name: "Lúcia Maria",
-      value: 30.00,
-      description: null,
-      paymentType: 'Pix',
-      dueDate: "25/04/2025",
-      status: 'pending'
-    },
-    {
-      id: "4",
-      name: "Marco Antônio Gonçalves",
-      value: 150.00,
-      description: null,
-      paymentType: 'Pix',
-      dueDate: "25/04/2025",
-      status: 'pending'
-    },
-    {
-      id: "5",
-      name: "Ezequias da Silva Silva",
-      value: 220.87,
-      description: null,
-      paymentType: 'Boleto Bancário / Pix',
-      dueDate: "15/03/2026",
-      status: 'partial',
-      installment: {
-        number: 12,
-        total: 12
-      }
-    },
-    {
-      id: "6",
-      name: "Ezequias da Silva Silva",
-      value: 220.83,
-      description: null,
-      paymentType: 'Boleto Bancário / Pix',
-      dueDate: "15/02/2026",
-      status: 'pending',
-      installment: {
-        number: 11,
-        total: 12
-      }
-    },
-    {
-      id: "7",
-      name: "Ezequias da Silva Silva",
-      value: 220.83,
-      description: null,
-      paymentType: 'Boleto Bancário / Pix',
-      dueDate: "15/01/2026",
-      status: 'pending',
-      installment: {
-        number: 10,
-        total: 12
-      }
-    },
-    {
-      id: "8",
-      name: "Ezequias da Silva Silva",
-      value: 220.83,
-      description: null,
-      paymentType: 'Boleto Bancário / Pix',
-      dueDate: "15/12/2025",
-      status: 'paid',
-      installment: {
-        number: 9,
-        total: 12
-      }
-    },
-    {
-      id: "9",
-      name: "Ezequias da Silva Silva",
-      value: 220.83,
-      description: null,
-      paymentType: 'Boleto Bancário / Pix',
-      dueDate: "15/11/2025",
-      status: 'paid',
-      installment: {
-        number: 8,
-        total: 12
-      }
-    }
-  ]);
+  // Removemos os dados simulados, agora estamos usando dados reais da API Asaas
 
   // Buscar dados da API Asaas
-  const { data: charges, isLoading, error } = useQuery({
+  const { data: asaasCharges, isLoading, error } = useQuery({
     queryKey: ["/api/finance/charges"],
     enabled: true, // Habilitado para buscar dados da API Asaas
   });
+
+  // Mapeamento dos dados do Asaas para o formato da UI
+  const mapAsaasToCharges = (asaasData: AsaasCharge[] | undefined): Charge[] => {
+    if (!asaasData) return [];
+    
+    return asaasData.map(charge => {
+      // Mapear o status do Asaas para nosso formato
+      let status: Charge['status'] = 'pending';
+      switch(charge.status) {
+        case 'CONFIRMED':
+        case 'RECEIVED':
+        case 'RECEIVED_IN_CASH':
+          status = 'paid';
+          break;
+        case 'PENDING':
+          status = 'pending';
+          break;
+        case 'OVERDUE':
+          status = 'overdue';
+          break;
+        case 'REFUNDED':
+        case 'REFUND_REQUESTED':
+        case 'CHARGEBACK_REQUESTED':
+        case 'CHARGEBACK_DISPUTE':
+        case 'AWAITING_CHARGEBACK_REVERSAL':
+        case 'DUNNING_REQUESTED':
+        case 'DUNNING_RECEIVED':
+        case 'AWAITING_RISK_ANALYSIS':
+          status = 'partial';
+          break;
+        case 'PAYMENT_DELETED':
+        case 'CANCELED':
+          status = 'cancelled';
+          break;
+      }
+      
+      // Mapear o tipo de pagamento
+      const getBillingTypeText = (billingType: string) => {
+        switch(billingType) {
+          case 'BOLETO': return 'Boleto Bancário';
+          case 'CREDIT_CARD': return 'Cartão de Crédito';
+          case 'PIX': return 'Pix';
+          case 'UNDEFINED': return 'Indefinido';
+          default: return billingType;
+        }
+      };
+      
+      // Formatar a data de vencimento
+      const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('pt-BR');
+      };
+      
+      // Construir a informação de parcela (se houver)
+      let installmentInfo;
+      if (charge.installment && charge.installmentCount) {
+        installmentInfo = {
+          number: charge.installment,
+          total: charge.installmentCount
+        };
+      }
+      
+      return {
+        id: charge.id,
+        name: charge.customerName,
+        value: charge.value,
+        description: charge.description,
+        paymentType: getBillingTypeText(charge.billingType),
+        dueDate: formatDate(charge.dueDate),
+        status,
+        installment: installmentInfo,
+        invoiceUrl: charge.invoiceUrl,
+        bankSlipUrl: charge.bankSlipUrl
+      };
+    });
+  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -233,7 +230,11 @@ export default function ChargesPage() {
     return sortDirection === 'asc' ? <ArrowUpIcon className="h-4 w-4" /> : <ArrowDownIcon className="h-4 w-4" />;
   };
 
-  const filteredCharges = mockCharges.filter(charge => 
+  // Usar os dados da API Asaas em vez dos dados simulados
+  const asaasChargesList = mapAsaasToCharges(asaasCharges?.data || []);
+  
+  // Filtrar cobranças com base na pesquisa
+  const filteredCharges = asaasChargesList.filter(charge => 
     charge.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (charge.description && charge.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
     formatCurrency(charge.value).includes(searchTerm)
@@ -415,10 +416,7 @@ export default function ChargesPage() {
                           <div className="flex items-center">
                             {charge.dueDate}
                             <span className="ml-2">
-                              {charge.status === 'paid' || charge.status === 'partial' ? 
-                                <span className="h-4 w-4 text-green-500">✓</span> : 
-                                <AlertCircleIcon className={`h-4 w-4 ${charge.status === 'overdue' ? 'text-red-500' : 'text-yellow-500'}`} />
-                              }
+                              {getStatusIcon(charge.status)}
                             </span>
                           </div>
                         </TableCell>
