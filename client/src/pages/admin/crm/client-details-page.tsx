@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/icons";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useClients, useContacts } from "@/hooks/use-crm";
+import { useClientCheckouts } from "@/hooks/use-checkout";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -44,6 +45,7 @@ export default function ClientDetailsPage() {
   const { useClient } = useClients();
   const { data, isLoading, isError, error } = useClient(clientId);
   const { contacts } = useContacts(clientId);
+  const { checkouts, isLoading: isLoadingCheckouts, checkStatus, cancelCheckout } = useClientCheckouts(clientId);
   
   // Hook para excluir cliente
   const { deleteClient, isPendingDelete } = useClients();
@@ -495,12 +497,108 @@ export default function ClientDetailsPage() {
                   </dl>
 
                   <div className="mt-6">
-                    <h3 className="text-lg font-medium mb-4">Histórico Financeiro</h3>
-                    <div className="bg-gray-50 rounded-lg p-6 text-center">
-                      <p className="text-gray-500">
-                        O histórico financeiro será implementado em uma próxima versão.
-                      </p>
-                    </div>
+                    <h3 className="text-lg font-medium mb-4">Cobranças</h3>
+                    {isLoadingCheckouts ? (
+                      <Skeleton className="h-48 w-full" />
+                    ) : checkouts.length > 0 ? (
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Descrição
+                              </th>
+                              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Valor
+                              </th>
+                              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Vencimento
+                              </th>
+                              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Status
+                              </th>
+                              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Ações
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {checkouts.map((checkout) => (
+                              <tr key={checkout.id}>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  {checkout.description}
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  {typeof checkout.value === 'number' 
+                                    ? `R$ ${checkout.value.toFixed(2).replace('.', ',')}`
+                                    : `R$ ${checkout.value}`}
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  {formatDate(checkout.dueDate)}
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm">
+                                  {checkout.status === 'PENDING' && (
+                                    <Badge className="bg-yellow-400">Pendente</Badge>
+                                  )}
+                                  {checkout.status === 'CONFIRMED' && (
+                                    <Badge className="bg-green-500">Confirmado</Badge>
+                                  )}
+                                  {checkout.status === 'RECEIVED' && (
+                                    <Badge className="bg-green-600">Recebido</Badge>
+                                  )}
+                                  {checkout.status === 'OVERDUE' && (
+                                    <Badge className="bg-red-500">Vencido</Badge>
+                                  )}
+                                  {checkout.status === 'CANCELLED' && (
+                                    <Badge variant="outline">Cancelado</Badge>
+                                  )}
+                                  {!['PENDING', 'CONFIRMED', 'RECEIVED', 'OVERDUE', 'CANCELLED'].includes(checkout.status) && (
+                                    <Badge>{checkout.status}</Badge>
+                                  )}
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                                  <div className="flex space-x-2">
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      onClick={() => window.open(checkout.url, '_blank')}
+                                    >
+                                      Visualizar
+                                    </Button>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      onClick={() => checkStatus(checkout.id)}
+                                    >
+                                      Atualizar
+                                    </Button>
+                                    {checkout.status === 'PENDING' && (
+                                      <Button 
+                                        variant="destructive" 
+                                        size="sm"
+                                        onClick={() => {
+                                          if (confirm('Tem certeza que deseja cancelar esta cobrança?')) {
+                                            cancelCheckout(checkout.id);
+                                          }
+                                        }}
+                                      >
+                                        Cancelar
+                                      </Button>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <div className="bg-gray-50 rounded-lg p-6 text-center">
+                        <p className="text-gray-500">
+                          Nenhuma cobrança encontrada para este cliente.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
