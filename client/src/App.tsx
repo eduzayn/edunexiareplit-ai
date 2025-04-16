@@ -86,8 +86,9 @@ import PoloStudentsPage from "@/pages/polo/students-page";
 import PoloReportsPage from "@/pages/polo/reports-page";
 import PoloSettingsPage from "@/pages/polo/settings-page";
 import PoloSalesLinksPage from "@/pages/polo/sales-links-page";
-// Página pública de cobranças
+// Páginas públicas de cobranças
 import PublicChargesPage from "@/pages/public-charges";
+import PublicCreateChargePage from "@/pages/public-create-charge";
 import { ProtectedRoute } from "./lib/protected-route";
 import { useAuth, AuthProvider } from "./hooks/use-auth";
 

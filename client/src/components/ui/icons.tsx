@@ -46,7 +46,9 @@ import {
   AlertCircle,
   Edit,
   Trash,
-  ArrowLeft
+  ArrowLeft,
+  Loader2,
+  Search
 } from "lucide-react";
 
 // Ícones de Lucide exportados diretamente
@@ -527,6 +529,7 @@ export { Pencil as EditIcon } from "lucide-react";
 export { Trash as TrashIcon } from "lucide-react";
 
 export { ArrowLeft as ArrowLeftIcon } from "lucide-react";
+export { Loader2 as Loader2Icon } from "lucide-react";
 
 // Ícones específicos para o módulo CRM
 export function UserPlusIcon(props: React.SVGProps<SVGSVGElement>) {
