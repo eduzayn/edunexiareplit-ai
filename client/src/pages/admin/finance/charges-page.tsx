@@ -136,6 +136,9 @@ export default function ChargesPage() {
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [isFilterDialogOpen, setIsFilterDialogOpen] = useState(false);
+  const [isBulkModifyDialogOpen, setIsBulkModifyDialogOpen] = useState(false);
+  const [isBulkRemoveDialogOpen, setIsBulkRemoveDialogOpen] = useState(false);
+  const [selectedCharges, setSelectedCharges] = useState<Record<string, boolean>>({});
   
   // Estados para os filtros
   const [dueDateFilterStart, setDueDateFilterStart] = useState<Date | undefined>(undefined);
@@ -165,6 +168,96 @@ export default function ChargesPage() {
   });
 
   const { toast } = useToast();
+  
+  // Função para limpar seleções
+  const clearSelection = () => {
+    setSelectedCharges({});
+  };
+  
+  // Função para lidar com as ações em lote
+  const handleBulkAction = (action: string) => {
+    const selectedChargeIds = Object.keys(selectedCharges).filter(id => selectedCharges[id]);
+    
+    if (selectedChargeIds.length === 0) {
+      toast({
+        title: "Nenhuma cobrança selecionada",
+        description: "Selecione pelo menos uma cobrança para executar esta ação.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    switch (action) {
+      case 'export':
+        // Exportar dados das cobranças selecionadas
+        toast({
+          title: "Exportação iniciada",
+          description: `Exportando dados de ${selectedChargeIds.length} cobranças.`,
+        });
+        // Aqui seria implementada a exportação real
+        break;
+        
+      case 'print':
+        // Imprimir boletos das cobranças selecionadas
+        toast({
+          title: "Impressão iniciada",
+          description: `Preparando ${selectedChargeIds.length} boletos para impressão.`,
+        });
+        // Aqui seria implementada a impressão real
+        break;
+        
+      case 'download':
+        // Baixar boletos das cobranças selecionadas
+        toast({
+          title: "Download iniciado",
+          description: `Baixando ${selectedChargeIds.length} boletos.`,
+        });
+        // Aqui seria implementado o download real
+        break;
+        
+      case 'modify':
+        // Abrir modal para modificar as cobranças selecionadas
+        setIsBulkModifyDialogOpen(true);
+        break;
+        
+      case 'remove':
+        // Abrir confirmação para remover as cobranças selecionadas
+        setIsBulkRemoveDialogOpen(true);
+        break;
+        
+      default:
+        toast({
+          title: "Ação não implementada",
+          description: `A ação "${action}" ainda não foi implementada.`,
+          variant: "destructive"
+        });
+    }
+  };
+  
+  // Selecionar/deselecionar todas as cobranças
+  const toggleSelectAll = (isSelected: boolean) => {
+    const newSelectedCharges: Record<string, boolean> = {};
+    
+    if (isSelected) {
+      // Selecionar todas as cobranças filtradas
+      sortedCharges.forEach(charge => {
+        newSelectedCharges[charge.id] = true;
+      });
+    }
+    
+    setSelectedCharges(newSelectedCharges);
+  };
+  
+  // Verificar se todas as cobranças estão selecionadas
+  const areAllSelected = () => {
+    if (sortedCharges.length === 0) return false;
+    return sortedCharges.every(charge => selectedCharges[charge.id]);
+  };
+  
+  // Contar quantas cobranças estão selecionadas
+  const countSelectedCharges = () => {
+    return Object.values(selectedCharges).filter(Boolean).length;
+  };
   
   // Funções para gerenciar os links de pagamento
   const openPaymentLink = (url: string | undefined) => {
@@ -1051,10 +1144,38 @@ export default function ChargesPage() {
                 </DialogContent>
               </Dialog>
 
-              <Button variant="outline" className="text-blue-600">
-                Ações em lote
-                <ChevronDownIcon className="ml-2 h-4 w-4" />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="text-blue-600 flex items-center">
+                    <span className="flex items-center">
+                      Ações em lote
+                      <ChevronDownIcon className="ml-2 h-4 w-4" />
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-60">
+                  <DropdownMenuItem className="flex items-center cursor-pointer" onClick={() => handleBulkAction('export')}>
+                    <DownloadIcon className="mr-2 h-4 w-4" />
+                    Exportar dados
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="flex items-center cursor-pointer" onClick={() => handleBulkAction('print')}>
+                    <PrinterIcon className="mr-2 h-4 w-4" />
+                    Imprimir boletos
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="flex items-center cursor-pointer" onClick={() => handleBulkAction('download')}>
+                    <DownloadIcon className="mr-2 h-4 w-4" />
+                    Baixar boletos
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="flex items-center cursor-pointer" onClick={() => handleBulkAction('modify')}>
+                    <EditIcon className="mr-2 h-4 w-4" />
+                    Modificar cobranças
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="flex items-center cursor-pointer text-red-500" onClick={() => handleBulkAction('remove')}>
+                    <Trash2Icon className="mr-2 h-4 w-4" />
+                    Remover cobranças
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
@@ -1082,6 +1203,14 @@ export default function ChargesPage() {
                 <Table className="w-full">
                   <TableHeader>
                     <TableRow className="bg-gray-50 hover:bg-gray-50">
+                      <TableHead className="w-10">
+                        <Checkbox 
+                          checked={areAllSelected()} 
+                          onCheckedChange={toggleSelectAll}
+                          aria-label="Selecionar todas as cobranças"
+                          className="ml-2"
+                        />
+                      </TableHead>
                       <TableHead 
                         className="cursor-pointer"
                         onClick={() => handleSort('name')}
@@ -1128,6 +1257,18 @@ export default function ChargesPage() {
                   <TableBody>
                     {sortedCharges.map((charge) => (
                       <TableRow key={charge.id} className="border-t">
+                        <TableCell>
+                          <Checkbox 
+                            checked={!!selectedCharges[charge.id]}
+                            onCheckedChange={(checked) => {
+                              setSelectedCharges({
+                                ...selectedCharges,
+                                [charge.id]: !!checked
+                              });
+                            }}
+                            aria-label={`Selecionar cobrança ${charge.id}`}
+                          />
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center">
                             <div className="w-6 mr-2">
@@ -1286,7 +1427,7 @@ export default function ChargesPage() {
                     ))}
                     {sortedCharges.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={6} className="h-24 text-center">
+                        <TableCell colSpan={7} className="h-24 text-center">
                           Nenhuma cobrança encontrada.
                         </TableCell>
                       </TableRow>
@@ -1298,6 +1439,108 @@ export default function ChargesPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Modal para modificação em lote */}
+      <Dialog open={isBulkModifyDialogOpen} onOpenChange={setIsBulkModifyDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modificar cobranças em lote</DialogTitle>
+            <DialogDescription>
+              Você está prestes a modificar {countSelectedCharges()} cobranças. 
+              Essa ação afetará apenas as cobranças selecionadas.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="dueDateBulk">Data de vencimento</Label>
+              <Input
+                id="dueDateBulk"
+                type="date"
+                className="w-full"
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="statusBulk">Status</Label>
+              <Select>
+                <SelectTrigger id="statusBulk">
+                  <SelectValue placeholder="Selecione um status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PENDING">Aguardando pagamento</SelectItem>
+                  <SelectItem value="RECEIVED">Recebida</SelectItem>
+                  <SelectItem value="OVERDUE">Vencida</SelectItem>
+                  <SelectItem value="CANCELED">Cancelada</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsBulkModifyDialogOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={() => {
+                toast({
+                  title: "Cobranças atualizadas",
+                  description: `${countSelectedCharges()} cobranças foram atualizadas com sucesso.`,
+                });
+                setIsBulkModifyDialogOpen(false);
+                clearSelection();
+              }}
+            >
+              Aplicar alterações
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal para remoção em lote */}
+      <Dialog open={isBulkRemoveDialogOpen} onOpenChange={setIsBulkRemoveDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Remover cobranças em lote</DialogTitle>
+            <DialogDescription>
+              Você está prestes a remover {countSelectedCharges()} cobranças. 
+              Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <p className="text-sm text-red-500">
+              Atenção: A remoção de cobranças é irreversível. Todas as informações relacionadas a essas 
+              cobranças serão perdidas.
+            </p>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsBulkRemoveDialogOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={() => {
+                toast({
+                  title: "Cobranças removidas",
+                  description: `${countSelectedCharges()} cobranças foram removidas com sucesso.`,
+                });
+                setIsBulkRemoveDialogOpen(false);
+                clearSelection();
+              }}
+            >
+              Confirmar remoção
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 }
