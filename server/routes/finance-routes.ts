@@ -1,6 +1,6 @@
 /**
  * Rotas para o módulo Financeiro
- * Gerencia produtos, faturas, itens de faturas e pagamentos
+ * Gerencia produtos, faturas, itens de faturas, pagamentos e cobranças
  */
 
 import { Router } from 'express';
@@ -8,6 +8,7 @@ import { z } from 'zod';
 import * as financeService from '../services/finance-service';
 import { requirePermission } from '../middlewares/permission-middleware';
 import { requireAuth } from '../middlewares/requireAuth';
+import chargesRoutes from './finance-charges-routes';
 import {
   insertProductSchema,
   insertInvoiceSchema,

@@ -1,13 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import AdminLayout from "@/components/layout/admin-layout";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   Table,
@@ -21,89 +18,309 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { 
-  InvoiceIcon, 
-  PlusIcon, 
-  SearchIcon, 
-  FilterIcon,
+  AlertCircleIcon,
+  ArrowDownwardIcon as ArrowDownIcon,
+  ArrowUpwardIcon as ArrowUpIcon,
+  CheckIcon,
+  ChevronDownIcon,
+  CopyIcon,
+  EditIcon,
   EyeIcon,
-  DownloadIcon,
-  BuildingStoreIcon
+  FilterIcon,
+  InfoIcon,
+  InvoiceIcon, 
+  MailIcon,
+  PlusIcon, 
+  PrinterIcon,
+  SearchIcon,
+  TrashIcon as Trash2Icon,
+  UserIcon,
+  CreditCardIcon as DollarSignIcon,
+  DownloadIcon
 } from "@/components/ui/icons";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
+// Tipo para as cobranças
+type Charge = {
+  id: string;
+  name: string;
+  value: number;
+  description: string | null;
+  paymentType: 'Pix' | 'Boleto Bancário / Pix';
+  dueDate: string;
+  status: 'pending' | 'paid' | 'overdue' | 'cancelled' | 'partial';
+  installment?: {
+    number: number;
+    total: number;
+  };
+};
 
 export default function ChargesPage() {
   const [, navigate] = useLocation();
-  const [searchTerm, setSearchTerm] = React.useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortField, setSortField] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
-  // Quando tivermos a API real, este useQuery será usado para carregar os dados
-  // Por enquanto, definimos como isLoading para mostrar o estado de carregamento
+  // Estado para mock de dados até que tenhamos a API
+  const [mockCharges] = useState<Charge[]>([
+    {
+      id: "1",
+      name: "Ana Lúcia Moreira Gonçalves",
+      value: 10.00,
+      description: null,
+      paymentType: 'Pix',
+      dueDate: "25/04/2025",
+      status: 'pending'
+    },
+    {
+      id: "2",
+      name: "Ruan Moreira Pereira",
+      value: 110.00,
+      description: null,
+      paymentType: 'Pix',
+      dueDate: "25/04/2025",
+      status: 'pending'
+    },
+    {
+      id: "3",
+      name: "Lúcia Maria",
+      value: 30.00,
+      description: null,
+      paymentType: 'Pix',
+      dueDate: "25/04/2025",
+      status: 'pending'
+    },
+    {
+      id: "4",
+      name: "Marco Antônio Gonçalves",
+      value: 150.00,
+      description: null,
+      paymentType: 'Pix',
+      dueDate: "25/04/2025",
+      status: 'pending'
+    },
+    {
+      id: "5",
+      name: "Ezequias da Silva Silva",
+      value: 220.87,
+      description: null,
+      paymentType: 'Boleto Bancário / Pix',
+      dueDate: "15/03/2026",
+      status: 'partial',
+      installment: {
+        number: 12,
+        total: 12
+      }
+    },
+    {
+      id: "6",
+      name: "Ezequias da Silva Silva",
+      value: 220.83,
+      description: null,
+      paymentType: 'Boleto Bancário / Pix',
+      dueDate: "15/02/2026",
+      status: 'pending',
+      installment: {
+        number: 11,
+        total: 12
+      }
+    },
+    {
+      id: "7",
+      name: "Ezequias da Silva Silva",
+      value: 220.83,
+      description: null,
+      paymentType: 'Boleto Bancário / Pix',
+      dueDate: "15/01/2026",
+      status: 'pending',
+      installment: {
+        number: 10,
+        total: 12
+      }
+    },
+    {
+      id: "8",
+      name: "Ezequias da Silva Silva",
+      value: 220.83,
+      description: null,
+      paymentType: 'Boleto Bancário / Pix',
+      dueDate: "15/12/2025",
+      status: 'paid',
+      installment: {
+        number: 9,
+        total: 12
+      }
+    },
+    {
+      id: "9",
+      name: "Ezequias da Silva Silva",
+      value: 220.83,
+      description: null,
+      paymentType: 'Boleto Bancário / Pix',
+      dueDate: "15/11/2025",
+      status: 'paid',
+      installment: {
+        number: 8,
+        total: 12
+      }
+    }
+  ]);
+
+  // Quando tivermos a API real, este useQuery será usado para carregar os dados da API Asaas
   const { data: charges, isLoading } = useQuery({
     queryKey: ["/api/finance/charges"],
     enabled: false, // Desabilitado até termos a API real
   });
 
-  const formatCurrency = (value) => {
+  const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL'
     }).format(value);
   };
 
-  const getStatusBadge = (status) => {
-    const statusMap = {
-      paid: <Badge className="bg-green-500">Pago</Badge>,
-      pending: <Badge className="bg-yellow-500">Pendente</Badge>,
-      overdue: <Badge className="bg-red-500">Vencido</Badge>,
-      cancelled: <Badge className="bg-gray-500">Cancelado</Badge>,
-      partial: <Badge className="bg-blue-500">Pagamento Parcial</Badge>,
-    };
-
-    return statusMap[status] || <Badge>{status}</Badge>;
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'paid':
+        return <Badge className="bg-green-100 text-green-800 rounded-full flex items-center gap-1 px-2 py-0.5">
+          <span className="h-2 w-2 rounded-full bg-green-500"></span>
+          Recebida
+        </Badge>;
+      case 'pending':
+        return <Badge className="bg-yellow-100 text-yellow-800 rounded-full flex items-center gap-1 px-2 py-0.5">
+          <span className="h-2 w-2 rounded-full bg-yellow-500"></span>
+          Pendente
+        </Badge>;
+      case 'overdue':
+        return <Badge className="bg-red-100 text-red-800 rounded-full flex items-center gap-1 px-2 py-0.5">
+          <span className="h-2 w-2 rounded-full bg-red-500"></span>
+          Vencida
+        </Badge>;
+      case 'cancelled':
+        return <Badge className="bg-gray-100 text-gray-800 rounded-full flex items-center gap-1 px-2 py-0.5">
+          <span className="h-2 w-2 rounded-full bg-gray-500"></span>
+          Cancelada
+        </Badge>;
+      case 'partial':
+        return <Badge className="bg-blue-100 text-blue-800 rounded-full flex items-center gap-1 px-2 py-0.5">
+          <span className="h-2 w-2 rounded-full bg-blue-500"></span>
+          Parcial
+        </Badge>;
+      default:
+        return <Badge>{status}</Badge>;
+    }
   };
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const getSortIcon = (field: string) => {
+    if (sortField !== field) return null;
+    return sortDirection === 'asc' ? <ArrowUpIcon className="h-4 w-4" /> : <ArrowDownIcon className="h-4 w-4" />;
+  };
+
+  const filteredCharges = mockCharges.filter(charge => 
+    charge.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (charge.description && charge.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    formatCurrency(charge.value).includes(searchTerm)
+  );
+
+  // Ordenação dos resultados
+  const sortedCharges = [...filteredCharges].sort((a, b) => {
+    if (!sortField) return 0;
+    
+    let comparison = 0;
+    
+    if (sortField === 'name') {
+      comparison = a.name.localeCompare(b.name);
+    } else if (sortField === 'value') {
+      comparison = a.value - b.value;
+    } else if (sortField === 'dueDate') {
+      const dateA = new Date(a.dueDate.split('/').reverse().join('-'));
+      const dateB = new Date(b.dueDate.split('/').reverse().join('-'));
+      comparison = dateA.getTime() - dateB.getTime();
+    } else if (sortField === 'description') {
+      comparison = (a.description || '').localeCompare(b.description || '');
+    } else if (sortField === 'paymentType') {
+      comparison = a.paymentType.localeCompare(b.paymentType);
+    }
+    
+    return sortDirection === 'asc' ? comparison : -comparison;
+  });
 
   return (
     <AdminLayout>
-      <div className="container mx-auto py-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Cobranças</h1>
-            <p className="text-gray-500">
-              Gerenciamento de cobranças e acompanhamento de pagamentos.
-            </p>
+      <div className="container mx-auto py-4">
+        {/* Cabeçalho */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-2">
+            <div className="text-gray-600">Cobranças</div>
+            <div className="text-gray-400">〉</div>
+            <div className="font-medium">Todas</div>
           </div>
-          <Button onClick={() => navigate("/admin/finance/charges/new")}>
-            <PlusIcon className="mr-2 h-4 w-4" />
-            Nova Cobrança
-          </Button>
+          <div className="flex space-x-2">
+            <Button 
+              variant="default" 
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={() => navigate("/admin/finance/charges/new")}
+            >
+              <span className="flex items-center">
+                <PlusIcon className="h-4 w-4 mr-2" />
+                Emitir cobrança
+                <ChevronDownIcon className="h-4 w-4 ml-2" />
+              </span>
+            </Button>
+          </div>
         </div>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle>Listagem de Cobranças</CardTitle>
-            <CardDescription>
-              Visualize e gerencie todas as cobranças emitidas.
-            </CardDescription>
-            <div className="flex items-center space-x-2 pt-2">
-              <div className="relative flex-1">
-                <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                <Input
-                  type="search"
-                  placeholder="Buscar por número, cliente ou valor..."
-                  className="pl-8"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-              <Button variant="outline" size="sm">
+        <h2 className="text-2xl font-bold mb-4">Todas</h2>
+
+        {/* Barra de pesquisa e filtros */}
+        <div className="bg-white rounded-md p-4 mb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex-1 relative">
+              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                type="text"
+                placeholder="Procurar por nome ou email do cliente"
+                className="pl-9 pr-4 h-10 w-full max-w-md"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="flex space-x-2">
+              <Button variant="outline" className="flex items-center text-gray-600">
                 <FilterIcon className="mr-2 h-4 w-4" />
                 Filtros
+                <ChevronDownIcon className="ml-2 h-4 w-4" />
+              </Button>
+              <Button variant="outline" className="text-blue-600">
+                Ações em lote
+                <ChevronDownIcon className="ml-2 h-4 w-4" />
               </Button>
             </div>
-          </CardHeader>
-          <CardContent>
+          </div>
+        </div>
+
+        <Card className="overflow-hidden border-0 shadow-sm">
+          <CardContent className="p-0">
             {isLoading ? (
               // Estado de carregamento
-              <div className="space-y-2">
+              <div className="space-y-2 p-4">
                 {Array(5)
                   .fill(null)
                   .map((_, i) => (
@@ -117,125 +334,177 @@ export default function ChargesPage() {
                   ))}
               </div>
             ) : (
-              // Tabela que será preenchida com dados da API
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Número</TableHead>
-                    <TableHead>Cliente</TableHead>
-                    <TableHead>Data de Emissão</TableHead>
-                    <TableHead>Vencimento</TableHead>
-                    <TableHead>Valor</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {/* Dados de exemplo - serão substituídos por dados da API */}
-                  <TableRow>
-                    <TableCell className="font-medium">COB-2025-0001</TableCell>
-                    <TableCell>
-                      <div className="flex items-center">
-                        <BuildingStoreIcon className="mr-2 h-4 w-4" />
-                        Empresa Alpha Ltda.
-                      </div>
-                    </TableCell>
-                    <TableCell>01/04/2025</TableCell>
-                    <TableCell>15/04/2025</TableCell>
-                    <TableCell>{formatCurrency(4320.00)}</TableCell>
-                    <TableCell>
-                      {getStatusBadge('pending')}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end space-x-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          title="Baixar cobrança"
-                        >
-                          <DownloadIcon className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => navigate("/admin/finance/charges/1")}
-                        >
-                          <EyeIcon className="mr-2 h-4 w-4" />
-                          Detalhes
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">COB-2025-0002</TableCell>
-                    <TableCell>
-                      <div className="flex items-center">
-                        <BuildingStoreIcon className="mr-2 h-4 w-4" />
-                        Empresa Beta S.A.
-                      </div>
-                    </TableCell>
-                    <TableCell>28/03/2025</TableCell>
-                    <TableCell>28/04/2025</TableCell>
-                    <TableCell>{formatCurrency(9850.00)}</TableCell>
-                    <TableCell>
-                      {getStatusBadge('paid')}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end space-x-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          title="Baixar cobrança"
-                        >
-                          <DownloadIcon className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => navigate("/admin/finance/charges/2")}
-                        >
-                          <EyeIcon className="mr-2 h-4 w-4" />
-                          Detalhes
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">COB-2025-0003</TableCell>
-                    <TableCell>
-                      <div className="flex items-center">
-                        <BuildingStoreIcon className="mr-2 h-4 w-4" />
-                        Carlos Eduardo Santos
-                      </div>
-                    </TableCell>
-                    <TableCell>15/03/2025</TableCell>
-                    <TableCell>15/03/2025</TableCell>
-                    <TableCell>{formatCurrency(750.00)}</TableCell>
-                    <TableCell>
-                      {getStatusBadge('overdue')}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end space-x-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          title="Baixar cobrança"
-                        >
-                          <DownloadIcon className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => navigate("/admin/finance/charges/3")}
-                        >
-                          <EyeIcon className="mr-2 h-4 w-4" />
-                          Detalhes
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
+              // Tabela estilo Asaas
+              <div className="overflow-x-auto">
+                <Table className="w-full">
+                  <TableHeader>
+                    <TableRow className="bg-gray-50 hover:bg-gray-50">
+                      <TableHead 
+                        className="cursor-pointer"
+                        onClick={() => handleSort('name')}
+                      >
+                        <div className="flex items-center">
+                          Nome {getSortIcon('name')}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="cursor-pointer text-right"
+                        onClick={() => handleSort('value')}
+                      >
+                        <div className="flex items-center justify-end">
+                          Valor {getSortIcon('value')}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="cursor-pointer"
+                        onClick={() => handleSort('description')}
+                      >
+                        <div className="flex items-center">
+                          Descrição {getSortIcon('description')}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="cursor-pointer"
+                        onClick={() => handleSort('paymentType')}
+                      >
+                        <div className="flex items-center">
+                          Forma de pagamento {getSortIcon('paymentType')}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="cursor-pointer"
+                        onClick={() => handleSort('dueDate')}
+                      >
+                        <div className="flex items-center">
+                          Data de vencimento {getSortIcon('dueDate')}
+                        </div>
+                      </TableHead>
+                      <TableHead></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sortedCharges.map((charge) => (
+                      <TableRow key={charge.id} className="border-t">
+                        <TableCell>
+                          <div className="flex items-center">
+                            <div className="w-6 mr-2">
+                              <UserIcon className="h-5 w-5 text-teal-600" />
+                            </div>
+                            <span className="font-medium text-teal-600">
+                              {charge.name}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          {formatCurrency(charge.value)}
+                        </TableCell>
+                        <TableCell>
+                          {charge.description || (
+                            <span className="text-gray-500">Descrição não informada</span>
+                          )}
+                          {charge.installment && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              Parcela {charge.installment.number} de {charge.installment.total}.
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {charge.paymentType}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center">
+                            {charge.dueDate}
+                            <span className="ml-2">
+                              {charge.status === 'paid' || charge.status === 'partial' ? 
+                                <span className="h-4 w-4 text-green-500">✓</span> : 
+                                <AlertCircleIcon className={`h-4 w-4 ${charge.status === 'overdue' ? 'text-red-500' : 'text-yellow-500'}`} />
+                              }
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-end space-x-1">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-gray-800">
+                                    <DollarSignIcon className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Receber</p>
+                                </TooltipContent>
+                              </Tooltip>
+                              
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-gray-800">
+                                    <EyeIcon className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Visualizar</p>
+                                </TooltipContent>
+                              </Tooltip>
+                              
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-gray-800">
+                                    <EditIcon className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Editar</p>
+                                </TooltipContent>
+                              </Tooltip>
+                              
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-gray-800">
+                                    <CopyIcon className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Copiar link</p>
+                                </TooltipContent>
+                              </Tooltip>
+                              
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-gray-800">
+                                    <MailIcon className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Enviar por e-mail</p>
+                                </TooltipContent>
+                              </Tooltip>
+                              
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-red-600">
+                                    <Trash2Icon className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Excluir</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {sortedCharges.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={6} className="h-24 text-center">
+                          Nenhuma cobrança encontrada.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </CardContent>
         </Card>
