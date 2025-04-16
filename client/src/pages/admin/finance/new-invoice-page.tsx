@@ -127,7 +127,7 @@ export default function NewInvoicePage() {
     const year = now.getFullYear().toString().slice(2);
     const month = (now.getMonth() + 1).toString().padStart(2, '0');
     const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-    return `FAT-${year}${month}-${random}`;
+    return `COB-${year}${month}-${random}`;
   }
 
   // Função para calcular o subtotal do item
