@@ -573,7 +573,7 @@ export default function ClientDetailsPage() {
                                     >
                                       Atualizar
                                     </Button>
-                                    {checkout.status === 'PENDING' && (
+                                    {(checkout.status === 'pending' || checkout.status === 'PENDING') && (
                                       <Button 
                                         variant="destructive" 
                                         size="sm"
