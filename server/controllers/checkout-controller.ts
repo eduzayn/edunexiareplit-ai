@@ -47,7 +47,9 @@ export async function createCheckoutLink(req: Request, res: Response) {
 
     // Cria um link de checkout no Asaas
     try {
+      console.log('Iniciando criação de link de checkout no Asaas...');
       const baseUrl = process.env.APP_URL || 'https://app.edunexia.com.br';
+      console.log('Dados do lead para checkout:', JSON.stringify(leadData, null, 2));
       const checkoutResponse = await asaasCheckoutService.createCheckoutLink({
         name: leadData.name,
         email: leadData.email,
