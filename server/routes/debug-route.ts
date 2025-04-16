@@ -87,4 +87,55 @@ router.get('/asaas-charges', async (req, res) => {
   }
 });
 
+// Rota para buscar clientes do Asaas diretamente
+router.get('/asaas-customers', async (req, res) => {
+  try {
+    console.log('Buscando clientes do Asaas:');
+    
+    const ASAAS_API_URL = process.env.ASAAS_API_URL || 'https://api.asaas.com/v3';
+    const ASAAS_API_KEY = process.env.ASAAS_ZAYN_KEY;
+    
+    if (!ASAAS_API_KEY) {
+      return res.status(500).json({
+        success: false,
+        message: 'Chave da API Asaas não está configurada'
+      });
+    }
+    
+    // Criar cliente Axios para o Asaas
+    const asaasApi = axios.create({
+      baseURL: ASAAS_API_URL,
+      headers: {
+        'access_token': ASAAS_API_KEY,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    // Buscar clientes
+    const response = await asaasApi.get('/customers', {
+      params: { limit: 50 }
+    });
+    
+    console.log(`Encontrados ${response.data.totalCount} clientes no Asaas`);
+    
+    res.json({
+      success: true,
+      message: 'Clientes obtidos com sucesso',
+      data: response.data.data
+    });
+  } catch (error) {
+    console.error('Erro ao buscar clientes do Asaas:', error);
+    
+    const responseData = error.response?.data || {};
+    const responseStatus = error.response?.status || 500;
+    
+    res.status(responseStatus).json({
+      success: false,
+      message: 'Erro ao buscar clientes do Asaas',
+      error: error.message,
+      details: responseData
+    });
+  }
+});
+
 export default router;
