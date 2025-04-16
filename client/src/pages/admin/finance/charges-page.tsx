@@ -174,10 +174,10 @@ export default function ChargesPage() {
     }
   ]);
 
-  // Quando tivermos a API real, este useQuery será usado para carregar os dados da API Asaas
-  const { data: charges, isLoading } = useQuery({
+  // Buscar dados da API Asaas
+  const { data: charges, isLoading, error } = useQuery({
     queryKey: ["/api/finance/charges"],
-    enabled: false, // Desabilitado até termos a API real
+    enabled: true, // Habilitado para buscar dados da API Asaas
   });
 
   const formatCurrency = (value: number) => {

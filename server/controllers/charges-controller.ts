@@ -252,12 +252,13 @@ export async function getCustomerCharges(req: Request, res: Response) {
       success: true,
       data: charges
     });
-  } catch (error) {
-    logger.error(`[ChargesController] Erro ao buscar cobranças do cliente ${req.params.customerId}: ${error.message}`);
+  } catch (error: any) {
+    const errorMessage = error?.message || 'Erro desconhecido';
+    logger.error(`[ChargesController] Erro ao buscar cobranças do cliente ${req.params.customerId}: ${errorMessage}`);
     res.status(500).json({
       success: false,
       message: 'Erro ao buscar cobranças do cliente',
-      error: error.message
+      error: errorMessage
     });
   }
 }
@@ -304,12 +305,13 @@ export async function receivePayment(req: Request, res: Response) {
         localInfo: localChargeInfo
       }
     });
-  } catch (error) {
-    logger.error(`[ChargesController] Erro ao confirmar pagamento da cobrança ${req.params.id}: ${error.message}`);
+  } catch (error: any) {
+    const errorMessage = error?.message || 'Erro desconhecido';
+    logger.error(`[ChargesController] Erro ao confirmar pagamento da cobrança ${req.params.id}: ${errorMessage}`);
     res.status(500).json({
       success: false,
       message: 'Erro ao confirmar pagamento da cobrança',
-      error: error.message
+      error: errorMessage
     });
   }
 }
