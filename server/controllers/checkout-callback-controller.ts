@@ -230,50 +230,125 @@ export async function checkoutNotificationCallback(req: Request, res: Response) 
       WHERE id = ${checkoutData.id}
     `);
 
-    // Se o checkout está vinculado a um cliente, verificar se deve criar o pagamento
-    if (checkoutData.client_id && asaasCheckoutStatus.payment) {
-      // Verificar se já existe um pagamento para este checkout
-      const existingPayment = await db.execute(sql`
-        SELECT * FROM payments WHERE external_id = ${asaasCheckoutStatus.payment.id}
-      `);
-
-      if (!existingPayment.rows.length && ['CONFIRMED', 'RECEIVED', 'PAID'].includes(asaasCheckoutStatus.payment.status.toUpperCase())) {
-        // Criar pagamento no sistema
-        await db.execute(sql`
-          INSERT INTO payments (
-            client_id, type, status, value, payment_method,
-            external_id, external_data, description, created_at
-          ) VALUES (
-            ${checkoutData.client_id},
-            ${'payment'},
-            ${'completed'},
-            ${asaasCheckoutStatus.payment.value},
-            ${asaasCheckoutStatus.payment.billingType},
-            ${asaasCheckoutStatus.payment.id},
-            ${JSON.stringify(asaasCheckoutStatus.payment)},
-            ${asaasCheckoutStatus.payment.description || `Pagamento via Checkout ${checkoutId}`},
-            NOW()
-          )
-        `);
-      } else if (existingPayment.rows.length) {
-        // Atualizar status do pagamento existente
-        let paymentStatus = 'pending';
+    // Se o checkout está vinculado a um cliente, buscar e processar pagamentos
+    if (checkoutData.client_id) {
+      try {
+        console.log(`Buscando pagamentos do checkout ${checkoutId} no Asaas...`);
         
-        if (['CONFIRMED', 'RECEIVED', 'PAID'].includes(asaasCheckoutStatus.payment.status.toUpperCase())) {
-          paymentStatus = 'completed';
-        } else if (['OVERDUE'].includes(asaasCheckoutStatus.payment.status.toUpperCase())) {
-          paymentStatus = 'pending';
-        } else if (['CANCELED', 'DECLINED', 'FAILED'].includes(asaasCheckoutStatus.payment.status.toUpperCase())) {
-          paymentStatus = 'failed';
-        } else if (['REFUNDED'].includes(asaasCheckoutStatus.payment.status.toUpperCase())) {
-          paymentStatus = 'refunded';
+        // Usar o serviço para buscar pagamentos associados ao checkout
+        const asaasPayments = await asaasCheckoutService.getCheckoutPayments(String(checkoutId));
+        
+        if (asaasPayments && asaasPayments.length > 0) {
+          console.log(`Encontrados ${asaasPayments.length} pagamentos para o checkout ${checkoutId}`);
+          
+          // Registrar pagamentos na tabela de pagamentos
+          for (const payment of asaasPayments) {
+            // Processar somente se tiver dados básicos
+            if (payment && payment.id && payment.value) {
+              // Verificar se o pagamento já existe
+              const existingPayment = await db.execute(sql`
+                SELECT * FROM payments WHERE asaas_id = ${payment.id}
+              `);
+              
+              if (existingPayment.rows.length === 0) {
+                // Criar uma fatura para o pagamento
+                const paymentDate = payment.paymentDate ? new Date(payment.paymentDate) : new Date();
+                
+                // Verificar se já existe uma fatura para este checkout
+                const existingInvoice = await db.execute(sql`
+                  SELECT * FROM invoices 
+                  WHERE client_id = ${checkoutData.client_id}
+                  AND description LIKE ${'%' + checkoutId + '%'}
+                `);
+                
+                let invoiceId;
+                
+                if (existingInvoice.rows.length === 0) {
+                  // Criar uma nova fatura
+                  const invoice = await db.execute(sql`
+                    INSERT INTO invoices (
+                      client_id, total_amount, status, 
+                      due_date, description, created_at
+                    ) VALUES (
+                      ${checkoutData.client_id}, 
+                      ${payment.value}, 
+                      ${'paid'}, 
+                      ${payment.dueDate || new Date().toISOString().split('T')[0]}, 
+                      ${'Fatura gerada automaticamente a partir do checkout ' + checkoutId}, 
+                      NOW()
+                    )
+                    RETURNING *
+                  `);
+                  
+                  invoiceId = invoice.rows[0].id;
+                } else {
+                  // Usar a fatura existente
+                  invoiceId = existingInvoice.rows[0].id;
+                }
+                
+                // Determinar o status do pagamento
+                let paymentStatus = 'pending';
+                if (['CONFIRMED', 'RECEIVED', 'PAID'].includes(payment.status.toUpperCase())) {
+                  paymentStatus = 'completed';
+                } else if (['OVERDUE'].includes(payment.status.toUpperCase())) {
+                  paymentStatus = 'pending';
+                } else if (['CANCELED', 'DECLINED', 'FAILED'].includes(payment.status.toUpperCase())) {
+                  paymentStatus = 'failed';
+                } else if (['REFUNDED'].includes(payment.status.toUpperCase())) {
+                  paymentStatus = 'refunded';
+                }
+                
+                // Registrar o pagamento
+                await db.execute(sql`
+                  INSERT INTO payments (
+                    invoice_id, amount, method, payment_date, status,
+                    transaction_id, notes, asaas_id, payment_url,
+                    created_at
+                  ) VALUES (
+                    ${invoiceId},
+                    ${payment.value},
+                    ${'credit_card'}, 
+                    ${paymentDate.toISOString()},
+                    ${paymentStatus},
+                    ${payment.id},
+                    ${'Pagamento via Asaas Checkout'},
+                    ${payment.id},
+                    ${payment.invoiceUrl || null},
+                    NOW()
+                  )
+                `);
+                
+                console.log(`Pagamento ${payment.id} registrado com sucesso para o cliente ${checkoutData.client_id}`);
+              } else {
+                // Atualizar status do pagamento existente
+                let paymentStatus = 'pending';
+                
+                if (['CONFIRMED', 'RECEIVED', 'PAID'].includes(payment.status.toUpperCase())) {
+                  paymentStatus = 'completed';
+                } else if (['OVERDUE'].includes(payment.status.toUpperCase())) {
+                  paymentStatus = 'pending';
+                } else if (['CANCELED', 'DECLINED', 'FAILED'].includes(payment.status.toUpperCase())) {
+                  paymentStatus = 'failed';
+                } else if (['REFUNDED'].includes(payment.status.toUpperCase())) {
+                  paymentStatus = 'refunded';
+                }
+                
+                await db.execute(sql`
+                  UPDATE payments
+                  SET status = ${paymentStatus}, updated_at = NOW()
+                  WHERE id = ${existingPayment.rows[0].id}
+                `);
+                
+                console.log(`Pagamento ${payment.id} atualizado com sucesso`);
+              }
+            }
+          }
+        } else {
+          console.log(`Nenhum pagamento encontrado para o checkout ${checkoutId}`);
         }
-        
-        await db.execute(sql`
-          UPDATE payments
-          SET status = ${paymentStatus}, updated_at = NOW()
-          WHERE id = ${existingPayment.rows[0].id}
-        `);
+      } catch (paymentError) {
+        console.error('Erro ao processar pagamentos do checkout:', paymentError);
+        // Não interrompe o fluxo, apenas registra o erro
       }
     }
 
@@ -437,6 +512,84 @@ export async function checkAndConvertPendingLeads(req: Request, res: Response) {
             updated_at = NOW()
           WHERE id = ${leadData.checkout_id}
         `);
+        
+        // Buscar informações de pagamentos no Asaas
+        try {
+          if (leadData.asaas_checkout_id) {
+            console.log(`Buscando pagamentos do checkout ${leadData.asaas_checkout_id} no Asaas...`);
+            
+            // Usar o serviço para buscar pagamentos associados ao checkout
+            const asaasPayments = await asaasCheckoutService.getCheckoutPayments(leadData.asaas_checkout_id);
+            
+            if (asaasPayments && asaasPayments.length > 0) {
+              console.log(`Encontrados ${asaasPayments.length} pagamentos para o checkout ${leadData.asaas_checkout_id}`);
+              
+              // Registrar pagamentos na tabela de pagamentos
+              for (const payment of asaasPayments) {
+                // Processar somente se tiver dados básicos
+                if (payment && payment.id && payment.value) {
+                  // Verificar se o pagamento já existe
+                  const existingPayment = await db.execute(sql`
+                    SELECT * FROM payments WHERE asaas_id = ${payment.id}
+                  `);
+                  
+                  if (existingPayment.rows.length === 0) {
+                    // TODO: Esta parte precisará criar uma fatura (invoice) primeiro,
+                    // mas por enquanto só vamos registrar o pagamento
+                    const paymentDate = payment.paymentDate ? new Date(payment.paymentDate) : new Date();
+                    
+                    // Criar uma fatura temporária para vincular o pagamento
+                    const invoice = await db.execute(sql`
+                      INSERT INTO invoices (
+                        client_id, total_amount, status, 
+                        due_date, description, created_at
+                      ) VALUES (
+                        ${clientId}, 
+                        ${payment.value}, 
+                        ${'paid'}, 
+                        ${payment.dueDate || new Date().toISOString().split('T')[0]}, 
+                        ${'Fatura gerada automaticamente a partir de checkout'}, 
+                        NOW()
+                      )
+                      RETURNING *
+                    `);
+                    
+                    const invoiceId = invoice.rows[0].id;
+                    
+                    // Registrar o pagamento
+                    await db.execute(sql`
+                      INSERT INTO payments (
+                        invoice_id, amount, method, payment_date, status,
+                        transaction_id, notes, asaas_id, payment_url,
+                        created_at
+                      ) VALUES (
+                        ${invoiceId},
+                        ${payment.value},
+                        ${'credit_card'}, 
+                        ${paymentDate.toISOString()},
+                        ${payment.status === 'CONFIRMED' || payment.status === 'RECEIVED' ? 'completed' : 'pending'},
+                        ${payment.id},
+                        ${'Pagamento do Asaas'},
+                        ${payment.id},
+                        ${payment.invoiceUrl || null},
+                        NOW()
+                      )
+                    `);
+                    
+                    console.log(`Pagamento ${payment.id} registrado com sucesso para o cliente ${clientId}`);
+                  } else {
+                    console.log(`Pagamento ${payment.id} já existente no sistema`);
+                  }
+                }
+              }
+            } else {
+              console.log(`Nenhum pagamento encontrado para o checkout ${leadData.asaas_checkout_id}`);
+            }
+          }
+        } catch (paymentError) {
+          console.error('Erro ao processar pagamentos do checkout:', paymentError);
+          // Não interrompe o fluxo, apenas registra o erro
+        }
         
         // Adicionar ao resultado
         conversionResults.push({
