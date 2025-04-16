@@ -11,6 +11,10 @@ const ASAAS_API_URL = process.env.ASAAS_API_URL || (
   : 'https://sandbox.asaas.com/api/v3'
 );
 
+// Log para rastrear qual ambiente está sendo usado
+console.log(`[ASAAS SERVICE] Utilizando ambiente: ${isProductionToken ? 'Produção' : 'Sandbox'} - ${ASAAS_API_URL}`);
+console.log(`[ASAAS SERVICE] Token da API: ${ASAAS_API_KEY?.substring(0, 10)}...`);
+
 // Configuração do cliente Axios para a API do Asaas
 const asaasClient = axios.create({
   baseURL: ASAAS_API_URL,
