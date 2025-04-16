@@ -331,135 +331,138 @@ export async function checkAndConvertPendingLeads(req: Request, res: Response) {
         // Verificar o status do checkout no Asaas
         const asaasCheckoutStatus = await asaasCheckoutService.getCheckoutStatus(String(leadData.asaas_checkout_id));
         
-        // Se o checkout tem customer, significa que o formulário foi preenchido
-        if (asaasCheckoutStatus.customer) {
-          console.log(`Checkout ${leadData.asaas_checkout_id} tem dados de cliente preenchidos, convertendo lead...`);
+        // MODIFICAÇÃO: Vamos converter mesmo sem customer no Asaas, usando os dados do lead
+        // Se tem customer no Asaas, usamos esse dado. Caso contrário, usamos os dados do lead
+        console.log(`Convertendo lead ${leadData.id} (${leadData.name}) para cliente...`);
+        
+        // Dados do cliente - prioriza dados do checkout, se existirem
+        const customerName = asaasCheckoutStatus.customer?.name || leadData.name;
+        const customerEmail = asaasCheckoutStatus.customer?.email || leadData.email;
+        const customerPhone = asaasCheckoutStatus.customer?.phone || leadData.phone;
+        const customerDocument = asaasCheckoutStatus.customer?.document || null;
+        
+        // Verificar se o cliente já existe com o mesmo email
+        const existingClient = await db.execute(sql`
+          SELECT * FROM clients WHERE email = ${customerEmail}
+        `);
+        
+        let clientId;
+        let isNewClient = false;
+        
+        if (!existingClient.rows.length) {
+          // Criar cliente no Asaas se não existir um ID do Asaas no lead
+          let asaasCustomerId = leadData.asaas_id;
           
-          // Verificar se o cliente já existe com o mesmo email
-          const existingClient = await db.execute(sql`
-            SELECT * FROM clients WHERE email = ${asaasCheckoutStatus.customer.email}
-          `);
-          
-          let clientId;
-          let isNewClient = false;
-          
-          if (!existingClient.rows.length) {
-            // Criar cliente no Asaas se não existir um ID do Asaas no lead
-            let asaasCustomerId = leadData.asaas_id;
-            
-            if (!asaasCustomerId) {
-              try {
-                // Criar cliente no Asaas
-                const asaasCustomer = await AsaasService.createCustomer({
-                  name: asaasCheckoutStatus.customer.name,
-                  email: asaasCheckoutStatus.customer.email,
-                  phone: asaasCheckoutStatus.customer.phone || null,
-                  document: asaasCheckoutStatus.customer.document || null,
-                  status: 'active',
-                });
-                asaasCustomerId = asaasCustomer.id;
-              } catch (asaasError) {
-                console.error('Erro ao criar cliente no Asaas:', asaasError);
-                // Continua sem o ID do Asaas, não é crítico neste momento
-              }
+          if (!asaasCustomerId) {
+            try {
+              // Criar cliente no Asaas
+              const asaasCustomer = await AsaasService.createCustomer({
+                name: customerName,
+                email: customerEmail,
+                phone: customerPhone || null,
+                document: customerDocument || null,
+                status: 'active',
+              });
+              asaasCustomerId = asaasCustomer.id;
+            } catch (asaasError) {
+              console.error('Erro ao criar cliente no Asaas:', asaasError);
+              // Continua sem o ID do Asaas, não é crítico neste momento
             }
-            
-            // Criar cliente local
-            const newClient = await db.execute(sql`
-              INSERT INTO clients (
-                name, email, phone, document, status, segment, 
-                asaas_id, created_from_lead_id, created_at
-              ) VALUES (
-                ${asaasCheckoutStatus.customer.name},
-                ${asaasCheckoutStatus.customer.email},
-                ${asaasCheckoutStatus.customer.phone || null},
-                ${asaasCheckoutStatus.customer.document || null},
-                ${'active'},
-                ${leadData.segment || 'default'},
-                ${asaasCustomerId || null},
-                ${leadData.id},
-                NOW()
-              )
-              RETURNING *
-            `);
-            
-            clientId = newClient.rows[0].id;
-            isNewClient = true;
-            
-            // Registrar atividade para o cliente
-            await db.execute(sql`
-              INSERT INTO client_activities (
-                client_id, type, description, metadata, created_at
-              ) VALUES (
-                ${clientId},
-                ${'conversion'},
-                ${'Cliente criado a partir de lead'},
-                ${JSON.stringify({
-                  leadId: leadData.id,
-                  checkoutId: leadData.checkout_id,
-                  asaasCheckoutId: leadData.asaas_checkout_id,
-                  manual: true
-                })},
-                NOW()
-              )
-            `);
-          } else {
-            // Usar cliente existente
-            clientId = existingClient.rows[0].id;
-            isNewClient = false;
           }
           
-          // Atualizar lead para "won" (indicando conversão bem-sucedida)
-          await db.execute(sql`
-            UPDATE leads
-            SET status = ${'won'}, converted_to_client_id = ${clientId}, updated_at = NOW()
-            WHERE id = ${leadData.id}
+          // Criar cliente local
+          const newClient = await db.execute(sql`
+            INSERT INTO clients (
+              name, email, phone, document, status, segment, 
+              asaas_id, created_from_lead_id, created_at
+            ) VALUES (
+              ${customerName},
+              ${customerEmail},
+              ${customerPhone || null},
+              ${customerDocument || null},
+              ${'active'},
+              ${leadData.segment || 'default'},
+              ${asaasCustomerId || null},
+              ${leadData.id},
+              NOW()
+            )
+            RETURNING *
           `);
           
-          // Registrar atividade para o lead
+          clientId = newClient.rows[0].id;
+          isNewClient = true;
+          
+          // Registrar atividade para o cliente
           await db.execute(sql`
-            INSERT INTO lead_activities (
-              lead_id, type, description, metadata, created_at
+            INSERT INTO client_activities (
+              client_id, type, description, metadata, created_at
             ) VALUES (
-              ${leadData.id},
+              ${clientId},
               ${'conversion'},
-              ${'Lead convertido para cliente (manual)'},
+              ${'Cliente criado a partir de lead'},
               ${JSON.stringify({
-                clientId,
+                leadId: leadData.id,
                 checkoutId: leadData.checkout_id,
                 asaasCheckoutId: leadData.asaas_checkout_id,
-                isNewClient
+                manual: true
               })},
               NOW()
             )
           `);
-          
-          // Atualizar o checkout para vincular ao cliente
-          await db.execute(sql`
-            UPDATE checkout_links
-            SET 
-              client_id = ${clientId},
-              status = ${asaasCheckoutStatus.status},
-              updated_at = NOW()
-            WHERE id = ${leadData.checkout_id}
-          `);
-          
-          // Adicionar ao resultado
-          conversionResults.push({
-            leadId: leadData.id,
-            leadName: leadData.name,
-            leadEmail: leadData.email,
-            clientId,
-            isNewClient,
-            checkout: {
-              id: leadData.checkout_id,
-              asaasId: leadData.asaas_checkout_id,
-              status: asaasCheckoutStatus.status
-            }
-          });
         } else {
-          console.log(`Checkout ${leadData.asaas_checkout_id} não tem dados de cliente preenchidos, ignorando...`);
+          // Usar cliente existente
+          clientId = existingClient.rows[0].id;
+          isNewClient = false;
         }
+        
+        // Atualizar lead para "won" (indicando conversão bem-sucedida)
+        await db.execute(sql`
+          UPDATE leads
+          SET status = ${'won'}, converted_to_client_id = ${clientId}, updated_at = NOW()
+          WHERE id = ${leadData.id}
+        `);
+        
+        // Registrar atividade para o lead
+        await db.execute(sql`
+          INSERT INTO lead_activities (
+            lead_id, type, description, metadata, created_at
+          ) VALUES (
+            ${leadData.id},
+            ${'conversion'},
+            ${'Lead convertido para cliente (manual)'},
+            ${JSON.stringify({
+              clientId,
+              checkoutId: leadData.checkout_id,
+              asaasCheckoutId: leadData.asaas_checkout_id,
+              isNewClient
+            })},
+            NOW()
+          )
+        `);
+        
+        // Atualizar o checkout para vincular ao cliente
+        await db.execute(sql`
+          UPDATE checkout_links
+          SET 
+            client_id = ${clientId},
+            status = ${asaasCheckoutStatus.status},
+            updated_at = NOW()
+          WHERE id = ${leadData.checkout_id}
+        `);
+        
+        // Adicionar ao resultado
+        conversionResults.push({
+          leadId: leadData.id,
+          leadName: leadData.name,
+          leadEmail: leadData.email,
+          clientId,
+          isNewClient,
+          checkout: {
+            id: leadData.checkout_id,
+            asaasId: leadData.asaas_checkout_id,
+            status: asaasCheckoutStatus.status
+          }
+        });
       } catch (leadError) {
         console.error(`Erro ao processar lead ${leadData.id}:`, leadError);
         // Continua para o próximo lead
