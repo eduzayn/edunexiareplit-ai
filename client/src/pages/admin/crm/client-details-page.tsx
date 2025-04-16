@@ -151,13 +151,15 @@ export default function ClientDetailsPage() {
                   data?.client.name
                 )}
               </h1>
-              <p className="text-gray-500">
-                {isLoading ? (
+              {isLoading ? (
+                <div className="text-gray-500">
                   <Skeleton className="h-5 w-48 mt-1" />
-                ) : (
-                  `Cliente ${getClientTypeBadge(data?.client.type || "")}`
-                )}
-              </p>
+                </div>
+              ) : (
+                <div className="text-gray-500 flex items-center gap-2">
+                  <span>Cliente</span> {getClientTypeBadge(data?.client.type || "")}
+                </div>
+              )}
             </div>
           </div>
           <div className="flex space-x-2">

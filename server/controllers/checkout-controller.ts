@@ -191,11 +191,19 @@ export async function checkCheckoutStatus(req: Request, res: Response) {
 
       // Atualiza o status no banco se mudou
       if (asaasCheckoutStatus.status !== checkoutData.status) {
+        // Se o status for confirmado ou pago, marcamos como usado para expirar o link
+        const isConfirmedOrPaid = 
+          asaasCheckoutStatus.status.toLowerCase() === 'confirmed' || 
+          asaasCheckoutStatus.status.toLowerCase() === 'paid';
+        
         await db.execute(sql.raw(`
           UPDATE checkout_links
-          SET status = ?, updated_at = NOW()
+          SET 
+            status = ?, 
+            is_used = ?,
+            updated_at = NOW()
           WHERE id = ?
-        `, [asaasCheckoutStatus.status, checkoutData.id]));
+        `, [asaasCheckoutStatus.status, isConfirmedOrPaid ? true : checkoutData.is_used || false, checkoutData.id]));
 
         // Se foi pago, criar o cliente e converter o lead
         if (asaasCheckoutStatus.status === 'confirmed' || asaasCheckoutStatus.status === 'paid') {
