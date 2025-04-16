@@ -157,9 +157,10 @@ export async function getCustomerCharges(customerId: string, filters?: Omit<Char
     
     logger.info(`[AsaasChargesService] Encontradas ${response.data.data.length} cobranças para o cliente ${customerId}`);
     return response.data.data as AsaasCharge[];
-  } catch (error) {
-    logger.error(`[AsaasChargesService] Erro ao buscar cobranças do cliente ${customerId}: ${error.message}`);
-    throw new Error(`Erro ao buscar cobranças do cliente no Asaas: ${error.message}`);
+  } catch (error: any) {
+    const errorMessage = error?.message || 'Erro desconhecido';
+    logger.error(`[AsaasChargesService] Erro ao buscar cobranças do cliente ${customerId}: ${errorMessage}`);
+    throw new Error(`Erro ao buscar cobranças do cliente no Asaas: ${errorMessage}`);
   }
 }
 
@@ -174,9 +175,10 @@ export async function receivePayment(id: string, paymentData: any) {
     
     logger.info(`[AsaasChargesService] Pagamento confirmado com sucesso: ${id}`);
     return response.data;
-  } catch (error) {
-    logger.error(`[AsaasChargesService] Erro ao confirmar pagamento da cobrança ${id}: ${error.message}`);
-    throw new Error(`Erro ao confirmar pagamento da cobrança no Asaas: ${error.message}`);
+  } catch (error: any) {
+    const errorMessage = error?.message || 'Erro desconhecido';
+    logger.error(`[AsaasChargesService] Erro ao confirmar pagamento da cobrança ${id}: ${errorMessage}`);
+    throw new Error(`Erro ao confirmar pagamento da cobrança no Asaas: ${errorMessage}`);
   }
 }
 

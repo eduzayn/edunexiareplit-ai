@@ -53,12 +53,13 @@ export async function getAllCharges(req: Request, res: Response) {
       success: true,
       data: enhancedCharges
     });
-  } catch (error) {
-    logger.error(`[ChargesController] Erro ao buscar cobranças: ${error.message}`);
+  } catch (error: any) {
+    const errorMessage = error?.message || 'Erro desconhecido';
+    logger.error(`[ChargesController] Erro ao buscar cobranças: ${errorMessage}`);
     res.status(500).json({
       success: false,
       message: 'Erro ao buscar cobranças',
-      error: error.message
+      error: errorMessage
     });
   }
 }
@@ -85,12 +86,13 @@ export async function getChargeById(req: Request, res: Response) {
         localInfo: localChargeInfo || null
       }
     });
-  } catch (error) {
-    logger.error(`[ChargesController] Erro ao buscar cobrança ${req.params.id}: ${error.message}`);
+  } catch (error: any) {
+    const errorMessage = error?.message || 'Erro desconhecido';
+    logger.error(`[ChargesController] Erro ao buscar cobrança ${req.params.id}: ${errorMessage}`);
     res.status(500).json({
       success: false,
       message: 'Erro ao buscar cobrança',
-      error: error.message
+      error: errorMessage
     });
   }
 }
@@ -148,12 +150,13 @@ export async function createCharge(req: Request, res: Response) {
         localInfo: localChargeInfo
       }
     });
-  } catch (error) {
-    logger.error(`[ChargesController] Erro ao criar cobrança: ${error.message}`);
+  } catch (error: any) {
+    const errorMessage = error?.message || 'Erro desconhecido';
+    logger.error(`[ChargesController] Erro ao criar cobrança: ${errorMessage}`);
     res.status(500).json({
       success: false,
       message: 'Erro ao criar cobrança',
-      error: error.message
+      error: errorMessage
     });
   }
 }
@@ -186,12 +189,13 @@ export async function updateCharge(req: Request, res: Response) {
         localInfo: localChargeInfo
       }
     });
-  } catch (error) {
-    logger.error(`[ChargesController] Erro ao atualizar cobrança ${req.params.id}: ${error.message}`);
+  } catch (error: any) {
+    const errorMessage = error?.message || 'Erro desconhecido';
+    logger.error(`[ChargesController] Erro ao atualizar cobrança ${req.params.id}: ${errorMessage}`);
     res.status(500).json({
       success: false,
       message: 'Erro ao atualizar cobrança',
-      error: error.message
+      error: errorMessage
     });
   }
 }
@@ -215,12 +219,13 @@ export async function deleteCharge(req: Request, res: Response) {
       success: true,
       message: 'Cobrança removida com sucesso'
     });
-  } catch (error) {
-    logger.error(`[ChargesController] Erro ao remover cobrança ${req.params.id}: ${error.message}`);
+  } catch (error: any) {
+    const errorMessage = error?.message || 'Erro desconhecido';
+    logger.error(`[ChargesController] Erro ao remover cobrança ${req.params.id}: ${errorMessage}`);
     res.status(500).json({
       success: false,
       message: 'Erro ao remover cobrança',
-      error: error.message
+      error: errorMessage
     });
   }
 }
