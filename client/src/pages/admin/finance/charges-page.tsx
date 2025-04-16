@@ -312,6 +312,9 @@ export default function ChargesPage() {
         };
         
         // Enviar o email
+        console.log(`[INFO] Processando email em lote para: ${emailData.to}`);
+        console.log(`[INFO] Dados do email em lote:`, emailData);
+        
         const response = await fetch("/api/emails/send-invoice-email", {
           method: "POST",
           headers: {
@@ -320,7 +323,10 @@ export default function ChargesPage() {
           body: JSON.stringify(emailData)
         });
         
+        console.log(`[INFO] Status da resposta de email em lote:`, response.status);
+        
         const result = await response.json();
+        console.log(`[INFO] Resposta do servidor para email em lote:`, result);
         
         if (result.success) {
           successCount++;
