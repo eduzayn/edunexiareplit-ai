@@ -56,10 +56,9 @@ export async function createCheckoutLink(req: Request, res: Response) {
     }
 
     // Verifica se o lead existe
-    const lead = await db.execute(sql.raw(
-      `SELECT * FROM leads WHERE id = $1`,
-      [leadId]
-    ));
+    const lead = await db.execute(sql`
+      SELECT * FROM leads WHERE id = ${leadId}
+    `);
 
     if (!lead.rows.length) {
       return res.status(404).json({ error: 'Lead não encontrado' });
@@ -92,42 +91,44 @@ export async function createCheckoutLink(req: Request, res: Response) {
       const checkoutResponse = await asaasCheckoutService.createCheckoutLink(checkoutPayload);
 
       // Salva o link de checkout no banco
-      const result = await db.execute(sql.raw(`
+      const result = await db.execute(sql`
         INSERT INTO checkout_links (
           lead_id, course_id, product_id, asaas_checkout_id, description, value, due_date,
           expiration_time, status, url, created_by_id, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+        ) VALUES (
+          ${leadId},
+          ${validatedData.courseId || null},
+          ${validatedData.productId || null},
+          ${checkoutResponse.id},
+          ${validatedData.description},
+          ${validatedData.value},
+          ${validatedData.dueDate},
+          ${validatedData.expirationTime},
+          ${'pending'},
+          ${checkoutResponse.url},
+          ${req.user?.id},
+          NOW()
+        )
         RETURNING *
-      `, [
-        leadId,
-        validatedData.courseId || null,
-        validatedData.productId || null,
-        checkoutResponse.id,
-        validatedData.description,
-        validatedData.value,
-        validatedData.dueDate,
-        validatedData.expirationTime,
-        'pending',
-        checkoutResponse.url,
-        req.user?.id
-      ]));
+      `);
 
       // Registra atividade para o lead
-      await db.execute(sql.raw(`
+      await db.execute(sql`
         INSERT INTO lead_activities (
           lead_id, type, description, metadata, created_by_id, created_at
-        ) VALUES (?, ?, ?, ?, ?, NOW())
-      `, [
-        leadId,
-        'checkout',
-        'Link de checkout criado',
-        JSON.stringify({
-          checkoutId: checkoutResponse.id,
-          value: validatedData.value,
-          description: validatedData.description
-        }),
-        req.user?.id
-      ]));
+        ) VALUES (
+          ${leadId},
+          ${'checkout'},
+          ${'Link de checkout criado'},
+          ${JSON.stringify({
+            checkoutId: checkoutResponse.id,
+            value: validatedData.value,
+            description: validatedData.description
+          })},
+          ${req.user?.id},
+          NOW()
+        )
+      `);
 
       return res.status(201).json({
         message: 'Link de checkout criado com sucesso',
