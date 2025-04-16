@@ -201,36 +201,55 @@ class AsaasCheckoutService {
     try {
       console.log(`Buscando cobranças associadas ao checkout ${checkoutId}`);
       
+      // Configuração com timeout para evitar que a requisição fique pendente por muito tempo
+      const axiosInstance = axios.create({
+        baseURL: this.baseUrl,
+        headers: {
+          'access-token': this.apiKey,
+          'Content-Type': 'application/json'
+        },
+        timeout: 5000 // 5 segundos de timeout
+      });
+      
       // Primeiro obtemos os detalhes do checkout para verificar se há um pagamento
-      const checkoutStatus = await this.getCheckoutStatus(checkoutId);
+      console.log(`Consultando status do checkout ${checkoutId} com timeout definido`);
       
-      if (checkoutStatus.payment) {
-        console.log(`Checkout ${checkoutId} tem um pagamento associado:`, checkoutStatus.payment.id);
+      try {
+        const checkoutResponse = await axiosInstance.get(`/paymentLinks/${checkoutId}`);
+        const checkoutStatus = checkoutResponse.data;
         
-        // Se encontrou um pagamento associado, obtém os detalhes completos
-        try {
-          const paymentResponse = await axios.get(
-            `${this.baseUrl}/payments/${checkoutStatus.payment.id}`,
-            {
-              headers: {
-                'access-token': this.apiKey
-              }
-            }
-          );
+        console.log(`Status do checkout ${checkoutId} obtido com sucesso`);
+        
+        // Verifica se existe um pagamento associado ao checkout
+        if (checkoutStatus.payment && checkoutStatus.payment.id) {
+          console.log(`Checkout ${checkoutId} tem um pagamento associado: ${checkoutStatus.payment.id}`);
           
-          console.log(`Detalhes do pagamento ${checkoutStatus.payment.id} obtidos:`, 
-                     JSON.stringify(paymentResponse.data, null, 2));
-          
-          return [paymentResponse.data];
-        } catch (paymentError) {
-          console.error(`Erro ao obter detalhes do pagamento ${checkoutStatus.payment.id}:`, paymentError);
-          // Mesmo com erro, retornamos o pagamento básico que temos
-          return [checkoutStatus.payment];
+          // Se encontrou um pagamento associado, obtém os detalhes completos
+          try {
+            const paymentResponse = await axiosInstance.get(`/payments/${checkoutStatus.payment.id}`);
+            
+            console.log(`Detalhes do pagamento ${checkoutStatus.payment.id} obtidos com sucesso`);
+            
+            return [paymentResponse.data];
+          } catch (paymentError) {
+            console.error(`Erro ao obter detalhes do pagamento ${checkoutStatus.payment.id}:`, paymentError);
+            // Mesmo com erro, retornamos o pagamento básico que temos
+            return [checkoutStatus.payment];
+          }
         }
+        
+        console.log(`Checkout ${checkoutId} não tem pagamentos associados`);
+        return [];
+      } catch (checkoutError) {
+        console.error(`Erro ao consultar status do checkout ${checkoutId}:`, checkoutError);
+        
+        if (axios.isAxiosError(checkoutError) && checkoutError.code === 'ECONNABORTED') {
+          console.error(`Timeout na consulta do checkout ${checkoutId}`);
+          throw new Error(`Timeout na consulta do checkout ${checkoutId}`);
+        }
+        
+        return [];
       }
-      
-      console.log(`Checkout ${checkoutId} não tem pagamentos associados`);
-      return [];
     } catch (error) {
       console.error(`Erro ao buscar cobranças do checkout ${checkoutId}:`, error);
       return [];

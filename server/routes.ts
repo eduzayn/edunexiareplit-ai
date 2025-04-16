@@ -2860,12 +2860,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "ID do cliente inválido" });
       }
       
+      console.log(`Iniciando busca de pagamentos para o cliente ${clientId}`);
+      
       // Buscar checkouts associados ao cliente
       const checkouts = await db.execute(sql`
         SELECT * FROM checkout_links WHERE client_id = ${clientId}
       `);
       
-      if (!checkouts.rows.length) {
+      if (!checkouts.rows || !checkouts.rows.length) {
+        console.log(`Cliente ${clientId} não possui checkouts associados`);
         return res.json({
           success: true,
           message: "Cliente não possui checkouts",
@@ -2874,33 +2877,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Para cada checkout, buscar pagamentos
+      console.log(`Cliente ${clientId} possui ${checkouts.rows.length} checkouts associados`);
+      
+      // Para cada checkout, buscar pagamentos com um limite de requisições concorrentes
+      // para evitar sobrecarga na API do Asaas
       let allPayments: any[] = [];
       const checkoutsWithPayments: any[] = [];
       
-      for (const checkout of checkouts.rows) {
-        if (checkout.asaas_checkout_id) {
+      // Processar os checkouts em lotes de 2 para não sobrecarregar a API
+      const batchSize = 2;
+      for (let i = 0; i < checkouts.rows.length; i += batchSize) {
+        const batch = checkouts.rows.slice(i, i + batchSize);
+        
+        // Array de promessas para processar o lote atual
+        const batchPromises = batch.map(async (checkout) => {
+          if (!checkout.asaas_checkout_id) {
+            console.log(`Checkout ${checkout.id} não possui ID do Asaas`);
+            return {
+              checkout,
+              payments: []
+            };
+          }
+          
           try {
             console.log(`Buscando pagamentos para o checkout ${checkout.id} (Asaas ID: ${checkout.asaas_checkout_id})`);
-            const checkoutPayments = await asaasCheckoutService.getCheckoutPayments(checkout.asaas_checkout_id);
             
-            if (checkoutPayments && checkoutPayments.length) {
-              allPayments = [...allPayments, ...checkoutPayments];
-              checkoutsWithPayments.push({
-                ...checkout,
-                payments: checkoutPayments
-              });
-            } else {
-              checkoutsWithPayments.push({
-                ...checkout,
-                payments: []
-              });
-            }
+            // Adicionar um timeout para a operação completa
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error(`Timeout ao buscar pagamentos do checkout ${checkout.id}`)), 8000)
+            );
+            
+            // Executar a busca de pagamentos com timeout
+            const checkoutPaymentsPromise = asaasCheckoutService.getCheckoutPayments(checkout.asaas_checkout_id);
+            
+            // Usar Promise.race para aplicar o timeout
+            const checkoutPayments = await Promise.race([
+              checkoutPaymentsPromise,
+              timeoutPromise
+            ]) as any[];
+            
+            console.log(`${checkoutPayments.length} pagamentos encontrados para o checkout ${checkout.id}`);
+            
+            return {
+              checkout,
+              payments: checkoutPayments || []
+            };
           } catch (error) {
             console.error(`Erro ao buscar pagamentos do checkout ${checkout.id}:`, error);
+            return {
+              checkout,
+              payments: [],
+              error: error instanceof Error ? error.message : String(error)
+            };
           }
+        });
+        
+        // Aguardar todas as promessas do lote atual
+        const batchResults = await Promise.all(batchPromises);
+        
+        // Processar os resultados do lote
+        for (const result of batchResults) {
+          // Adicionar os pagamentos ao array geral
+          if (result.payments && result.payments.length) {
+            allPayments = [...allPayments, ...result.payments];
+          }
+          
+          // Adicionar o checkout com seus pagamentos ao array de resultados
+          checkoutsWithPayments.push({
+            ...result.checkout,
+            payments: result.payments || [],
+            error: result.error
+          });
         }
       }
+      
+      console.log(`Busca de pagamentos concluída para o cliente ${clientId}`);
+      console.log(`Total de ${allPayments.length} pagamentos encontrados em ${checkoutsWithPayments.length} checkouts`);
       
       return res.json({
         success: true,
@@ -2918,6 +2970,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Rota para buscar links de checkout associados a um cliente
+  app.get("/api/clients/:clientId/checkout-links", requireAuth, async (req, res) => {
+    try {
+      const { clientId } = req.params;
+      
+      if (!clientId || isNaN(parseInt(clientId))) {
+        return res.status(400).json({ error: "ID do cliente inválido" });
+      }
+      
+      console.log(`Buscando links de checkout para o cliente ${clientId}`);
+      
+      // Buscar checkout links associados ao cliente
+      const checkoutLinks = await db.execute(sql`
+        SELECT * FROM checkout_links WHERE client_id = ${clientId} ORDER BY created_at DESC
+      `);
+      
+      return res.json({
+        success: true,
+        data: checkoutLinks.rows,
+        count: checkoutLinks.rows.length
+      });
+    } catch (error) {
+      console.error(`Erro ao buscar links de checkout do cliente ${req.params.clientId}:`, error);
+      return res.status(500).json({
+        error: "Erro ao buscar links de checkout",
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
   // ================= Rotas para Registro Público =================
   // Rota pública para registro de novos usuários
   app.use("/api/public/register", publicRegisterRouter);
