@@ -418,7 +418,7 @@ export default function PublicCreateChargePage() {
                       type="button"
                       variant="outline"
                       className="w-full"
-                      onClick={() => navigate("/public/charges")}
+                      onClick={() => navigate("/charges")}
                     >
                       Cancelar
                     </Button>
