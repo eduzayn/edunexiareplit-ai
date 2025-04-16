@@ -7,9 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Plus, Search, Filter, RefreshCw } from 'lucide-react';
+import { Loader2, Plus, Search, Filter, RefreshCw, UserCheck } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useToast } from '@/hooks/use-toast';
 
 /**
  * Formatação de status para exibição
@@ -27,6 +28,8 @@ export default function LeadsV2Page() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [isConverting, setIsConverting] = useState(false);
+  const { toast } = useToast();
   
   const { 
     useLeadsList, 
@@ -54,6 +57,46 @@ export default function LeadsV2Page() {
   
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
+  };
+  
+  // Função para verificar e converter leads pendentes
+  const handleCheckPendingLeads = async () => {
+    try {
+      setIsConverting(true);
+      
+      const response = await fetch('/api/v2/checkout/convert-pending-leads', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok) {
+        toast({
+          title: 'Operação concluída',
+          description: `${result.count} leads foram convertidos para clientes.`,
+          variant: 'default',
+        });
+        
+        // Se algum lead foi convertido, recarregar a lista
+        if (result.count > 0) {
+          refetch();
+        }
+      } else {
+        throw new Error(result.error || 'Erro desconhecido');
+      }
+    } catch (error) {
+      console.error('Erro ao verificar leads pendentes:', error);
+      toast({
+        title: 'Erro',
+        description: error instanceof Error ? error.message : 'Erro ao verificar leads pendentes',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsConverting(false);
+    }
   };
   
   return (
@@ -117,13 +160,33 @@ export default function LeadsV2Page() {
       </Card>
       
       <Card>
-        <CardHeader>
-          <CardTitle>Lista de Leads</CardTitle>
-          <CardDescription>
-            {data?.data.length 
-              ? `Mostrando ${data.data.length} de ${data.pagination.total} leads`
-              : 'Nenhum lead encontrado'}
-          </CardDescription>
+        <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <CardTitle>Lista de Leads</CardTitle>
+            <CardDescription>
+              {data?.data.length 
+                ? `Mostrando ${data.data.length} de ${data.pagination.total} leads`
+                : 'Nenhum lead encontrado'}
+            </CardDescription>
+          </div>
+          <Button
+            onClick={handleCheckPendingLeads}
+            disabled={isConverting}
+            size="sm"
+            variant="outline"
+          >
+            {isConverting ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Verificando...
+              </>
+            ) : (
+              <>
+                <UserCheck className="h-4 w-4 mr-2" />
+                Converter Leads Pendentes
+              </>
+            )}
+          </Button>
         </CardHeader>
         <CardContent>
           {isLoading ? (
