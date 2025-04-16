@@ -392,23 +392,11 @@ export async function checkAndConvertPendingLeads(req: Request, res: Response) {
           clientId = newClient.rows[0].id;
           isNewClient = true;
           
-          // Registrar atividade para o cliente
-          await db.execute(sql`
-            INSERT INTO client_activities (
-              client_id, type, description, metadata, created_at
-            ) VALUES (
-              ${clientId},
-              ${'conversion'},
-              ${'Cliente criado a partir de lead'},
-              ${JSON.stringify({
-                leadId: leadData.id,
-                checkoutId: leadData.checkout_id,
-                asaasCheckoutId: leadData.asaas_checkout_id,
-                manual: true
-              })},
-              NOW()
-            )
-          `);
+          // Tabela client_activities não existe ainda, precisamos registrar de outra forma
+          console.log(`Cliente ${clientId} criado a partir do lead ${leadData.id}`);
+          
+          // TODO: Criar a tabela client_activities em uma migração futura
+          // por enquanto, vamos pular este registro para não gerar erros
         } else {
           // Usar cliente existente
           clientId = existingClient.rows[0].id;
