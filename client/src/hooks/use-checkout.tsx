@@ -55,15 +55,24 @@ export function useClientCheckouts(clientId?: number) {
   // Verificar status de um checkout
   const checkCheckoutStatusMutation = useMutation({
     mutationFn: (checkoutId: string | number) => 
-      apiRequest(`/api/checkout/status/${checkoutId}`),
+      apiRequest(`/api/v2/checkout/status/${checkoutId}`),
     onSuccess: (response) => {
+      // Log para debug
+      console.log("Resposta da verificação de status:", response);
+      
+      // Invalidar o cache para atualizar a listagem
       queryClient.invalidateQueries({ queryKey: [`/api/clients/${clientId}/checkout-links`] });
+      
+      // Notificar o usuário sobre o sucesso
       toast({
         title: "Status atualizado",
         description: "O status da cobrança foi atualizado com sucesso.",
       });
     },
     onError: (error: any) => {
+      // Log para debug
+      console.error("Erro ao verificar status:", error);
+      
       toast({
         title: "Erro ao verificar status",
         description: error.message || "Ocorreu um erro ao verificar o status da cobrança.",
@@ -75,15 +84,20 @@ export function useClientCheckouts(clientId?: number) {
   // Cancelar checkout
   const cancelCheckoutMutation = useMutation({
     mutationFn: (checkoutId: string | number) => 
-      apiRequest(`/api/checkout/links/${checkoutId}/cancel`, { method: 'POST' }),
+      apiRequest(`/api/v2/checkout/links/${checkoutId}/cancel`, { method: 'POST' }),
     onSuccess: (response) => {
+      // Invalidar o cache para atualizar a listagem
       queryClient.invalidateQueries({ queryKey: [`/api/clients/${clientId}/checkout-links`] });
+      
+      // Notificar o usuário
       toast({
         title: "Cobrança cancelada",
         description: response.message || "A cobrança foi cancelada com sucesso.",
       });
     },
     onError: (error: any) => {
+      console.error("Erro ao cancelar cobrança:", error);
+      
       toast({
         title: "Erro ao cancelar cobrança",
         description: error.message || "Ocorreu um erro ao cancelar a cobrança.",

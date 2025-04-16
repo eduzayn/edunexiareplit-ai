@@ -282,9 +282,13 @@ export async function checkCheckoutStatus(req: Request, res: Response) {
         }
       }
 
+      // Formatar resposta para o frontend de forma mais consistente
       return res.json({
-        checkout: checkoutData,
-        asaasStatus: asaasCheckoutStatus
+        success: true,
+        data: {
+          checkout: checkoutData,
+          asaasStatus: asaasCheckoutStatus
+        }
       });
     } catch (asaasError) {
       console.error('Erro ao verificar status no Asaas:', asaasError);
