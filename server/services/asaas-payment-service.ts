@@ -54,6 +54,7 @@ interface AsaasPaymentResponse {
   id: string;
   dateCreated: string;
   customer: string;
+  customerName?: string;    // Nome do cliente (presente na resposta da API)
   value: number;
   netValue: number;
   billingType: string;

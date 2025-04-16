@@ -323,43 +323,107 @@ export async function checkCheckoutStatus(req: Request, res: Response) {
           // Se não encontrar pagamentos associados ao checkout, tentamos buscar pelo cliente
           if (checkoutData.client_id) {
             try {
-              // Buscar o cliente para obter o AsaasID
+              // Buscar o cliente para obter nome, email e asaasId (se disponível)
               const clientResult = await db.execute(sql`
                 SELECT * FROM clients WHERE id = ${checkoutData.client_id}
               `);
               
-              if (clientResult.rows.length > 0 && clientResult.rows[0].asaas_id) {
-                const clientAsaasId = clientResult.rows[0].asaas_id;
-                console.log(`Buscando pagamentos do cliente pelo AsaasID: ${clientAsaasId}`);
+              if (clientResult.rows.length > 0) {
+                const client = clientResult.rows[0];
                 
                 // Importamos o serviço de pagamentos do Asaas
                 const { AsaasPaymentService } = await import('../services/asaas-payment-service');
                 
-                try {
-                  // Buscar as cobranças do cliente no Asaas
-                  const customerPayments = await AsaasPaymentService.getCustomerPayments(clientAsaasId);
+                // Tentar buscar via asaasId (se existir)
+                if (client.asaas_id) {
+                  const clientAsaasId = client.asaas_id;
+                  console.log(`Buscando pagamentos do cliente pelo AsaasID: ${clientAsaasId}`);
                   
-                  console.log(`Encontrados ${customerPayments.length} pagamentos para o cliente ${clientAsaasId}`);
+                  try {
+                    // Buscar as cobranças do cliente no Asaas
+                    const customerPayments = await AsaasPaymentService.getCustomerPayments(clientAsaasId);
+                    
+                    console.log(`Encontrados ${customerPayments.length} pagamentos para o cliente ${clientAsaasId}`);
+                    
+                    if (customerPayments && customerPayments.length > 0) {
+                      // Ordenar por data de criação, para pegar o mais recente
+                      const sortedPayments = customerPayments.sort((a, b) => 
+                        new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime()
+                      );
+                      
+                      // Pegar o pagamento mais recente
+                      const recentPayment = sortedPayments[0];
+                      
+                      if (recentPayment.invoiceUrl) {
+                        invoiceUrl = recentPayment.invoiceUrl;
+                        console.log(`URL da fatura do cliente encontrada via asaasId: ${invoiceUrl}`);
+                      } else if (recentPayment.id) {
+                        // Se não tiver invoiceUrl, tenta obter detalhes do pagamento
+                        try {
+                          const paymentDetails = await asaasCheckoutService.getPaymentDetails(recentPayment.id);
+                          if (paymentDetails && paymentDetails.invoiceUrl) {
+                            invoiceUrl = paymentDetails.invoiceUrl;
+                            console.log(`URL da fatura obtida via detalhes do pagamento: ${invoiceUrl}`);
+                          } else if (paymentDetails && paymentDetails.id) {
+                            // Tenta construir a URL da fatura com base no ID do pagamento
+                            invoiceUrl = `https://www.asaas.com/i/${paymentDetails.id}`;
+                            console.log(`URL da fatura construída com base no ID: ${invoiceUrl}`);
+                          }
+                        } catch (error) {
+                          console.error(`Erro ao buscar detalhes do pagamento:`, error);
+                        }
+                      }
+                    }
+                  } catch (customerPaymentError) {
+                    console.error(`Erro ao buscar pagamentos do cliente no Asaas:`, customerPaymentError);
+                  }
+                } else {
+                  console.log(`Cliente ${checkoutData.client_id} não tem asaasId, buscando pelo nome...`);
                   
-                  if (customerPayments && customerPayments.length > 0) {
-                    // Ordenar por data de criação, para pegar o mais recente
-                    const sortedPayments = customerPayments.sort((a, b) => 
-                      new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime()
-                    );
-                    
-                    // Pegar o pagamento mais recente
-                    const recentPayment = sortedPayments[0];
-                    
-                    if (recentPayment.invoiceUrl) {
-                      invoiceUrl = recentPayment.invoiceUrl;
-                      console.log(`URL da fatura do cliente encontrada: ${invoiceUrl}`);
+                  // Como não tem asaasId, vamos tentar buscar pelo nome do cliente
+                  if (client.name) {
+                    try {
+                      console.log(`Buscando pagamentos pelo nome do cliente: ${client.name}`);
+                      const paymentsByName = await AsaasPaymentService.getPaymentsByCustomerName(client.name);
+                      
+                      if (paymentsByName && paymentsByName.length > 0) {
+                        // Ordenar por data de criação, para pegar o mais recente
+                        const sortedPayments = paymentsByName.sort((a, b) => 
+                          new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime()
+                        );
+                        
+                        // Pegar o pagamento mais recente
+                        const recentPayment = sortedPayments[0];
+                        
+                        if (recentPayment.invoiceUrl) {
+                          invoiceUrl = recentPayment.invoiceUrl;
+                          console.log(`URL da fatura encontrada via nome do cliente: ${invoiceUrl}`);
+                        } else if (recentPayment.id) {
+                          // Se não tiver invoiceUrl, tenta obter detalhes do pagamento
+                          try {
+                            const paymentDetails = await asaasCheckoutService.getPaymentDetails(recentPayment.id);
+                            if (paymentDetails && paymentDetails.invoiceUrl) {
+                              invoiceUrl = paymentDetails.invoiceUrl;
+                              console.log(`URL da fatura obtida via detalhes do pagamento: ${invoiceUrl}`);
+                            } else if (paymentDetails && paymentDetails.id) {
+                              // Tenta construir a URL da fatura com base no ID do pagamento
+                              invoiceUrl = `https://www.asaas.com/i/${paymentDetails.id}`;
+                              console.log(`URL da fatura construída com base no ID: ${invoiceUrl}`);
+                            }
+                          } catch (error) {
+                            console.error(`Erro ao buscar detalhes do pagamento:`, error);
+                          }
+                        }
+                      } else {
+                        console.log(`Nenhum pagamento encontrado pelo nome: ${client.name}`);
+                      }
+                    } catch (error) {
+                      console.error(`Erro ao buscar pagamentos pelo nome do cliente:`, error);
                     }
                   }
-                } catch (customerPaymentError) {
-                  console.error(`Erro ao buscar pagamentos do cliente no Asaas:`, customerPaymentError);
                 }
               } else {
-                console.log(`Cliente ${checkoutData.client_id} não tem asaasId`);
+                console.log(`Cliente ${checkoutData.client_id} não encontrado no banco de dados`);
               }
             } catch (clientError) {
               console.error(`Erro ao buscar cliente:`, clientError);
