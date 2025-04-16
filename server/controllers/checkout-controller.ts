@@ -11,6 +11,7 @@ import { asaasCheckoutService } from '../services/asaas-checkout-service';
 
 // Schema de validação para criação de checkout
 const createCheckoutSchema = z.object({
+  leadId: z.number().positive(),
   description: z.string().min(3),
   value: z.number().positive(),
   dueDate: z.string().refine((date) => {
@@ -30,7 +31,9 @@ const createCheckoutSchema = z.object({
  */
 export async function createCheckoutLink(req: Request, res: Response) {
   try {
-    const { leadId } = req.params;
+    // Pegamos o leadId do body em vez dos parâmetros da URL
+    const { leadId } = req.body;
+    
     // Validação mais rigorosa
     console.log('Dados recebidos para criação de checkout:', JSON.stringify(req.body, null, 2));
     const validatedData = createCheckoutSchema.parse(req.body);
@@ -47,9 +50,14 @@ export async function createCheckoutLink(req: Request, res: Response) {
       });
     }
 
+    // Verifica se o leadId foi fornecido
+    if (!leadId) {
+      return res.status(400).json({ error: 'ID do lead não fornecido' });
+    }
+
     // Verifica se o lead existe
     const lead = await db.execute(sql.raw(
-      `SELECT * FROM leads WHERE id = ?`,
+      `SELECT * FROM leads WHERE id = $1`,
       [leadId]
     ));
 
