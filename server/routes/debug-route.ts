@@ -293,9 +293,25 @@ router.get('/asaas-customers', async (req, res) => {
   try {
     console.log('Buscando clientes do Asaas:');
     
+    // Extrair parâmetros de busca da query, se existirem
+    const { search } = req.query;
+    const filters: any = {};
+    
+    if (search && typeof search === 'string') {
+      // Tentar identificar se é CPF/CNPJ (apenas números)
+      if (/^\d+$/.test(search)) {
+        filters.cpfCnpj = search;
+      } else if (search.includes('@')) {
+        filters.email = search;
+      } else {
+        filters.name = search;
+      }
+      console.log(`Aplicando filtro de busca: ${JSON.stringify(filters)}`);
+    }
+    
     try {
-      // Usar o serviço para buscar clientes
-      const customers = await asaasCustomersService.getAllCustomers();
+      // Usar o serviço para buscar clientes com filtros
+      const customers = await asaasCustomersService.getAllCustomers(filters);
       
       console.log(`Encontrados ${customers.length} clientes no Asaas`);
       
