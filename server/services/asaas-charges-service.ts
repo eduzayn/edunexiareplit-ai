@@ -6,7 +6,7 @@ import axios from 'axios';
 import { logger } from '../utils/logger';
 
 const ASAAS_API_URL = process.env.ASAAS_API_URL || 'https://api.asaas.com/v3';
-const ASAAS_API_KEY = process.env.ASAAS_API_KEY;
+const ASAAS_API_KEY = process.env.ASAAS_ZAYN_KEY;
 
 // Criar uma instância do axios configurada para o Asaas
 const asaasApi = axios.create({
