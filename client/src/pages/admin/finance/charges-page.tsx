@@ -395,17 +395,28 @@ export default function ChargesPage() {
             <div className="font-medium">Todas</div>
           </div>
           <div className="flex space-x-2">
-            <Button 
-              variant="default" 
-              className="bg-blue-600 hover:bg-blue-700"
-              onClick={() => navigate("/admin/finance/charges/new")}
-            >
-              <span className="flex items-center">
-                <PlusIcon className="h-4 w-4 mr-2" />
-                Emitir cobrança
-                <ChevronDownIcon className="h-4 w-4 ml-2" />
-              </span>
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="default" 
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <span className="flex items-center">
+                    <PlusIcon className="h-4 w-4 mr-2" />
+                    Emitir cobrança
+                    <ChevronDownIcon className="h-4 w-4 ml-2" />
+                  </span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => navigate("/admin/finance/charges/new")}>
+                  Cobrança simples
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/admin/finance/charges/advanced")}>
+                  Cobrança com parcelamento
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
