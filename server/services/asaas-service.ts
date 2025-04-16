@@ -2,7 +2,8 @@ import axios from 'axios';
 import { Client, InsertClient } from '../../shared/schema';
 
 // Configurações da API do Asaas
-const ASAAS_API_KEY = process.env.ASAAS_API_KEY;
+// IMPORTANTE: Existem três chaves diferentes do Asaas, usamos especificamente a ASAAS_API_KEY (primeira chave)
+const ASAAS_API_KEY = process.env.ASAAS_API_KEY; // Primeira chave - correta para integração
 // Verificamos se a API key começa com $aact_prod_ para decidir qual ambiente usar
 const isProductionToken = ASAAS_API_KEY?.startsWith('$aact_prod_');
 const ASAAS_API_URL = process.env.ASAAS_API_URL || (
@@ -13,7 +14,8 @@ const ASAAS_API_URL = process.env.ASAAS_API_URL || (
 
 // Log para rastrear qual ambiente está sendo usado
 console.log(`[ASAAS SERVICE] Utilizando ambiente: ${isProductionToken ? 'Produção' : 'Sandbox'} - ${ASAAS_API_URL}`);
-console.log(`[ASAAS SERVICE] Token da API: ${ASAAS_API_KEY?.substring(0, 10)}...`);
+console.log(`[ASAAS SERVICE] Token da API (ASAAS_API_KEY): ${ASAAS_API_KEY?.substring(0, 10)}...`);
+console.log(`[ASAAS SERVICE] ⚠️ Atenção: Usando especificamente a primeira chave do Asaas (ASAAS_API_KEY)`);
 
 // Configuração do cliente Axios para a API do Asaas
 const asaasClient = axios.create({
