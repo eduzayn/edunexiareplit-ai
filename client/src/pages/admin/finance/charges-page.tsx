@@ -272,11 +272,8 @@ export default function ChargesPage() {
   };
 
   // Usar os dados da API Asaas em vez dos dados simulados
-  // Mapear dados do Asaas. O serviço retorna os dados no formato { success: true, data: [] }
-  // então primeiro verificamos se temos success: true e depois acessamos o array data
-  const asaasChargesList = mapAsaasToCharges(
-    asaasCharges?.success ? asaasCharges.data : []
-  );
+  // Mapear dados do Asaas
+  const asaasChargesList = mapAsaasToCharges(asaasCharges || []);
   
   // Filtrar cobranças com base na pesquisa
   const filteredCharges = asaasChargesList.filter(charge => 
