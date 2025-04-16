@@ -41,6 +41,8 @@ import auditRoutes from "./routes/audit-routes";
 import crmRoutes from "./routes/crm-routes";
 import financeRoutes from "./routes/finance-routes";
 import contractsRoutes from "./routes/contracts-routes";
+import leadsRoutes from "./routes/leads-routes";
+import checkoutRoutes from "./routes/checkout-routes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
@@ -2803,6 +2805,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ================= Rotas para Módulos CRM, Financeiro e Contratos =================
   // Registro das rotas do módulo CRM
   app.use("/api/crm", crmRoutes);
+  
+  // Registro das novas rotas para leads com Asaas Checkout
+  app.use("/api/v2/leads", leadsRoutes);
+  app.use("/api/v2", checkoutRoutes);
   
   // Registro das rotas do módulo Financeiro
   app.use("/api/finance", financeRoutes);

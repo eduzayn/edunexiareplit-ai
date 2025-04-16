@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { requireAuth } from '../middleware/auth-middleware';
-import { requirePermission } from '../middleware/permission-middleware';
+import { requireAuth } from '../middlewares/requireAuth';
+import { requirePermission } from '../middlewares/simple-permission';
 import * as leadsController from '../controllers/leads-controller';
 
 const router = Router();

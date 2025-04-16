@@ -1,180 +1,121 @@
+/**
+ * Cria um novo link de checkout para um lead
+ */
+
 import { Request, Response } from 'express';
-import { Pool } from 'pg';
-import * as dotenv from 'dotenv';
-import axios from 'axios';
+import { db } from '../db';
+import { sql } from 'drizzle-orm';
+import { z } from 'zod';
+import { AsaasService } from '../services/asaas-service';
+import { asaasCheckoutService } from '../services/asaas-checkout-service';
 
-dotenv.config();
-
-// Configurar pool de conexão PostgreSQL
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+// Schema de validação para criação de checkout
+const createCheckoutSchema = z.object({
+  description: z.string().min(3),
+  value: z.number().positive(),
+  dueDate: z.string().refine((date) => {
+    // Validação básica para formato de data (YYYY-MM-DD)
+    return /^\d{4}-\d{2}-\d{2}$/.test(date);
+  }, {
+    message: "A data deve estar no formato YYYY-MM-DD"
+  }),
+  courseId: z.number().optional(),
+  productId: z.number().optional(),
+  expirationTime: z.number().min(5).max(60).default(30), // Entre 5 e 60 minutos
+  additionalInfo: z.string().optional()
 });
-
-// Configurações do Asaas
-const ASAAS_API_URL = 'https://api.asaas.com/v3';
-const ASAAS_API_KEY = process.env.ASAAS_ZAYN_KEY;
 
 /**
  * Cria um novo link de checkout para um lead
  */
 export async function createCheckoutLink(req: Request, res: Response) {
-  const client = await pool.connect();
   try {
     const { leadId } = req.params;
-    const { 
-      amount, 
-      description, 
-      courseId,
-      expirationDays = 7,
-      billingType = 'BOLETO',
-      installments = 1,
-      installmentValue,
-      dueDate
-    } = req.body;
-    
-    const userId = req.user?.id; // ID do usuário logado
-    
-    // Validações básicas
-    if (!leadId || !amount || !description) {
-      return res.status(400).json({ 
-        error: 'ID do lead, valor e descrição são obrigatórios' 
-      });
-    }
-    
-    // Verificar se o lead existe
-    const leadResult = await client.query(
-      'SELECT * FROM leads WHERE id = $1',
+    const validatedData = createCheckoutSchema.parse(req.body);
+
+    // Verifica se o lead existe
+    const lead = await db.execute(sql.raw(
+      `SELECT * FROM leads WHERE id = ?`,
       [leadId]
-    );
-    
-    if (leadResult.rows.length === 0) {
+    ));
+
+    if (!lead.rows.length) {
       return res.status(404).json({ error: 'Lead não encontrado' });
     }
-    
-    const lead = leadResult.rows[0];
-    
-    // Criar checkout link no Asaas
+
+    const leadData = lead.rows[0];
+
+    // Cria um link de checkout no Asaas
     try {
-      // Formatar a data de vencimento para o formato esperado pelo Asaas (YYYY-MM-DD)
-      let formattedDueDate = dueDate;
-      if (!formattedDueDate) {
-        // Se não for fornecida, usar data atual + 7 dias
-        const date = new Date();
-        date.setDate(date.getDate() + 7);
-        formattedDueDate = date.toISOString().split('T')[0];
-      }
-      
-      // Determinar o valor das parcelas
-      const parcelValue = installmentValue || (amount / installments);
-      
-      // Criar o objeto de dados para o Asaas Checkout
-      const checkoutData = {
-        billingType,
-        installments: installments > 1 ? installments : undefined,
-        installmentValue: installments > 1 ? parcelValue : undefined,
-        value: amount,
-        dueDate: formattedDueDate,
-        description,
-        externalReference: `lead_${leadId}`,
-        postalService: false,
-        split: null
-      };
-      
-      console.log('Enviando dados para Asaas Checkout:', JSON.stringify(checkoutData, null, 2));
-      
-      // Fazer requisição para API do Asaas
-      const response = await axios.post(
-        `${ASAAS_API_URL}/checkouts`, 
-        checkoutData,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'access_token': ASAAS_API_KEY
-          }
-        }
-      );
-      
-      const checkoutInfo = response.data;
-      console.log('Resposta do Asaas Checkout:', JSON.stringify(checkoutInfo, null, 2));
-      
-      // Iniciar transação para salvar na base de dados
-      await client.query('BEGIN');
-      
-      // Salvar o link no banco de dados
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + expirationDays);
-      
-      const insertResult = await client.query(`
-        INSERT INTO checkout_links
-        (lead_id, checkout_url, checkout_id, amount, description, course_id, status, created_at, expires_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), $8)
-        RETURNING id
+      const baseUrl = process.env.APP_URL || 'https://app.edunexia.com.br';
+      const checkoutResponse = await asaasCheckoutService.createCheckoutLink({
+        name: leadData.name,
+        email: leadData.email,
+        phone: leadData.phone || '',
+        value: validatedData.value,
+        dueDate: validatedData.dueDate, // Formato: YYYY-MM-DD
+        description: validatedData.description,
+        expirationTime: validatedData.expirationTime, // Tempo de expiração do link em minutos
+        successUrl: `${baseUrl}/api/v2/checkout/success`,
+        notificationUrl: `${baseUrl}/api/v2/checkout/notification`,
+        additionalInfo: validatedData.additionalInfo || ''
+      });
+
+      // Salva o link de checkout no banco
+      const result = await db.execute(sql.raw(`
+        INSERT INTO checkout_links (
+          lead_id, course_id, product_id, asaas_checkout_id, description, value, due_date,
+          expiration_time, status, url, created_by_id, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+        RETURNING *
       `, [
         leadId,
-        checkoutInfo.url,
-        checkoutInfo.id,
-        amount,
-        description,
-        courseId,
+        validatedData.courseId || null,
+        validatedData.productId || null,
+        checkoutResponse.id,
+        validatedData.description,
+        validatedData.value,
+        validatedData.dueDate,
+        validatedData.expirationTime,
         'pending',
-        expiresAt.toISOString()
-      ]);
-      
-      const checkoutLinkId = insertResult.rows[0].id;
-      
-      // Registrar atividade para o lead
-      await client.query(`
-        INSERT INTO lead_activities
-        (lead_id, activity_type, description, created_at, created_by)
-        VALUES ($1, $2, $3, NOW(), $4)
+        checkoutResponse.url,
+        req.user?.id
+      ]));
+
+      // Registra atividade para o lead
+      await db.execute(sql.raw(`
+        INSERT INTO lead_activities (
+          lead_id, type, description, metadata, created_by_id, created_at
+        ) VALUES (?, ?, ?, ?, ?, NOW())
       `, [
         leadId,
         'checkout',
-        `Link de pagamento criado: ${description} - R$ ${amount.toFixed(2)}`,
-        userId
-      ]);
-      
-      // Atualizar status do lead para 'com_checkout' se ainda estiver como 'novo'
-      if (lead.status === 'new') {
-        await client.query(`
-          UPDATE leads
-          SET status = 'with_checkout', updated_at = NOW()
-          WHERE id = $1
-        `, [leadId]);
-      }
-      
-      await client.query('COMMIT');
-      
+        'Link de checkout criado',
+        JSON.stringify({
+          checkoutId: checkoutResponse.id,
+          value: validatedData.value,
+          description: validatedData.description
+        }),
+        req.user?.id
+      ]));
+
       return res.status(201).json({
-        success: true,
-        checkoutLink: {
-          id: checkoutLinkId,
-          url: checkoutInfo.url,
-          checkoutId: checkoutInfo.id,
-          amount,
-          description,
-          courseId,
-          status: 'pending',
-          expiresAt: expiresAt.toISOString(),
-          created_at: new Date().toISOString()
-        },
-        message: 'Link de checkout criado com sucesso'
+        message: 'Link de checkout criado com sucesso',
+        checkout: result.rows[0]
       });
-      
-    } catch (apiError: any) {
-      console.error('Erro na API do Asaas:', apiError.response?.data || apiError.message);
+    } catch (asaasError) {
+      console.error('Erro ao criar checkout no Asaas:', asaasError);
       return res.status(500).json({ 
-        error: 'Erro ao criar link de checkout no Asaas', 
-        details: apiError.response?.data || apiError.message 
+        error: 'Erro ao criar checkout no Asaas',
+        details: asaasError instanceof Error ? asaasError.message : 'Erro desconhecido'
       });
     }
-    
   } catch (error) {
-    await client.query('ROLLBACK');
     console.error('Erro ao criar link de checkout:', error);
-    return res.status(500).json({ error: 'Erro interno ao criar link de checkout' });
-  } finally {
-    client.release();
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Dados inválidos', details: error.errors });
+    }
+    return res.status(500).json({ error: 'Erro ao criar link de checkout' });
   }
 }
 
@@ -182,80 +123,99 @@ export async function createCheckoutLink(req: Request, res: Response) {
  * Verificar status de um link de checkout
  */
 export async function checkCheckoutStatus(req: Request, res: Response) {
-  const client = await pool.connect();
   try {
     const { checkoutId } = req.params;
-    
-    // Buscar o link de checkout no banco de dados
-    const checkoutResult = await client.query(`
-      SELECT c.*, l.name as lead_name, l.email as lead_email
-      FROM checkout_links c
-      JOIN leads l ON c.lead_id = l.id
-      WHERE c.id = $1
-    `, [checkoutId]);
-    
-    if (checkoutResult.rows.length === 0) {
+
+    // Verifica se o link de checkout existe no banco
+    const checkout = await db.execute(sql.raw(
+      `SELECT * FROM checkout_links WHERE id = ? OR asaas_checkout_id = ?`,
+      [checkoutId, checkoutId]
+    ));
+
+    if (!checkout.rows.length) {
       return res.status(404).json({ error: 'Link de checkout não encontrado' });
     }
-    
-    const checkout = checkoutResult.rows[0];
-    
-    // Consultar status no Asaas
+
+    const checkoutData = checkout.rows[0];
+
+    // Consulta o status no Asaas
     try {
-      const response = await axios.get(
-        `${ASAAS_API_URL}/checkouts/${checkout.checkout_id}`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'access_token': ASAAS_API_KEY
-          }
-        }
+      const asaasCheckoutStatus = await asaasCheckoutService.getCheckoutStatus(
+        checkoutData.asaas_checkout_id
       );
-      
-      const asaasStatus = response.data;
-      
-      // Atualizar status no banco de dados se necessário
-      if (asaasStatus.status !== checkout.status) {
-        await client.query(`
+
+      // Atualiza o status no banco se mudou
+      if (asaasCheckoutStatus.status !== checkoutData.status) {
+        await db.execute(sql.raw(`
           UPDATE checkout_links
-          SET status = $1, updated_at = NOW()
-          WHERE id = $2
-        `, [asaasStatus.status, checkoutId]);
-        
-        // Se o status for 'pago', converter lead para cliente se ainda não for
-        if (asaasStatus.status === 'RECEIVED' || asaasStatus.status === 'CONFIRMED') {
-          // Verificar se já é cliente
-          const clientCheckResult = await client.query(`
-            SELECT client_id FROM leads WHERE id = $1
-          `, [checkout.lead_id]);
-          
-          if (!clientCheckResult.rows[0].client_id) {
-            // TODO: Implementar lógica de conversão para cliente
-            console.log('Checkout pago! Lead deve ser convertido para cliente.');
+          SET status = ?, updated_at = NOW()
+          WHERE id = ?
+        `, [asaasCheckoutStatus.status, checkoutData.id]));
+
+        // Se foi pago, criar o cliente e converter o lead
+        if (asaasCheckoutStatus.status === 'confirmed' || asaasCheckoutStatus.status === 'paid') {
+          const lead = await db.execute(sql.raw(
+            `SELECT * FROM leads WHERE id = ?`,
+            [checkoutData.lead_id]
+          ));
+
+          if (lead.rows.length) {
+            const leadData = lead.rows[0];
+            
+            // Verifica se o cliente já existe
+            const existingClient = await db.execute(sql.raw(
+              `SELECT * FROM clients WHERE email = ?`,
+              [leadData.email]
+            ));
+
+            if (!existingClient.rows.length) {
+              // Cria cliente no Asaas (se ainda não existir)
+              const asaasCustomer = await AsaasService.createCustomer({
+                name: leadData.name,
+                email: leadData.email,
+                phone: leadData.phone || null,
+                notificationDisabled: false
+              });
+
+              // Cria o cliente local
+              const client = await db.execute(sql.raw(`
+                INSERT INTO clients (
+                  name, email, phone, status, asaas_id, created_from_lead_id, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, NOW())
+                RETURNING *
+              `, [
+                leadData.name,
+                leadData.email,
+                leadData.phone || null,
+                'active',
+                asaasCustomer.id,
+                leadData.id
+              ]));
+
+              // Atualiza o status do lead para 'converted'
+              await db.execute(sql.raw(`
+                UPDATE leads
+                SET status = 'converted', converted_to_client_id = ?, updated_at = NOW()
+                WHERE id = ?
+              `, [client.rows[0].id, leadData.id]));
+            }
           }
         }
       }
-      
+
       return res.json({
-        success: true,
-        checkout: {
-          ...checkout,
-          asaasStatus: asaasStatus
-        }
+        checkout: checkoutData,
+        asaasStatus: asaasCheckoutStatus
       });
-      
-    } catch (apiError: any) {
-      console.error('Erro ao consultar status no Asaas:', apiError.response?.data || apiError.message);
+    } catch (asaasError) {
+      console.error('Erro ao verificar status no Asaas:', asaasError);
       return res.status(500).json({ 
-        error: 'Erro ao consultar status no Asaas', 
-        details: apiError.response?.data || apiError.message 
+        error: 'Erro ao verificar status no Asaas',
+        details: asaasError instanceof Error ? asaasError.message : 'Erro desconhecido'
       });
     }
-    
   } catch (error) {
-    console.error('Erro ao verificar status do checkout:', error);
-    return res.status(500).json({ error: 'Erro interno ao verificar status do checkout' });
-  } finally {
-    client.release();
+    console.error('Erro ao verificar status de checkout:', error);
+    return res.status(500).json({ error: 'Erro ao verificar status de checkout' });
   }
 }
