@@ -141,12 +141,18 @@ router.get('/asaas-charges', async (req, res) => {
             if (customerDetails) {
               // Adicionar CPF/CNPJ e outros detalhes relevantes
               charge.customerDetails = {
+                name: customerDetails.name,
                 cpfCnpj: customerDetails.cpfCnpj,
                 phone: customerDetails.phone || customerDetails.mobilePhone,
                 address: `${customerDetails.address}, ${customerDetails.addressNumber}`,
                 city: customerDetails.city,
                 state: customerDetails.state
               };
+              
+              // Adiciona o nome do cliente se estiver faltando
+              if (!charge.customerName) {
+                charge.customerName = customerDetails.name;
+              }
             }
           }
         } catch (customerError) {

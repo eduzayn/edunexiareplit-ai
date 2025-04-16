@@ -223,9 +223,12 @@ export default function ChargesPage() {
       // Extrair detalhes do cliente, se disponíveis
       const customerDetails = charge.customerDetails || null;
       
+      // Determinar o melhor nome para exibição
+      const displayName = charge.customerName || customerDetails?.name || 'Cliente';
+      
       return {
         id: charge.id,
-        name: charge.customerName,
+        name: displayName,
         value: charge.value,
         description: charge.description,
         paymentType: getBillingTypeText(charge.billingType),
@@ -237,7 +240,7 @@ export default function ChargesPage() {
         // Adicionar informações do cliente
         customer: {
           id: charge.customer,
-          name: charge.customerName,
+          name: displayName,
           cpfCnpj: customerDetails?.cpfCnpj || '',
           phone: customerDetails?.phone || '',
           address: customerDetails?.address || '',
