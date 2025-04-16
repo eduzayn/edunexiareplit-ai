@@ -571,13 +571,16 @@ export default function ClientDetailsPage() {
                                 </td>
                                 <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                                   <div className="flex space-x-2">
+                                    {/* Botão de visualizar link/pagamento baseado no status e expiração */}
                                     {(checkout.status === 'pending' || checkout.status === 'PENDING') ? (
                                       <Button 
                                         variant="outline" 
                                         size="sm"
                                         onClick={() => window.open(checkout.url, '_blank')}
+                                        disabled={checkout.is_used}
+                                        title={checkout.is_used ? "Link expirado" : "Abrir link de pagamento"}
                                       >
-                                        Visualizar Link
+                                        {checkout.is_used ? "Link Expirado" : "Visualizar Link"}
                                       </Button>
                                     ) : (
                                       <Button 
@@ -588,6 +591,8 @@ export default function ClientDetailsPage() {
                                         Ver Pagamento
                                       </Button>
                                     )}
+                                    
+                                    {/* Botão de atualizar status */}
                                     <Button 
                                       variant="outline" 
                                       size="sm"
@@ -595,7 +600,9 @@ export default function ClientDetailsPage() {
                                     >
                                       Atualizar
                                     </Button>
-                                    {(checkout.status === 'pending' || checkout.status === 'PENDING') && (
+                                    
+                                    {/* Botão de cancelar apenas para pendentes e não expirados */}
+                                    {(checkout.status === 'pending' || checkout.status === 'PENDING') && !checkout.is_used && (
                                       <Button 
                                         variant="destructive" 
                                         size="sm"

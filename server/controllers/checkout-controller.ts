@@ -416,6 +416,7 @@ export async function getClientCheckoutLinks(req: Request, res: Response) {
       expirationTime: checkout.expiration_time,
       status: checkout.status,
       url: checkout.url,
+      is_used: checkout.is_used || false,  // Incluindo a propriedade is_used
       createdAt: checkout.created_at,
       updatedAt: checkout.updated_at
     }));
