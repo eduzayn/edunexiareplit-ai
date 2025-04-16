@@ -2148,7 +2148,7 @@ export class DatabaseStorage implements IStorage {
     
     // Verificar se o valor total foi pago
     let newStatus;
-    if (totalPaid >= invoice.total) {
+    if (totalPaid >= invoice.totalAmount) {
       newStatus = "paid";
     } else if (totalPaid > 0) {
       newStatus = "partial";
