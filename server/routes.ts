@@ -31,6 +31,7 @@ import certificatesRoutes from "./routes/certificates";
 import certificateTemplatesRoutes from "./routes/certificate-templates";
 import certificateSignersRoutes from "./routes/certificate-signers";
 import { WebhookController } from "./controllers/webhook-controller";
+import { checkoutSuccessCallback, checkoutNotificationCallback } from "./controllers/checkout-callback-controller";
 import subscriptionPlansRoutes from "./routes/subscription-plans";
 import subscriptionsRoutes from "./routes/subscriptions";
 import publicRegisterRouter from "./routes/public-register";
