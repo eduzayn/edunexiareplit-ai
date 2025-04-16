@@ -38,6 +38,9 @@ import CertificationSignersPage from "@/pages/admin/certification/signers-page";
 // Importações de leads temporariamente removidas para reconstrução do módulo
 // import LeadsPage from "@/pages/admin/crm/leads-page";
 // import NewLeadPage from "@/pages/admin/crm/new-lead-page";
+import LeadsV2Page from "@/pages/admin/crm/leads-v2-page";
+import NewLeadV2Page from "@/pages/admin/crm/new-lead-v2-page";
+import LeadDetailV2Page from "@/pages/admin/crm/lead-detail-v2-page";
 import ClientsPage from "@/pages/admin/crm/clients-page";
 import NewClientPage from "@/pages/admin/crm/new-client-page";
 import ClientDetailsPage from "@/pages/admin/crm/client-details-page";
