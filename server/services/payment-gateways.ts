@@ -17,8 +17,8 @@ export class AsaasGateway implements PaymentGateway {
   private apiUrl: string;
   
   constructor() {
-    // IMPORTANTE: Existem três chaves diferentes do Asaas, usamos especificamente a ASAAS_API_KEY (primeira chave)
-    this.apiKey = process.env.ASAAS_API_KEY || ''; // Primeira chave - correta para integração
+    // IMPORTANTE: Usamos a nova chave ASAAS_ZAYN_KEY (nos secrets do Replit)
+    this.apiKey = process.env.ASAAS_ZAYN_KEY || '';
     
     // Verificar se estamos usando token de produção ou sandbox
     const isProductionToken = this.apiKey?.startsWith('$aact_prod_');
@@ -31,7 +31,7 @@ export class AsaasGateway implements PaymentGateway {
     // Log para rastrear qual ambiente está sendo usado
     console.log(`[ASAAS GATEWAY] Utilizando ambiente: ${isProductionToken ? 'Produção' : 'Sandbox'} - ${this.apiUrl}`);
     console.log(`[ASAAS GATEWAY] Token da API (ASAAS_API_KEY): ${this.apiKey?.substring(0, 10)}...`);
-    console.log(`[ASAAS GATEWAY] ⚠️ Atenção: Usando especificamente a primeira chave do Asaas (ASAAS_API_KEY)`);
+    console.log(`[ASAAS GATEWAY] ⚠️ Atenção: Configuração atualizada com a chave correta do Asaas`);
     
     if (!this.apiKey) {
       console.warn('ASAAS_API_KEY não configurada. Integração com Asaas funcionará em modo de simulação.');
