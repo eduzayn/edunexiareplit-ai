@@ -79,7 +79,7 @@ export default function NewClientPage() {
       type: "pf", // Alterado para "pf" (pessoa física) como padrão
       email: "",
       phone: "",
-      cpfCnpj: "",
+      document: "",
       rgIe: "",
       zipCode: "",
       street: "",
@@ -105,7 +105,7 @@ export default function NewClientPage() {
         type: data.type,
         email: data.email,
         phone: data.phone,
-        cpfCnpj: data.cpfCnpj,
+        document: data.document,
         rgIe: data.rgIe || "",
         // Campos de endereço separados (conforme esperado pela API)
         street: data.street,
