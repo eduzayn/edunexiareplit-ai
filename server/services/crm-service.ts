@@ -195,16 +195,9 @@ export async function createClient(data: InsertClient): Promise<Client> {
       if (!newClient.document) {
         console.log(`Cliente ${newClient.id} não tem CPF/CNPJ para cadastro no Asaas`);
       } else {
-        // Criar objeto para o Asaas com os dados disponíveis
-        const asaasData: any = {
-          name: newClient.name,
-          email: newClient.email,
-          phone: newClient.phone,
-          cpfCnpj: newClient.document, // CPF/CNPJ do cliente
-          postalCode: newClient.zipCode,
-          address: newClient.address,
-          externalReference: `client_${newClient.id}`
-        };
+        // Passar o cliente diretamente para o serviço Asaas
+        // que usará a função mapClientToAsaasCustomer para fazer o mapeamento correto
+        const asaasData = newClient;
         
         // Adicionar campos opcionais de endereço se disponíveis na implementação futura
         // quando esses campos forem adicionados ao schema de clientes
@@ -285,16 +278,9 @@ export async function updateClient(id: number, data: Partial<InsertClient>): Pro
       } 
       // Se o cliente não tem asaasId mas tem um documento, criar no Asaas
       else if (updatedClient.document && !data.asaasId) {
-        // Criar objeto para o Asaas
-        const asaasData: any = {
-          name: updatedClient.name,
-          email: updatedClient.email,
-          phone: updatedClient.phone,
-          cpfCnpj: updatedClient.document,
-          postalCode: updatedClient.zipCode,
-          address: updatedClient.address,
-          externalReference: `client_${updatedClient.id}`
-        };
+        // Passar o cliente diretamente para o serviço Asaas
+        // que usará a função mapClientToAsaasCustomer para fazer o mapeamento correto
+        const asaasData = updatedClient;
         
         // Criar no Asaas
         const asaasResponse = await AsaasService.createCustomer(asaasData, updatedClient.id);
