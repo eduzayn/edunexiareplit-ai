@@ -290,12 +290,35 @@ export async function checkCheckoutStatus(req: Request, res: Response) {
         }
       }
 
-      // Formatar resposta para o frontend de forma mais consistente
+      // Buscar pagamentos associados a este checkout
+      let paymentUrl = null;
+      try {
+        if (checkoutData.client_id) {
+          // Verificamos na tabela de pagamentos
+          const payments = await db.execute(sql`
+            SELECT p.* 
+            FROM payments p
+            JOIN invoices i ON p.invoice_id = i.id
+            WHERE i.client_id = ${checkoutData.client_id}
+            ORDER BY p.created_at DESC
+            LIMIT 1
+          `);
+          
+          if (payments.rows.length > 0) {
+            paymentUrl = payments.rows[0].payment_url;
+          }
+        }
+      } catch (paymentError) {
+        console.error('Erro ao buscar pagamentos do checkout:', paymentError);
+      }
+      
+      // Formatar resposta para o frontend com o link de pagamento
       return res.json({
         success: true,
         data: {
           checkout: checkoutData,
-          asaasStatus: asaasCheckoutStatus
+          asaasStatus: asaasCheckoutStatus,
+          paymentUrl: paymentUrl
         }
       });
     } catch (asaasError) {

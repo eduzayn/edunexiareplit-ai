@@ -33,6 +33,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useClients, useContacts } from "@/hooks/use-crm";
 import { useClientCheckouts } from "@/hooks/use-checkout";
+import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -586,7 +587,26 @@ export default function ClientDetailsPage() {
                                       <Button 
                                         variant="outline" 
                                         size="sm"
-                                        onClick={() => window.open(checkout.url, '_blank')}
+                                        onClick={() => {
+                                          // Primeiro verificamos o status para obter o link de pagamento
+                                          checkStatus(checkout.id);
+                                          setTimeout(() => {
+                                            // Após 1 segundo, verificamos se há um link de pagamento atualizado
+                                            apiRequest(`/api/v2/checkout/status/${checkout.id}`)
+                                              .then(response => {
+                                                if (response.success && response.data.paymentUrl) {
+                                                  window.open(response.data.paymentUrl, '_blank');
+                                                } else {
+                                                  // Se não houver link de pagamento, abrimos o link de checkout
+                                                  window.open(checkout.url, '_blank');
+                                                }
+                                              })
+                                              .catch(() => {
+                                                // Em caso de erro, abrimos o link de checkout
+                                                window.open(checkout.url, '_blank');
+                                              });
+                                          }, 1000);
+                                        }}
                                       >
                                         Ver Pagamento
                                       </Button>
