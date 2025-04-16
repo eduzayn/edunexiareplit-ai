@@ -46,35 +46,31 @@ export async function getLeads(req: Request, res: Response) {
     const limitNumber = parseInt(limit as string);
     const offset = (pageNumber - 1) * limitNumber;
 
-    // Construindo a consulta
-    let query = `
-      SELECT * FROM leads
-      WHERE 1=1
-    `;
+    // Construímos os filtros usando SQL para evitar problemas de sintaxe
+    let whereClause = sql`WHERE 1=1`;
     
-    const countQuery = `
-      SELECT COUNT(*) as total FROM leads
-      WHERE 1=1
-    `;
-
-    let conditions = '';
-    const params: any[] = [];
-
-    // Adicionar filtros se fornecidos
+    // Adicionar status se fornecido e diferente de 'all'
     if (status && status !== 'all') {
-      conditions += ` AND status = ?`;
-      params.push(status);
+      whereClause = sql`${whereClause} AND status = ${status}`;
     }
 
+    // Adicionar busca por nome ou email
     if (search) {
-      conditions += ` AND (name LIKE ? OR email LIKE ?)`;
-      params.push(`%${search}%`, `%${search}%`);
+      whereClause = sql`${whereClause} AND (name LIKE ${`%${search}%`} OR email LIKE ${`%${search}%`})`;
     }
 
-    // Executa as consultas
+    // Executa as consultas com SQL template strings seguras
     const [leads, countResult] = await Promise.all([
-      db.execute(sql`${sql.raw(query + conditions)} ORDER BY ${sql.raw(sortBy)} ${sql.raw(sortOrder)} LIMIT ${limitNumber} OFFSET ${offset}`),
-      db.execute(sql`${sql.raw(countQuery + conditions)}`)
+      db.execute(sql`
+        SELECT * FROM leads
+        ${whereClause}
+        ORDER BY ${sql.raw(sortBy as string)} ${sql.raw(sortOrder as string)}
+        LIMIT ${limitNumber} OFFSET ${offset}
+      `),
+      db.execute(sql`
+        SELECT COUNT(*) as total FROM leads
+        ${whereClause}
+      `)
     ]);
 
     const total = countResult.rows[0]?.total || 0;
@@ -102,26 +98,27 @@ export async function getLeadById(req: Request, res: Response) {
     const { id } = req.params;
 
     // Consulta o lead
-    const lead = await db.execute(sql.raw(
-      `SELECT * FROM leads WHERE id = ?`,
-      [id]
-    ));
+    const lead = await db.execute(sql`
+      SELECT * FROM leads WHERE id = ${id}
+    `);
 
     if (!lead.rows.length) {
       return res.status(404).json({ error: 'Lead não encontrado' });
     }
 
     // Consulta atividades do lead
-    const activities = await db.execute(sql.raw(
-      `SELECT * FROM lead_activities WHERE lead_id = ? ORDER BY created_at DESC`,
-      [id]
-    ));
+    const activities = await db.execute(sql`
+      SELECT * FROM lead_activities 
+      WHERE lead_id = ${id} 
+      ORDER BY created_at DESC
+    `);
 
     // Consulta links de checkout associados
-    const checkoutLinks = await db.execute(sql.raw(
-      `SELECT * FROM checkout_links WHERE lead_id = ? ORDER BY created_at DESC`,
-      [id]
-    ));
+    const checkoutLinks = await db.execute(sql`
+      SELECT * FROM checkout_links 
+      WHERE lead_id = ${id} 
+      ORDER BY created_at DESC
+    `);
 
     return res.json({
       lead: lead.rows[0],
@@ -142,35 +139,37 @@ export async function createLead(req: Request, res: Response) {
     const validatedData = createLeadSchema.parse(req.body);
 
     // Insere lead no banco
-    const result = await db.execute(sql.raw(`
+    const result = await db.execute(sql`
       INSERT INTO leads (
         name, email, phone, course, source, notes, status, created_by_id, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
+      ) VALUES (
+        ${validatedData.name},
+        ${validatedData.email},
+        ${validatedData.phone || null},
+        ${validatedData.course || null},
+        ${validatedData.source || null},
+        ${validatedData.notes || null},
+        ${validatedData.status},
+        ${req.user?.id || null},
+        NOW()
+      )
       RETURNING *
-    `, [
-      validatedData.name,
-      validatedData.email,
-      validatedData.phone || null,
-      validatedData.course || null,
-      validatedData.source || null,
-      validatedData.notes || null,
-      validatedData.status,
-      req.user?.id
-    ]));
+    `);
 
     const newLead = result.rows[0];
 
     // Cria uma atividade inicial para o lead
-    await db.execute(sql.raw(`
+    await db.execute(sql`
       INSERT INTO lead_activities (
         lead_id, type, description, created_by_id, created_at
-      ) VALUES (?, ?, ?, ?, NOW())
-    `, [
-      newLead.id,
-      'note',
-      'Lead criado',
-      req.user?.id
-    ]));
+      ) VALUES (
+        ${newLead.id},
+        ${'note'},
+        ${'Lead criado'},
+        ${req.user?.id || null},
+        NOW()
+      )
+    `);
 
     return res.status(201).json(newLead);
   } catch (error) {
@@ -191,42 +190,42 @@ export async function updateLead(req: Request, res: Response) {
     const validatedData = updateLeadSchema.parse(req.body);
 
     // Verifica se o lead existe
-    const existingLead = await db.execute(sql.raw(
-      `SELECT * FROM leads WHERE id = ?`,
-      [id]
-    ));
+    const existingLead = await db.execute(sql`
+      SELECT * FROM leads WHERE id = ${id}
+    `);
 
     if (!existingLead.rows.length) {
       return res.status(404).json({ error: 'Lead não encontrado' });
     }
 
-    // Constrói a query dinâmica para atualização
-    let updateFields = [];
-    let params = [];
-
-    // Adiciona campos para atualização
-    Object.entries(validatedData).forEach(([key, value]) => {
+    // Construímos os campos a serem atualizados usando um objeto
+    const fieldsToUpdate = { ...validatedData };
+    
+    // Aqui precisamos construir a query SQL de forma dinâmica
+    // Primeiro criamos uma array com cada parte do SET
+    const updateParts = [];
+    const updateValues = {};
+    
+    // Iteramos sobre os campos a atualizar
+    Object.entries(fieldsToUpdate).forEach(([key, value]) => {
       if (value !== undefined) {
-        updateFields.push(`${key} = ?`);
-        params.push(value);
+        updateParts.push(`${key} = ${sql.placeholder(key)}`);
+        updateValues[key] = value;
       }
     });
-
-    // Adiciona updated_at e updated_by_id
-    updateFields.push('updated_at = NOW()');
-    updateFields.push('updated_by_id = ?');
-    params.push(req.user?.id);
-
-    // Adiciona o ID para o WHERE
-    params.push(id);
-
-    // Executa a atualização
-    const result = await db.execute(sql.raw(`
+    
+    // Adicionamos os campos de sistema
+    updateParts.push('updated_at = NOW()');
+    updateParts.push(`updated_by_id = ${sql.placeholder('userId')}`);
+    updateValues['userId'] = req.user?.id || null;
+    
+    // Executamos a atualização
+    const result = await db.execute(sql`
       UPDATE leads 
-      SET ${updateFields.join(', ')} 
-      WHERE id = ?
+      SET ${sql.raw(updateParts.join(', '))}
+      WHERE id = ${id}
       RETURNING *
-    `, params));
+    `.params(updateValues));
 
     return res.json(result.rows[0]);
   } catch (error) {
@@ -247,28 +246,28 @@ export async function addLeadActivity(req: Request, res: Response) {
     const validatedData = leadActivitySchema.parse(req.body);
 
     // Verifica se o lead existe
-    const existingLead = await db.execute(sql.raw(
-      `SELECT * FROM leads WHERE id = ?`,
-      [leadId]
-    ));
+    const existingLead = await db.execute(sql`
+      SELECT * FROM leads WHERE id = ${leadId}
+    `);
 
     if (!existingLead.rows.length) {
       return res.status(404).json({ error: 'Lead não encontrado' });
     }
 
     // Insere a atividade
-    const result = await db.execute(sql.raw(`
+    const result = await db.execute(sql`
       INSERT INTO lead_activities (
         lead_id, type, description, metadata, created_by_id, created_at
-      ) VALUES (?, ?, ?, ?, ?, NOW())
+      ) VALUES (
+        ${leadId},
+        ${validatedData.type},
+        ${validatedData.description},
+        ${validatedData.metadata ? JSON.stringify(validatedData.metadata) : null},
+        ${req.user?.id || null},
+        NOW()
+      )
       RETURNING *
-    `, [
-      leadId,
-      validatedData.type,
-      validatedData.description,
-      validatedData.metadata ? JSON.stringify(validatedData.metadata) : null,
-      req.user?.id
-    ]));
+    `);
 
     return res.status(201).json(result.rows[0]);
   } catch (error) {
