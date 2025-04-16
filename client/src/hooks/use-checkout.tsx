@@ -43,10 +43,10 @@ export function useClientCheckouts(clientId?: number) {
   
   // Listar cobranças do cliente
   const checkoutsQuery = useQuery({
-    queryKey: [`/api/clients/${clientId}/checkout-links`],
+    queryKey: [`/api/v2/clients/${clientId}/checkout-links`],
     queryFn: async () => {
       if (!clientId) return [];
-      const response = await apiRequest<ClientCheckoutsResponse>(`/api/clients/${clientId}/checkout-links`);
+      const response = await apiRequest<ClientCheckoutsResponse>(`/api/v2/clients/${clientId}/checkout-links`);
       return response.data; 
     },
     enabled: !!clientId
