@@ -35,8 +35,9 @@ import CertificationTemplatesPage from "@/pages/admin/certification/templates-pa
 import CertificationIssuePage from "@/pages/admin/certification/issue-page";
 import CertificationSignersPage from "@/pages/admin/certification/signers-page";
 // Importação dos módulos CRM e Gestão
-import LeadsPage from "@/pages/admin/crm/leads-page";
-import NewLeadPage from "@/pages/admin/crm/new-lead-page";
+// Importações de leads temporariamente removidas para reconstrução do módulo
+// import LeadsPage from "@/pages/admin/crm/leads-page";
+// import NewLeadPage from "@/pages/admin/crm/new-lead-page";
 import ClientsPage from "@/pages/admin/crm/clients-page";
 import NewClientPage from "@/pages/admin/crm/new-client-page";
 import ClientDetailsPage from "@/pages/admin/crm/client-details-page";
@@ -269,12 +270,21 @@ function Router() {
       </Route>
       
       {/* Rotas do Módulo CRM */}
+      {/* Rotas de leads temporariamente removidas para reconstrução do módulo */}
       <Route path="/admin/crm/leads">
-        {() => user?.portalType === "admin" ? <LeadsPage /> : <Redirect to="/admin" />}
+        {() => user?.portalType === "admin" ? <div className="p-8">
+          <h1 className="text-2xl font-bold mb-4">Módulo de Leads em Reconstrução</h1>
+          <p className="mb-2">Estamos reconstruindo o módulo de leads com integração ao Asaas Checkout.</p>
+          <p>Esta funcionalidade estará disponível em breve.</p>
+        </div> : <Redirect to="/admin" />}
       </Route>
       
       <Route path="/admin/crm/leads/new">
-        {() => user?.portalType === "admin" ? <NewLeadPage /> : <Redirect to="/admin" />}
+        {() => user?.portalType === "admin" ? <div className="p-8">
+          <h1 className="text-2xl font-bold mb-4">Módulo de Leads em Reconstrução</h1>
+          <p className="mb-2">Estamos reconstruindo o módulo de leads com integração ao Asaas Checkout.</p>
+          <p>Esta funcionalidade estará disponível em breve.</p>
+        </div> : <Redirect to="/admin" />}
       </Route>
       
       <Route path="/admin/crm/clients">
