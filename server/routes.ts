@@ -2816,6 +2816,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/v2/checkout/convert-pending-leads", async (req, res) => {
     await checkAndConvertPendingLeads(req, res);
   });
+  
+  // Rota adicional para testes - converter leads pendentes
+  app.post("/api/v2/checkout/check-convert-pending", async (req, res) => {
+    await checkAndConvertPendingLeads(req, res);
+  });
 
   // ================= Rotas para Registro Público =================
   // Rota pública para registro de novos usuários

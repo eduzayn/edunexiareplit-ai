@@ -504,11 +504,12 @@ export async function checkAndConvertPendingLeads(req: Request, res: Response) {
         `);
         
         // Atualizar o checkout para vincular ao cliente
+        const checkoutStatus = asaasCheckoutStatus.status || 'pending';
         await db.execute(sql`
           UPDATE checkout_links
           SET 
             client_id = ${clientId},
-            status = ${asaasCheckoutStatus.status},
+            status = ${checkoutStatus},
             updated_at = NOW()
           WHERE id = ${leadData.checkout_id}
         `);
@@ -601,7 +602,7 @@ export async function checkAndConvertPendingLeads(req: Request, res: Response) {
           checkout: {
             id: leadData.checkout_id,
             asaasId: leadData.asaas_checkout_id,
-            status: asaasCheckoutStatus.status
+            status: checkoutStatus
           }
         });
       } catch (leadError) {
