@@ -120,7 +120,7 @@ export default function AdvancedChargePage() {
   // Função para formatar valor monetário
   const formatCurrency = (value: string) => {
     // Remove tudo que não for número
-    const numericValue = value.replace(/\\D/g, "");
+    const numericValue = value.replace(/\D/g, "");
     
     // Converte para formato flutuante (divide por 100 para tratar centavos)
     const floatValue = Number(numericValue) / 100;
@@ -135,7 +135,7 @@ export default function AdvancedChargePage() {
   // Manipuladores de eventos - Campos básicos
   const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Remove formatação, mantém apenas números
-    const numericValue = e.target.value.replace(/\\D/g, "");
+    const numericValue = e.target.value.replace(/\D/g, "");
     
     // Se estiver vazio, limpa o campo
     if (!numericValue) {
@@ -159,7 +159,7 @@ export default function AdvancedChargePage() {
   
   // Função para extrair valor numérico de um valor formatado como moeda
   const extractNumericValue = (formattedValue: string): number => {
-    const numericValue = formattedValue.replace(/\\D/g, "");
+    const numericValue = formattedValue.replace(/\D/g, "");
     return Number(numericValue) / 100;
   };
   
