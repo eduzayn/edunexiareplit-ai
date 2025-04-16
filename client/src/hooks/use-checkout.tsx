@@ -61,7 +61,7 @@ export function useClientCheckouts(clientId?: number) {
       console.log("Resposta da verificação de status:", response);
       
       // Invalidar o cache para atualizar a listagem
-      queryClient.invalidateQueries({ queryKey: [`/api/clients/${clientId}/checkout-links`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/v2/clients/${clientId}/checkout-links`] });
       
       // Notificar o usuário sobre o sucesso
       toast({
@@ -87,7 +87,7 @@ export function useClientCheckouts(clientId?: number) {
       apiRequest(`/api/v2/checkout/links/${checkoutId}/cancel`, { method: 'POST' }),
     onSuccess: (response) => {
       // Invalidar o cache para atualizar a listagem
-      queryClient.invalidateQueries({ queryKey: [`/api/clients/${clientId}/checkout-links`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/v2/clients/${clientId}/checkout-links`] });
       
       // Notificar o usuário
       toast({
