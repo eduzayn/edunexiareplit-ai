@@ -67,10 +67,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { ptBR } from "date-fns/locale";
@@ -1445,36 +1447,14 @@ export default function ChargesPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Modificar cobranças em lote</DialogTitle>
-            <DialogDescription>
-              Você está prestes a modificar {countSelectedCharges()} cobranças. 
+            <p className="text-sm text-muted-foreground">
+              Você está prestes a modificar {countSelectedCharges()} cobranças.
               Essa ação afetará apenas as cobranças selecionadas.
-            </DialogDescription>
+            </p>
           </DialogHeader>
           
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="dueDateBulk">Data de vencimento</Label>
-              <Input
-                id="dueDateBulk"
-                type="date"
-                className="w-full"
-              />
-            </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="statusBulk">Status</Label>
-              <Select>
-                <SelectTrigger id="statusBulk">
-                  <SelectValue placeholder="Selecione um status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="PENDING">Aguardando pagamento</SelectItem>
-                  <SelectItem value="RECEIVED">Recebida</SelectItem>
-                  <SelectItem value="OVERDUE">Vencida</SelectItem>
-                  <SelectItem value="CANCELED">Cancelada</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="py-4">
+            <p>Em desenvolvimento...</p>
           </div>
           
           <DialogFooter>
@@ -1505,10 +1485,10 @@ export default function ChargesPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Remover cobranças em lote</DialogTitle>
-            <DialogDescription>
-              Você está prestes a remover {countSelectedCharges()} cobranças. 
+            <p className="text-sm text-muted-foreground">
+              Você está prestes a remover {countSelectedCharges()} cobranças.
               Esta ação não pode ser desfeita.
-            </DialogDescription>
+            </p>
           </DialogHeader>
           
           <div className="py-4">
