@@ -8,12 +8,12 @@ import axios from 'axios';
 interface CheckoutLinkData {
   name: string;
   email: string;
-  phone: string;
+  phone?: string;
   value: number;
   dueDate: string; // Formato: YYYY-MM-DD
   description: string;
-  expirationTime: number; // Tempo de expiração em minutos
-  successUrl: string;
+  expirationTime?: number; // Tempo de expiração em minutos
+  successUrl?: string;
   notificationUrl?: string;
   additionalInfo?: string;
 }
@@ -79,20 +79,23 @@ class AsaasCheckoutService {
     try {
       console.log('Criando link de checkout no Asaas:', JSON.stringify(data, null, 2));
       
-      // Formata os dados para a API do Asaas
+      // Formata os dados para a API do Asaas conforme documentação v3
       const payload = {
-        name: data.name,
-        email: data.email,
-        phone: data.phone,
-        value: data.value,
-        dueDate: data.dueDate,
-        description: data.description,
-        expirationTime: data.expirationTime,
-        successUrl: data.successUrl,
-        notificationUrl: data.notificationUrl,
+        customer: {
+          name: data.name,
+          email: data.email,
+          phone: data.phone || undefined
+        },
+        payment: {
+          value: data.value,
+          dueDate: data.dueDate,
+          description: data.description || 'Pagamento via Checkout'
+        },
+        expirationTime: data.expirationTime || 60, // Em minutos
         billingType: 'UNDEFINED',  // Permite que o cliente escolha a forma de pagamento
         chargingType: 'NORMAL',    // Cobrança padrão
-        additionalInfo: data.additionalInfo || undefined
+        successUrl: data.successUrl || undefined,
+        notificationUrl: data.notificationUrl || undefined
       };
 
       const response = await axios.post(
