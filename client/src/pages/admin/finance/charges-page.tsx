@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 import AdminLayout from "@/components/layout/admin-layout";
 import {
   Card,
@@ -26,7 +27,7 @@ import {
   CopyIcon,
   EditIcon,
   EyeIcon,
-  ExternalLinkIcon,
+  ExternalLink as ExternalLinkIcon,
   FilterIcon,
   InfoIcon,
   InvoiceIcon, 
@@ -92,6 +93,46 @@ export default function ChargesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const { toast } = useToast();
+  
+  // Funções para gerenciar os links de pagamento
+  const openPaymentLink = (url: string | undefined) => {
+    if (!url) {
+      toast({
+        title: "Link indisponível",
+        description: "O link de pagamento não está disponível para esta cobrança.",
+        variant: "destructive"
+      });
+      return;
+    }
+    window.open(url, '_blank');
+  };
+  
+  const copyPaymentLink = (url: string | undefined) => {
+    if (!url) {
+      toast({
+        title: "Link indisponível",
+        description: "O link de pagamento não está disponível para esta cobrança.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    navigator.clipboard.writeText(url)
+      .then(() => {
+        toast({
+          title: "Link copiado!",
+          description: "O link de pagamento foi copiado para a área de transferência.",
+        });
+      })
+      .catch(() => {
+        toast({
+          title: "Erro ao copiar",
+          description: "Não foi possível copiar o link. Tente novamente.",
+          variant: "destructive"
+        });
+      });
+  };
 
   // Removemos os dados simulados, agora estamos usando dados reais da API Asaas
 
@@ -458,12 +499,17 @@ export default function ChargesPage() {
                               
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-gray-800">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-8 w-8 text-gray-500 hover:text-gray-800"
+                                    onClick={() => copyPaymentLink(charge.invoiceUrl)}
+                                  >
                                     <CopyIcon className="h-4 w-4" />
                                   </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                  <p>Copiar link</p>
+                                  <p>Copiar link de pagamento</p>
                                 </TooltipContent>
                               </Tooltip>
                               
