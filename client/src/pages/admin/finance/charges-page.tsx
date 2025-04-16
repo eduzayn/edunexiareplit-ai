@@ -136,17 +136,25 @@ export default function ChargesPage() {
 
   // Removemos os dados simulados, agora estamos usando dados reais da API Asaas
 
-  // Buscar dados da API Asaas
+  // Buscar dados da API Asaas (usando rota debug para maior confiabilidade)
   const { data: asaasCharges, isLoading, error } = useQuery({
-    queryKey: ["/api/finance/charges"],
+    queryKey: ["/api/debug/asaas-charges"],
     enabled: true, // Habilitado para buscar dados da API Asaas
+    retry: 3, // Tentar 3 vezes em caso de erro
+    retryDelay: 1000, // Esperar 1 segundo entre as tentativas
+    refetchOnWindowFocus: false // Evitar refetch automático ao focar na janela
   });
 
   // Mapeamento dos dados do Asaas para o formato da UI
-  const mapAsaasToCharges = (asaasData: AsaasCharge[] | undefined): Charge[] => {
+  const mapAsaasToCharges = (asaasData: any): Charge[] => {
     if (!asaasData) return [];
     
-    return asaasData.map(charge => {
+    // Se for uma resposta com estrutura de API, extrair o array do campo data
+    const charges = asaasData.data && Array.isArray(asaasData.data) 
+      ? asaasData.data 
+      : (Array.isArray(asaasData) ? asaasData : []);
+    
+    return charges.map(charge => {
       // Mapear o status do Asaas para nosso formato
       let status: Charge['status'] = 'pending';
       switch(charge.status) {
