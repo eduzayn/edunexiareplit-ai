@@ -261,6 +261,63 @@ export default function ChargesPage() {
     return Object.values(selectedCharges).filter(Boolean).length;
   };
   
+  // Função para enviar fatura por e-mail
+  const sendInvoiceEmail = async (charge: Charge) => {
+    if (!charge.customer?.email) {
+      toast({
+        title: "E-mail indisponível",
+        description: "O cliente não possui um e-mail cadastrado.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      // Preparar os dados para o envio do e-mail
+      const emailData = {
+        to: charge.customer.email,
+        customerName: charge.name,
+        chargeId: charge.id,
+        chargeValue: charge.value,
+        dueDate: charge.dueDate,
+        paymentLink: charge.invoiceUrl || "",
+        bankSlipLink: charge.bankSlipUrl || undefined
+      };
+      
+      // Enviar a requisição para a API
+      const response = await fetch("/api/emails/send-invoice-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(emailData)
+      });
+      
+      // Processar a resposta
+      const result = await response.json();
+      
+      if (result.success) {
+        toast({
+          title: "E-mail enviado",
+          description: `E-mail enviado com sucesso para ${emailData.to}`,
+        });
+      } else {
+        toast({
+          title: "Erro ao enviar e-mail",
+          description: result.message || "Ocorreu um erro ao enviar o e-mail. Tente novamente.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao enviar e-mail:", error);
+      toast({
+        title: "Erro ao enviar e-mail",
+        description: "Ocorreu um erro ao enviar o e-mail. Tente novamente.",
+        variant: "destructive"
+      });
+    }
+  };
+  
   // Funções para gerenciar os links de pagamento
   const openPaymentLink = (url: string | undefined) => {
     if (!url) {
@@ -1403,7 +1460,12 @@ export default function ChargesPage() {
                               
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-gray-800">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-8 w-8 text-gray-500 hover:text-gray-800"
+                                    onClick={() => sendInvoiceEmail(charge)}
+                                  >
                                     <MailIcon className="h-4 w-4" />
                                   </Button>
                                 </TooltipTrigger>

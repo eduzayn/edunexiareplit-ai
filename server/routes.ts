@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import debugRoutes from "./routes/debug-route";
+import emailRoutes from "./routes/email-routes";
 import { 
   insertDisciplineSchema, 
   insertCourseSchema, 
@@ -3016,6 +3017,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registro das rotas do módulo Financeiro
   app.use("/api/finance", financeRoutes);
   app.use("/api/debug", debugRoutes);
+  app.use("/api/emails", emailRoutes);
   
   // Registro das rotas do módulo de Contratos
   app.use("/api/contracts", contractsRoutes);
