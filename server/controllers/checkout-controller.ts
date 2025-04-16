@@ -130,9 +130,23 @@ export async function createCheckoutLink(req: Request, res: Response) {
         )
       `);
 
+      // Format response for frontend using camelCase keys
+      const checkout = result.rows[0];
       return res.status(201).json({
         message: 'Link de checkout criado com sucesso',
-        checkout: result.rows[0]
+        leadId: leadId, // Adiciona leadId explicitamente na resposta
+        data: {
+          id: checkout.id,
+          leadId: leadId,
+          asaasCheckoutId: checkout.asaas_checkout_id,
+          description: checkout.description,
+          value: checkout.value,
+          dueDate: checkout.due_date,
+          expirationTime: checkout.expiration_time,
+          status: checkout.status,
+          url: checkout.url,
+          createdAt: checkout.created_at
+        }
       });
     } catch (asaasError) {
       console.error('Erro ao criar checkout no Asaas:', asaasError);
