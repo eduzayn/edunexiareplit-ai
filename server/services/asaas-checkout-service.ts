@@ -64,8 +64,8 @@ class AsaasCheckoutService {
     // Determina o ambiente (sandbox ou produção)
     const useSandbox = process.env.ASAAS_SANDBOX === 'true';
     this.baseUrl = useSandbox 
-      ? 'https://sandbox.asaas.com/api/v3'
-      : 'https://api.asaas.com/api/v3';
+      ? 'https://sandbox.asaas.com/v3'
+      : 'https://api.asaas.com/v3';
     
     if (!this.apiKey) {
       console.error('AVISO: Chave da API Asaas (ASAAS_ZAYN_KEY) não configurada!');

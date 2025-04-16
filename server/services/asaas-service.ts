@@ -9,7 +9,7 @@ const isProductionToken = ASAAS_API_KEY?.startsWith('$aact_prod_');
 const ASAAS_API_URL = process.env.ASAAS_API_URL || (
   isProductionToken
   ? 'https://api.asaas.com/v3'
-  : 'https://sandbox.asaas.com/api/v3'
+  : 'https://sandbox.asaas.com/v3'
 );
 
 // Log para rastrear qual ambiente está sendo usado
@@ -21,7 +21,7 @@ console.log(`[ASAAS SERVICE] ⚠️ Atenção: Configuração atualizada com a c
 const asaasClient = axios.create({
   baseURL: ASAAS_API_URL,
   headers: {
-    'access_token': ASAAS_API_KEY,
+    'access-token': ASAAS_API_KEY,
     'Content-Type': 'application/json'
   }
 });
