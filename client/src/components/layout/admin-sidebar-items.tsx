@@ -351,7 +351,7 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
           active: currentPath === "/admin/finance/products" || (currentPath && currentPath.includes("/admin/finance/products/"))
         },
         { 
-          name: "Faturas", 
+          name: "Cobranças", 
           icon: <InvoiceIcon />, 
           href: "/admin/finance/invoices",
           active: currentPath === "/admin/finance/invoices" || (currentPath && currentPath.includes("/admin/finance/invoices/"))
@@ -399,7 +399,7 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
         active: currentPath === "/admin/finance/products" || (currentPath && currentPath.includes("/admin/finance/products/"))
       },
       { 
-        name: "Faturas", 
+        name: "Cobranças", 
         icon: <InvoiceIcon />, 
         href: "/admin/finance/invoices",
         active: currentPath === "/admin/finance/invoices" || (currentPath && currentPath.includes("/admin/finance/invoices/"))
