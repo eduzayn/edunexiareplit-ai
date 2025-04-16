@@ -65,7 +65,7 @@ const formSchema = z.object({
   // Os itens serão gerenciados separadamente
 });
 
-// Schema para item da fatura
+// Schema para item da cobrança
 const invoiceItemSchema = z.object({
   id: z.string(),
   description: z.string().min(1, { message: "Descrição do item é obrigatória" }),
@@ -121,7 +121,7 @@ export default function NewInvoicePage() {
     },
   });
 
-  // Função para gerar número de fatura automático
+  // Função para gerar número de cobrança automático
   function generateInvoiceNumber() {
     const now = new Date();
     const year = now.getFullYear().toString().slice(2);
@@ -136,7 +136,7 @@ export default function NewInvoicePage() {
     return (item.quantity * item.unitPrice) - (item.discount || 0);
   };
 
-  // Função para calcular o total da fatura
+  // Função para calcular o total da cobrança
   const calculateInvoiceTotal = () => {
     return items.reduce((total, item) => {
       const itemSubtotal = calculateItemSubtotal(item);
@@ -145,7 +145,7 @@ export default function NewInvoicePage() {
     }, 0);
   };
 
-  // Função para adicionar item à fatura
+  // Função para adicionar item à cobrança
   const addItemToInvoice = () => {
     if (!currentItem.description || !currentItem.quantity || !currentItem.unitPrice) {
       toast({
@@ -169,7 +169,7 @@ export default function NewInvoicePage() {
     });
   };
 
-  // Função para remover item da fatura
+  // Função para remover item da cobrança
   const removeItem = (id: string) => {
     setItems(items.filter(item => item.id !== id));
   };
@@ -190,14 +190,14 @@ export default function NewInvoicePage() {
     if (items.length === 0) {
       toast({
         title: "Nenhum item adicionado",
-        description: "Adicione pelo menos um item à fatura.",
+        description: "Adicione pelo menos um item à cobrança.",
         variant: "destructive",
       });
       return;
     }
 
     try {
-      // Preparar dados da fatura completa
+      // Preparar dados da cobrança completa
       const invoiceData = {
         ...data,
         items,
@@ -205,7 +205,7 @@ export default function NewInvoicePage() {
       };
 
       // Quando tivermos a API, enviaremos a requisição para o servidor
-      console.log("Enviando dados da fatura:", invoiceData);
+      console.log("Enviando dados da cobrança:", invoiceData);
 
       /*
       // Exemplo de como será a implementação da API
@@ -215,7 +215,7 @@ export default function NewInvoicePage() {
         data: invoiceData,
       });
       
-      // Invalidar cache para forçar recarregamento das faturas
+      // Invalidar cache para forçar recarregamento das cobranças
       queryClient.invalidateQueries({ queryKey: ["/api/finance/invoices"] });
       */
 
