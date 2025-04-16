@@ -109,11 +109,47 @@ export const AsaasService = {
    */
   async createCustomer(client: InsertClient, clientId?: number): Promise<{ id: string }> {
     try {
+      console.log(`[Asaas] Iniciando cadastro do cliente ${client.name} com CPF/CNPJ ${client.document} no Asaas...`);
+      
+      // Verificar se o cliente já existe no Asaas pelo CPF/CNPJ para evitar duplicação
+      if (client.document) {
+        try {
+          console.log(`[Asaas] Verificando se o cliente já existe no Asaas com CPF/CNPJ ${client.document}...`);
+          const existingCustomer = await this.getCustomerByCpfCnpj(client.document);
+          
+          if (existingCustomer) {
+            console.log(`[Asaas] Cliente já existe no Asaas com ID ${existingCustomer.id}`);
+            return { id: existingCustomer.id };
+          }
+          console.log(`[Asaas] Cliente não encontrado no Asaas, prosseguindo com cadastro.`);
+        } catch (searchError) {
+          console.log(`[Asaas] Erro ao verificar se cliente já existe, prosseguindo com cadastro:`, searchError);
+        }
+      }
+      
+      // Mapear os dados do cliente para o formato do Asaas
       const customerData = mapClientToAsaasCustomer(client, clientId);
+      console.log(`[Asaas] Dados para cadastro no Asaas:`, JSON.stringify(customerData));
+      
+      // Registrar informações sobre o ambiente da API em uso
+      console.log(`[Asaas] Usando API URL: ${ASAAS_API_URL}`);
+      console.log(`[Asaas] Ambiente: ${isProductionToken ? 'Produção' : 'Sandbox'}`);
+      
+      // Criar o cliente no Asaas
       const response = await asaasClient.post('/customers', customerData);
+      console.log(`[Asaas] Cliente cadastrado com sucesso no Asaas com ID ${response.data.id}`);
+      
       return { id: response.data.id };
-    } catch (error) {
-      console.error('Erro ao criar cliente no Asaas:', error);
+    } catch (error: any) {
+      // Exibir detalhes sobre o erro da API
+      if (error.response) {
+        console.error(`[Asaas] Erro na resposta da API (Status: ${error.response.status}):`, 
+          error.response.data);
+      } else if (error.request) {
+        console.error('[Asaas] Erro na requisição (sem resposta):', error.request);
+      } else {
+        console.error('[Asaas] Erro ao criar cliente no Asaas:', error.message);
+      }
       throw error;
     }
   },
@@ -123,11 +159,62 @@ export const AsaasService = {
    */
   async updateCustomer(asaasId: string, client: Partial<Client>): Promise<{ id: string }> {
     try {
+      console.log(`[Asaas] Iniciando atualização do cliente ${client.name} (ID: ${asaasId}) no Asaas...`);
+      
+      // Verificar se o cliente existe no Asaas
+      try {
+        console.log(`[Asaas] Verificando se o cliente existe no Asaas com ID ${asaasId}...`);
+        await this.getCustomerById(asaasId);
+        console.log(`[Asaas] Cliente encontrado no Asaas, prosseguindo com atualização.`);
+      } catch (searchError) {
+        console.error(`[Asaas] Cliente não encontrado no Asaas com ID ${asaasId}.`);
+        
+        // Se o cliente tem documento, tentar encontrar pelo CPF/CNPJ
+        if (client.document) {
+          console.log(`[Asaas] Tentando encontrar cliente pelo CPF/CNPJ ${client.document}...`);
+          try {
+            const existingCustomer = await this.getCustomerByCpfCnpj(client.document);
+            
+            if (existingCustomer) {
+              console.log(`[Asaas] Cliente encontrado pelo CPF/CNPJ com ID ${existingCustomer.id}`);
+              asaasId = existingCustomer.id;
+            } else {
+              console.log(`[Asaas] Cliente não encontrado pelo CPF/CNPJ, será criado um novo cliente.`);
+              // Criar um novo cliente no Asaas
+              const newCustomer = await this.createCustomer(client as InsertClient);
+              return newCustomer;
+            }
+          } catch (cpfSearchError) {
+            console.error(`[Asaas] Erro ao buscar cliente por CPF/CNPJ:`, cpfSearchError);
+            // Criar um novo cliente no Asaas
+            const newCustomer = await this.createCustomer(client as InsertClient);
+            return newCustomer;
+          }
+        } else {
+          console.error(`[Asaas] Cliente não tem CPF/CNPJ, não é possível buscar ou criar cliente.`);
+          throw new Error('Cliente não encontrado no Asaas e não tem CPF/CNPJ para criar um novo');
+        }
+      }
+      
+      // Mapear os dados do cliente para o formato do Asaas
       const customerData = mapClientToAsaasCustomer(client);
+      console.log(`[Asaas] Dados para atualização no Asaas:`, JSON.stringify(customerData));
+      
+      // Atualizar o cliente no Asaas
       const response = await asaasClient.post(`/customers/${asaasId}`, customerData);
+      console.log(`[Asaas] Cliente atualizado com sucesso no Asaas com ID ${response.data.id}`);
+      
       return { id: response.data.id };
-    } catch (error) {
-      console.error(`Erro ao atualizar cliente no Asaas (ID: ${asaasId}):`, error);
+    } catch (error: any) {
+      // Exibir detalhes sobre o erro da API
+      if (error.response) {
+        console.error(`[Asaas] Erro na resposta da API de atualização (Status: ${error.response.status}):`, 
+          error.response.data);
+      } else if (error.request) {
+        console.error('[Asaas] Erro na requisição de atualização (sem resposta):', error.request);
+      } else {
+        console.error(`[Asaas] Erro ao atualizar cliente no Asaas (ID: ${asaasId}):`, error.message);
+      }
       throw error;
     }
   },
