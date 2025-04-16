@@ -4,28 +4,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "./use-toast";
-
-/**
- * Estrutura de um link de checkout
- */
-export interface CheckoutLink {
-  id: number;
-  leadId: number;
-  leadName?: string;
-  leadEmail?: string;
-  clientId?: number; 
-  courseId?: number;
-  productId?: number;
-  asaasCheckoutId: string;
-  description: string;
-  value: number;
-  dueDate: string;
-  expirationTime: number;
-  status: string;
-  url: string;
-  createdAt: string;
-  updatedAt?: string;
-}
+import { CheckoutLink } from "./use-checkout";
 
 // Types
 export interface Lead {
