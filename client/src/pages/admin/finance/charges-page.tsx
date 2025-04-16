@@ -374,6 +374,9 @@ export default function ChargesPage() {
       };
       
       // Enviar a requisição para a API
+      console.log('[INFO] Enviando e-mail para:', emailData.to);
+      console.log('[INFO] Dados do e-mail:', emailData);
+      
       const response = await fetch("/api/emails/send-invoice-email", {
         method: "POST",
         headers: {
@@ -382,8 +385,11 @@ export default function ChargesPage() {
         body: JSON.stringify(emailData)
       });
       
+      console.log('[INFO] Status da resposta:', response.status);
+      
       // Processar a resposta
       const result = await response.json();
+      console.log('[INFO] Resposta do servidor:', result);
       
       if (result.success) {
         toast({

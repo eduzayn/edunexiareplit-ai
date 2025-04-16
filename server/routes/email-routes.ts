@@ -1,35 +1,27 @@
 /**
  * Rotas de email
  */
-import express from 'express';
+import { Router } from 'express';
 import { emailService } from '../services/email-service';
-import { requireAuth } from '../auth';
 
-const router = express.Router();
+const router = Router();
 
 /**
  * Rota para enviar e-mail com link de cobrança
  */
-router.post('/send-charge-email', requireAuth, async (req, res) => {
+router.post('/send-charge-email', async (req, res) => {
   try {
-    const { 
-      to,
-      customerName,
-      chargeId,
-      chargeValue,
-      dueDate,
-      paymentLink 
-    } = req.body;
-
-    // Validar dados
+    const { to, customerName, chargeId, chargeValue, dueDate, paymentLink } = req.body;
+    
+    // Validação básica
     if (!to || !customerName || !chargeId || !chargeValue || !dueDate || !paymentLink) {
       return res.status(400).json({
         success: false,
-        message: 'Dados incompletos. Todos os campos são obrigatórios.'
+        message: 'Dados incompletos. Certifique-se de fornecer todos os campos necessários.'
       });
     }
-
-    // Enviar e-mail
+    
+    // Enviar e-mail via serviço
     const success = await emailService.sendChargeEmail({
       to,
       customerName,
@@ -38,24 +30,23 @@ router.post('/send-charge-email', requireAuth, async (req, res) => {
       dueDate,
       paymentLink
     });
-
+    
     if (success) {
       return res.json({
         success: true,
-        message: `E-mail enviado com sucesso para ${to}`
+        message: 'E-mail enviado com sucesso.'
       });
     } else {
       return res.status(500).json({
         success: false,
-        message: 'Erro ao enviar e-mail. Tente novamente.'
+        message: 'Falha ao enviar e-mail. Verifique os logs para mais detalhes.'
       });
     }
   } catch (error) {
-    console.error('[ERROR] Erro ao processar solicitação de envio de e-mail:', error);
+    console.error('[ERROR] Erro ao processar envio de e-mail:', error);
     return res.status(500).json({
       success: false,
-      message: 'Erro interno ao processar solicitação',
-      error: error instanceof Error ? error.message : 'Erro desconhecido'
+      message: 'Erro interno ao processar a solicitação de envio de e-mail.'
     });
   }
 });
@@ -63,27 +54,19 @@ router.post('/send-charge-email', requireAuth, async (req, res) => {
 /**
  * Rota para enviar e-mail com link de fatura/boleto
  */
-router.post('/send-invoice-email', requireAuth, async (req, res) => {
+router.post('/send-invoice-email', async (req, res) => {
   try {
-    const { 
-      to,
-      customerName,
-      chargeId,
-      chargeValue,
-      dueDate,
-      paymentLink,
-      bankSlipLink
-    } = req.body;
-
-    // Validar dados
+    const { to, customerName, chargeId, chargeValue, dueDate, paymentLink, bankSlipLink } = req.body;
+    
+    // Validação básica
     if (!to || !customerName || !chargeId || !chargeValue || !dueDate || !paymentLink) {
       return res.status(400).json({
         success: false,
-        message: 'Dados incompletos. Todos os campos são obrigatórios (exceto bankSlipLink).'
+        message: 'Dados incompletos. Certifique-se de fornecer todos os campos necessários.'
       });
     }
-
-    // Enviar e-mail
+    
+    // Enviar e-mail via serviço
     const success = await emailService.sendInvoiceEmail({
       to,
       customerName,
@@ -93,24 +76,23 @@ router.post('/send-invoice-email', requireAuth, async (req, res) => {
       paymentLink,
       bankSlipLink
     });
-
+    
     if (success) {
       return res.json({
         success: true,
-        message: `E-mail com fatura enviado com sucesso para ${to}`
+        message: 'E-mail de fatura enviado com sucesso.'
       });
     } else {
       return res.status(500).json({
         success: false,
-        message: 'Erro ao enviar e-mail com fatura. Tente novamente.'
+        message: 'Falha ao enviar e-mail de fatura. Verifique os logs para mais detalhes.'
       });
     }
   } catch (error) {
-    console.error('[ERROR] Erro ao processar solicitação de envio de e-mail com fatura:', error);
+    console.error('[ERROR] Erro ao processar envio de e-mail de fatura:', error);
     return res.status(500).json({
       success: false,
-      message: 'Erro interno ao processar solicitação',
-      error: error instanceof Error ? error.message : 'Erro desconhecido'
+      message: 'Erro interno ao processar a solicitação de envio de e-mail de fatura.'
     });
   }
 });
