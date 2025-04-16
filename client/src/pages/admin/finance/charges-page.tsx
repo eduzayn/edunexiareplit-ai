@@ -171,6 +171,20 @@ export default function ChargesPage() {
     retryDelay: 1000, // Esperar 1 segundo entre as tentativas
     refetchOnWindowFocus: false // Evitar refetch automático ao focar na janela
   });
+  
+  // Buscar clientes do Asaas para a funcionalidade de busca
+  const { data: customersData, isLoading: customersLoading } = useQuery({
+    queryKey: ["/api/debug/asaas-customers", searchTerm],
+    queryFn: async () => {
+      if (!searchTerm || searchTerm.length < 3) return null;
+      const response = await fetch(`/api/debug/asaas-customers?search=${encodeURIComponent(searchTerm)}`);
+      if (!response.ok) throw new Error('Falha ao buscar clientes');
+      return response.json();
+    },
+    enabled: searchTerm.length >= 3, // Só busca quando digitar pelo menos 3 caracteres
+    retry: 1,
+    refetchOnWindowFocus: false
+  });
 
   // Mapeamento dos dados do Asaas para o formato da UI
   const mapAsaasToCharges = (asaasData: any): Charge[] => {
@@ -429,11 +443,47 @@ export default function ChargesPage() {
               <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
                 type="text"
-                placeholder="Procurar por nome ou email do cliente"
+                placeholder="Procurar por nome, CPF/CNPJ ou email do cliente"
                 className="pl-9 pr-4 h-10 w-full max-w-md"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
+              
+              {/* Resultados da busca por clientes */}
+              {customersData && searchTerm.length >= 3 && (
+                <div className="absolute top-full left-0 mt-1 w-full max-w-md bg-white shadow-lg rounded-md border z-10">
+                  <div className="p-2 border-b">
+                    <span className="text-sm font-medium">Resultados da busca - Clientes</span>
+                  </div>
+                  {customersData.data?.length > 0 ? (
+                    <ul className="max-h-60 overflow-auto">
+                      {customersData.data.map((customer: any) => (
+                        <li 
+                          key={customer.id} 
+                          className="px-3 py-2 hover:bg-gray-50 cursor-pointer flex items-start"
+                          onClick={() => {
+                            setSearchTerm(customer.name);
+                            // Poderia navegar para uma página do cliente
+                            // navigate(`/admin/finance/customers/${customer.id}`);
+                          }}
+                        >
+                          <div className="flex-1">
+                            <div className="font-medium">{customer.name}</div>
+                            <div className="text-xs text-gray-500 flex flex-col">
+                              {customer.cpfCnpj && <span>CPF/CNPJ: {customer.cpfCnpj}</span>}
+                              {customer.email && <span>Email: {customer.email}</span>}
+                            </div>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div className="p-3 text-sm text-gray-500">
+                      Nenhum cliente encontrado com esse termo.
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             <div className="flex space-x-2">
               <Button variant="outline" className="flex items-center text-gray-600">
