@@ -586,7 +586,7 @@ export default function ClientDetailsPage() {
                                       <Button 
                                         variant="outline" 
                                         size="sm"
-                                        onClick={() => checkStatus(checkout.id)}
+                                        onClick={() => window.open(checkout.url, '_blank')}
                                       >
                                         Ver Pagamento
                                       </Button>
