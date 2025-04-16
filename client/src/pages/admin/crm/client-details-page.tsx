@@ -590,22 +590,8 @@ export default function ClientDetailsPage() {
                                         onClick={() => {
                                           // Primeiro verificamos o status para obter o link de pagamento
                                           checkStatus(checkout.id);
-                                          setTimeout(() => {
-                                            // Após 1 segundo, verificamos se há um link de pagamento atualizado
-                                            apiRequest(`/api/v2/checkout/status/${checkout.id}`)
-                                              .then(response => {
-                                                if (response.success && response.data.paymentUrl) {
-                                                  window.open(response.data.paymentUrl, '_blank');
-                                                } else {
-                                                  // Se não houver link de pagamento, abrimos o link de checkout
-                                                  window.open(checkout.url, '_blank');
-                                                }
-                                              })
-                                              .catch(() => {
-                                                // Em caso de erro, abrimos o link de checkout
-                                                window.open(checkout.url, '_blank');
-                                              });
-                                          }, 1000);
+                                          // Tentamos abrir o link do checkout
+                                          window.open(checkout.url, '_blank');
                                         }}
                                       >
                                         Ver Pagamento
