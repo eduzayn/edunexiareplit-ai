@@ -2821,6 +2821,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/v2/checkout/check-convert-pending", async (req, res) => {
     await checkAndConvertPendingLeads(req, res);
   });
+  
+  // Rota para testar busca de pagamentos
+  app.get("/api/v2/checkout/test-payments/:checkoutId", async (req, res) => {
+    try {
+      const { checkoutId } = req.params;
+      
+      if (!checkoutId) {
+        return res.status(400).json({ error: "ID do checkout não fornecido" });
+      }
+      
+      // Buscar pagamentos no Asaas
+      const payments = await asaasCheckoutService.getCheckoutPayments(checkoutId);
+      
+      return res.status(200).json({
+        success: true,
+        checkoutId,
+        payments
+      });
+    } catch (error) {
+      console.error("Erro ao buscar pagamentos:", error);
+      return res.status(500).json({
+        error: "Erro ao buscar pagamentos",
+        details: error instanceof Error ? error.message : "Erro desconhecido"
+      });
+    }
+  });
 
   // ================= Rotas para Registro Público =================
   // Rota pública para registro de novos usuários
