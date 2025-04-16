@@ -67,6 +67,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Checkbox } from "@/components/ui/checkbox";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+import { ptBR } from "date-fns/locale";
 
 // Tipo para as cobranças da API Asaas
 interface AsaasCharge {
@@ -120,6 +127,35 @@ export default function ChargesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [isFilterDialogOpen, setIsFilterDialogOpen] = useState(false);
+  
+  // Estados para os filtros
+  const [dueDateFilterStart, setDueDateFilterStart] = useState<Date | undefined>(undefined);
+  const [dueDateFilterEnd, setDueDateFilterEnd] = useState<Date | undefined>(undefined);
+  const [receiveDateFilterStart, setReceiveDateFilterStart] = useState<Date | undefined>(undefined);
+  const [receiveDateFilterEnd, setReceiveDateFilterEnd] = useState<Date | undefined>(undefined);
+  const [createDateFilterStart, setCreateDateFilterStart] = useState<Date | undefined>(undefined);
+  const [createDateFilterEnd, setCreateDateFilterEnd] = useState<Date | undefined>(undefined);
+  
+  // Estados para os tipos de cobrança
+  const [chargeTypeFilters, setChargeTypeFilters] = useState({
+    avulsas: false,
+    assinaturas: false,
+    parceladas: false
+  });
+  
+  // Estados para os status de cobrança
+  const [chargeStatusFilters, setChargeStatusFilters] = useState({
+    aguardandoPagamento: false,
+    vencida: false,
+    recebida: false,
+    confirmada: false,
+    estornadaCompleta: false,
+    estornadoParcial: false,
+    pagamentoAnalise: false,
+    chargeback: false
+  });
+
   const { toast } = useToast();
   
   // Funções para gerenciar os links de pagamento
@@ -195,7 +231,7 @@ export default function ChargesPage() {
       ? asaasData.data 
       : (Array.isArray(asaasData) ? asaasData : []);
     
-    return charges.map(charge => {
+    return charges.map((charge: AsaasCharge) => {
       // Mapear o status do Asaas para nosso formato
       let status: Charge['status'] = 'pending';
       switch(charge.status) {
@@ -344,8 +380,33 @@ export default function ChargesPage() {
   // Mapear dados do Asaas
   const asaasChargesList = mapAsaasToCharges(asaasCharges || []);
   
-  // Filtrar cobranças com base na pesquisa (com verificação segura de propriedades)
+  // Função auxiliar para validar período de datas
+  const isDateInRange = (dateStr: string, startDate?: Date, endDate?: Date): boolean => {
+    if (!startDate && !endDate) return true;
+    
+    try {
+      // Converter a string de data (formato dd/mm/yyyy) para um objeto Date
+      const dateParts = dateStr.split('/');
+      const date = new Date(
+        parseInt(dateParts[2]), // ano
+        parseInt(dateParts[1]) - 1, // mês (0-indexed)
+        parseInt(dateParts[0]) // dia
+      );
+      
+      // Verificar se a data está dentro do intervalo
+      if (startDate && date < startDate) return false;
+      if (endDate && date > endDate) return false;
+      
+      return true;
+    } catch (error) {
+      console.error('Erro ao converter data:', error);
+      return true; // Em caso de erro, não filtramos
+    }
+  };
+  
+  // Filtrar cobranças com base na pesquisa e nos filtros avançados
   const filteredCharges = asaasChargesList.filter(charge => {
+    // Filtro por termo de busca
     const nameMatch = charge.name ? 
       charge.name.toLowerCase().includes(searchTerm.toLowerCase()) : false;
     
@@ -355,7 +416,47 @@ export default function ChargesPage() {
     const valueMatch = charge.value ? 
       formatCurrency(charge.value).includes(searchTerm) : false;
     
-    return nameMatch || descriptionMatch || valueMatch;
+    const textSearchMatch = nameMatch || descriptionMatch || valueMatch;
+    if (!textSearchMatch && searchTerm.length > 0) return false;
+    
+    // Filtro por período de vencimento
+    const dueDateMatch = isDateInRange(charge.dueDate, dueDateFilterStart, dueDateFilterEnd);
+    if (!dueDateMatch) return false;
+    
+    // Filtro por tipo de cobrança
+    const anyChargeTypeSelected = 
+      chargeTypeFilters.avulsas || 
+      chargeTypeFilters.assinaturas || 
+      chargeTypeFilters.parceladas;
+    
+    if (anyChargeTypeSelected) {
+      const isInstallment = !!charge.installment;
+      // Aqui precisaríamos de dados adicionais da API para filtrar por assinaturas vs avulsas
+      // Por enquanto estamos apenas diferenciando parcelamentos
+      if (chargeTypeFilters.parceladas && !isInstallment) return false;
+      if (chargeTypeFilters.avulsas && isInstallment) return false;
+      // Não temos uma forma clara de identificar assinaturas apenas pelo objeto da cobrança
+    }
+    
+    // Filtro por status
+    const anyStatusSelected = 
+      chargeStatusFilters.aguardandoPagamento ||
+      chargeStatusFilters.vencida ||
+      chargeStatusFilters.recebida ||
+      chargeStatusFilters.confirmada ||
+      chargeStatusFilters.estornadaCompleta ||
+      chargeStatusFilters.estornadoParcial ||
+      chargeStatusFilters.pagamentoAnalise ||
+      chargeStatusFilters.chargeback;
+    
+    if (anyStatusSelected) {
+      if (chargeStatusFilters.aguardandoPagamento && charge.status !== 'pending') return false;
+      if (chargeStatusFilters.vencida && charge.status !== 'overdue') return false;
+      if (chargeStatusFilters.recebida && charge.status !== 'paid') return false;
+      // Outras condições de status também poderiam ser adicionadas com mais dados do Asaas
+    }
+    
+    return true;
   });
 
   // Ordenação dos resultados
@@ -486,11 +587,402 @@ export default function ChargesPage() {
               )}
             </div>
             <div className="flex space-x-2">
-              <Button variant="outline" className="flex items-center text-gray-600">
-                <FilterIcon className="mr-2 h-4 w-4" />
-                Filtros
-                <ChevronDownIcon className="ml-2 h-4 w-4" />
-              </Button>
+              <Dialog open={isFilterDialogOpen} onOpenChange={setIsFilterDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="flex items-center text-gray-600">
+                    <FilterIcon className="mr-2 h-4 w-4" />
+                    Filtros
+                    <ChevronDownIcon className="ml-2 h-4 w-4" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[800px]">
+                  <DialogHeader>
+                    <DialogTitle>Filtros avançados</DialogTitle>
+                  </DialogHeader>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+                    {/* Período de vencimento */}
+                    <div className="space-y-3">
+                      <h3 className="text-sm font-medium">Período de vencimento</h3>
+                      <div className="flex items-center space-x-2">
+                        <div className="grid gap-2 w-full">
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className="w-full justify-start text-left font-normal"
+                              >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {dueDateFilterStart ? (
+                                  format(dueDateFilterStart, "dd/MM/yyyy")
+                                ) : (
+                                  <span>__/__/____</span>
+                                )}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                              <Calendar
+                                mode="single"
+                                selected={dueDateFilterStart}
+                                onSelect={setDueDateFilterStart}
+                                initialFocus
+                                locale={ptBR}
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                        
+                        <span className="text-sm">até</span>
+                        
+                        <div className="grid gap-2 w-full">
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className="w-full justify-start text-left font-normal"
+                              >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {dueDateFilterEnd ? (
+                                  format(dueDateFilterEnd, "dd/MM/yyyy")
+                                ) : (
+                                  <span>__/__/____</span>
+                                )}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                              <Calendar
+                                mode="single"
+                                selected={dueDateFilterEnd}
+                                onSelect={setDueDateFilterEnd}
+                                initialFocus
+                                locale={ptBR}
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Período de recebimento */}
+                    <div className="space-y-3">
+                      <h3 className="text-sm font-medium">Período de recebimento</h3>
+                      <div className="flex items-center space-x-2">
+                        <div className="grid gap-2 w-full">
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className="w-full justify-start text-left font-normal"
+                              >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {receiveDateFilterStart ? (
+                                  format(receiveDateFilterStart, "dd/MM/yyyy")
+                                ) : (
+                                  <span>__/__/____</span>
+                                )}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                              <Calendar
+                                mode="single"
+                                selected={receiveDateFilterStart}
+                                onSelect={setReceiveDateFilterStart}
+                                initialFocus
+                                locale={ptBR}
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                        
+                        <span className="text-sm">até</span>
+                        
+                        <div className="grid gap-2 w-full">
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className="w-full justify-start text-left font-normal"
+                              >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {receiveDateFilterEnd ? (
+                                  format(receiveDateFilterEnd, "dd/MM/yyyy")
+                                ) : (
+                                  <span>__/__/____</span>
+                                )}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                              <Calendar
+                                mode="single"
+                                selected={receiveDateFilterEnd}
+                                onSelect={setReceiveDateFilterEnd}
+                                initialFocus
+                                locale={ptBR}
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Período de criação */}
+                    <div className="space-y-3">
+                      <h3 className="text-sm font-medium">Período de criação</h3>
+                      <div className="flex items-center space-x-2">
+                        <div className="grid gap-2 w-full">
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className="w-full justify-start text-left font-normal"
+                              >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {createDateFilterStart ? (
+                                  format(createDateFilterStart, "dd/MM/yyyy")
+                                ) : (
+                                  <span>__/__/____</span>
+                                )}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                              <Calendar
+                                mode="single"
+                                selected={createDateFilterStart}
+                                onSelect={setCreateDateFilterStart}
+                                initialFocus
+                                locale={ptBR}
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                        
+                        <span className="text-sm">até</span>
+                        
+                        <div className="grid gap-2 w-full">
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className="w-full justify-start text-left font-normal"
+                              >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {createDateFilterEnd ? (
+                                  format(createDateFilterEnd, "dd/MM/yyyy")
+                                ) : (
+                                  <span>__/__/____</span>
+                                )}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                              <Calendar
+                                mode="single"
+                                selected={createDateFilterEnd}
+                                onSelect={setCreateDateFilterEnd}
+                                initialFocus
+                                locale={ptBR}
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Tipos de cobrança */}
+                    <div className="space-y-3">
+                      <h3 className="text-sm font-medium">Tipos de cobrança</h3>
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox 
+                            id="avulsas" 
+                            checked={chargeTypeFilters.avulsas}
+                            onCheckedChange={(checked) => 
+                              setChargeTypeFilters({...chargeTypeFilters, avulsas: !!checked})
+                            }
+                          />
+                          <label htmlFor="avulsas" className="text-sm cursor-pointer">
+                            Avulsas
+                          </label>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <Checkbox 
+                            id="assinaturas" 
+                            checked={chargeTypeFilters.assinaturas}
+                            onCheckedChange={(checked) => 
+                              setChargeTypeFilters({...chargeTypeFilters, assinaturas: !!checked})
+                            }
+                          />
+                          <label htmlFor="assinaturas" className="text-sm cursor-pointer">
+                            Assinaturas
+                          </label>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <Checkbox 
+                            id="parceladas" 
+                            checked={chargeTypeFilters.parceladas}
+                            onCheckedChange={(checked) => 
+                              setChargeTypeFilters({...chargeTypeFilters, parceladas: !!checked})
+                            }
+                          />
+                          <label htmlFor="parceladas" className="text-sm cursor-pointer">
+                            Parceladas
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Situações das cobranças */}
+                    <div className="col-span-1 md:col-span-2 space-y-3">
+                      <h3 className="text-sm font-medium">Situações das cobranças</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox 
+                            id="aguardandoPagamento" 
+                            checked={chargeStatusFilters.aguardandoPagamento}
+                            onCheckedChange={(checked) => 
+                              setChargeStatusFilters({...chargeStatusFilters, aguardandoPagamento: !!checked})
+                            }
+                          />
+                          <label htmlFor="aguardandoPagamento" className="text-sm cursor-pointer">
+                            Aguardando pagamento
+                          </label>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <Checkbox 
+                            id="vencida" 
+                            checked={chargeStatusFilters.vencida}
+                            onCheckedChange={(checked) => 
+                              setChargeStatusFilters({...chargeStatusFilters, vencida: !!checked})
+                            }
+                          />
+                          <label htmlFor="vencida" className="text-sm cursor-pointer">
+                            Vencida
+                          </label>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <Checkbox 
+                            id="recebida" 
+                            checked={chargeStatusFilters.recebida}
+                            onCheckedChange={(checked) => 
+                              setChargeStatusFilters({...chargeStatusFilters, recebida: !!checked})
+                            }
+                          />
+                          <label htmlFor="recebida" className="text-sm cursor-pointer">
+                            Recebida
+                          </label>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <Checkbox 
+                            id="confirmada" 
+                            checked={chargeStatusFilters.confirmada}
+                            onCheckedChange={(checked) => 
+                              setChargeStatusFilters({...chargeStatusFilters, confirmada: !!checked})
+                            }
+                          />
+                          <label htmlFor="confirmada" className="text-sm cursor-pointer">
+                            Confirmada
+                          </label>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <Checkbox 
+                            id="estornadaCompleta" 
+                            checked={chargeStatusFilters.estornadaCompleta}
+                            onCheckedChange={(checked) => 
+                              setChargeStatusFilters({...chargeStatusFilters, estornadaCompleta: !!checked})
+                            }
+                          />
+                          <label htmlFor="estornadaCompleta" className="text-sm cursor-pointer">
+                            Cobrança estornada
+                          </label>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <Checkbox 
+                            id="estornadoParcial" 
+                            checked={chargeStatusFilters.estornadoParcial}
+                            onCheckedChange={(checked) => 
+                              setChargeStatusFilters({...chargeStatusFilters, estornadoParcial: !!checked})
+                            }
+                          />
+                          <label htmlFor="estornadoParcial" className="text-sm cursor-pointer">
+                            Cobrança estornada parcialmente
+                          </label>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <Checkbox 
+                            id="pagamentoAnalise" 
+                            checked={chargeStatusFilters.pagamentoAnalise}
+                            onCheckedChange={(checked) => 
+                              setChargeStatusFilters({...chargeStatusFilters, pagamentoAnalise: !!checked})
+                            }
+                          />
+                          <label htmlFor="pagamentoAnalise" className="text-sm cursor-pointer">
+                            Pagamento em análise
+                          </label>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <Checkbox 
+                            id="chargeback" 
+                            checked={chargeStatusFilters.chargeback}
+                            onCheckedChange={(checked) => 
+                              setChargeStatusFilters({...chargeStatusFilters, chargeback: !!checked})
+                            }
+                          />
+                          <label htmlFor="chargeback" className="text-sm cursor-pointer">
+                            Chargeback
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <DialogFooter className="flex justify-between sm:justify-between">
+                    <Button variant="outline" onClick={() => {
+                      // Limpar todos os filtros
+                      setDueDateFilterStart(undefined);
+                      setDueDateFilterEnd(undefined);
+                      setReceiveDateFilterStart(undefined);
+                      setReceiveDateFilterEnd(undefined);
+                      setCreateDateFilterStart(undefined);
+                      setCreateDateFilterEnd(undefined);
+                      setChargeTypeFilters({
+                        avulsas: false,
+                        assinaturas: false,
+                        parceladas: false
+                      });
+                      setChargeStatusFilters({
+                        aguardandoPagamento: false,
+                        vencida: false,
+                        recebida: false,
+                        confirmada: false,
+                        estornadaCompleta: false,
+                        estornadoParcial: false,
+                        pagamentoAnalise: false,
+                        chargeback: false
+                      });
+                    }}>
+                      Limpar
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      className="bg-blue-600 hover:bg-blue-700"
+                      onClick={() => {
+                        setIsFilterDialogOpen(false);
+                      }}
+                    >
+                      Aplicar
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
               <Button variant="outline" className="text-blue-600">
                 Ações em lote
                 <ChevronDownIcon className="ml-2 h-4 w-4" />
