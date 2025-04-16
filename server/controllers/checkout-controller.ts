@@ -318,22 +318,69 @@ export async function checkCheckoutStatus(req: Request, res: Response) {
             }
           }
         } else {
-          console.log('Nenhum pagamento Asaas encontrado, buscando no banco...');
+          console.log('Nenhum pagamento associado ao checkout encontrado, buscando pelo cliente...');
           
-          // Se não encontrar no Asaas, verifica na tabela payments local
+          // Se não encontrar pagamentos associados ao checkout, tentamos buscar pelo cliente
           if (checkoutData.client_id) {
-            const payments = await db.execute(sql`
-              SELECT p.* 
-              FROM payments p
-              JOIN invoices i ON p.invoice_id = i.id
-              WHERE i.client_id = ${checkoutData.client_id}
-              ORDER BY p.created_at DESC
-              LIMIT 1
-            `);
+            try {
+              // Buscar o cliente para obter o AsaasID
+              const clientResult = await db.execute(sql`
+                SELECT * FROM clients WHERE id = ${checkoutData.client_id}
+              `);
+              
+              if (clientResult.rows.length > 0 && clientResult.rows[0].asaas_id) {
+                const clientAsaasId = clientResult.rows[0].asaas_id;
+                console.log(`Buscando pagamentos do cliente pelo AsaasID: ${clientAsaasId}`);
+                
+                // Importamos o serviço de pagamentos do Asaas
+                const { AsaasPaymentService } = await import('../services/asaas-payment-service');
+                
+                try {
+                  // Buscar as cobranças do cliente no Asaas
+                  const customerPayments = await AsaasPaymentService.getCustomerPayments(clientAsaasId);
+                  
+                  console.log(`Encontrados ${customerPayments.length} pagamentos para o cliente ${clientAsaasId}`);
+                  
+                  if (customerPayments && customerPayments.length > 0) {
+                    // Ordenar por data de criação, para pegar o mais recente
+                    const sortedPayments = customerPayments.sort((a, b) => 
+                      new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime()
+                    );
+                    
+                    // Pegar o pagamento mais recente
+                    const recentPayment = sortedPayments[0];
+                    
+                    if (recentPayment.invoiceUrl) {
+                      invoiceUrl = recentPayment.invoiceUrl;
+                      console.log(`URL da fatura do cliente encontrada: ${invoiceUrl}`);
+                    }
+                  }
+                } catch (customerPaymentError) {
+                  console.error(`Erro ao buscar pagamentos do cliente no Asaas:`, customerPaymentError);
+                }
+              } else {
+                console.log(`Cliente ${checkoutData.client_id} não tem asaasId`);
+              }
+            } catch (clientError) {
+              console.error(`Erro ao buscar cliente:`, clientError);
+            }
             
-            if (payments.rows.length > 0) {
-              paymentUrl = payments.rows[0].payment_url;
-              console.log(`URL de pagamento encontrada no banco: ${paymentUrl}`);
+            // Se não conseguir pelo Asaas, vamos buscar no banco local como fallback
+            if (!invoiceUrl) {
+              console.log('Buscando pagamentos no banco de dados local...');
+              const payments = await db.execute(sql`
+                SELECT p.* 
+                FROM payments p
+                JOIN invoices i ON p.invoice_id = i.id
+                WHERE i.client_id = ${checkoutData.client_id}
+                ORDER BY p.created_at DESC
+                LIMIT 1
+              `);
+              
+              if (payments.rows.length > 0) {
+                paymentUrl = payments.rows[0].payment_url;
+                console.log(`URL de pagamento encontrada no banco: ${paymentUrl}`);
+              }
             }
           }
         }
