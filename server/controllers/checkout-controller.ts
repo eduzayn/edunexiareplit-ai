@@ -354,11 +354,11 @@ export async function cancelCheckoutLink(req: Request, res: Response) {
           (asaasError.message.includes('already cancelled') || 
           asaasError.message.includes('already canceled'))) {
         
-        await db.execute(sql.raw(`
+        await db.execute(sql`
           UPDATE checkout_links
           SET status = 'canceled', updated_at = NOW()
-          WHERE id = ?
-        `, [checkoutData.id]));
+          WHERE id = ${checkoutData.id}
+        `);
         
         return res.json({
           success: true,
@@ -385,24 +385,22 @@ export async function getClientCheckoutLinks(req: Request, res: Response) {
     const { clientId } = req.params;
     
     // Verifica se o cliente existe
-    const clientResult = await db.execute(sql.raw(
-      `SELECT * FROM clients WHERE id = ?`,
-      [clientId]
-    ));
+    const clientResult = await db.execute(sql`
+      SELECT * FROM clients WHERE id = ${clientId}
+    `);
     
     if (!clientResult.rows.length) {
       return res.status(404).json({ error: 'Cliente não encontrado' });
     }
     
     // Busca todos os links de checkout do cliente
-    const checkoutsResult = await db.execute(sql.raw(
-      `SELECT cl.*, l.name as lead_name, l.email as lead_email 
-       FROM checkout_links cl
-       LEFT JOIN leads l ON cl.lead_id = l.id
-       WHERE cl.client_id = ?
-       ORDER BY cl.created_at DESC`,
-      [clientId]
-    ));
+    const checkoutsResult = await db.execute(sql`
+      SELECT cl.*, l.name as lead_name, l.email as lead_email 
+      FROM checkout_links cl
+      LEFT JOIN leads l ON cl.lead_id = l.id
+      WHERE cl.client_id = ${clientId}
+      ORDER BY cl.created_at DESC
+    `);
     
     // Formata os dados para o frontend (converter snake_case para camelCase)
     const checkouts = checkoutsResult.rows.map(checkout => ({
@@ -453,10 +451,9 @@ export async function getCheckoutPayments(req: Request, res: Response) {
     }
     
     // Buscar detalhes do checkout no banco de dados
-    const checkout = await db.execute(sql.raw(
-      `SELECT * FROM checkout_links WHERE id = ?`,
-      [checkoutId]
-    ));
+    const checkout = await db.execute(sql`
+      SELECT * FROM checkout_links WHERE id = ${checkoutId}
+    `);
     
     if (!checkout.rows.length) {
       return res.status(404).json({ 
@@ -505,10 +502,9 @@ export async function getClientPaymentsFromCheckouts(req: Request, res: Response
     }
     
     // Buscar todos os checkouts associados ao cliente
-    const checkouts = await db.execute(sql.raw(
-      `SELECT * FROM checkout_links WHERE client_id = ?`,
-      [clientId]
-    ));
+    const checkouts = await db.execute(sql`
+      SELECT * FROM checkout_links WHERE client_id = ${clientId}
+    `);
     
     if (!checkouts.rows.length) {
       return res.json({
