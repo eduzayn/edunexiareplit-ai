@@ -86,6 +86,15 @@ type Charge = {
   };
   invoiceUrl?: string;
   bankSlipUrl?: string | null;
+  customer?: {
+    id: string;
+    name: string;
+    cpfCnpj: string;
+    phone: string;
+    address: string;
+    city: string | number;
+    state: string;
+  };
 };
 
 export default function ChargesPage() {
@@ -211,6 +220,9 @@ export default function ChargesPage() {
         };
       }
       
+      // Extrair detalhes do cliente, se disponíveis
+      const customerDetails = charge.customerDetails || null;
+      
       return {
         id: charge.id,
         name: charge.customerName,
@@ -221,7 +233,17 @@ export default function ChargesPage() {
         status,
         installment: installmentInfo,
         invoiceUrl: charge.invoiceUrl,
-        bankSlipUrl: charge.bankSlipUrl
+        bankSlipUrl: charge.bankSlipUrl,
+        // Adicionar informações do cliente
+        customer: {
+          id: charge.customer,
+          name: charge.customerName,
+          cpfCnpj: customerDetails?.cpfCnpj || '',
+          phone: customerDetails?.phone || '',
+          address: customerDetails?.address || '',
+          city: customerDetails?.city || '',
+          state: customerDetails?.state || ''
+        }
       };
     });
   };
@@ -469,9 +491,32 @@ export default function ChargesPage() {
                             <div className="w-6 mr-2">
                               <UserIcon className="h-5 w-5 text-teal-600" />
                             </div>
-                            <span className="font-medium text-teal-600">
-                              {charge.name}
-                            </span>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="font-medium text-teal-600 cursor-help">
+                                    {charge.name}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent side="right" align="start" className="p-4 max-w-md space-y-1">
+                                  <div className="text-sm font-bold">{charge.name}</div>
+                                  {charge.customer?.cpfCnpj && (
+                                    <div className="text-xs">CPF/CNPJ: {charge.customer.cpfCnpj}</div>
+                                  )}
+                                  {charge.customer?.phone && (
+                                    <div className="text-xs">Tel: {charge.customer.phone}</div>
+                                  )}
+                                  {charge.customer?.address && (
+                                    <div className="text-xs">
+                                      Endereço: {charge.customer.address}
+                                      {charge.customer.city && charge.customer.state && (
+                                        <>, {charge.customer.city} - {charge.customer.state}</>
+                                      )}
+                                    </div>
+                                  )}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           </div>
                         </TableCell>
                         <TableCell className="text-right font-medium">
