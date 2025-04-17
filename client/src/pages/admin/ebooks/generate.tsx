@@ -119,8 +119,9 @@ const GenerateEBookPage: React.FC = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          ...values,
+          topic: values.title,
           disciplineId: parseInt(values.disciplineId),
+          additionalContext: values.description,
         }),
       });
       

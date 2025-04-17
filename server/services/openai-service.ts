@@ -114,6 +114,45 @@ O texto deve seguir padrões acadêmicos, ser informativo, ter tom profissional 
       throw new Error('Falha ao gerar conteúdo do e-book');
     }
   }
+  
+  /**
+   * Gera sugestões de descrições para imagens com base no título e descrição do e-book
+   * @param title Título do e-book
+   * @param description Descrição do e-book
+   * @returns Lista de sugestões de descrições para imagens
+   */
+  async generateImageSuggestions(title: string, description: string): Promise<string[]> {
+    if (!this.apiKey) {
+      throw new Error('OPENAI_API_KEY não está configurado');
+    }
+
+    const prompt = `Com base no título e descrição de um e-book educacional, gere 5 descrições detalhadas para imagens que poderiam ilustrar o conteúdo.
+
+Título do e-book: ${title}
+Descrição: ${description}
+
+Forneça descrições específicas e visuais que possam ser usadas para gerar ou buscar imagens. Cada descrição deve ser detalhada, com 1-2 frases, focada em elementos visuais claros.
+
+Retorne apenas as 5 descrições das imagens, uma por linha, sem numeração ou marcadores.`;
+
+    try {
+      const response = await this.generateText(prompt, {
+        maxTokens: 1000,
+        temperature: 0.8
+      });
+
+      // Dividir a resposta em linhas e filtrar linhas vazias
+      const suggestions = response.split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0)
+        .slice(0, 5); // Limitar a 5 sugestões
+
+      return suggestions;
+    } catch (error) {
+      console.error('Erro ao gerar sugestões de imagens:', error);
+      throw new Error('Falha ao gerar sugestões de imagens');
+    }
+  }
 }
 
 // Instância única para uso em toda a aplicação

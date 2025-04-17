@@ -335,6 +335,28 @@ router.post("/generate-content", requireAuth, requireAdmin, async (req, res) => 
   }
 });
 
+// Gerar sugestões de imagens usando OpenAI
+router.post("/generate-image-suggestions", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { title, description } = z.object({
+      title: z.string().min(3, "O título deve ter pelo menos 3 caracteres"),
+      description: z.string().min(10, "A descrição deve ter pelo menos 10 caracteres")
+    }).parse(req.body);
+    
+    // Gerar sugestões de imagens usando o serviço OpenAI
+    const imageSuggestions = await openaiService.generateImageSuggestions(title, description);
+    
+    // Responder com as sugestões geradas
+    res.json({ imageSuggestions });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Dados de requisição inválidos", details: error.errors });
+    }
+    console.error("Erro ao gerar sugestões de imagens:", error);
+    res.status(500).json({ error: "Erro ao gerar sugestões de imagens" });
+  }
+});
+
 // ==================== Rotas para integração com Freepik ====================
 
 // Buscar imagens no Freepik
