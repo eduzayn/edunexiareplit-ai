@@ -52,6 +52,7 @@ import { asaasCheckoutService } from "./services/asaas-checkout-service";
 import { db } from "./db";
 import { sql } from "drizzle-orm";
 import studentChargesRoutes from "./routes/student-charges-routes";
+import ebooksRoutes from "./routes/ebooks";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
@@ -2918,6 +2919,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Registro das rotas de cobranças do aluno
   app.use("/api/student/charges", studentChargesRoutes);
+  
+  // E-books interativos
+  app.use("/api/ebooks", ebooksRoutes);
 
   const httpServer = createServer(app);
 
