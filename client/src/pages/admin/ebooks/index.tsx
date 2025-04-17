@@ -5,8 +5,8 @@ import { queryClient } from '@/lib/queryClient';
 import { Link } from 'wouter';
 
 // UI Components
+import { Button } from '@/components/ui/button';
 import {
-  Button,
   Card,
   CardContent,
   CardDescription,

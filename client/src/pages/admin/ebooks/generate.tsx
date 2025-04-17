@@ -8,8 +8,8 @@ import { queryClient } from '@/lib/queryClient';
 import { useLocation } from 'wouter';
 
 // UI Components
+import { Button } from '@/components/ui/button';
 import {
-  Button,
   Card,
   CardContent,
   CardDescription,
@@ -37,6 +37,7 @@ import {
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 // Icons

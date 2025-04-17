@@ -83,6 +83,11 @@ import SecretariaPage from "@/pages/student/secretaria-page";
 import CredencialPage from "@/pages/student/credencial-page";
 import LearningPage from "@/pages/student/learning-page";
 import StudentFinancialPage from "@/pages/student/financial-page";
+
+// Import ebooks pages
+import EbooksIndexPage from "@/pages/admin/ebooks/index";
+import EbooksGeneratePage from "@/pages/admin/ebooks/generate";
+import EbookEditPage from "@/pages/admin/ebooks/[id]/edit";
 // Módulo de Sistema
 import SecurityPage from "@/pages/admin/sistema/security-page";
 import SettingsPage from "@/pages/admin/sistema/settings-page";
@@ -224,6 +229,17 @@ function Router() {
       </Route>
       <Route path="/admin/disciplines/:id/content">
         {() => user?.portalType === "admin" ? <DisciplineContentPage /> : <Redirect to="/admin" />}
+      </Route>
+
+      {/* Rotas de e-books */}
+      <Route path="/admin/ebooks">
+        {() => user?.portalType === "admin" ? <EbooksIndexPage /> : <Redirect to="/admin" />}
+      </Route>
+      <Route path="/admin/ebooks/generate">
+        {() => user?.portalType === "admin" ? <EbooksGeneratePage /> : <Redirect to="/admin" />}
+      </Route>
+      <Route path="/admin/ebooks/:id/edit">
+        {() => user?.portalType === "admin" ? <EbookEditPage /> : <Redirect to="/admin" />}
       </Route>
       <Route path="/admin/courses/new">
         {() => user?.portalType === "admin" ? <CourseFormPage /> : <Redirect to="/admin" />}

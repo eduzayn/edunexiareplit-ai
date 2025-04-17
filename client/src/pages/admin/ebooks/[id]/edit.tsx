@@ -8,8 +8,8 @@ import { queryClient } from '@/lib/queryClient';
 import { useLocation, useParams, Link } from 'wouter';
 
 // UI Components
+import { Button } from '@/components/ui/button';
 import {
-  Button,
   Card,
   CardContent,
   CardDescription,
