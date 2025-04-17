@@ -25,11 +25,12 @@ export function PaginationItem({
 
 export function PaginationLink({
   className,
+  isActive,
   ...props
-}: React.ComponentProps<typeof Button>) {
+}: React.ComponentProps<typeof Button> & { isActive?: boolean }) {
   return (
     <Button
-      variant="outline"
+      variant={isActive ? "default" : "outline"}
       size="icon"
       className={cn("h-8 w-8", className)}
       {...props}
@@ -94,7 +95,16 @@ interface PaginationProps {
 }
 
 // Componente principal de paginação
-export function Pagination({ currentPage, totalPages, onPageChange, className }: PaginationProps) {
+export function Pagination(props: PaginationProps & React.HTMLAttributes<HTMLDivElement>) {
+  const { currentPage, totalPages, onPageChange, className, children, ...rest } = props as PaginationProps & { 
+    children?: React.ReactNode, 
+    className?: string 
+  };
+  
+  // Se tiver children, significa que é usado no formato composto
+  if (children) {
+    return <nav className={cn("mx-auto flex w-full justify-center", className)} {...rest}>{children}</nav>;
+  }
   // Não renderize a paginação se houver apenas uma página
   if (totalPages <= 1) return null;
 
