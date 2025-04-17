@@ -89,6 +89,13 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
       href: "/admin/dashboard",
       active: currentPath === "/admin/dashboard"
     },
+    {
+      name: "FINANCEIRO EMPRESARIAL",
+      icon: <CircleDollarSign className="text-green-600" />,
+      href: "/admin/financeiro-empresarial",
+      active: currentPath === "/admin/financeiro-empresarial" || 
+              (currentPath && currentPath.includes("/admin/financeiro-empresarial"))
+    },
   ];
 
   // Categoria: Acadêmico
@@ -238,13 +245,6 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
       icon: <FolderIcon />,
       items: [
         { 
-          name: "Financeiro Empresarial", 
-          icon: <CircleDollarSign className="text-muted-foreground" />, 
-          href: "/admin/financeiro-empresarial",
-          active: currentPath === "/admin/financeiro-empresarial" || 
-                  (currentPath && currentPath.includes("/admin/financeiro-empresarial"))
-        },
-        { 
           name: "Relatórios", 
           icon: <BarChartIcon className="text-muted-foreground" />, 
           href: "/admin/reports",
@@ -253,13 +253,6 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
       ]
     }, currentPath),
     items: [
-      { 
-        name: "Financeiro Empresarial", 
-        icon: <CircleDollarSign />, 
-        href: "/admin/financeiro-empresarial",
-        active: currentPath === "/admin/financeiro-empresarial" || 
-                (currentPath && currentPath.includes("/admin/financeiro-empresarial"))
-      },
       { 
         name: "Relatórios", 
         icon: <BarChartIcon />, 
