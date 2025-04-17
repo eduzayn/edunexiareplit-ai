@@ -24,7 +24,7 @@ interface StudentLayoutProps {
 /**
  * Layout principal para o portal do estudante
  */
-export const StudentLayout: React.FC<StudentLayoutProps> = ({
+const StudentLayout: React.FC<StudentLayoutProps> = ({
   children,
   className = '',
 }) => {
@@ -123,3 +123,5 @@ export const StudentLayout: React.FC<StudentLayoutProps> = ({
     </div>
   );
 };
+
+export default StudentLayout;

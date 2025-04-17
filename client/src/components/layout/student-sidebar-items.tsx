@@ -90,20 +90,20 @@ export const getStudentSidebarItems = (pathname: string): SidebarItem[] => {
     {
       label: 'Financeiro',
       icon: <CreditCard size={20} />,
-      href: '/student/financeiro',
-      active: pathname.startsWith('/student/financeiro'),
+      href: '/student/financial',
+      active: pathname.startsWith('/student/financial'),
       submenu: [
         {
           label: 'Cobranças',
           icon: <CreditCard size={16} />,
-          href: '/student/financeiro/cobrancas',
-          active: pathname.startsWith('/student/financeiro/cobrancas'),
+          href: '/student/financial',
+          active: pathname.startsWith('/student/financial'),
         },
         {
           label: 'Histórico de Pagamentos',
           icon: <FileText size={16} />,
-          href: '/student/financeiro/historico',
-          active: pathname.startsWith('/student/financeiro/historico'),
+          href: '/student/financial/history',
+          active: pathname.startsWith('/student/financial/history'),
         },
       ],
     },
