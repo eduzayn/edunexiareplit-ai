@@ -25,6 +25,10 @@ import PartnersPage from "@/pages/admin/institucional/partners-page";
 import FinancialPage from "@/pages/admin/finance/financial-page";
 import ReportsPage from "@/pages/admin/relatorios/reports-page";
 import NewReportsPage from "@/pages/admin/relatorios/new-reports-page";
+// Módulo Financeiro Empresarial
+import FinanceiroEmpresarialPage from "@/pages/admin/financeiro-empresarial/index";
+import AntecipacaoPage from "@/pages/admin/financeiro-empresarial/antecipacao-page";
+import AssinaturasPage from "@/pages/admin/financeiro-empresarial/assinaturas-page";
 // Módulo de Matrículas
 import EnrollmentsPage from "@/pages/admin/matriculas/enrollments-page";
 import NewEnrollmentPage from "@/pages/admin/matriculas/new-enrollment-page";
@@ -240,6 +244,20 @@ function Router() {
       <Route path="/admin/financial">
         {() => user?.portalType === "admin" ? <FinancialPage /> : <Redirect to="/admin" />}
       </Route>
+      
+      {/* Rotas do Módulo Financeiro Empresarial */}
+      <Route path="/admin/financeiro-empresarial">
+        {() => user?.portalType === "admin" ? <FinanceiroEmpresarialPage /> : <Redirect to="/admin" />}
+      </Route>
+      
+      <Route path="/admin/financeiro-empresarial/antecipacao">
+        {() => user?.portalType === "admin" ? <AntecipacaoPage /> : <Redirect to="/admin" />}
+      </Route>
+      
+      <Route path="/admin/financeiro-empresarial/assinaturas">
+        {() => user?.portalType === "admin" ? <AssinaturasPage /> : <Redirect to="/admin" />}
+      </Route>
+      
       {/* Rotas do Módulo de Matrículas */}
       <Route path="/admin/enrollments">
         {() => user?.portalType === "admin" ? <EnrollmentsPage /> : <Redirect to="/admin" />}

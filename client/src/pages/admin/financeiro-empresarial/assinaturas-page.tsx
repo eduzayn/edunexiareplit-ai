@@ -387,7 +387,7 @@ export default function AssinaturasPage() {
               <CardContent>
                 <div className="text-2xl font-bold">1</div>
                 <p className="text-xs text-muted-foreground">
-                  Atrasada > 5 dias
+                  Atrasada {">"}5 dias
                 </p>
               </CardContent>
             </Card>
