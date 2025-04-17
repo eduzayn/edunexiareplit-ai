@@ -430,8 +430,9 @@ router.post("/generate-complete-ebook", requireAuth, requireAdmin, async (req, r
         
         if (imageResult?.data?.imageUrl) {
           images.push({
-            url: imageResult.data.imageUrl,
-            prompt: prompt
+            imageUrl: imageResult.data.imageUrl,
+            prompt: prompt,
+            altText: prompt
           });
         }
       } catch (imageError) {
@@ -456,7 +457,8 @@ router.post("/generate-complete-ebook", requireAuth, requireAdmin, async (req, r
       const image = images[i];
       await storage.addImageToEBook({
         eBookId: newEBook.id,
-        url: image.url,
+        imageUrl: image.imageUrl,
+        altText: image.prompt,
         caption: image.prompt,
         order: i + 1
       });
