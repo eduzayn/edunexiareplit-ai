@@ -84,14 +84,14 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
   // Item principal sempre visível no topo
   const mainItems: SidebarItemOrCategory[] = [
     { 
-      name: "DASHBOARD", 
-      icon: <DashboardIcon className="text-blue-500" />, 
+      name: "Dashboard", 
+      icon: <DashboardIcon />, 
       href: "/admin/dashboard",
       active: currentPath === "/admin/dashboard"
     },
     {
-      name: "FINANCEIRO EMPRESARIAL",
-      icon: <CircleDollarSign className="text-green-600" />,
+      name: "Financeiro Empresarial",
+      icon: <CircleDollarSign />,
       href: "/admin/financeiro-empresarial",
       active: currentPath === "/admin/financeiro-empresarial" || 
               (currentPath && currentPath.includes("/admin/financeiro-empresarial"))
@@ -100,21 +100,21 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
 
   // Categoria: Acadêmico
   const academicCategory: SidebarCategory = {
-    name: "ACADÊMICO",
-    icon: <MenuBookIcon className="text-green-500" />,
+    name: "Acadêmico",
+    icon: <MenuBookIcon />,
     expanded: hasCategoryActiveItem({
       name: "Acadêmico",
       icon: <MenuBookIcon />,
       items: [
         { 
           name: "Disciplinas", 
-          icon: <BookIcon className="text-muted-foreground" />, 
+          icon: <BookIcon />, 
           href: "/admin/disciplines",
           active: currentPath === "/admin/disciplines" || (currentPath && currentPath.includes("/admin/disciplines/"))
         },
         { 
           name: "Cursos", 
-          icon: <GraduationCapAltIcon className="text-muted-foreground" />, 
+          icon: <GraduationCapAltIcon />, 
           href: "/admin/courses",
           active: currentPath === "/admin/courses" || (currentPath && currentPath.includes("/admin/courses/"))
         },
@@ -138,27 +138,27 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
 
   // Categoria: Institucional
   const institutionalCategory: SidebarCategory = {
-    name: "INSTITUCIONAL",
-    icon: <BuildingIcon className="text-purple-500" />,
+    name: "Institucional",
+    icon: <BuildingIcon />,
     expanded: hasCategoryActiveItem({
       name: "Institucional",
       icon: <BuildingIcon />,
       items: [
         { 
           name: "Instituições", 
-          icon: <BusinessIcon className="text-muted-foreground" />, 
+          icon: <BusinessIcon />, 
           href: "/admin/institutions",
           active: currentPath === "/admin/institutions"
         },
         { 
           name: "Polos", 
-          icon: <StorefrontIcon className="text-muted-foreground" />, 
+          icon: <StorefrontIcon />, 
           href: "/admin/polos",
           active: currentPath === "/admin/polos"
         },
         { 
           name: "Parceiros", 
-          icon: <HandshakeIcon className="text-muted-foreground" />, 
+          icon: <HandshakeIcon />, 
           href: "/admin/partners",
           active: currentPath === "/admin/partners"
         },
@@ -188,27 +188,27 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
 
   // Categoria: Pessoas
   const peopleCategory: SidebarCategory = {
-    name: "PESSOAS",
-    icon: <UsersIcon className="text-orange-500" />,
+    name: "Pessoas",
+    icon: <UsersIcon />,
     expanded: hasCategoryActiveItem({
       name: "Pessoas",
       icon: <UsersIcon />,
       items: [
         { 
           name: "Usuários", 
-          icon: <GroupIcon className="text-muted-foreground" />, 
+          icon: <GroupIcon />, 
           href: "/admin/pessoas/usuarios",
           active: currentPath === "/admin/pessoas/usuarios" || (currentPath && currentPath.includes("/admin/pessoas/usuarios/"))
         },
         { 
           name: "Papéis & Permissões", 
-          icon: <SecurityIcon className="text-muted-foreground" />, 
+          icon: <SecurityIcon />, 
           href: "/admin/pessoas/roles",
           active: currentPath === "/admin/pessoas/roles" || (currentPath && currentPath.includes("/admin/pessoas/roles"))
         },
         { 
           name: "Permissões Contextuais", 
-          icon: <BadgeCheckIcon className="text-muted-foreground" />, 
+          icon: <BadgeCheckIcon />, 
           href: "/admin/pessoas/abac-permissions",
           active: currentPath === "/admin/pessoas/abac-permissions" || (currentPath && currentPath.includes("/admin/pessoas/abac"))
         },
