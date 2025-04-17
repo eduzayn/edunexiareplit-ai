@@ -19,6 +19,10 @@ export default function SettingsPage() {
   const { data: settings, isLoading: isLoadingSettings } = useQuery({
     queryKey: ["/api/settings"],
   });
+  
+  const { data: themeData, isLoading: isLoadingTheme } = useQuery({
+    queryKey: ["/api/settings/theme"],
+  });
 
   const { data: integrations, isLoading: isLoadingIntegrations } = useQuery({
     queryKey: ["/api/integrations"],
@@ -35,13 +39,18 @@ export default function SettingsPage() {
       const backgroundColor = (document.getElementById("background-color") as HTMLInputElement)?.value || "#f0f9ff";
       const textColor = (document.getElementById("text-color") as HTMLInputElement)?.value || "#1e293b";
       
-      // Converter para HSL para o tema
-      const primaryColorHSL = "hsl(230, 70%, 55%)"; // Ideal seria converter a cor HEX para HSL
+      // Usar valor HSL ou converter para HSL (para simplificar, mantemos o valor atual)
+      const primaryColorHSL = (document.querySelector('input[type="text"][value^="hsl"]') as HTMLInputElement)?.value || "hsl(230, 70%, 55%)";
       
-      // Variantes e temas
-      const theme = document.querySelector('button[data-state="active"][id^="theme-"]')?.getAttribute('value') || "light";
-      const variant = document.querySelector('button[data-state="active"][id^="variant-"]')?.getAttribute('value') || "vibrant";
-      const radius = document.querySelector('button[data-state="active"][id^="radius-"]')?.getAttribute('value') || "0.75";
+      // Obter valores dos selects
+      const themeSelect = document.getElementById("theme") as HTMLSelectElement;
+      const variantSelect = document.getElementById("variant") as HTMLSelectElement;
+      const radiusSelect = document.getElementById("radius") as HTMLSelectElement;
+      
+      // Obter valores selecionados
+      const theme = themeSelect?.value || "light";
+      const variant = variantSelect?.value || "vibrant";
+      const radius = radiusSelect?.value || "0.75";
       
       // Criar objeto de tema
       const themeConfig = {
@@ -51,17 +60,33 @@ export default function SettingsPage() {
         radius: parseFloat(radius)
       };
       
-      // Simular API para salvar as configurações
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      // Enviar para a API
+      const response = await fetch("/api/settings/theme", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ theme: themeConfig })
+      });
       
-      // Atualizar arquivo theme.json - em um ambiente real, isso seria feito via API
-      console.log("Atualizando tema:", themeConfig);
+      if (!response.ok) {
+        throw new Error(`Erro ao salvar tema: ${response.status} ${response.statusText}`);
+      }
       
-      // Simulando alterações aplicadas na interface
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.message || "Erro desconhecido ao salvar tema");
+      }
+      
+      // Aplicar alterações na interface
       document.documentElement.style.setProperty('--primary', primaryColor);
       document.documentElement.style.setProperty('--secondary', secondaryColor);
       document.documentElement.style.setProperty('--background', backgroundColor);
       document.documentElement.style.setProperty('--text', textColor);
+      
+      // Forçar recarregamento da página para aplicar o novo tema
+      window.location.reload();
       
       setIsSubmitting(false);
       toast({
@@ -73,13 +98,13 @@ export default function SettingsPage() {
       setIsSubmitting(false);
       toast({
         title: "Erro ao salvar",
-        description: "Ocorreu um erro ao salvar as configurações. Tente novamente.",
+        description: error instanceof Error ? error.message : "Ocorreu um erro ao salvar as configurações. Tente novamente.",
         variant: "destructive",
       });
     }
   };
 
-  if (isLoadingSettings) {
+  if (isLoadingSettings || isLoadingTheme) {
     return (
       <AdminLayout>
         <div className="flex justify-center items-center h-screen">
@@ -88,6 +113,14 @@ export default function SettingsPage() {
       </AdminLayout>
     );
   }
+  
+  // Preparar valores padrão do tema
+  const currentTheme = themeData?.success ? themeData.theme : {
+    primary: "hsl(230, 70%, 55%)",
+    appearance: "light",
+    variant: "vibrant",
+    radius: 0.75
+  };
 
   return (
     <AdminLayout>
@@ -238,7 +271,7 @@ export default function SettingsPage() {
                   <Label htmlFor="primary-color">Cor Primária</Label>
                   <div className="flex space-x-2">
                     <Input id="primary-color" type="color" defaultValue="#5277e2" className="w-16 h-10" />
-                    <Input defaultValue="hsl(230, 70%, 55%)" className="flex-1" />
+                    <Input defaultValue={currentTheme.primary} className="flex-1" />
                   </div>
                   <p className="text-sm text-muted-foreground">
                     Esta cor será aplicada aos botões, links e elementos principais da interface
@@ -282,7 +315,7 @@ export default function SettingsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="theme">Tema</Label>
-                  <Select defaultValue="light">
+                  <Select defaultValue={currentTheme.appearance}>
                     <SelectTrigger id="theme">
                       <SelectValue placeholder="Selecione um tema" />
                     </SelectTrigger>
@@ -295,7 +328,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="variant">Variante Visual</Label>
-                  <Select defaultValue="vibrant">
+                  <Select defaultValue={currentTheme.variant}>
                     <SelectTrigger id="variant">
                       <SelectValue placeholder="Selecione uma variante" />
                     </SelectTrigger>
@@ -325,7 +358,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="radius">Arredondamento de Bordas</Label>
-                  <Select defaultValue="0.75">
+                  <Select defaultValue={currentTheme.radius.toString()}>
                     <SelectTrigger id="radius">
                       <SelectValue placeholder="Selecione um valor" />
                     </SelectTrigger>

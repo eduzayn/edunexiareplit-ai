@@ -146,31 +146,68 @@ router.get("/appearance", requireAuth, (req, res) => {
   }
 });
 
-// Atualizar configurações de aparência
-router.post("/appearance", requireAuth, requireAdmin, (req, res) => {
+// Obter tema atual
+router.get("/theme", requireAuth, requireAdmin, (req, res) => {
   try {
-    const { appearance } = req.body;
+    // Leia o arquivo theme.json
+    const themeFile = fs.readFileSync(path.join(process.cwd(), 'theme.json'), 'utf8');
+    const theme = JSON.parse(themeFile);
     
-    if (!appearance || typeof appearance !== 'object') {
+    // Retorne o tema atual
+    res.json({
+      success: true,
+      message: "Tema obtido com sucesso",
+      theme
+    });
+  } catch (error) {
+    console.error("Erro ao obter tema:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Erro ao obter tema",
+      error: String(error)
+    });
+  }
+});
+
+// Atualizar configurações de tema
+router.post("/theme", requireAuth, requireAdmin, (req, res) => {
+  try {
+    const { theme } = req.body;
+    
+    if (!theme || typeof theme !== 'object') {
       return res.status(400).json({ 
         success: false, 
-        message: "Dados de aparência inválidos" 
+        message: "Dados de tema inválidos" 
       });
     }
     
-    // Em um ambiente real, aqui seria feita a validação e atualização no banco de dados
+    // Validar estrutura do tema
+    if (typeof theme.primary !== 'string' || 
+        !['light', 'dark', 'system'].includes(theme.appearance) ||
+        !['vibrant', 'professional', 'tint'].includes(theme.variant) ||
+        typeof theme.radius !== 'number') {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Estrutura de tema inválida" 
+      });
+    }
     
-    // Simulação de sucesso
+    // Atualizar arquivo theme.json
+    fs.writeFileSync(
+      path.join(process.cwd(), 'theme.json'), 
+      JSON.stringify(theme, null, 2)
+    );
+    
     res.json({
       success: true,
-      message: "Configurações de aparência atualizadas com sucesso",
-      appearance
+      message: "Tema atualizado com sucesso",
+      theme
     });
   } catch (error) {
-    console.error("Erro ao salvar configurações de aparência:", error);
+    console.error("Erro ao salvar tema:", error);
     res.status(500).json({ 
       success: false, 
-      message: "Erro ao salvar configurações de aparência",
+      message: "Erro ao salvar tema",
       error: String(error)
     });
   }
