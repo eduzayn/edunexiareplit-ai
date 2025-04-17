@@ -102,16 +102,21 @@ export default function DisciplinesPage() {
     queryKey: ["/api/admin/disciplines", searchTerm],
     queryFn: async () => {
       const url = `/api/admin/disciplines${searchTerm ? `?search=${searchTerm}` : ""}`;
+      console.log("Buscando disciplinas...");
       const response = await apiRequest("GET", url);
-      return response.json();
+      const data = await response.json();
+      console.log("Disciplinas recebidas:", data);
+      return data;
     },
+    retry: 3, // Tenta até 3 vezes em caso de erro
+    retryDelay: 1000, // Espera 1 segundo entre as tentativas
   });
 
   // Mutation para criar disciplina
   const createDisciplineMutation = useMutation({
     mutationFn: async (data: DisciplineFormValues) => {
       const response = await apiRequest("POST", "/api/admin/disciplines", data);
-      return response.json();
+      return await response.json();
     },
     onSuccess: () => {
       toast({
@@ -136,7 +141,7 @@ export default function DisciplinesPage() {
     mutationFn: async (data: DisciplineFormValues & { id: number }) => {
       const { id, ...updateData } = data;
       const response = await apiRequest("PUT", `/api/admin/disciplines/${id}`, updateData);
-      return response.json();
+      return await response.json();
     },
     onSuccess: () => {
       toast({

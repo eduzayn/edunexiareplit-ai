@@ -20,7 +20,11 @@ import { users, type User, type InsertUser,
   products, type Product, type InsertProduct,
   invoices, type Invoice, type InsertInvoice,
   invoiceItems, type InvoiceItem, type InsertInvoiceItem,
-  payments, type Payment, type InsertPayment
+  payments, type Payment, type InsertPayment,
+  // E-books interativos
+  eBooks, type EBook, type InsertEBook,
+  eBookImages, type EBookImage, type InsertEBookImage,
+  type EBookContent
 } from "@shared/schema";
 import session from "express-session";
 import { Store as SessionStore } from "express-session";
@@ -219,6 +223,23 @@ export interface IStorage {
   updatePayment(id: number, payment: Partial<InsertPayment>): Promise<Payment | undefined>;
   deletePayment(id: number): Promise<boolean>;
   updateInvoiceAfterPayment(invoiceId: number): Promise<Invoice | undefined>;
+  
+  // E-Books Interativos
+  getEBook(id: number): Promise<EBook | undefined>;
+  getEBooksByDiscipline(disciplineId: number): Promise<EBook[]>;
+  getEBooks(status?: string, search?: string, limit?: number, offset?: number): Promise<EBook[]>;
+  createEBook(eBook: InsertEBook): Promise<EBook>;
+  updateEBook(id: number, eBook: Partial<InsertEBook>): Promise<EBook | undefined>;
+  deleteEBook(id: number): Promise<boolean>;
+  publishEBook(id: number): Promise<EBook | undefined>;
+  
+  // Imagens de E-Books
+  getEBookImage(id: number): Promise<EBookImage | undefined>;
+  getEBookImages(eBookId: number): Promise<EBookImage[]>;
+  addImageToEBook(image: InsertEBookImage): Promise<EBookImage>;
+  updateEBookImage(id: number, image: Partial<InsertEBookImage>): Promise<EBookImage | undefined>;
+  removeImageFromEBook(id: number): Promise<boolean>;
+  reorderEBookImages(eBookId: number, imageOrder: { imageId: number, order: number }[]): Promise<boolean>;
   
   sessionStore: SessionStore;
 }
@@ -2036,6 +2057,149 @@ export class DatabaseStorage implements IStorage {
     
     // Atualizar o status da fatura
     return await this.updateInvoiceStatus(invoiceId, newStatus);
+  }
+
+  // ==================== E-Books Interativos ====================
+  async getEBook(id: number): Promise<EBook | undefined> {
+    const [eBook] = await db.select().from(eBooks).where(eq(eBooks.id, id));
+    return eBook || undefined;
+  }
+
+  async getEBooksByDiscipline(disciplineId: number): Promise<EBook[]> {
+    return await db
+      .select()
+      .from(eBooks)
+      .where(eq(eBooks.disciplineId, disciplineId))
+      .orderBy(desc(eBooks.createdAt));
+  }
+
+  async getEBooks(status?: string, search?: string, limit: number = 50, offset: number = 0): Promise<EBook[]> {
+    let query = db.select().from(eBooks).limit(limit).offset(offset);
+    
+    if (search) {
+      query = query.where(
+        or(
+          like(eBooks.title, `%${search}%`),
+          like(eBooks.description, `%${search}%`)
+        )
+      );
+    }
+    
+    if (status) {
+      query = query.where(eq(eBooks.status, status));
+    }
+    
+    return await query.orderBy(desc(eBooks.createdAt));
+  }
+
+  async createEBook(eBook: InsertEBook): Promise<EBook> {
+    const [newEBook] = await db
+      .insert(eBooks)
+      .values(eBook)
+      .returning();
+    return newEBook;
+  }
+
+  async updateEBook(id: number, eBook: Partial<InsertEBook>): Promise<EBook | undefined> {
+    const [updatedEBook] = await db
+      .update(eBooks)
+      .set(eBook)
+      .where(eq(eBooks.id, id))
+      .returning();
+    return updatedEBook;
+  }
+
+  async deleteEBook(id: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(eBooks)
+        .where(eq(eBooks.id, id))
+        .returning({ id: eBooks.id });
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting e-book:", error);
+      return false;
+    }
+  }
+
+  async publishEBook(id: number): Promise<EBook | undefined> {
+    const [publishedEBook] = await db
+      .update(eBooks)
+      .set({
+        status: 'published',
+        publishedAt: new Date()
+      })
+      .where(eq(eBooks.id, id))
+      .returning();
+    return publishedEBook;
+  }
+
+  // ==================== Imagens de E-Books ====================
+  async getEBookImage(id: number): Promise<EBookImage | undefined> {
+    const [image] = await db.select().from(eBookImages).where(eq(eBookImages.id, id));
+    return image || undefined;
+  }
+
+  async getEBookImages(eBookId: number): Promise<EBookImage[]> {
+    return await db
+      .select()
+      .from(eBookImages)
+      .where(eq(eBookImages.eBookId, eBookId))
+      .orderBy(asc(eBookImages.order));
+  }
+
+  async addImageToEBook(image: InsertEBookImage): Promise<EBookImage> {
+    const [newImage] = await db
+      .insert(eBookImages)
+      .values(image)
+      .returning();
+    return newImage;
+  }
+
+  async updateEBookImage(id: number, image: Partial<InsertEBookImage>): Promise<EBookImage | undefined> {
+    const [updatedImage] = await db
+      .update(eBookImages)
+      .set(image)
+      .where(eq(eBookImages.id, id))
+      .returning();
+    return updatedImage;
+  }
+
+  async removeImageFromEBook(id: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(eBookImages)
+        .where(eq(eBookImages.id, id))
+        .returning({ id: eBookImages.id });
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error removing image from e-book:", error);
+      return false;
+    }
+  }
+
+  async reorderEBookImages(
+    eBookId: number, 
+    imageOrder: { imageId: number, order: number }[]
+  ): Promise<boolean> {
+    try {
+      // Atualizar cada ordem de imagem
+      for (const item of imageOrder) {
+        await db
+          .update(eBookImages)
+          .set({ order: item.order })
+          .where(
+            and(
+              eq(eBookImages.eBookId, eBookId),
+              eq(eBookImages.id, item.imageId)
+            )
+          );
+      }
+      return true;
+    } catch (error) {
+      console.error("Error reordering e-book images:", error);
+      return false;
+    }
   }
 }
 

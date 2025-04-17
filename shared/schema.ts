@@ -1935,5 +1935,69 @@ export const asaasApiConfigSchema = z.object({
     .startsWith("$", { message: "A chave de API do Asaas deve começar com $" }),
 });
 
+// E-books Interativos
+export const eBooks = pgTable("ebooks", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  content: text("content").notNull(), // Conteúdo em formato Markdown
+  disciplineId: integer("discipline_id").notNull().references(() => disciplines.id, { onDelete: 'cascade' }),
+  createdById: integer("created_by_id").references(() => users.id),
+  isGenerated: boolean("is_generated").default(true).notNull(), // Indica se foi gerado por IA ou criado manualmente
+  status: text("status").default("draft").notNull(), // draft, published, archived
+  thumbnailUrl: text("thumbnail_url"), // URL da imagem de capa do e-book
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  publishedAt: timestamp("published_at"),
+});
+
+// Imagens utilizadas nos e-books interativos
+export const eBookImages = pgTable("ebook_images", {
+  id: serial("id").primaryKey(),
+  eBookId: integer("ebook_id").notNull().references(() => eBooks.id, { onDelete: 'cascade' }),
+  imageUrl: text("image_url").notNull(),
+  altText: text("alt_text").notNull(),
+  caption: text("caption"),
+  order: integer("order").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Relações para e-books
+export const eBooksRelations = relations(eBooks, ({ one, many }) => ({
+  discipline: one(disciplines, {
+    fields: [eBooks.disciplineId],
+    references: [disciplines.id],
+  }),
+  createdBy: one(users, {
+    fields: [eBooks.createdById],
+    references: [users.id],
+  }),
+  images: many(eBookImages),
+}));
+
+// Criar schemas para inserção e manipulação de e-books
+export const insertEBookSchema = createInsertSchema(eBooks)
+  .omit({ id: true, createdAt: true, updatedAt: true, publishedAt: true });
+
+export const insertEBookImageSchema = createInsertSchema(eBookImages)
+  .omit({ id: true, createdAt: true });
+
+// Esquema para troca entre frontend e backend
+export const eBookContentSchema = z.object({
+  title: z.string().min(3, "O título deve ter pelo menos 3 caracteres"),
+  description: z.string().min(10, "A descrição deve ter pelo menos 10 caracteres"),
+  content: z.string().min(50, "O conteúdo deve ter pelo menos 50 caracteres"), 
+  disciplineId: z.number().int().positive(),
+  generatedAt: z.string().datetime().optional(),
+  imageSuggestions: z.array(z.string()).optional()
+});
+
+// Tipos exportados para e-books
+export type InsertEBook = z.infer<typeof insertEBookSchema>;
+export type EBook = typeof eBooks.$inferSelect;
+export type InsertEBookImage = z.infer<typeof insertEBookImageSchema>;
+export type EBookImage = typeof eBookImages.$inferSelect;
+export type EBookContent = z.infer<typeof eBookContentSchema>;
+
 // Configurar índices como comentário para referência futura
 // Índice será criado diretamente na migração SQL

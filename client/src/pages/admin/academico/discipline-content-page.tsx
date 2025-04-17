@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useParams, useLocation } from "wouter";
+import { useParams, useLocation, Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Sidebar } from "@/components/layout/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -106,11 +106,7 @@ const materialFormSchema = z.object({
   url: z.string().url({ message: "URL inválida" }),
 });
 
-const ebookFormSchema = z.object({
-  title: z.string().min(3, { message: "Título deve ter pelo menos 3 caracteres" }),
-  description: z.string().min(10, { message: "Descrição deve ter pelo menos 10 caracteres" }),
-  url: z.string().url({ message: "URL inválida" }),
-});
+// E-book schema removido - usando interface completa em /admin/ebooks/generate
 
 const questionFormSchema = z.object({
   statement: z.string().min(5, { message: "Enunciado deve ter pelo menos 5 caracteres" }),
@@ -128,7 +124,7 @@ const assessmentFormSchema = z.object({
 
 type VideoFormValues = z.infer<typeof videoFormSchema>;
 type MaterialFormValues = z.infer<typeof materialFormSchema>;
-type EbookFormValues = z.infer<typeof ebookFormSchema>;
+// Tipo EbookFormValues removido - usando interface completa em /admin/ebooks/generate
 type QuestionFormValues = z.infer<typeof questionFormSchema>;
 type AssessmentFormValues = z.infer<typeof assessmentFormSchema>;
 
@@ -146,7 +142,7 @@ export default function DisciplineContentPage() {
   const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
   const [isVideoEditDialogOpen, setIsVideoEditDialogOpen] = useState(false);
   const [isMaterialDialogOpen, setIsMaterialDialogOpen] = useState(false);
-  const [isEbookDialogOpen, setIsEbookDialogOpen] = useState(false);
+  // Estado isEbookDialogOpen removido - usando interface completa em /admin/ebooks/generate
   const [isQuestionDialogOpen, setIsQuestionDialogOpen] = useState(false);
   const [isAssessmentDialogOpen, setIsAssessmentDialogOpen] = useState(false);
   
@@ -319,29 +315,7 @@ export default function DisciplineContentPage() {
     },
   });
   
-  // Mutation para adicionar e-book
-  const addEbookMutation = useMutation({
-    mutationFn: async (data: EbookFormValues) => {
-      const response = await apiRequest("POST", `/api/admin/discipline-ebook/${disciplineId}`, data);
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "E-book adicionado com sucesso!",
-        description: "O e-book foi vinculado à disciplina.",
-      });
-      refetchEbook();
-      setIsEbookDialogOpen(false);
-      ebookForm.reset();
-    },
-    onError: (error) => {
-      toast({
-        title: "Erro ao adicionar e-book",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
+  // Mutation para adicionar e-book removida - usando interface completa em /admin/ebooks/generate
   
   // Mutation para adicionar questão
   const addQuestionMutation = useMutation({
@@ -443,14 +417,7 @@ export default function DisciplineContentPage() {
     },
   });
   
-  const ebookForm = useForm<EbookFormValues>({
-    resolver: zodResolver(ebookFormSchema),
-    defaultValues: {
-      title: "",
-      description: "",
-      url: "",
-    },
-  });
+  // Formulário ebookForm removido - usando interface completa em /admin/ebooks/generate
   
   const questionForm = useForm<QuestionFormValues>({
     resolver: zodResolver(questionFormSchema),
@@ -495,10 +462,7 @@ export default function DisciplineContentPage() {
     setIsMaterialDialogOpen(true);
   };
   
-  const handleOpenEbookDialog = () => {
-    ebookForm.reset();
-    setIsEbookDialogOpen(true);
-  };
+  // Manipulador removido - usando interface completa em /admin/ebooks/generate
   
   const handleOpenQuestionDialog = () => {
     questionForm.reset();
@@ -535,9 +499,7 @@ export default function DisciplineContentPage() {
     addMaterialMutation.mutate(data);
   };
   
-  const onEbookSubmit = (data: EbookFormValues) => {
-    addEbookMutation.mutate(data);
-  };
+  // Função onEbookSubmit removida - usando interface completa em /admin/ebooks/generate
   
   const onQuestionSubmit = (data: QuestionFormValues) => {
     addQuestionMutation.mutate({ ...data, disciplineId });
@@ -1151,12 +1113,14 @@ export default function DisciplineContentPage() {
                       </CardDescription>
                     </div>
                     <Button
-                      onClick={handleOpenEbookDialog}
+                      asChild
                       className="mt-4 md:mt-0"
                       disabled={ebook !== null && ebook !== undefined}
                     >
-                      <PlusIcon className="mr-1 h-4 w-4" />
-                      {ebook ? "Substituir E-book" : "Adicionar E-book"}
+                      <Link href={`/admin/ebooks/generate?disciplineId=${disciplineId}`}>
+                        <BookIcon className="mr-1 h-4 w-4" />
+                        {ebook ? "Substituir E-book" : "Gerar E-book com IA"}
+                      </Link>
                     </Button>
                   </div>
                 </CardHeader>
@@ -1176,9 +1140,11 @@ export default function DisciplineContentPage() {
                       <p className="mt-1 text-gray-500">
                         Adicione um e-book interativo para proporcionar uma experiência rica de aprendizado.
                       </p>
-                      <Button onClick={handleOpenEbookDialog} className="mt-4">
-                        <PlusIcon className="mr-1 h-4 w-4" />
-                        Adicionar E-book
+                      <Button asChild className="mt-4">
+                        <Link href={`/admin/ebooks/generate?disciplineId=${disciplineId}`}>
+                          <BookIcon className="mr-1 h-4 w-4" />
+                          Gerar E-book com IA
+                        </Link>
                       </Button>
                     </div>
                   ) : (
@@ -1200,14 +1166,7 @@ export default function DisciplineContentPage() {
                             </Button>
                             <Button
                               variant="outline"
-                              onClick={() => {
-                                ebookForm.reset({
-                                  title: ebook.title,
-                                  description: ebook.description,
-                                  url: ebook.url,
-                                });
-                                setIsEbookDialogOpen(true);
-                              }}
+                              onClick={() => navigate(`/admin/ebooks/${ebook.id}/edit`)}
                             >
                               <PencilIcon className="mr-1 h-4 w-4" />
                               Editar
@@ -1930,78 +1889,7 @@ export default function DisciplineContentPage() {
       </Dialog>
 
       {/* Add E-book Dialog */}
-      <Dialog open={isEbookDialogOpen} onOpenChange={setIsEbookDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Adicionar E-book Interativo</DialogTitle>
-            <DialogDescription>
-              Preencha os dados abaixo para adicionar um e-book interativo à disciplina.
-            </DialogDescription>
-          </DialogHeader>
-          <Form {...ebookForm}>
-            <form onSubmit={ebookForm.handleSubmit(onEbookSubmit)} className="space-y-6">
-              <FormField
-                control={ebookForm.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Título</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Ex: E-book Interativo de Matemática" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={ebookForm.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Descrição</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Descrição do conteúdo do e-book..."
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={ebookForm.control}
-                name="url"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>URL do E-book</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="https://" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Link para o e-book interativo. Pode ser uma URL do Canva, Book Creator ou plataforma similar.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsEbookDialogOpen(false)}
-                >
-                  Cancelar
-                </Button>
-                <Button type="submit">Adicionar E-book</Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
+      {/* Diálogo de E-book removido - usando interface completa em /admin/ebooks/generate */}
 
       {/* Add Question Dialog */}
       <Dialog open={isQuestionDialogOpen} onOpenChange={setIsQuestionDialogOpen}>

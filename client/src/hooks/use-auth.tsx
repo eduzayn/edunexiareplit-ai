@@ -15,7 +15,7 @@ type AuthContextType = {
   isLoading: boolean;
   error: Error | null;
   loginMutation: UseMutationResult<SelectUser, Error, LoginData>;
-  logoutMutation: UseMutationResult<void, Error, void>;
+  logoutMutation: UseMutationResult<{}, Error, void>;
   registerMutation: UseMutationResult<SelectUser, Error, InsertUser>;
 };
 
@@ -40,7 +40,7 @@ const defaultLoginMutation = {
 
 const defaultLogoutMutation = {
   mutate: () => {},
-  mutateAsync: async () => {},
+  mutateAsync: async () => ({} as any),
   isPending: false,
   isSuccess: false,
   isError: false,
@@ -79,7 +79,7 @@ const defaultAuthContext: AuthContextType = {
   isLoading: false,
   error: null,
   loginMutation: defaultLoginMutation as unknown as UseMutationResult<SelectUser, Error, LoginData>,
-  logoutMutation: defaultLogoutMutation as unknown as UseMutationResult<void, Error, void>,
+  logoutMutation: defaultLogoutMutation as unknown as UseMutationResult<{}, Error, void>,
   registerMutation: defaultRegisterMutation as unknown as UseMutationResult<SelectUser, Error, InsertUser>,
 };
 
@@ -109,7 +109,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // para evitar conflitos de estado entre logins
       queryClient.removeQueries({ queryKey: ["/api/user"] });
       
-      return apiRequest<SelectUser>("/api/login", { method: 'POST', data });
+      const response = await apiRequest("POST", "/api/login", data);
+      return await response.json();
     },
     onSuccess: async (user: SelectUser) => {
       // Atualizar o cache do usuário com os dados mais recentes
@@ -142,7 +143,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerMutation = useMutation({
     mutationFn: async (credentials: InsertUser) => {
-      return apiRequest<SelectUser>("/api/register", { method: 'POST', data: credentials });
+      const response = await apiRequest("POST", "/api/register", credentials);
+      return await response.json();
     },
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
@@ -168,10 +170,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logoutMutation = useMutation({
     mutationFn: async () => {
       console.log("Executando logout - mutationFn");
-      await apiRequest<{}>("/api/logout", { method: 'POST' });
+      const response = await apiRequest("POST", "/api/logout");
       
       // Limpar todos os dados em cache para evitar problemas de persistência
       queryClient.clear();
+      return {};
     },
     onSuccess: () => {
       console.log("Logout bem-sucedido - onSuccess");

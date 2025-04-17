@@ -40,6 +40,9 @@ export function setupAuth(app: Express) {
     store: storage.sessionStore,
     cookie: {
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      httpOnly: true,
+      sameSite: 'lax', // Isso permitirá que o cookie seja enviado quando o usuário clicar em um link para o site
+      path: '/',
     }
   };
 
@@ -61,8 +64,19 @@ export function setupAuth(app: Express) {
 
   passport.serializeUser((user, done) => done(null, user.id));
   passport.deserializeUser(async (id: number, done) => {
-    const user = await storage.getUser(id);
-    done(null, user);
+    try {
+      const user = await storage.getUser(id);
+      if (!user) {
+        console.log(`Usuário com id ${id} não encontrado. Invalidando sessão.`);
+        // Em vez de um erro, retorna null sem erro para invalidar a sessão silenciosamente
+        return done(null, null);
+      }
+      return done(null, user);
+    } catch (error) {
+      console.error("Error deserializing user:", error);
+      // Em caso de erro, também invalidamos a sessão silenciosamente
+      return done(null, null);
+    }
   });
 
   app.post("/api/register", async (req, res, next) => {
