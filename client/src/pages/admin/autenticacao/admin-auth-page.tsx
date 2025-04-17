@@ -59,7 +59,7 @@ export default function AdminAuthPage() {
   useEffect(() => {
     // Se o login foi bem-sucedido e o usuário está disponível com o portalType correto
     if (loginSuccess && user && user.portalType === 'admin') {
-      console.log("Login bem-sucedido, redirecionando para dashboard admin");
+      console.log("Login bem-sucedido, redirecionando para o Portal Administrativo");
       // Usar window.location para forçar um recarregamento completo
       window.location.href = "/admin/dashboard";
     }
@@ -91,7 +91,7 @@ export default function AdminAuthPage() {
       await queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       
       // O redirecionamento será tratado pelo useEffect acima
-      console.log("Login bem-sucedido, preparando redirecionamento...");
+      console.log("Login bem-sucedido, preparando acesso ao Portal Administrativo...");
     } catch (error) {
       console.error("Erro no login:", error);
     }
