@@ -157,11 +157,15 @@ export default function CoursesPage() {
                           <TableCell>{formatCurrency(course.price)}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
-                              <Button size="sm" variant="outline">
-                                <Eye className="h-4 w-4" />
+                              <Button size="sm" variant="outline" asChild>
+                                <Link to={`/admin/academico/courses/edit/${course.id}`}>
+                                  <Eye className="h-4 w-4" />
+                                </Link>
                               </Button>
-                              <Button size="sm" variant="outline">
-                                <FileEdit className="h-4 w-4" />
+                              <Button size="sm" variant="outline" asChild>
+                                <Link to={`/admin/academico/courses/edit/${course.id}`}>
+                                  <FileEdit className="h-4 w-4" />
+                                </Link>
                               </Button>
                               <Button 
                                 size="sm" 

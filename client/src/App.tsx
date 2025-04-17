@@ -219,13 +219,22 @@ function Router() {
       <Route path="/admin/courses">
         {() => user?.portalType === "admin" ? <CoursesPage /> : <Redirect to="/admin" />}
       </Route>
+      <Route path="/admin/academico/courses">
+        {() => user?.portalType === "admin" ? <CoursesPage /> : <Redirect to="/admin" />}
+      </Route>
       <Route path="/admin/disciplines/:id/content">
         {() => user?.portalType === "admin" ? <DisciplineContentPage /> : <Redirect to="/admin" />}
       </Route>
       <Route path="/admin/courses/new">
         {() => user?.portalType === "admin" ? <CourseFormPage /> : <Redirect to="/admin" />}
       </Route>
+      <Route path="/admin/academico/courses/new">
+        {() => user?.portalType === "admin" ? <CourseFormPage /> : <Redirect to="/admin" />}
+      </Route>
       <Route path="/admin/courses/edit/:id">
+        {() => user?.portalType === "admin" ? <CourseFormPage /> : <Redirect to="/admin" />}
+      </Route>
+      <Route path="/admin/academico/courses/edit/:id">
         {() => user?.portalType === "admin" ? <CourseFormPage /> : <Redirect to="/admin" />}
       </Route>
       <Route path="/admin/institutions">
