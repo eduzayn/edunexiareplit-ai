@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import { asaasChargesService } from '../services/asaas-charges-service';
+import asaasChargesService from '../services/asaas-charges-service';
 import { storage } from '../storage';
-import { logger } from '../lib/logger';
+import { logger } from '../utils/logger';
 
 export const studentChargesController = {
   /**
@@ -23,7 +23,7 @@ export const studentChargesController = {
       logger.info(`[StudentChargesController] Buscando cobranças para usuário ID: ${userId}`);
 
       // Buscar os dados do aluno
-      const studentData = await storage.users.getUserById(userId);
+      const studentData = await storage.users.findById(userId);
       if (!studentData) {
         return res.status(404).json({ 
           success: false, 
@@ -55,7 +55,8 @@ export const studentChargesController = {
         logger.warn(`[StudentChargesController] Cliente não encontrado no Asaas para CPF: ${studentData.cpf}`);
         
         // Se não encontrar pelo CPF, tentar buscar matrículas com pagamento
-        const enrollments = await storage.enrollments.getEnrollmentsByStudentId(userId);
+        // Buscar matrículas usando a função apropriada do storage
+        const enrollments = await storage.enrollments.findByStudentId(userId);
         
         if (!enrollments || enrollments.length === 0) {
           return res.status(404).json({ 

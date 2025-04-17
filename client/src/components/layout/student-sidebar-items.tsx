@@ -1,83 +1,93 @@
-import {
-  ChartIcon,
-  MenuBookIcon,
-  EventNoteIcon,
-  DescriptionIcon,
-  PaymentsIcon,
-  HelpOutlineIcon,
-  LayersIcon,
-  FileTextIcon,
-  AssignmentIcon,
-  GraduationCapIcon,
-  IdCardIcon,
-} from "@/components/ui/icons";
+import React from 'react';
+import { 
+  BookOpenText, 
+  LayoutDashboard, 
+  FileText, 
+  Calendar, 
+  GraduationCap,
+  User, 
+  FileQuestion, 
+  BriefcaseBusiness,
+  Handshake,
+  Banknote,
+  MessagesSquare
+} from 'lucide-react';
+
+export type SidebarItem = {
+  label: string;
+  icon: React.ReactNode;
+  href: string;
+  active?: boolean;
+  submenu?: SidebarItem[];
+  onClick?: () => void;
+};
 
 /**
- * Retorna uma lista completa de itens para a barra lateral do portal do aluno
- * Essa função garante que todos os itens da navegação estejam sempre presentes
- * independente da página atual
+ * Retorna os itens do menu da barra lateral do estudante
+ * @param pathname Caminho atual da rota
+ * @returns Array de itens do menu
  */
-export function getStudentSidebarItems(currentPath: string) {
+export const getStudentSidebarItems = (pathname: string): SidebarItem[] => {
   return [
-    { 
-      name: "Dashboard", 
-      icon: <ChartIcon />, 
-      href: "/student/dashboard",
-      active: currentPath === "/student/dashboard"
+    {
+      label: 'Início',
+      icon: <LayoutDashboard size={18} />,
+      href: '/student',
+      active: pathname === '/student',
     },
-    { 
-      name: "Meus Cursos", 
-      icon: <GraduationCapIcon />, 
-      href: "/student/courses",
-      active: currentPath === "/student/courses"
+    {
+      label: 'Meus cursos',
+      icon: <BookOpenText size={18} />,
+      href: '/student/courses',
+      active: pathname === '/student/courses' || pathname.startsWith('/student/courses/'),
     },
-    { 
-      name: "Progresso", 
-      icon: <AssignmentIcon />, 
-      href: "/student/learning",
-      active: currentPath === "/student/learning"
+    {
+      label: 'Meus certificados',
+      icon: <GraduationCap size={18} />,
+      href: '/student/certificates',
+      active: pathname === '/student/certificates',
     },
-    { 
-      name: "Calendário", 
-      icon: <EventNoteIcon />, 
-      href: "/student/calendar",
-      active: currentPath === "/student/calendar"
+    {
+      label: 'Avaliações',
+      icon: <FileQuestion size={18} />,
+      href: '/student/assessments',
+      active: pathname === '/student/assessments',
     },
-    { 
-      name: "Documentos", 
-      icon: <DescriptionIcon />, 
-      href: "/student/documents",
-      active: currentPath === "/student/documents"
+    {
+      label: 'Meus estágios',
+      icon: <BriefcaseBusiness size={18} />,
+      href: '/student/internships',
+      active: pathname === '/student/internships',
     },
-    { 
-      name: "Biblioteca", 
-      icon: <LayersIcon />, 
-      href: "/student/library",
-      active: currentPath === "/student/library"
+    {
+      label: 'Contratos',
+      icon: <Handshake size={18} />,
+      href: '/student/contracts',
+      active: pathname === '/student/contracts',
     },
-    { 
-      name: "Secretaria", 
-      icon: <FileTextIcon />, 
-      href: "/student/secretaria",
-      active: currentPath === "/student/secretaria"
+    {
+      label: 'Financeiro',
+      icon: <Banknote size={18} />,
+      href: '/student/financial',
+      active: pathname === '/student/financial',
     },
-    { 
-      name: "Credencial", 
-      icon: <IdCardIcon />, 
-      href: "/student/credencial",
-      active: currentPath === "/student/credencial"
+    {
+      label: 'Calendário',
+      icon: <Calendar size={18} />,
+      href: '/student/calendar',
+      active: pathname === '/student/calendar',
     },
-    { 
-      name: "Financeiro", 
-      icon: <PaymentsIcon />, 
-      href: "/student/financial",
-      active: currentPath === "/student/financial"
+    {
+      label: 'Mensagens',
+      icon: <MessagesSquare size={18} />,
+      href: '/student/messages',
+      active: pathname === '/student/messages',
     },
-    { 
-      name: "Suporte", 
-      icon: <HelpOutlineIcon />, 
-      href: "/student/support",
-      active: currentPath === "/student/support"
+    {
+      label: 'Minhas informações',
+      icon: <User size={18} />,
+      href: '/student/profile',
+      active: pathname === '/student/profile',
     },
   ];
-}
+};

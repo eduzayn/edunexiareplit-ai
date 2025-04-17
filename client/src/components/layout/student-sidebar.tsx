@@ -1,200 +1,146 @@
-import { useCallback, useEffect, useState } from "react";
-import { useLocation, Link } from "wouter";
-import { 
-  FileTextIcon, 
-  GraduationCapIcon, 
-  HomeIcon, 
-  BookOpenIcon,
-  CreditCardIcon,
-  LogOutIcon,
-  MenuIcon,
-  XIcon,
-  ChevronRightIcon,
-  UserIcon
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { useUserStore } from "@/stores/user-store";
+import React from 'react';
+import { useLocation, Link } from 'wouter';
+import { SidebarItem, getStudentSidebarItems } from './student-sidebar-items';
+import { ChevronDown, ChevronRight, LogOut } from 'lucide-react';
 
-export default function StudentSidebar() {
+interface StudentSidebarProps {
+  isMobile?: boolean;
+  onClose?: () => void;
+  className?: string;
+}
+
+/**
+ * Componente para exibir a barra lateral do portal do estudante
+ */
+const StudentSidebar: React.FC<StudentSidebarProps> = ({
+  isMobile = false,
+  onClose,
+  className = '',
+}) => {
   const [location] = useLocation();
-  const [isOpen, setIsOpen] = useState(false);
-  const { user, logout } = useUserStore();
-  const [isMobile, setIsMobile] = useState(false);
+  const [openSubmenu, setOpenSubmenu] = React.useState<string | null>(null);
+  
+  // Obtém os itens da barra lateral baseado na localização atual
+  const sidebarItems = getStudentSidebarItems(location);
 
-  // Detectar se é mobile
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024);
-      if (window.innerWidth >= 1024) {
-        setIsOpen(true);
-      } else {
-        setIsOpen(false);
-      }
-    };
+  // Alterna o estado de abertura/fechamento do submenu
+  const toggleSubmenu = (label: string) => {
+    setOpenSubmenu(openSubmenu === label ? null : label);
+  };
 
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
+  // Renderiza um item do menu
+  const renderMenuItem = (item: SidebarItem, index: number) => {
+    const hasSubmenu = item.submenu && item.submenu.length > 0;
+    const isSubmenuOpen = openSubmenu === item.label;
+    
+    // Define a classe do item do menu baseada no estado ativo e hover
+    const itemClass = `
+      flex items-center justify-between rounded-md px-3 py-2.5 cursor-pointer
+      ${item.active ? 'bg-blue-100 text-primary-700 font-medium' : 'text-gray-700 hover:bg-blue-50'}
+      ${isMobile ? 'text-base' : 'text-sm'}
+      transition-all duration-200 ease-in-out
+    `;
 
-  // Fazer logout
-  const handleLogout = useCallback(async () => {
-    try {
-      await logout();
-      window.location.href = "/login";
-    } catch (error) {
-      console.error("Erro ao fazer logout:", error);
-    }
-  }, [logout]);
-
-  // Fechar sidebar em telas menores ao clicar em um link
-  const handleNavClick = useCallback(() => {
-    if (isMobile) {
-      setIsOpen(false);
-    }
-  }, [isMobile]);
+    // Renderiza o item como um botão se tiver submenu, ou como um link se não tiver
+    return (
+      <div key={index} className="my-1">
+        {hasSubmenu ? (
+          <>
+            <div
+              className={itemClass}
+              onClick={() => toggleSubmenu(item.label)}
+              data-testid={`sidebar-item-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+            >
+              <div className="flex items-center gap-3">
+                {item.icon}
+                <span>{item.label}</span>
+              </div>
+              {isSubmenuOpen ? (
+                <ChevronDown size={16} />
+              ) : (
+                <ChevronRight size={16} />
+              )}
+            </div>
+            
+            {isSubmenuOpen && item.submenu && (
+              <div className="ml-6 mt-1">
+                {item.submenu.map((subItem, subIndex) => (
+                  <Link
+                    key={subIndex}
+                    href={subItem.href}
+                    onClick={onClose}
+                    className={`
+                      flex items-center gap-3 px-3 py-2 rounded-md text-sm
+                      ${subItem.active ? 'bg-blue-100 text-primary-700 font-medium' : 'text-gray-700 hover:bg-blue-50'}
+                      transition-all duration-200 ease-in-out
+                    `}
+                    data-testid={`sidebar-subitem-${subItem.label.toLowerCase().replace(/\s+/g, '-')}`}
+                  >
+                    {subItem.icon}
+                    <span>{subItem.label}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </>
+        ) : (
+          <Link
+            href={item.href}
+            onClick={() => {
+              if (item.onClick) item.onClick();
+              if (onClose) onClose();
+            }}
+            className={itemClass}
+            data-testid={`sidebar-item-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+          >
+            <div className="flex items-center gap-3">
+              {item.icon}
+              <span>{item.label}</span>
+            </div>
+          </Link>
+        )}
+      </div>
+    );
+  };
 
   return (
-    <>
-      {/* Botão do menu mobile */}
-      <div className="fixed top-4 left-4 z-50 lg:hidden">
-        <Button
-          variant="outline"
-          size="icon"
-          className="rounded-full bg-white shadow-md"
-          onClick={() => setIsOpen(!isOpen)}
-        >
-          {isOpen ? (
-            <XIcon className="h-5 w-5" />
-          ) : (
-            <MenuIcon className="h-5 w-5" />
-          )}
-        </Button>
+    <aside 
+      className={`flex flex-col pb-4 ${className} ${
+        isMobile ? 'w-full' : 'w-64 border-r border-gray-200'
+      }`}
+    >
+      {/* Cabeçalho da barra lateral */}
+      <div className="flex flex-col p-4 bg-gradient-to-b from-blue-50 to-white">
+        <div className="flex flex-col items-center space-y-1 my-3">
+          <div className="w-16 h-16 rounded-full bg-primary-100 flex items-center justify-center overflow-hidden">
+            <div className="text-2xl font-bold text-primary">
+              {/* Iniciais do usuário ou avatar */}
+              ES
+            </div>
+          </div>
+          <h3 className="font-semibold text-gray-800">Estudante</h3>
+          <span className="text-xs text-gray-500">Portal do Aluno</span>
+        </div>
       </div>
 
-      {/* Overlay para quando o menu estiver aberto no mobile */}
-      {isMobile && isOpen && (
-        <div 
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden" 
-          onClick={() => setIsOpen(false)}
-        />
-      )}
+      {/* Lista de itens do menu */}
+      <nav className="flex-1 px-3 mt-3">
+        {sidebarItems.map(renderMenuItem)}
+      </nav>
 
-      {/* Sidebar */}
-      <aside
-        className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-gradient-to-br from-blue-50 to-blue-100 shadow-md transition-transform lg:static lg:translate-x-0",
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        )}
-      >
-        {/* Logo e perfil */}
-        <div className="flex flex-col items-center p-4 gap-3">
-          <h1 className="text-xl font-bold text-primary mt-3">
-            EdunexIA
-          </h1>
-          <div className="w-16 h-16 rounded-full bg-blue-200 flex items-center justify-center overflow-hidden">
-            <UserIcon className="h-8 w-8 text-primary" />
-          </div>
-          <div className="text-center">
-            <h2 className="font-semibold">{user?.name || "Estudante"}</h2>
-            <p className="text-sm text-gray-600">{user?.email || ""}</p>
-          </div>
-        </div>
-
-        <Separator className="mb-2" />
-
-        {/* Links */}
-        <ScrollArea className="flex-1 px-3">
-          <nav className="space-y-1 py-2">
-            <NavItem
-              href="/student"
-              icon={<HomeIcon className="h-5 w-5" />}
-              label="Início"
-              isActive={location === "/student"}
-              onClick={handleNavClick}
-            />
-            
-            <NavItem
-              href="/student/cursos"
-              icon={<GraduationCapIcon className="h-5 w-5" />}
-              label="Meus Cursos"
-              isActive={location.startsWith("/student/cursos")}
-              onClick={handleNavClick}
-            />
-            
-            <NavItem
-              href="/student/materiais"
-              icon={<BookOpenIcon className="h-5 w-5" />}
-              label="Materiais"
-              isActive={location.startsWith("/student/materiais")}
-              onClick={handleNavClick}
-            />
-            
-            <NavItem
-              href="/student/certificados"
-              icon={<FileTextIcon className="h-5 w-5" />}
-              label="Certificados"
-              isActive={location.startsWith("/student/certificados")}
-              onClick={handleNavClick}
-            />
-            
-            <NavItem
-              href="/student/financeiro"
-              icon={<CreditCardIcon className="h-5 w-5" />}
-              label="Financeiro"
-              isActive={location.startsWith("/student/financeiro")}
-              onClick={handleNavClick}
-            />
-          </nav>
-        </ScrollArea>
-
-        {/* Rodapé com botão de logout */}
-        <div className="p-4">
-          <Separator className="mb-4" />
-          <Button 
-            variant="outline" 
-            className="w-full justify-between bg-white hover:bg-red-50"
-            onClick={handleLogout}
-          >
-            <span className="flex items-center">
-              <LogOutIcon className="h-5 w-5 mr-3 text-red-500" />
-              Sair
-            </span>
-            <ChevronRightIcon className="h-5 w-5 text-red-500" />
-          </Button>
-        </div>
-      </aside>
-    </>
+      {/* Botão de logout na barra lateral */}
+      <div className="px-3 mt-auto">
+        <Link
+          href="/auth/logout"
+          className="flex items-center gap-3 px-3 py-2 text-sm text-red-500 hover:bg-red-50 rounded-md transition-all duration-200 ease-in-out"
+          data-testid="sidebar-logout"
+        >
+          <LogOut size={18} />
+          <span>Sair da conta</span>
+        </Link>
+      </div>
+    </aside>
   );
-}
+};
 
-// Componente para os itens de navegação
-interface NavItemProps {
-  href: string;
-  icon: React.ReactNode;
-  label: string;
-  isActive?: boolean;
-  onClick?: () => void;
-}
-
-function NavItem({ href, icon, label, isActive, onClick }: NavItemProps) {
-  return (
-    <Link href={href}>
-      <a
-        className={cn(
-          "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-          isActive 
-            ? "bg-blue-200 text-primary hover:bg-blue-200" 
-            : "text-gray-700 hover:bg-blue-200/50 hover:text-primary"
-        )}
-        onClick={onClick}
-      >
-        {icon}
-        {label}
-      </a>
-    </Link>
-  );
-}
+export default StudentSidebar;
