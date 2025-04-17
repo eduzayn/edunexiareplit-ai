@@ -50,7 +50,9 @@ import {
   Trash2, 
   Eye, 
   Upload,
-  BookOpenText
+  BookOpenText,
+  Sparkles,
+  Zap
 } from 'lucide-react';
 
 // Tipos
@@ -227,6 +229,12 @@ const EBooksPage: React.FC = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">E-Books Interativos</h1>
         <div className="flex gap-3">
+          <Button asChild variant="outline">
+            <Link href="/admin/ebooks/advanced-generate">
+              <Sparkles className="mr-2 h-4 w-4 text-yellow-500" />
+              Gerador Avançado
+            </Link>
+          </Button>
           <Button asChild>
             <Link href="/admin/ebooks/generate">
               <BookOpenText className="mr-2 h-4 w-4" />

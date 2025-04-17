@@ -9,10 +9,12 @@ export class AdvancedOpenAIService {
   private client: OpenAI;
 
   constructor() {
-    this.apiKey = process.env.OPENAI_API_KEY || '';
+    this.apiKey = process.env.OPENAI_API_KEY || "";
+    
     if (!this.apiKey) {
-      console.warn('OPENAI_API_KEY não está configurado!');
+      console.error("OPENAI_API_KEY não configurada. O serviço não funcionará corretamente.");
     }
+    
     this.client = new OpenAI({ apiKey: this.apiKey });
   }
 
@@ -23,38 +25,44 @@ export class AdvancedOpenAIService {
    * @returns Texto gerado pelo modelo
    */
   async generateText(prompt: string, options?: {
-    model?: string,
-    maxTokens?: number,
-    temperature?: number,
-    systemPrompt?: string
+    temperature?: number;
+    maxTokens?: number;
+    format?: 'markdown' | 'json' | 'text';
   }): Promise<string> {
-    if (!this.apiKey) {
-      throw new Error('OPENAI_API_KEY não está configurado');
-    }
-
     try {
-      // Criar array de mensagens tipadas corretamente para a API OpenAI
-      const messages: OpenAI.ChatCompletionMessageParam[] = [];
+      // Ajustar parâmetros com valores padrão se não fornecidos
+      const temperature = options?.temperature ?? 0.7;
+      const maxTokens = options?.maxTokens ?? 2000;
       
-      // Adicionar prompt do sistema se fornecido
-      if (options?.systemPrompt) {
-        messages.push({ role: "system", content: options.systemPrompt });
-      }
-      
-      // Adicionar prompt do usuário
-      messages.push({ role: "user", content: prompt });
-      
+      // Configurar o formato da resposta se solicitado
+      const responseFormat = options?.format === 'json' 
+        ? { type: "json_object" as const } 
+        : undefined;
+
+      // Gerar a resposta
       const response = await this.client.chat.completions.create({
-        model: options?.model || "gpt-4o", // o modelo mais recente é "gpt-4o" que foi lançado em maio de 2024. não altere a menos que o usuário solicite explicitamente
-        messages: messages,
-        max_tokens: options?.maxTokens || 2000,
-        temperature: options?.temperature || 0.7,
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [
+          {
+            role: "system",
+            content: `Você é um assistente especializado em educação, focado em gerar conteúdo educacional de alta qualidade. 
+            ${options?.format === 'markdown' ? 'Formate sua resposta usando Markdown, com títulos, subtítulos, listas e ênfases apropriadas.' : ''}
+            ${options?.format === 'json' ? 'Formate sua resposta como um objeto JSON válido.' : ''}`,
+          },
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        temperature,
+        max_tokens: maxTokens,
+        response_format: responseFormat,
       });
 
-      return response.choices[0].message.content || '';
+      return response.choices[0].message.content || "";
     } catch (error) {
-      console.error('Erro ao gerar texto com OpenAI:', error);
-      throw error;
+      console.error("Erro ao gerar texto com OpenAI:", error);
+      throw new Error(`Falha ao gerar texto: ${error}`);
     }
   }
 
@@ -67,129 +75,109 @@ export class AdvancedOpenAIService {
    * @returns Objeto contendo título, conteúdo e sugestões de imagens
    */
   async generateEBook(
-    topic: string, 
-    disciplineName: string, 
-    additionalContext?: string,
-    referenceMaterials?: string[]
+    topic: string,
+    disciplineName: string,
+    additionalContext: string = "",
+    referenceMaterials: string[] = []
   ): Promise<{
     title: string;
     content: string;
     description: string;
-    imagePrompts: string[];
-    tableOfContents: {title: string, level: number}[];
+    tableOfContents: { title: string; level: number }[];
   }> {
-    // Preparar o contexto com materiais de referência se houver
-    let contextWithReferences = additionalContext || '';
-    
-    if (referenceMaterials && referenceMaterials.length > 0) {
-      contextWithReferences += '\n\nMateriais de referência a considerar:\n';
-      referenceMaterials.forEach((material, index) => {
-        contextWithReferences += `${index + 1}. ${material}\n`;
-      });
-    }
-    
-    const systemPrompt = `Você é um professor especialista e autor acadêmico com experiência em criar materiais educacionais de alta qualidade. Seu objetivo é criar e-books educacionais que sejam informativos, envolventes e visualmente atrativos.`;
-    
-    const prompt = `Crie um e-book educacional completo sobre "${topic}" para a disciplina "${disciplineName}".
-    
-${contextWithReferences ? contextWithReferences + '\n' : ''}
-
-O e-book deve incluir:
-1. Um título cativante e educacional
-2. Uma descrição resumida do conteúdo (máximo 150 palavras)
-3. Um sumário com todos os capítulos e seções
-4. Conteúdo completo dividido em seções claras com subtítulos hierárquicos (usando # para títulos principais, ## para subtítulos, ### para seções menores)
-5. Pelo menos 8 sugestões de imagens (marcadas como [IMAGEM: descrição detalhada]) que poderiam ser geradas para ilustrar pontos-chave
-6. Exemplos práticos e estudos de caso quando apropriado
-7. Destaques para termos e conceitos importantes usando **termo** para negrito
-8. Citações inspiradoras ou reflexivas em formato de bloco de citação
-
-Retorne a resposta no seguinte formato:
-TÍTULO: [título do e-book]
-DESCRIÇÃO: [breve descrição]
-SUMÁRIO:
-[lista de capítulos e seções]
-CONTEÚDO:
-[conteúdo completo formatado em markdown com subtítulos e [IMAGEM: descrições de imagens]]
-
-O texto deve seguir padrões acadêmicos, ser informativo, ter tom profissional e ser adequado para estudantes de nível superior.`;
-
     try {
-      const response = await this.generateText(prompt, {
-        maxTokens: 4000,
+      // Construir um prompt contextualizado com base nas informações fornecidas
+      let prompt = `Crie um e-book educacional completo sobre "${topic}" para a disciplina "${disciplineName}".`;
+      
+      // Adicionar contexto adicional se fornecido
+      if (additionalContext && additionalContext.trim()) {
+        prompt += `\n\nContexto adicional: ${additionalContext}`;
+      }
+      
+      // Adicionar materiais de referência se fornecidos
+      if (referenceMaterials && referenceMaterials.length > 0) {
+        prompt += `\n\nUse os seguintes materiais de referência para contextualizar o conteúdo:\n`;
+        referenceMaterials.forEach((material, index) => {
+          prompt += `\nMaterial ${index + 1}:\n${material}\n`;
+        });
+      }
+      
+      // Solicitar estrutura específica para o e-book
+      prompt += `\n\nO e-book deve conter:
+      1. Um título envolvente e descritivo
+      2. Um sumário detalhado com capítulos e seções
+      3. Conteúdo completo formatado em Markdown
+      4. Sugestões de onde inserir imagens ilustrativas no formato [Imagem X]
+      
+      Formate sua resposta como JSON com a seguinte estrutura:
+      {
+        "title": "Título do E-book",
+        "description": "Uma descrição concisa do conteúdo do e-book (150-200 caracteres)",
+        "tableOfContents": [{"title": "Nome do capítulo/seção", "level": número (1 para capítulos, 2 para seções, 3 para subseções)}],
+        "content": "Conteúdo completo em Markdown"
+      }`;
+
+      // Gerar o e-book usando o modelo GPT
+      const response = await this.client.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [
+          {
+            role: "system",
+            content: `Você é um escritor especializado em conteúdo educacional. Crie um e-book completo e bem estruturado sobre o tópico solicitado, seguindo a estrutura indicada e usando os materiais de referência fornecidos para contextualizar o conteúdo. Use uma linguagem clara, didática e adequada ao contexto acadêmico.`,
+          },
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
         temperature: 0.7,
-        systemPrompt
+        response_format: { type: "json_object" },
       });
 
-      // Extrair as partes do texto gerado
-      const titleMatch = response.match(/TÍTULO:\s*(.*)/);
-      const descriptionMatch = response.match(/DESCRIÇÃO:\s*([\s\S]*?)(?=SUMÁRIO:|$)/);
-      const tocMatch = response.match(/SUMÁRIO:\s*([\s\S]*?)(?=CONTEÚDO:|$)/);
-      const contentMatch = response.match(/CONTEÚDO:\s*([\s\S]*)/);
-
-      // Extrair prompts de imagem do conteúdo
-      const imagePromptRegex = /\[IMAGEM:\s*(.*?)\]/g;
-      const imagePrompts: string[] = [];
+      // Parse da resposta JSON
+      const ebookData = JSON.parse(response.choices[0].message.content || "{}");
       
-      let match;
-      const content = contentMatch ? contentMatch[1].trim() : '';
-      while ((match = imagePromptRegex.exec(content)) !== null) {
-        imagePrompts.push(match[1].trim());
+      // Extrair e processar o sumário
+      let tableOfContents = [];
+      if (ebookData.tableOfContents) {
+        tableOfContents = ebookData.tableOfContents;
+      } else if (ebookData.content) {
+        // Tentar extrair o sumário do conteúdo se não estiver explícito no JSON
+        tableOfContents = this.parseTableOfContents(ebookData.content);
       }
 
-      // Extrair o sumário
-      const tocText = tocMatch ? tocMatch[1].trim() : '';
-      const tableOfContents = this.parseTableOfContents(tocText);
-
-      // Remover os marcadores de imagem, deixando apenas uma referência numérica
-      const cleanedContent = content.replace(imagePromptRegex, (match, p1, offset) => {
-        const index = imagePrompts.findIndex(prompt => prompt === p1.trim());
-        return `[Imagem ${index + 1}]`;
-      });
-
       return {
-        title: titleMatch ? titleMatch[1].trim() : 'E-book sobre ' + topic,
-        description: descriptionMatch ? descriptionMatch[1].trim() : '',
-        content: cleanedContent,
-        imagePrompts,
-        tableOfContents
+        title: ebookData.title || topic,
+        content: ebookData.content || "",
+        description: ebookData.description || additionalContext,
+        tableOfContents: tableOfContents,
       };
     } catch (error) {
-      console.error('Erro ao gerar e-book:', error);
-      throw new Error('Falha ao gerar conteúdo do e-book');
+      console.error("Erro ao gerar e-book completo:", error);
+      throw new Error(`Falha ao gerar e-book: ${error}`);
     }
   }
-  
+
   /**
    * Parseia o texto do sumário para extrair a estrutura hierárquica
    */
   private parseTableOfContents(tocText: string): {title: string, level: number}[] {
-    if (!tocText) return [];
+    const tocResult = [];
+    const headingRegex = /^(#{1,3})\s+(.+)$/gm;
+    let match;
     
-    const lines = tocText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-    const toc: {title: string, level: number}[] = [];
+    while ((match = headingRegex.exec(tocText)) !== null) {
+      const level = match[1].length;
+      const title = match[2].trim();
+      tocResult.push({
+        title: title,
+        level: level
+      });
+    }
     
-    lines.forEach(line => {
-      // Determinar o nível com base na indentação ou formatação
-      let level = 1;
-      
-      if (line.startsWith('   ')) {
-        level = 3;
-        line = line.replace(/^\s+/, '');
-      } else if (line.startsWith(' ')) {
-        level = 2;
-        line = line.replace(/^\s+/, '');
-      }
-      
-      // Remover marcadores de lista numerados ou com pontos
-      line = line.replace(/^(\d+\.|\*|-)\s+/, '');
-      
-      toc.push({ title: line, level });
-    });
-    
-    return toc;
+    return tocResult;
   }
-  
+
   /**
    * Gera sugestões de descrições para imagens com base no título e descrição do e-book
    * @param title Título do e-book
@@ -197,45 +185,48 @@ O texto deve seguir padrões acadêmicos, ser informativo, ter tom profissional 
    * @returns Lista de sugestões de descrições para imagens
    */
   async generateImageSuggestions(title: string, description: string): Promise<string[]> {
-    if (!this.apiKey) {
-      throw new Error('OPENAI_API_KEY não está configurado');
-    }
-
-    const systemPrompt = `Você é um designer especialista em visualização de conteúdo educacional. Seu objetivo é sugerir imagens que ilustrem conceitos educacionais de forma clara e envolvente.`;
-    
-    const prompt = `Com base no título e descrição de um e-book educacional, gere 8 descrições detalhadas para imagens que poderiam ilustrar o conteúdo.
-
-Título do e-book: ${title}
-Descrição: ${description}
-
-Para cada imagem:
-1. Forneça uma descrição visual detalhada (2-3 frases)
-2. Especifique estilo visual (fotografia, ilustração, diagrama, etc.)
-3. Indique paleta de cores sugerida
-4. Descreva o contexto educacional e como a imagem reforça o aprendizado
-
-Retorne apenas as 8 descrições das imagens, uma por linha, sem numeração ou marcadores.`;
-
     try {
-      const response = await this.generateText(prompt, {
-        maxTokens: 1500,
-        temperature: 0.8,
-        systemPrompt
+      const prompt = `
+      Com base no e-book "**${title}**" que tem a seguinte descrição:
+      
+      "${description}"
+      
+      Gere 5 sugestões detalhadas para imagens que poderiam ilustrar este e-book educacional. 
+      Cada sugestão deve:
+      1. Ser específica e descritiva
+      2. Estar relacionada diretamente ao conteúdo do e-book
+      3. Servir como referência para busca em bancos de imagens ou geração com IA
+
+      Crie suas sugestões como uma lista em formato JSON. Exemplo:
+      ["Descrição da imagem 1", "Descrição da imagem 2", ...etc]
+      `;
+
+      const response = await this.client.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [
+          {
+            role: "system",
+            content: `Você é um especialista em design visual educacional. Sua tarefa é sugerir imagens descritivas e relevantes para complementar materiais educacionais.`,
+          },
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        temperature: 0.7,
+        response_format: { type: "json_object" },
       });
 
-      // Dividir a resposta em parágrafos e filtrar vazios
-      const suggestions = response.split('\n\n')
-        .map(paragraph => paragraph.trim())
-        .filter(paragraph => paragraph.length > 0)
-        .slice(0, 8); // Limitar a 8 sugestões
-
-      return suggestions;
+      // Parse da resposta JSON
+      const suggestionsData = JSON.parse(response.choices[0].message.content || "[]");
+      
+      return Array.isArray(suggestionsData) ? suggestionsData : [];
     } catch (error) {
-      console.error('Erro ao gerar sugestões de imagens:', error);
-      throw new Error('Falha ao gerar sugestões de imagens');
+      console.error("Erro ao gerar sugestões de imagens:", error);
+      throw new Error(`Falha ao gerar sugestões de imagens: ${error}`);
     }
   }
-  
+
   /**
    * Analisa e extrai informações úteis de um texto importado
    * @param importedText Texto a ser analisado
@@ -246,71 +237,59 @@ Retorne apenas as 8 descrições das imagens, uma por linha, sem numeração ou 
     keyPoints: string[];
     recommendedSections: string[];
   }> {
-    if (!this.apiKey) {
-      throw new Error('OPENAI_API_KEY não está configurado');
-    }
-
-    const systemPrompt = `Você é um assistente especializado em análise de conteúdo educacional. Seu trabalho é extrair informações úteis de textos para auxiliar na criação de e-books.`;
-    
-    const prompt = `Analise o seguinte texto e extraia:
-1. Um resumo conciso do conteúdo (máximo 100 palavras)
-2. Cinco pontos-chave abordados no texto
-3. Recomendação de 3-5 seções que poderiam ser incluídas em um e-book baseado neste conteúdo
-
-Texto para análise:
-${importedText.substring(0, 8000)} ${importedText.length > 8000 ? '... (texto truncado)' : ''}
-
-Responda no seguinte formato:
-RESUMO:
-[resumo conciso]
-
-PONTOS-CHAVE:
-1. [ponto 1]
-2. [ponto 2]
-...
-
-RECOMENDAÇÃO DE SEÇÕES:
-- [seção 1]
-- [seção 2]
-...`;
-
     try {
-      const response = await this.generateText(prompt, {
-        maxTokens: 1500,
+      // Limitar o tamanho do texto para análise
+      const textForAnalysis = importedText.substring(0, 15000);
+      
+      const prompt = `
+      Analise o seguinte texto educacional e extraia as informações mais relevantes:
+
+      """
+      ${textForAnalysis}
+      """
+
+      Por favor, forneça:
+      1. Um resumo conciso (até 200 caracteres)
+      2. Uma lista dos pontos-chave (máximo 5 itens)
+      3. Recomendações de seções ou tópicos que poderiam ser criados com base neste conteúdo (máximo 3 itens)
+
+      Retorne sua análise como JSON no seguinte formato:
+      {
+        "summary": "Resumo do texto",
+        "keyPoints": ["Ponto 1", "Ponto 2", ...],
+        "recommendedSections": ["Seção 1", "Seção 2", ...]
+      }
+      `;
+
+      const response = await this.client.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [
+          {
+            role: "system",
+            content: `Você é um assistente especializado em análise de conteúdo educacional. Sua tarefa é extrair as informações mais relevantes de textos acadêmicos e educacionais, resumindo-os de forma concisa e estruturada.`,
+          },
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
         temperature: 0.3,
-        systemPrompt
+        response_format: { type: "json_object" },
       });
-      
-      // Extrair as partes da resposta
-      const summaryMatch = response.match(/RESUMO:\s*([\s\S]*?)(?=PONTOS-CHAVE:|$)/);
-      const pointsMatch = response.match(/PONTOS-CHAVE:\s*([\s\S]*?)(?=RECOMENDAÇÃO DE SEÇÕES:|$)/);
-      const sectionsMatch = response.match(/RECOMENDAÇÃO DE SEÇÕES:\s*([\s\S]*)/);
-      
-      // Processar pontos-chave
-      const pointsText = pointsMatch ? pointsMatch[1].trim() : '';
-      const keyPoints = pointsText
-        .split('\n')
-        .map(line => line.replace(/^\d+\.\s*/, '').trim())
-        .filter(line => line.length > 0);
-        
-      // Processar recomendações de seções
-      const sectionsText = sectionsMatch ? sectionsMatch[1].trim() : '';
-      const recommendedSections = sectionsText
-        .split('\n')
-        .map(line => line.replace(/^-\s*/, '').trim())
-        .filter(line => line.length > 0);
+
+      // Parse da resposta JSON
+      const analysisData = JSON.parse(response.choices[0].message.content || "{}");
       
       return {
-        summary: summaryMatch ? summaryMatch[1].trim() : '',
-        keyPoints,
-        recommendedSections
+        summary: analysisData.summary || "Resumo não disponível",
+        keyPoints: Array.isArray(analysisData.keyPoints) ? analysisData.keyPoints : [],
+        recommendedSections: Array.isArray(analysisData.recommendedSections) ? analysisData.recommendedSections : [],
       };
     } catch (error) {
-      console.error('Erro ao analisar conteúdo importado:', error);
-      throw new Error('Falha ao analisar o conteúdo importado');
+      console.error("Erro ao analisar conteúdo importado:", error);
+      throw new Error(`Falha ao analisar conteúdo: ${error}`);
     }
   }
 }
 
-// Instância única para uso em toda a aplicação
 export const advancedOpenaiService = new AdvancedOpenAIService();

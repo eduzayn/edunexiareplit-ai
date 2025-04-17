@@ -75,7 +75,7 @@ import {
   Link as LinkIcon,
   UploadCloud,
   Trash,
-  FileAnalytics,
+  FileBarChart2, // Substituindo FileAnalytics que não existe
   ListTree,
   MessageSquarePlus,
   FileUp
@@ -815,7 +815,7 @@ const AdvancedGenerateEBookPage: React.FC = () => {
                                   onClick={() => analyzeReference(ref)}
                                   className="h-7 w-7"
                                 >
-                                  <FileAnalytics className="h-4 w-4" />
+                                  <FileBarChart2 className="h-4 w-4" />
                                 </Button>
                                 <Button 
                                   variant="ghost" 
@@ -1059,7 +1059,7 @@ const AdvancedGenerateEBookPage: React.FC = () => {
         <DialogContent className="sm:max-w-[625px]">
           <DialogHeader>
             <DialogTitle className="flex items-center">
-              <FileAnalytics className="h-5 w-5 mr-2" /> 
+              <FileBarChart2 className="h-5 w-5 mr-2" /> 
               Análise de Conteúdo
             </DialogTitle>
             <DialogDescription>

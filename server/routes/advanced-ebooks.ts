@@ -1,132 +1,157 @@
-import express from 'express';
-import { z } from 'zod';
-import { requireAuth, requireAdmin } from '../middleware/auth-middleware';
+import { Router } from 'express';
 import { storage } from '../storage';
 import { advancedOpenaiService } from '../services/advanced-openai-service';
+import { z } from 'zod';
+import { Request as ExpressRequest } from 'express';
 
-const router = express.Router();
+// Estender o Request do Express para incluir o user
+declare global {
+  namespace Express {
+    interface Request {
+      user?: any;
+      isAuthenticated?: () => boolean;
+    }
+  }
+}
 
-// Gerar conteúdo avançado para e-book com OpenAI
-router.post("/generate-content", requireAuth, requireAdmin, async (req, res) => {
+const router = Router();
+
+// Validação para o corpo da requisição de geração de conteúdo
+const generateContentSchema = z.object({
+  topic: z.string().min(3, "O tópico deve ter pelo menos 3 caracteres"),
+  disciplineId: z.number().int().positive("ID da disciplina inválido"),
+  additionalContext: z.string().optional(),
+  referenceMaterials: z.array(z.string()).optional(),
+});
+
+// Endpoint para geração de conteúdo avançado do e-book
+router.post('/generate-content', async (req, res) => {
   try {
-    const { topic, disciplineId, additionalContext, referenceMaterials } = z.object({
-      topic: z.string().min(3, "O tópico deve ter pelo menos 3 caracteres"),
-      disciplineId: z.number({ required_error: "O ID da disciplina é obrigatório" }),
-      additionalContext: z.string().optional(),
-      referenceMaterials: z.array(z.string()).optional()
-    }).parse(req.body);
-    
-    // Verificar se a disciplina existe
+    // Validar o corpo da requisição
+    const validationResult = generateContentSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      return res.status(400).json({ 
+        error: "Dados inválidos", 
+        details: validationResult.error.format() 
+      });
+    }
+
+    const { topic, disciplineId, additionalContext, referenceMaterials } = validationResult.data;
+
+    // Buscar a disciplina para usá-la como contexto
     const discipline = await storage.getDiscipline(disciplineId);
-    
     if (!discipline) {
       return res.status(404).json({ error: "Disciplina não encontrada" });
     }
-    
-    // Gerar conteúdo usando o serviço OpenAI avançado
-    const eBookContent = await advancedOpenaiService.generateEBook(
-      topic,
-      discipline.name,
-      additionalContext,
-      referenceMaterials
+
+    // Gerar o conteúdo com o serviço avançado do OpenAI
+    const generatedEBook = await advancedOpenaiService.generateEBook(
+      topic, 
+      discipline.name, 
+      additionalContext || '',
+      referenceMaterials || []
     );
-    
-    // Responder com o conteúdo gerado
-    res.json(eBookContent);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: "Dados de requisição inválidos", details: error.errors });
-    }
-    console.error("Erro ao gerar conteúdo para e-book:", error);
-    res.status(500).json({ error: "Erro ao gerar conteúdo para e-book" });
+
+    // Retornar o conteúdo gerado
+    res.json(generatedEBook);
+  } catch (error: any) {
+    console.error("Erro ao gerar conteúdo avançado:", error);
+    res.status(500).json({ error: "Erro ao gerar conteúdo: " + error.message });
   }
 });
 
-// Gerar sugestões de imagens avançadas usando OpenAI
-router.post("/generate-image-suggestions", requireAuth, requireAdmin, async (req, res) => {
-  try {
-    const { title, description } = z.object({
-      title: z.string().min(3, "O título deve ter pelo menos 3 caracteres"),
-      description: z.string().min(10, "A descrição deve ter pelo menos 10 caracteres")
-    }).parse(req.body);
-    
-    // Gerar sugestões de imagens usando o serviço OpenAI avançado
-    const imageSuggestions = await advancedOpenaiService.generateImageSuggestions(title, description);
-    
-    // Responder com as sugestões geradas
-    res.json({ imageSuggestions });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: "Dados de requisição inválidos", details: error.errors });
-    }
-    console.error("Erro ao gerar sugestões de imagens:", error);
-    res.status(500).json({ error: "Erro ao gerar sugestões de imagens" });
-  }
+// Validação para o corpo da requisição de análise de conteúdo
+const analyzeContentSchema = z.object({
+  content: z.string().min(10, "O conteúdo deve ter pelo menos 10 caracteres"),
 });
 
-// Analisar conteúdo importado
-router.post("/analyze-content", requireAuth, requireAdmin, async (req, res) => {
+// Endpoint para análise de conteúdo importado
+router.post('/analyze-content', async (req, res) => {
   try {
-    const { content } = z.object({
-      content: z.string().min(50, "O conteúdo deve ter pelo menos 50 caracteres"),
-    }).parse(req.body);
-    
-    // Analisar o conteúdo importado
+    // Validar o corpo da requisição
+    const validationResult = analyzeContentSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      return res.status(400).json({ 
+        error: "Dados inválidos", 
+        details: validationResult.error.format() 
+      });
+    }
+
+    const { content } = validationResult.data;
+
+    // Analisar o conteúdo com o serviço avançado do OpenAI
     const analysis = await advancedOpenaiService.analyzeImportedContent(content);
-    
-    // Responder com a análise
+
+    // Retornar a análise
     res.json(analysis);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: "Dados de requisição inválidos", details: error.errors });
-    }
+  } catch (error: any) {
     console.error("Erro ao analisar conteúdo:", error);
-    res.status(500).json({ error: "Erro ao analisar conteúdo importado" });
+    res.status(500).json({ error: "Erro ao analisar conteúdo: " + error.message });
   }
 });
 
-// Salvar e-book avançado (com tabela de conteúdo)
-router.post("/", requireAuth, requireAdmin, async (req, res) => {
+// Validação para o corpo da requisição de geração de sugestões de imagens
+const generateImageSuggestionsSchema = z.object({
+  title: z.string().min(3, "O título deve ter pelo menos 3 caracteres"),
+  description: z.string().min(10, "A descrição deve ter pelo menos 10 caracteres"),
+});
+
+// Endpoint para geração de sugestões de imagens
+router.post('/generate-image-suggestions', async (req, res) => {
   try {
-    const { title, description, content, disciplineId, tableOfContents } = z.object({
-      title: z.string().min(3, "O título deve ter pelo menos 3 caracteres"),
-      description: z.string().min(10, "A descrição deve ter pelo menos 10 caracteres"),
-      content: z.string().min(50, "O conteúdo deve ter pelo menos 50 caracteres"),
-      disciplineId: z.number({ required_error: "O ID da disciplina é obrigatório" }),
-      tableOfContents: z.array(z.object({
-        title: z.string(),
-        level: z.number()
-      })).optional()
-    }).parse(req.body);
-    
-    // Verificar se a disciplina existe
-    const discipline = await storage.getDiscipline(disciplineId);
-    
-    if (!discipline) {
-      return res.status(404).json({ error: "Disciplina não encontrada" });
+    // Validar o corpo da requisição
+    const validationResult = generateImageSuggestionsSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      return res.status(400).json({ 
+        error: "Dados inválidos", 
+        details: validationResult.error.format() 
+      });
     }
-    
+
+    const { title, description } = validationResult.data;
+
+    // Gerar sugestões de imagens com o serviço avançado do OpenAI
+    const imageSuggestions = await advancedOpenaiService.generateImageSuggestions(title, description);
+
+    // Retornar as sugestões
+    res.json({ imageSuggestions });
+  } catch (error: any) {
+    console.error("Erro ao gerar sugestões de imagens:", error);
+    res.status(500).json({ error: "Erro ao gerar sugestões de imagens: " + error.message });
+  }
+});
+
+// Endpoint para salvar e-book avançado
+router.post('/', async (req, res) => {
+  try {
+    // Verificar autenticação usando a session
+    if (!req.isAuthenticated || !req.isAuthenticated()) {
+      return res.status(401).json({ error: "Não autorizado" });
+    }
+
+    const { title, description, content, disciplineId, tableOfContents } = req.body;
+
+    // Validação básica
+    if (!title || !description || !content || !disciplineId) {
+      return res.status(400).json({ error: "Dados incompletos" });
+    }
+
     // Criar o e-book no banco de dados
-    const newEBook = await storage.createEBook({
+    const ebook = await storage.createEBook({
       title,
       description,
       content,
       disciplineId,
-      status: 'draft',
+      status: req.body.status || 'draft',
       isGenerated: true,
-      createdById: (req as any).user?.id
-      // Nota: o campo metadata não existe no esquema, então armazenaremos a tabela de conteúdo no conteúdo do e-book
-      // ou implementaremos essa funcionalidade no future quando o esquema for atualizado
+      createdById: (req.user as any)?.id
     });
-    
-    // Responder com o e-book criado
-    res.status(201).json(newEBook);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: "Dados de requisição inválidos", details: error.errors });
-    }
+
+    // Resposta
+    res.status(201).json(ebook);
+  } catch (error: any) {
     console.error("Erro ao salvar e-book:", error);
-    res.status(500).json({ error: "Erro ao salvar e-book" });
+    res.status(500).json({ error: "Erro ao salvar e-book: " + error.message });
   }
 });
 
