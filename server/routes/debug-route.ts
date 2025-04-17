@@ -329,6 +329,67 @@ router.post('/asaas-charges/:id/cancel', async (req, res) => {
   }
 });
 
+// Rota para cancelar múltiplas cobranças de uma vez
+router.post('/asaas-charges/bulk/cancel', async (req, res) => {
+  try {
+    const { chargeIds } = req.body;
+    
+    if (!chargeIds || !Array.isArray(chargeIds) || chargeIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'É necessário fornecer um array de IDs de cobranças para cancelamento em lote'
+      });
+    }
+    
+    console.log(`[DEBUG] Iniciando cancelamento em lote de ${chargeIds.length} cobranças`);
+    
+    // Resultados para acompanhar o progresso
+    const results = {
+      success: [] as string[],
+      errors: [] as {id: string, error: string}[]
+    };
+    
+    // Processar cada cobrança sequencialmente
+    for (const chargeId of chargeIds) {
+      try {
+        await asaasChargesService.cancelCharge(chargeId);
+        console.log(`[DEBUG] Cobrança ${chargeId} cancelada com sucesso`);
+        results.success.push(chargeId);
+      } catch (apiError) {
+        const errorMessage = apiError.response?.data?.errors?.[0]?.description || 
+                            apiError.message || 
+                            'Erro desconhecido';
+        console.error(`[DEBUG] Erro ao cancelar cobrança ${chargeId}:`, errorMessage);
+        results.errors.push({
+          id: chargeId,
+          error: errorMessage
+        });
+      }
+    }
+    
+    // Retornar um resumo do processamento
+    res.json({
+      success: true,
+      message: `Processamento concluído: ${results.success.length} cobranças canceladas com sucesso, ${results.errors.length} falhas`,
+      data: {
+        totalProcessed: chargeIds.length,
+        successCount: results.success.length,
+        errorCount: results.errors.length,
+        successIds: results.success,
+        errors: results.errors
+      }
+    });
+  } catch (error) {
+    console.error('Erro ao processar cancelamento em lote:', error);
+    
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno ao processar o cancelamento em lote',
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+});
+
 // Rota para buscar clientes do Asaas diretamente
 router.get('/asaas-customers', async (req, res) => {
   try {
