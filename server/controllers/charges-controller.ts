@@ -316,6 +316,39 @@ export async function receivePayment(req: Request, res: Response) {
   }
 }
 
+/**
+ * Cancela uma cobrança pelo ID
+ */
+export async function cancelCharge(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    
+    logger.info(`[ChargesController] Cancelando cobrança: ${id}`);
+    
+    // Cancelar a cobrança no Asaas
+    const result = await asaasChargesService.cancelCharge(id);
+    
+    // Atualizar status no nosso banco
+    await storage.updateChargeByExternalId(id, {
+      status: 'CANCELED'
+    });
+    
+    res.json({
+      success: true,
+      message: 'Cobrança cancelada com sucesso',
+      data: result
+    });
+  } catch (error: any) {
+    const errorMessage = error?.message || 'Erro desconhecido';
+    logger.error(`[ChargesController] Erro ao cancelar cobrança ${req.params.id}: ${errorMessage}`);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao cancelar cobrança',
+      error: errorMessage
+    });
+  }
+}
+
 export default {
   getAllCharges,
   getChargeById,
@@ -323,5 +356,6 @@ export default {
   updateCharge,
   deleteCharge,
   getCustomerCharges,
-  receivePayment
+  receivePayment,
+  cancelCharge
 };

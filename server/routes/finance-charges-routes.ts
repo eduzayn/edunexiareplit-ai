@@ -22,5 +22,6 @@ router.put('/:id', financePermission, chargesController.updateCharge);
 router.delete('/:id', financePermission, chargesController.deleteCharge);
 router.get('/customer/:customerId', financePermission, chargesController.getCustomerCharges);
 router.post('/:id/receive', financePermission, chargesController.receivePayment);
+router.post('/:id/cancel', financePermission, chargesController.cancelCharge);
 
 export default router;
