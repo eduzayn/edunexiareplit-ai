@@ -3,6 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { Loader2, Save, Plus, Trash2, AlertCircle, CheckCircle, ShieldAlert, Settings2 } from "lucide-react";
 import * as z from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 
 import {
   Alert,
@@ -49,8 +51,6 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Defina o esquema de validação para o formulário de configurações
@@ -103,10 +103,6 @@ const InstitutionSettingsPage: React.FC = () => {
   } = useQuery<{ configured: boolean }>({
     queryKey: ['/api/institution-settings/integrations/asaas'],
     retry: false,
-    // Usando onError como parte das opções de sucesso/erro
-    onSuccess: () => {
-      // Sucesso ao verificar configuração
-    },
     onError: () => {
       // Silenciar erro
     }
@@ -492,12 +488,13 @@ const InstitutionSettingsPage: React.FC = () => {
               Tem certeza que deseja excluir esta configuração? Esta ação não pode ser desfeita.
             </DialogDescription>
           </DialogHeader>
+          
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDeleteConfirmOpen(false)}>
               Cancelar
             </Button>
             <Button 
-              variant="destructive" 
+              variant="destructive"
               onClick={handleConfirmDelete}
               disabled={deleteSettingMutation.isPending}
             >
