@@ -43,7 +43,7 @@ import auditRoutes from "./routes/audit-routes";
 import crmRoutes from "./routes/crm-routes";
 import financeRoutes from "./routes/finance-routes";
 import contractsRoutes from "./routes/contracts-routes";
-import leadsRoutes from "./routes/leads-routes";
+// Remoção do módulo de leads
 import checkoutRoutes from "./routes/checkout-routes";
 // Importação das rotas de configurações
 import institutionSettingsRoutes from "./routes/institution-settings-routes";
@@ -3013,7 +3013,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/crm", crmRoutes);
   
   // Registro das rotas padronizadas para leads com Asaas Checkout
-  app.use("/api/leads", leadsRoutes);
+  // Remoção do módulo de leads
+  // app.use("/api/leads", leadsRoutes);
   app.use("/api/checkout", checkoutRoutes);
   
   // Registro das rotas do módulo Financeiro

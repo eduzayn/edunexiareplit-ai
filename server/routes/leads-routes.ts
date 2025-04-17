@@ -1,21 +1,19 @@
 import { Router } from 'express';
-import { requireAuth } from '../middleware/auth';
-import { requirePermission } from '../middlewares/simple-permission';
-import * as leadsController from '../controllers/leads-controller';
+
+/**
+ * Este arquivo está sendo mantido temporariamente para evitar problemas de importação
+ * Todo o módulo de leads foi removido como solicitado pelo cliente
+ * Data: 17/04/2025
+ */
 
 const router = Router();
 
-// Middleware de autenticação para todas as rotas
-router.use(requireAuth);
-
-// Verificar se incluímos middleware para permissões
-router.use(requirePermission('leads', 'manage')); // Permissão geral para gerenciar leads
-
-// Rotas para gerenciamento de leads
-router.get('/', leadsController.getLeads);
-router.get('/:id', leadsController.getLeadById);
-router.post('/', leadsController.createLead);
-router.put('/:id', leadsController.updateLead);
-router.post('/:leadId/activities', leadsController.addLeadActivity);
+// Middleware apenas para responder a requisições informando que o módulo foi removido
+router.use((req, res) => {
+  res.status(410).json({
+    message: "O módulo de leads foi removido do sistema",
+    info: "Este recurso não está mais disponível. Por favor, utilize o módulo CRM"
+  });
+});
 
 export default router;
