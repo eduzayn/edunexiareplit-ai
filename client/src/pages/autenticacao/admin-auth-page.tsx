@@ -35,10 +35,19 @@ export default function AdminAuthPage() {
   useEffect(() => {
     const prepareAuthState = async () => {
       if (user) {
-        console.log("Usuário já autenticado, fazendo logout para limpar estado");
-        // Limpar cache e fazer logout se o usuário já estiver autenticado
-        await logoutMutation.mutateAsync();
-        queryClient.removeQueries({ queryKey: ["/api/user"] });
+        try {
+          console.log("Usuário já autenticado, fazendo logout para limpar estado do portal admin");
+          
+          // Limpar cache e fazer logout se o usuário já estiver autenticado
+          await logoutMutation.mutateAsync();
+          
+          // Limpar todas as queries em cache para garantir um estado limpo
+          queryClient.removeQueries();
+          
+          console.log("Autenticação anterior limpa com sucesso");
+        } catch (error) {
+          console.error("Erro ao limpar autenticação anterior:", error);
+        }
       }
     };
     
@@ -66,7 +75,11 @@ export default function AdminAuthPage() {
       
       // Login bem-sucedido, vamos esperar os dados serem atualizados antes de navegar
       console.log("Login bem-sucedido, redirecionando para dashboard administrativo");
-      navigate("/admin/dashboard");
+      
+      // Usar setTimeout para garantir que o estado seja completamente atualizado
+      setTimeout(() => {
+        navigate("/admin/dashboard");
+      }, 300);
     } catch (error) {
       console.error("Erro no login:", error);
     }

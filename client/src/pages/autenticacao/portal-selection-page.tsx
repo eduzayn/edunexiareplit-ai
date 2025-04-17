@@ -14,14 +14,23 @@ export default function PortalSelectionPage() {
 
   // Efeito para lidar com usuário já autenticado
   useEffect(() => {
-    if (user) {
-      // Se o usuário já estiver autenticado, fazer logout primeiro
-      // para garantir uma transição limpa entre portais
-      logoutMutation.mutate();
-      
-      // Limpar qualquer consulta de usuário em cache
-      queryClient.removeQueries({ queryKey: ["/api/user"] });
-    }
+    const cleanupAuth = async () => {
+      if (user) {
+        console.log("Limpando autenticação na seleção de portal");
+        
+        try {
+          // Se o usuário já estiver autenticado, fazer logout primeiro
+          await logoutMutation.mutateAsync();
+          
+          // Limpar qualquer consulta de usuário em cache
+          queryClient.removeQueries({ queryKey: ["/api/user"] });
+        } catch (error) {
+          console.error("Erro ao limpar autenticação:", error);
+        }
+      }
+    };
+    
+    cleanupAuth();
   }, []);
 
   const portals = [
@@ -59,25 +68,35 @@ export default function PortalSelectionPage() {
     },
   ];
 
-  const handlePortalSelect = (portalId: string) => {
+  const handlePortalSelect = async (portalId: string) => {
     setSelectedPortal(portalId);
     
-    // Aplicar um delay mais longo para garantir uma transição suave
-    setTimeout(() => {
-      // Direcionar para a rota específica do portal selecionado
-      console.log("Redirecionando para portal:", portalId);
+    try {
+      // Verificar se há sessão ativa e limpar
+      if (user) {
+        console.log("Limpando sessão existente antes de mudar de portal");
+        await logoutMutation.mutateAsync();
+      }
       
       // Limpar qualquer estado anterior que possa estar em cache
-      queryClient.removeQueries({ queryKey: ["/api/user"] });
+      queryClient.removeQueries();
       
-      if (portalId === "admin") {
-        navigate("/admin");
-      } else if (portalId === "polo") {
-        navigate("/polo");
-      } else {
-        navigate(`/auth?portal=${portalId}`);
-      }
-    }, 500);
+      // Aplicar um delay mais longo para garantir uma transição suave
+      setTimeout(() => {
+        // Direcionar para a rota específica do portal selecionado
+        console.log("Redirecionando para portal:", portalId);
+        
+        if (portalId === "admin") {
+          navigate("/admin");
+        } else if (portalId === "polo") {
+          navigate("/polo");
+        } else {
+          navigate(`/auth?portal=${portalId}`);
+        }
+      }, 500);
+    } catch (error) {
+      console.error("Erro ao mudar de portal:", error);
+    }
   };
 
   const containerVariants = {

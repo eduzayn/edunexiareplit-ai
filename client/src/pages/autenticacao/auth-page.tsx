@@ -62,7 +62,7 @@ interface AuthPageProps {
 }
 
 export default function AuthPage({ adminOnly = false }: AuthPageProps) {
-  const { loginMutation, registerMutation } = useAuth();
+  const { user, loginMutation, registerMutation, logoutMutation } = useAuth();
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const search = useSearch();
@@ -70,6 +70,24 @@ export default function AuthPage({ adminOnly = false }: AuthPageProps) {
   const portalParam = params.get("portal") as PortalType;
   const portalType = adminOnly ? "admin" : (portalParam || "student");
   const [selectedTab, setSelectedTab] = useState<"login" | "register">("login");
+  
+  // Efeito para verificar e limpar qualquer autenticação existente
+  useEffect(() => {
+    const prepareAuthState = async () => {
+      // Verificar se há usuário autenticado
+      if (user) {
+        console.log("Limpando autenticação anterior para portal:", portalType);
+        
+        // Desautenticar usuário atual para evitar conflitos
+        await logoutMutation.mutateAsync();
+        
+        // Limpar cache de usuário para garantir estado limpo
+        queryClient.removeQueries({ queryKey: ["/api/user"] });
+      }
+    };
+    
+    prepareAuthState();
+  }, [portalType]);
 
   const portalIcons = {
     student: <SchoolIcon className="h-8 w-8 text-[#12B76A]" />,
@@ -115,17 +133,59 @@ export default function AuthPage({ adminOnly = false }: AuthPageProps) {
     },
   });
 
-  const onLoginSubmit = (data: LoginFormValues) => {
-    loginMutation.mutate({
-      username: data.username,
-      password: data.password,
-      portalType: portalType,
-    });
+  const onLoginSubmit = async (data: LoginFormValues) => {
+    try {
+      console.log("Tentando login para portal:", portalType);
+      
+      await loginMutation.mutateAsync({
+        username: data.username,
+        password: data.password,
+        portalType: portalType,
+      });
+      
+      // Login bem-sucedido, redirecionando para o dashboard apropriado
+      console.log("Login bem-sucedido, redirecionando para dashboard");
+      
+      // Usar setTimeout para garantir que o estado seja atualizado antes do redirecionamento
+      setTimeout(() => {
+        if (portalType === "admin") {
+          navigate("/admin/dashboard");
+        } else if (portalType === "polo") {
+          navigate("/polo/dashboard");
+        } else if (portalType === "partner") {
+          navigate("/partner/dashboard");
+        } else {
+          navigate("/student/dashboard");
+        }
+      }, 300);
+    } catch (error) {
+      console.error("Erro no login:", error);
+    }
   };
 
-  const onRegisterSubmit = (data: RegisterFormValues) => {
-    const { confirmPassword, terms, ...userData } = data;
-    registerMutation.mutate(userData);
+  const onRegisterSubmit = async (data: RegisterFormValues) => {
+    try {
+      console.log("Registrando usuário para portal:", portalType);
+      const { confirmPassword, terms, ...userData } = data;
+      
+      await registerMutation.mutateAsync(userData);
+      
+      // Registro bem-sucedido, exibir mensagem e redirecionar para login
+      console.log("Registro bem-sucedido, redirecionando para login");
+      toast({
+        title: "Conta criada com sucesso!",
+        description: "Você já pode fazer login com suas credenciais.",
+        variant: "default",
+      });
+      
+      // Mudar para a aba de login
+      setSelectedTab("login");
+      
+      // Limpar formulário
+      registerForm.reset();
+    } catch (error) {
+      console.error("Erro no registro:", error);
+    }
   };
 
   return (
