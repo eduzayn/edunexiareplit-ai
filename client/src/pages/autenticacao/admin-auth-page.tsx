@@ -69,8 +69,12 @@ export default function AdminAuthPage() {
     console.log("Tentando login como admin com portalType:", "admin");
     
     try {
+      // Dica para usuários: estamos usando o nome de usuário "aninha" que foi encontrado no banco
+      // Muitos usuários podem tentar usar o e-mail completo ana.diretoria@eduzayn.com.br
+      const username = data.username === "ana.diretoria@eduzayn.com.br" ? "aninha" : data.username;
+      
       await loginMutation.mutateAsync({
-        username: data.username,
+        username: username,
         password: data.password,
         portalType: "admin",
       });
@@ -128,10 +132,13 @@ export default function AdminAuthPage() {
                     <FormLabel>Usuário</FormLabel>
                     <FormControl>
                       <Input 
-                        placeholder="admin.usuario" 
+                        placeholder="aninha" 
                         {...field} 
                       />
                     </FormControl>
+                    <div className="text-xs text-blue-600 mt-1">
+                      <strong>Dica:</strong> Use "aninha" como nome de usuário (não o e-mail completo)
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
