@@ -6,6 +6,7 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
+import { requireAuth } from "./middleware/auth";
 
 declare global {
   namespace Express {
@@ -13,13 +14,8 @@ declare global {
   }
 }
 
-// Middleware para verificar se o usuário está autenticado
-export function requireAuth(req: Request, res: Response, next: NextFunction) {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: 'Usuário não autenticado' });
-  }
-  next();
-}
+// Exportação do middleware centralizado para verificar se o usuário está autenticado
+export { requireAuth };
 
 const scryptAsync = promisify(scrypt);
 

@@ -4,7 +4,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { institutionSettingsService } from '../services/institution-settings-service';
-import { requireAuth } from '../middlewares/requireAuth';
+import { requireAuth } from '../middleware/auth';
 import { requirePermission } from '../middlewares/permission-middleware';
 
 const router = Router();

@@ -7,7 +7,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import * as financeService from '../services/finance-service';
 import { requirePermission } from '../middlewares/permission-middleware';
-import { requireAuth } from '../middlewares/requireAuth';
+import { requireAuth } from '../middleware/auth';
 import chargesRoutes from './finance-charges-routes';
 import {
   insertProductSchema,

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { requireAuth } from '../middlewares/requireAuth';
+import { requireAuth } from '../middleware/auth';
 import { requirePermission } from '../middlewares/simple-permission';
 import * as checkoutController from '../controllers/checkout-controller';
 

@@ -3,7 +3,7 @@
  */
 
 import express from 'express';
-import { requireAuth } from '../middlewares/requireAuth';
+import { requireAuth } from '../middleware/auth';
 import { requirePermission } from '../middlewares/permission-middleware';
 import chargesController from '../controllers/charges-controller';
 
