@@ -498,6 +498,12 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
           href: "/admin/sistema/settings",
           active: currentPath === "/admin/sistema/settings" || (currentPath && currentPath.includes("/admin/sistema/settings"))
         },
+        { 
+          name: "Configurações da Instituição", 
+          icon: <Settings2Icon />, 
+          href: "/admin/sistema/institution-settings",
+          active: currentPath === "/admin/sistema/institution-settings" || (currentPath && currentPath.includes("/admin/sistema/institution-settings"))
+        },
       ]
     }, currentPath),
     items: [
@@ -524,6 +530,12 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
         icon: <SettingsIcon />, 
         href: "/admin/sistema/settings",
         active: currentPath === "/admin/sistema/settings" || (currentPath && currentPath.includes("/admin/sistema/settings"))
+      },
+      { 
+        name: "Configurações da Instituição", 
+        icon: <Settings2Icon />, 
+        href: "/admin/sistema/institution-settings",
+        active: currentPath === "/admin/sistema/institution-settings" || (currentPath && currentPath.includes("/admin/sistema/institution-settings"))
       },
     ]
   };
