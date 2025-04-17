@@ -23,7 +23,7 @@ import {
   FileTextIcon, 
   InfoIcon, 
   PrinterIcon,
-  BanknoteIcon,
+  CreditCardIcon as BanknoteIcon,
   AlertTriangleIcon,
   CheckCircleIcon,
   XCircleIcon
