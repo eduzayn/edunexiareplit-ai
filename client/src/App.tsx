@@ -82,6 +82,7 @@ import LibraryPage from "@/pages/student/library-page";
 import SecretariaPage from "@/pages/student/secretaria-page";
 import CredencialPage from "@/pages/student/credencial-page";
 import LearningPage from "@/pages/student/learning-page";
+import StudentFinancialPage from "@/pages/student/financial-page";
 // Módulo de Sistema
 import SecurityPage from "@/pages/admin/sistema/security-page";
 import SettingsPage from "@/pages/admin/sistema/settings-page";
@@ -187,6 +188,9 @@ function Router() {
       </Route>
       <Route path="/student/learning">
         {() => user?.portalType === "student" ? <LearningPage /> : <Redirect to="/auth" />}
+      </Route>
+      <Route path="/student/financial">
+        {() => user?.portalType === "student" ? <StudentFinancialPage /> : <Redirect to="/auth" />}
       </Route>
       <ProtectedRoute path="/partner/dashboard" portalType="partner" />
       <ProtectedRoute path="/polo/dashboard" portalType="polo" />

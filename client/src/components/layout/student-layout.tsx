@@ -1,35 +1,27 @@
-import { useState } from "react";
+import { ReactNode } from "react";
 import { useLocation } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
-import { Sidebar } from "@/components/layout/sidebar";
-import { getStudentSidebarItems } from "@/components/layout/student-sidebar-items";
+import StudentSidebar from "./student-sidebar";
 
 interface StudentLayoutProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 export default function StudentLayout({ children }: StudentLayoutProps) {
-  const { user } = useAuth();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  
-  // Usar o componente compartilhado para os itens do sidebar
   const [location] = useLocation();
-  const sidebarItems = getStudentSidebarItems(location);
+
+  // Verificar se o usuário está na página de login, caso esteja, renderizar sem o sidebar
+  if (location === "/login" || location === "/") {
+    return <>{children}</>;
+  }
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar
-        items={sidebarItems}
-        user={user}
-        portalType="student"
-        portalColor="#12B76A"
-        isMobileMenuOpen={isMobileMenuOpen}
-        setIsMobileMenuOpen={setIsMobileMenuOpen}
-      />
-      
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto">
-        <div className="px-4 py-20 md:py-6 md:px-8">
+    <div className="flex min-h-screen bg-gray-50">
+      {/* Sidebar */}
+      <StudentSidebar />
+
+      {/* Conteúdo principal */}
+      <div className="flex-1 p-6 lg:p-8 overflow-auto">
+        <div className="max-w-6xl mx-auto">
           {children}
         </div>
       </div>

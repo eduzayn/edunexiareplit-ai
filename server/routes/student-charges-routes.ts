@@ -1,21 +1,14 @@
+import { Router } from 'express';
+import { studentChargesController } from '../controllers/student-charges-controller';
+import { requireAuth } from '../middlewares/auth-middleware';
+
+const router = Router();
+
 /**
- * Rotas para o módulo de cobranças do aluno
+ * @route GET /api/student/charges
+ * @desc Obtém as cobranças do aluno autenticado
+ * @access Private (Student only)
  */
-
-import express from 'express';
-import { requireAuth } from '../middleware/auth';
-import { requirePortalType } from '../middlewares/permission-middleware';
-import studentChargesController from '../controllers/student-charges-controller';
-
-const router = express.Router();
-
-// Rotas protegidas por autenticação
-router.use(requireAuth);
-
-// Middleware para verificar se o usuário é aluno
-const studentPortalMiddleware = requirePortalType('student');
-
-// Rotas específicas para alunos
-router.get('/', studentPortalMiddleware, studentChargesController.getStudentCharges);
+router.get('/charges', requireAuth, studentChargesController.getStudentCharges);
 
 export default router;
