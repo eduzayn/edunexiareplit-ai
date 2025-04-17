@@ -1,4 +1,5 @@
 import React from "react";
+import { CircleIcon } from "@/components/ui/circle-icon";
 import {
   DashboardIcon,
   BusinessIcon,
@@ -217,19 +218,19 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
     items: [
       { 
         name: "Usuários", 
-        icon: <GroupIcon className="text-muted-foreground" />, 
+        icon: <CircleIcon />, 
         href: "/admin/pessoas/usuarios",
         active: currentPath === "/admin/pessoas/usuarios" || (currentPath && currentPath.includes("/admin/pessoas/usuarios/"))
       },
       { 
         name: "Papéis & Permissões", 
-        icon: <SecurityIcon className="text-muted-foreground" />, 
+        icon: <CircleIcon />, 
         href: "/admin/pessoas/roles",
         active: currentPath === "/admin/pessoas/roles" || (currentPath && currentPath.includes("/admin/pessoas/roles"))
       },
       { 
         name: "Permissões Contextuais", 
-        icon: <BadgeCheckIcon className="text-muted-foreground" />, 
+        icon: <CircleIcon />, 
         href: "/admin/pessoas/abac-permissions",
         active: currentPath === "/admin/pessoas/abac-permissions" || (currentPath && currentPath.includes("/admin/pessoas/abac"))
       },
