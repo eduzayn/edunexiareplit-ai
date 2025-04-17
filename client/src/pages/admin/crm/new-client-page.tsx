@@ -36,8 +36,9 @@ import { ArrowLeftIcon, BuildingStoreIcon, SaveIcon } from "@/components/ui/icon
 import { useClients } from "@/hooks/use-crm";
 
 // Schema de validação para criação de cliente
+// Schema simplificado com apenas os campos obrigatórios para o Asaas
 const formSchema = z.object({
-  // Informações básicas
+  // Informações básicas (obrigatórias para o Asaas)
   name: z.string().min(3, { message: "Nome deve ter pelo menos 3 caracteres" }),
   type: z.enum(["pf", "pj"], { 
     required_error: "Selecione o tipo de cliente" 
@@ -45,22 +46,21 @@ const formSchema = z.object({
   email: z.string().email({ message: "Email inválido" }),
   phone: z.string().min(10, { message: "Telefone inválido" }),
   
-  // Documentos
+  // Documentos (CPF/CNPJ é obrigatório para o Asaas)
   document: z.string().min(11, { message: "CPF/CNPJ inválido" }).refine(val => val.length > 0, {
     message: "CPF/CNPJ é obrigatório para integração com sistema financeiro"
   }),
+  
+  // Campos opcionais
+  // Estes campos podem ser preenchidos posteriormente pelo aluno no portal
   rgIe: z.string().optional().or(z.literal("")),
-  
-  // Endereço
-  zipCode: z.string().min(8, { message: "CEP inválido" }),
-  street: z.string().min(3, { message: "Endereço é obrigatório" }),
-  number: z.string().min(1, { message: "Número é obrigatório" }),
+  zipCode: z.string().optional().or(z.literal("")),
+  street: z.string().optional().or(z.literal("")),
+  number: z.string().optional().or(z.literal("")),
   complement: z.string().optional().or(z.literal("")),
-  neighborhood: z.string().min(2, { message: "Bairro é obrigatório" }),
-  city: z.string().min(2, { message: "Cidade é obrigatória" }),
-  state: z.string().length(2, { message: "Estado deve ter 2 caracteres" }),
-  
-  // Outras informações
+  neighborhood: z.string().optional().or(z.literal("")),
+  city: z.string().optional().or(z.literal("")),
+  state: z.string().optional().or(z.literal("")),
   birthDate: z.string().optional().or(z.literal("")).transform(val => val || undefined),
   observation: z.string().optional().or(z.literal("")),
 });
@@ -333,10 +333,10 @@ export default function NewClientPage() {
                         name="zipCode"
                         render={({ field }) => (
                           <FormItem className="md:col-span-3">
-                            <FormLabel>CEP*</FormLabel>
+                            <FormLabel>CEP</FormLabel>
                             <FormControl>
                               <Input 
-                                placeholder="00000-000" 
+                                placeholder="00000-000 (opcional)" 
                                 {...field} 
                                 onBlur={(e) => {
                                   field.onBlur();
@@ -344,6 +344,9 @@ export default function NewClientPage() {
                                 }}
                               />
                             </FormControl>
+                            <FormDescription>
+                              Os dados de endereço poderão ser atualizados pelo aluno após o cadastro inicial
+                            </FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -354,9 +357,9 @@ export default function NewClientPage() {
                         name="street"
                         render={({ field }) => (
                           <FormItem className="md:col-span-6">
-                            <FormLabel>Logradouro*</FormLabel>
+                            <FormLabel>Logradouro</FormLabel>
                             <FormControl>
-                              <Input placeholder="Rua, Avenida, etc." {...field} />
+                              <Input placeholder="Rua, Avenida, etc. (opcional)" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
