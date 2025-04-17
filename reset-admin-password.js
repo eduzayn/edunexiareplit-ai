@@ -1,6 +1,7 @@
 // Script para resetar a senha do administrador
-const bcrypt = require('bcrypt');
-const { Client } = require('pg');
+import bcrypt from 'bcrypt';
+import pg from 'pg';
+const { Client } = pg;
 
 async function resetAdminPassword() {
   try {
