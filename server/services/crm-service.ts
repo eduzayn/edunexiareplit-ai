@@ -1,127 +1,14 @@
 /**
  * Serviço para o módulo CRM
- * Fornece funcionalidades para gerenciar leads, clientes e contatos
+ * Fornece funcionalidades para gerenciar clientes e contatos
  */
 
 import { storage } from '../storage';
 import { 
-  Lead, InsertLead,
   Client, InsertClient,
   Contact, InsertContact 
 } from '@shared/schema';
 import { AsaasService } from './asaas-service';
-
-// ==================== LEADS ====================
-
-/**
- * Obtém todos os leads com paginação e filtros
- */
-export async function getLeads(
-  search?: string,
-  status?: string,
-  userId?: number,
-  limit = 50,
-  offset = 0
-): Promise<Lead[]> {
-  try {
-    return await storage.getLeads(search, status, limit, offset);
-  } catch (error) {
-    console.error("Erro ao obter leads:", error);
-    throw new Error("Falha ao buscar leads");
-  }
-}
-
-/**
- * Obtém um lead específico pelo ID
- */
-export async function getLead(id: number): Promise<Lead | null> {
-  try {
-    const lead = await storage.getLead(id);
-    return lead || null;
-  } catch (error) {
-    console.error(`Erro ao obter lead ${id}:`, error);
-    throw new Error(`Falha ao buscar lead ${id}`);
-  }
-}
-
-/**
- * Cria um novo lead
- */
-export async function createLead(data: InsertLead): Promise<Lead> {
-  try {
-    return await storage.createLead(data);
-  } catch (error) {
-    console.error("Erro ao criar lead:", error);
-    throw new Error("Falha ao criar lead");
-  }
-}
-
-/**
- * Atualiza um lead existente
- */
-export async function updateLead(id: number, data: Partial<InsertLead>): Promise<Lead> {
-  try {
-    const updatedLead = await storage.updateLead(id, data);
-    if (!updatedLead) {
-      throw new Error(`Lead ${id} não encontrado`);
-    }
-    return updatedLead;
-  } catch (error) {
-    console.error(`Erro ao atualizar lead ${id}:`, error);
-    throw new Error(`Falha ao atualizar lead ${id}`);
-  }
-}
-
-/**
- * Exclui um lead
- */
-export async function deleteLead(id: number): Promise<boolean> {
-  try {
-    return await storage.deleteLead(id);
-  } catch (error) {
-    console.error(`Erro ao excluir lead ${id}:`, error);
-    throw new Error(`Falha ao excluir lead ${id}`);
-  }
-}
-
-/**
- * Converte um lead para cliente e contato
- */
-export async function convertLeadToClient(
-  leadId: number,
-  clientData: Partial<InsertClient>,
-  createdById: number
-): Promise<{ client: Client, contact?: Contact }> {
-  try {
-    // Buscar o lead
-    const lead = await storage.getLead(leadId);
-    if (!lead) {
-      throw new Error(`Lead ${leadId} não encontrado`);
-    }
-    
-    // Converter lead para cliente
-    const client = await storage.convertLeadToClient(leadId, clientData, createdById);
-    
-    // Opcional: Criar contato para o cliente se houver dados de contato específicos
-    let contact = undefined;
-    if (clientData.contactName && clientData.contactEmail) {
-      contact = await storage.createContact({
-        clientId: client.id,
-        name: clientData.contactName,
-        email: clientData.contactEmail,
-        phone: clientData.contactPhone || null,
-        position: 'Contato Principal',
-        isPrimary: true,
-        createdById: createdById
-      });
-    }
-    
-    return { client, contact };
-  } catch (error) {
-    console.error(`Erro ao converter lead ${leadId} para cliente:`, error);
-    throw new Error(`Falha ao converter lead ${leadId} para cliente`);
-  }
-}
 
 // ==================== CLIENTES ====================
 

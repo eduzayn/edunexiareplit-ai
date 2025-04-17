@@ -178,13 +178,7 @@ export interface IStorage {
   createPayment(enrollment: Enrollment, gateway: string): Promise<{externalId: string, paymentUrl: string}>;
   getPaymentStatus(externalId: string, gateway: string): Promise<string>;
   
-  // CRM - Leads
-  getLead(id: number): Promise<Lead | undefined>;
-  getLeads(search?: string, status?: string, limit?: number, offset?: number): Promise<Lead[]>;
-  createLead(lead: InsertLead): Promise<Lead>;
-  updateLead(id: number, lead: Partial<InsertLead>): Promise<Lead | undefined>;
-  deleteLead(id: number): Promise<boolean>;
-  convertLeadToClient(leadId: number, additionalData: Partial<InsertClient>, createdById: number): Promise<Client>;
+  // CRM - Clients and Contacts
   
   // CRM - Clientes
   getClient(id: number): Promise<Client | undefined>;
@@ -1434,109 +1428,7 @@ export class DatabaseStorage implements IStorage {
 
   // ==================== CRM - Leads ====================
   
-  async getLead(id: number): Promise<Lead | undefined> {
-    const [lead] = await db
-      .select()
-      .from(leads)
-      .where(eq(leads.id, id));
-    return lead || undefined;
-  }
-  
-  async getLeads(search?: string, status?: string, limit: number = 50, offset: number = 0): Promise<Lead[]> {
-    let query = db
-      .select()
-      .from(leads)
-      .limit(limit)
-      .offset(offset);
-    
-    if (search) {
-      query = query.where(
-        or(
-          like(leads.name, `%${search}%`),
-          like(leads.email, `%${search}%`),
-          like(leads.phone, `%${search}%`),
-          like(leads.company, `%${search}%`)
-        )
-      );
-    }
-    
-    if (status) {
-      query = query.where(eq(leads.status, status as any));
-    }
-    
-    return await query.orderBy(desc(leads.createdAt));
-  }
-  
-  async createLead(lead: InsertLead): Promise<Lead> {
-    const [newLead] = await db
-      .insert(leads)
-      .values(lead)
-      .returning();
-    return newLead;
-  }
-  
-  async updateLead(id: number, lead: Partial<InsertLead>): Promise<Lead | undefined> {
-    const [updatedLead] = await db
-      .update(leads)
-      .set(lead)
-      .where(eq(leads.id, id))
-      .returning();
-    return updatedLead;
-  }
-  
-  async deleteLead(id: number): Promise<boolean> {
-    try {
-      const result = await db
-        .delete(leads)
-        .where(eq(leads.id, id))
-        .returning({ id: leads.id });
-      return result.length > 0;
-    } catch (error) {
-      console.error("Error deleting lead:", error);
-      return false;
-    }
-  }
-  
-  async convertLeadToClient(leadId: number, additionalData: Partial<InsertClient>, createdById: number): Promise<Client> {
-    // Buscar o lead
-    const lead = await this.getLead(leadId);
-    if (!lead) {
-      throw new Error("Lead não encontrado");
-    }
-    
-    // Criar o cliente baseado no lead
-    const clientData: InsertClient = {
-      name: lead.name,
-      type: additionalData.type || 'pf',
-      email: lead.email,
-      phone: lead.phone || '',
-      document: additionalData.document || '',
-      address: additionalData.address || '',
-      city: additionalData.city || '',
-      state: additionalData.state || '',
-      zip_code: additionalData.zip_code || '',
-      institution_id: lead.institution_id || 1,
-      segment: lead.segment || '',
-      status: 'active',
-      created_by_id: createdById,
-      assigned_to_id: lead.assigned_to_id || null,
-      contact_name: additionalData.contact_name || '',
-      contact_email: additionalData.contact_email || '',
-      contact_phone: additionalData.contact_phone || '',
-      payment_terms: additionalData.payment_terms || '',
-      credit_limit: additionalData.credit_limit || 0,
-      notes: lead.notes || '',
-      metadata: lead.metadata || {}
-    };
-    
-    // Criar o cliente
-    const client = await this.createClient(clientData);
-    
-    // Atualizar o status do lead para "won"
-    await this.updateLead(leadId, { status: 'won' });
-    
-    return client;
-  }
+  // ==================== CRM - Clients and Contacts ====================
   
   // ==================== CRM - Clientes ====================
   async getClient(id: number): Promise<Client | undefined> {

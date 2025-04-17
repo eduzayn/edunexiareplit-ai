@@ -1,6 +1,6 @@
 /**
  * Rotas para o módulo CRM
- * Gerencia as operações CRUD para leads, clientes e contatos
+ * Gerencia as operações CRUD para clientes e contatos
  */
 
 import { Router } from 'express';
@@ -9,207 +9,14 @@ import { requireAuth } from '../middleware/auth';
 import * as crmService from '../services/crm-service';
 import { Request, Response } from 'express';
 import { 
-  InsertLead, InsertClient, 
-  InsertContact, Client, Lead, Contact 
+  InsertClient, 
+  InsertContact, Client, Contact 
 } from '@shared/schema';
 
 const router = Router();
 
 // Middleware de autenticação em todas as rotas
 router.use(requireAuth);
-
-// ==================== ROTAS PARA LEADS ====================
-
-/**
- * Obter todos os leads com paginação e filtros
- */
-router.get('/leads', requirePermission('lead', 'ler'), async (req: Request, res: Response) => {
-  try {
-    const search = req.query.search as string | undefined;
-    const status = req.query.status as string | undefined;
-    const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
-    const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
-    
-    const leads = await crmService.getLeads(search, status, req.user.id, limit, offset);
-    
-    res.json({
-      success: true,
-      data: leads,
-      pagination: {
-        limit,
-        offset,
-        total: leads.length // Isto não é preciso para paginação real
-      }
-    });
-  } catch (error) {
-    console.error('Erro ao buscar leads:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Erro ao buscar leads',
-      details: error instanceof Error ? error.message : 'Erro desconhecido'
-    });
-  }
-});
-
-/**
- * Obter um lead específico pelo ID
- */
-router.get('/leads/:id', requirePermission('lead', 'ler'), async (req: Request, res: Response) => {
-  try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({
-        success: false,
-        error: 'ID inválido'
-      });
-    }
-    
-    const lead = await crmService.getLead(id);
-    
-    if (!lead) {
-      return res.status(404).json({
-        success: false,
-        error: 'Lead não encontrado'
-      });
-    }
-    
-    res.json({
-      success: true,
-      data: lead
-    });
-  } catch (error) {
-    console.error(`Erro ao buscar lead ${req.params.id}:`, error);
-    res.status(500).json({
-      success: false,
-      error: 'Erro ao buscar lead',
-      details: error instanceof Error ? error.message : 'Erro desconhecido'
-    });
-  }
-});
-
-/**
- * Criar um novo lead
- */
-router.post('/leads', requirePermission('lead', 'criar'), async (req: Request, res: Response) => {
-  try {
-    // Adicionar o ID do usuário que está criando o lead
-    const leadData: InsertLead = {
-      ...req.body,
-      createdById: req.user.id
-    };
-    
-    const lead = await crmService.createLead(leadData);
-    
-    res.status(201).json({
-      success: true,
-      data: lead,
-      message: 'Lead criado com sucesso'
-    });
-  } catch (error) {
-    console.error('Erro ao criar lead:', error);
-    res.status(400).json({
-      success: false,
-      error: 'Erro ao criar lead',
-      details: error instanceof Error ? error.message : 'Erro desconhecido'
-    });
-  }
-});
-
-/**
- * Atualizar um lead existente
- */
-router.put('/leads/:id', requirePermission('lead', 'atualizar'), async (req: Request, res: Response) => {
-  try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({
-        success: false,
-        error: 'ID inválido'
-      });
-    }
-    
-    const lead = await crmService.updateLead(id, req.body);
-    
-    res.json({
-      success: true,
-      data: lead,
-      message: 'Lead atualizado com sucesso'
-    });
-  } catch (error) {
-    console.error(`Erro ao atualizar lead ${req.params.id}:`, error);
-    res.status(400).json({
-      success: false,
-      error: 'Erro ao atualizar lead',
-      details: error instanceof Error ? error.message : 'Erro desconhecido'
-    });
-  }
-});
-
-/**
- * Excluir um lead
- */
-router.delete('/leads/:id', requirePermission('lead', 'deletar'), async (req: Request, res: Response) => {
-  try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({
-        success: false,
-        error: 'ID inválido'
-      });
-    }
-    
-    const success = await crmService.deleteLead(id);
-    
-    if (!success) {
-      return res.status(404).json({
-        success: false,
-        error: 'Lead não encontrado ou não pôde ser excluído'
-      });
-    }
-    
-    res.json({
-      success: true,
-      message: 'Lead excluído com sucesso'
-    });
-  } catch (error) {
-    console.error(`Erro ao excluir lead ${req.params.id}:`, error);
-    res.status(500).json({
-      success: false,
-      error: 'Erro ao excluir lead',
-      details: error instanceof Error ? error.message : 'Erro desconhecido'
-    });
-  }
-});
-
-/**
- * Converter um lead para cliente
- */
-router.post('/leads/:id/convert', requirePermission('lead', 'atualizar'), async (req: Request, res: Response) => {
-  try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({
-        success: false,
-        error: 'ID inválido'
-      });
-    }
-    
-    const { client, contact } = await crmService.convertLeadToClient(id, req.body, req.user.id);
-    
-    res.json({
-      success: true,
-      data: { client, contact },
-      message: 'Lead convertido para cliente com sucesso'
-    });
-  } catch (error) {
-    console.error(`Erro ao converter lead ${req.params.id}:`, error);
-    res.status(400).json({
-      success: false,
-      error: 'Erro ao converter lead para cliente',
-      details: error instanceof Error ? error.message : 'Erro desconhecido'
-    });
-  }
-});
 
 // ==================== ROTAS PARA CLIENTES ====================
 
