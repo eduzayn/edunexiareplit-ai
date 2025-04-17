@@ -2,11 +2,21 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import dotenv from 'dotenv';
+import cors from 'cors';
 
 // Carrega as variáveis de ambiente do arquivo .env
 dotenv.config();
 
 const app = express();
+
+// Configurar CORS para permitir requisições do cliente
+app.use(cors({
+  origin: ['http://localhost:5000', 'https://localhost:5000', 'http://0.0.0.0:5000'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true // Importante: permite envio de cookies
+}));
+
 app.use(express.json({
   // Adiciona uma configuração mais rigorosa para o JSON parser
   strict: true,

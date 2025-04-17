@@ -40,6 +40,9 @@ export function setupAuth(app: Express) {
     store: storage.sessionStore,
     cookie: {
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      httpOnly: true,
+      sameSite: 'lax', // Isso permitirá que o cookie seja enviado quando o usuário clicar em um link para o site
+      path: '/',
     }
   };
 
