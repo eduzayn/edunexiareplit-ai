@@ -125,7 +125,7 @@ export default function SubscriptionChargePage() {
     try {
       const subscriptionData = {
         customer: selectedCustomer,
-        billingType: "UNDEFINED", // Definido pelo Asaas com base nas preferências do cliente
+        billingType: "CREDIT_CARD", // Definido explicitamente como cartão de crédito
         value: parseFloat(value),
         nextDueDate,
         description,
@@ -195,6 +195,28 @@ export default function SubscriptionChargePage() {
             <h1 className="text-2xl font-bold">Nova Assinatura</h1>
           </div>
           <Badge className="bg-blue-600">Cobrança Recorrente</Badge>
+        </div>
+
+        <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg p-4 mb-6 text-white shadow-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="bg-white p-2 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-xl font-bold">Assinatura por Cartão de Crédito</h2>
+                <p className="opacity-90">Cobrança recorrente automática estilo Netflix</p>
+              </div>
+            </div>
+            <div className="hidden md:block">
+              <span className="flex items-center space-x-1 text-sm bg-white/20 px-3 py-1 rounded-full">
+                <CheckIcon className="h-4 w-4" />
+                <span>Renovação Automática</span>
+              </span>
+            </div>
+          </div>
         </div>
 
         <Card className="mb-6">
@@ -439,16 +461,36 @@ export default function SubscriptionChargePage() {
           </CardFooter>
         </Card>
 
-        <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-md mb-6">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <AlertTriangleIcon className="h-5 w-5 text-yellow-500" />
+        <div className="grid gap-6 mb-6">
+          <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-md">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <AlertTriangleIcon className="h-5 w-5 text-yellow-500" />
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-yellow-700">
+                  Assinaturas recorrentes são automáticas e geram cobranças de acordo com o ciclo definido.
+                  As cobranças geradas aparecerão na lista de cobranças com um indicador de recorrência.
+                </p>
+              </div>
             </div>
-            <div className="ml-3">
-              <p className="text-sm text-yellow-700">
-                Assinaturas recorrentes são automáticas e geram cobranças de acordo com o ciclo definido.
-                As cobranças geradas aparecerão na lista de cobranças com um indicador de recorrência.
-              </p>
+          </div>
+          
+          <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-md">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h4 className="text-sm font-medium text-blue-800">Pagamento com Cartão de Crédito</h4>
+                <p className="text-sm text-blue-700 mt-1">
+                  Esta assinatura será processada através de cartão de crédito, similar ao modelo utilizado pela Netflix. 
+                  O cliente receberá um e-mail com link para cadastrar os dados do cartão, e as cobranças serão renovadas 
+                  automaticamente a cada ciclo sem necessidade de nova intervenção.
+                </p>
+              </div>
             </div>
           </div>
         </div>
