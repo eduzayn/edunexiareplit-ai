@@ -482,11 +482,11 @@ function Router() {
       </Route>
       
       {/* Rotas do Módulo de Contratos */}
-      <Route path="/admin/contratos/contratos">
+      <Route path="/admin/contracts">
         {() => user?.portalType === "admin" ? <ContractsPage /> : <Redirect to="/admin" />}
       </Route>
       
-      <Route path="/admin/contratos/contratos/new">
+      <Route path="/admin/contracts/new">
         {() => user?.portalType === "admin" ? <NewContractPage /> : <Redirect to="/admin" />}
       </Route>
       

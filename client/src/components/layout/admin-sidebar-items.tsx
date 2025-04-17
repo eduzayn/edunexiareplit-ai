@@ -363,8 +363,8 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
         { 
           name: "Contratos", 
           icon: <ContractIcon />, 
-          href: "/admin/contratos/contratos",
-          active: currentPath === "/admin/contratos/contratos" || (currentPath && currentPath.includes("/admin/contratos/contratos/"))
+          href: "/admin/contracts",
+          active: currentPath === "/admin/contracts" || (currentPath && currentPath.includes("/admin/contracts/"))
         },
       ]
     }, currentPath),
@@ -411,8 +411,8 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
       { 
         name: "Contratos", 
         icon: <ContractIcon />, 
-        href: "/admin/contratos/contratos",
-        active: currentPath === "/admin/contratos/contratos" || (currentPath && currentPath.includes("/admin/contratos/contratos/"))
+        href: "/admin/contracts",
+        active: currentPath === "/admin/contracts" || (currentPath && currentPath.includes("/admin/contracts/"))
       },
     ]
   };
