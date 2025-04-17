@@ -20,7 +20,11 @@ import { users, type User, type InsertUser,
   products, type Product, type InsertProduct,
   invoices, type Invoice, type InsertInvoice,
   invoiceItems, type InvoiceItem, type InsertInvoiceItem,
-  payments, type Payment, type InsertPayment
+  payments, type Payment, type InsertPayment,
+  // E-books interativos
+  eBooks, type EBook, type InsertEBook,
+  eBookImages, type EBookImage, type InsertEBookImage,
+  type EBookContent
 } from "@shared/schema";
 import session from "express-session";
 import { Store as SessionStore } from "express-session";
