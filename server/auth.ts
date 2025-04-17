@@ -26,10 +26,33 @@ async function hashPassword(password: string) {
 }
 
 async function comparePasswords(supplied: string, stored: string) {
-  const [hashed, salt] = stored.split(".");
-  const hashedBuf = Buffer.from(hashed, "hex");
-  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-  return timingSafeEqual(hashedBuf, suppliedBuf);
+  try {
+    // Verificar se stored tem o formato correto
+    if (!stored || !stored.includes('.')) {
+      console.log('Formato de senha armazenada inválido');
+      return false;
+    }
+    
+    const [hashed, salt] = stored.split(".");
+    if (!hashed || !salt) {
+      console.log('Hash ou salt não encontrados na senha armazenada');
+      return false;
+    }
+    
+    const hashedBuf = Buffer.from(hashed, "hex");
+    const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+    
+    // Verificar se os buffers têm o mesmo tamanho
+    if (hashedBuf.length !== suppliedBuf.length) {
+      console.log(`Tamanhos diferentes: hash=${hashedBuf.length}, supplied=${suppliedBuf.length}`);
+      return false;
+    }
+    
+    return timingSafeEqual(hashedBuf, suppliedBuf);
+  } catch (error) {
+    console.error('Erro ao comparar senhas:', error);
+    return false;
+  }
 }
 
 export function setupAuth(app: Express) {
