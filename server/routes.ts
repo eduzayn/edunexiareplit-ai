@@ -3026,6 +3026,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Registro das rotas de auditoria
   app.use("/api/audit", auditRoutes);
+  
+  // Registro das rotas de configurações de instituição
+  app.use("/api/institution-settings", institutionSettingsRoutes);
 
   const httpServer = createServer(app);
 

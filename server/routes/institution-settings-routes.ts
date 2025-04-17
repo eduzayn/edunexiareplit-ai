@@ -4,13 +4,13 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { institutionSettingsService } from '../services/institution-settings-service';
-import { authenticateSession } from '../middlewares/auth-middleware';
-import { checkPermission } from '../middlewares/permission-middleware';
+import { requireAuth } from '../middlewares/requireAuth';
+import { requirePermission } from '../middlewares/permission-middleware';
 
 const router = Router();
 
 // Middleware de autenticação para todas as rotas
-router.use(authenticateSession);
+router.use(requireAuth);
 
 // Schema para validação do corpo da requisição ao criar/atualizar configuração
 const settingSchema = z.object({
@@ -23,9 +23,9 @@ const settingSchema = z.object({
  * Obter todas as configurações de uma instituição
  * GET /api/institution-settings
  */
-router.get('/', checkPermission('configuracao', 'ler'), async (req, res) => {
+router.get('/', requirePermission('configuracao', 'ler'), async (req: any, res) => {
   try {
-    const { user } = req.session;
+    const user = req.user;
     
     if (!user?.institutionId) {
       return res.status(400).json({ 
@@ -56,9 +56,9 @@ router.get('/', checkPermission('configuracao', 'ler'), async (req, res) => {
  * Obter uma configuração específica
  * GET /api/institution-settings/:key
  */
-router.get('/:key', checkPermission('configuracao', 'ler'), async (req, res) => {
+router.get('/:key', requirePermission('configuracao', 'ler'), async (req: any, res) => {
   try {
-    const { user } = req.session;
+    const user = req.user;
     const { key } = req.params;
     
     if (!user?.institutionId) {
@@ -91,9 +91,9 @@ router.get('/:key', checkPermission('configuracao', 'ler'), async (req, res) => 
  * Criar ou atualizar uma configuração
  * POST /api/institution-settings
  */
-router.post('/', checkPermission('configuracao', 'atualizar'), async (req, res) => {
+router.post('/', requirePermission('configuracao', 'atualizar'), async (req: any, res) => {
   try {
-    const { user } = req.session;
+    const user = req.user;
     
     if (!user?.institutionId) {
       return res.status(400).json({ 
@@ -139,9 +139,9 @@ router.post('/', checkPermission('configuracao', 'atualizar'), async (req, res) 
  * Excluir uma configuração
  * DELETE /api/institution-settings/:key
  */
-router.delete('/:key', checkPermission('configuracao', 'deletar'), async (req, res) => {
+router.delete('/:key', requirePermission('configuracao', 'deletar'), async (req: any, res) => {
   try {
-    const { user } = req.session;
+    const user = req.user;
     const { key } = req.params;
     
     if (!user?.institutionId) {
@@ -174,9 +174,9 @@ router.delete('/:key', checkPermission('configuracao', 'deletar'), async (req, r
  * Obter chave da API do Asaas
  * GET /api/institution-settings/integrations/asaas
  */
-router.get('/integrations/asaas', checkPermission('configuracao', 'ler'), async (req, res) => {
+router.get('/integrations/asaas', requirePermission('configuracao', 'ler'), async (req: any, res) => {
   try {
-    const { user } = req.session;
+    const user = req.user;
     
     if (!user?.institutionId) {
       return res.status(400).json({ 
@@ -211,9 +211,9 @@ router.get('/integrations/asaas', checkPermission('configuracao', 'ler'), async 
  * Configurar chave da API do Asaas
  * POST /api/institution-settings/integrations/asaas
  */
-router.post('/integrations/asaas', checkPermission('configuracao', 'atualizar'), async (req, res) => {
+router.post('/integrations/asaas', requirePermission('configuracao', 'atualizar'), async (req: any, res) => {
   try {
-    const { user } = req.session;
+    const user = req.user;
     
     if (!user?.institutionId) {
       return res.status(400).json({ 

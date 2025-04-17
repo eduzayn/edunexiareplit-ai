@@ -2,7 +2,7 @@
  * Serviço para gerenciar configurações específicas de cada instituição
  * Inclui suporte para armazenamento criptografado de informações sensíveis
  */
-import { db } from '../database';
+import { db } from '../db';
 import { institutionSettings } from '../../shared/schema';
 import { eq, and } from 'drizzle-orm';
 import * as crypto from 'crypto';
