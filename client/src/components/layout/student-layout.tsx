@@ -14,7 +14,7 @@ import {
 import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 
 interface StudentLayoutProps {
   children: React.ReactNode;
@@ -29,10 +29,16 @@ const StudentLayout: React.FC<StudentLayoutProps> = ({
   className = '',
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
+  const [location] = useLocation();
+  
+  // Fecha a barra lateral quando a localização muda (navegação em dispositivos móveis)
+  React.useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location]);
 
   const handleLogout = async () => {
-    await logout();
+    // Redirecionamento para a página de login
     window.location.href = '/auth/login';
   };
 
@@ -78,9 +84,8 @@ const StudentLayout: React.FC<StudentLayoutProps> = ({
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative rounded-full h-8 w-8 p-0">
                     <Avatar className="h-8 w-8 border border-gray-200">
-                      <AvatarImage src={user?.profileImage || ''} alt={user?.name || "Usuário"} />
                       <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-                        {(user?.name || "U").substring(0, 1).toUpperCase()}
+                        {user && user.fullName ? user.fullName.substring(0, 1).toUpperCase() : "U"}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
@@ -88,7 +93,7 @@ const StudentLayout: React.FC<StudentLayoutProps> = ({
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">{user?.name || "Usuário"}</p>
+                      <p className="text-sm font-medium leading-none">{user?.fullName || "Usuário"}</p>
                       <p className="text-xs leading-none text-gray-500">{user?.email || ""}</p>
                     </div>
                   </DropdownMenuLabel>

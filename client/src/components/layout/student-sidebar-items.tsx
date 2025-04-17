@@ -1,16 +1,16 @@
 import React from 'react';
 import { 
-  Home, 
-  BookOpen, 
-  CalendarClock, 
-  Medal, 
+  BookOpenText, 
+  LayoutDashboard, 
   FileText, 
+  Calendar, 
+  GraduationCap,
+  User, 
   FileQuestion, 
-  User,
-  CreditCard,
-  HelpCircle,
-  Settings,
-  MessageSquare
+  BriefcaseBusiness,
+  Handshake,
+  Banknote,
+  MessagesSquare
 } from 'lucide-react';
 
 export type SidebarItem = {
@@ -30,114 +30,64 @@ export type SidebarItem = {
 export const getStudentSidebarItems = (pathname: string): SidebarItem[] => {
   return [
     {
-      label: 'Dashboard',
-      icon: <Home size={20} />,
+      label: 'Início',
+      icon: <LayoutDashboard size={18} />,
       href: '/student',
       active: pathname === '/student',
     },
     {
-      label: 'Meus Cursos',
-      icon: <BookOpen size={20} />,
-      href: '/student/cursos',
-      active: pathname.startsWith('/student/cursos'),
-      submenu: [
-        {
-          label: 'Aulas e Conteúdos',
-          icon: <FileText size={16} />,
-          href: '/student/cursos/aulas',
-          active: pathname.startsWith('/student/cursos/aulas'),
-        },
-        {
-          label: 'Materiais Didáticos',
-          icon: <FileText size={16} />,
-          href: '/student/cursos/materiais',
-          active: pathname.startsWith('/student/cursos/materiais'),
-        },
-      ],
+      label: 'Meus cursos',
+      icon: <BookOpenText size={18} />,
+      href: '/student/courses',
+      active: pathname === '/student/courses' || pathname.startsWith('/student/courses/'),
+    },
+    {
+      label: 'Meus certificados',
+      icon: <GraduationCap size={18} />,
+      href: '/student/certificates',
+      active: pathname === '/student/certificates',
     },
     {
       label: 'Avaliações',
-      icon: <FileQuestion size={20} />,
-      href: '/student/avaliacoes',
-      active: pathname.startsWith('/student/avaliacoes'),
-      submenu: [
-        {
-          label: 'Simulados',
-          icon: <FileQuestion size={16} />,
-          href: '/student/avaliacoes/simulados',
-          active: pathname.startsWith('/student/avaliacoes/simulados'),
-        },
-        {
-          label: 'Avaliações Finais',
-          icon: <FileQuestion size={16} />,
-          href: '/student/avaliacoes/finais',
-          active: pathname.startsWith('/student/avaliacoes/finais'),
-        },
-      ],
+      icon: <FileQuestion size={18} />,
+      href: '/student/assessments',
+      active: pathname === '/student/assessments',
     },
     {
-      label: 'Calendário',
-      icon: <CalendarClock size={20} />,
-      href: '/student/calendario',
-      active: pathname.startsWith('/student/calendario'),
+      label: 'Meus estágios',
+      icon: <BriefcaseBusiness size={18} />,
+      href: '/student/internships',
+      active: pathname === '/student/internships',
     },
     {
-      label: 'Certificados',
-      icon: <Medal size={20} />,
-      href: '/student/certificados',
-      active: pathname.startsWith('/student/certificados'),
+      label: 'Contratos',
+      icon: <Handshake size={18} />,
+      href: '/student/contracts',
+      active: pathname === '/student/contracts',
     },
     {
       label: 'Financeiro',
-      icon: <CreditCard size={20} />,
+      icon: <Banknote size={18} />,
       href: '/student/financial',
-      active: pathname.startsWith('/student/financial'),
-      submenu: [
-        {
-          label: 'Cobranças',
-          icon: <CreditCard size={16} />,
-          href: '/student/financial',
-          active: pathname.startsWith('/student/financial'),
-        },
-        {
-          label: 'Histórico de Pagamentos',
-          icon: <FileText size={16} />,
-          href: '/student/financial/history',
-          active: pathname.startsWith('/student/financial/history'),
-        },
-      ],
+      active: pathname === '/student/financial',
     },
     {
-      label: 'Meu Perfil',
-      icon: <User size={20} />,
-      href: '/student/perfil',
-      active: pathname.startsWith('/student/perfil'),
+      label: 'Calendário',
+      icon: <Calendar size={18} />,
+      href: '/student/calendar',
+      active: pathname === '/student/calendar',
     },
     {
-      label: 'Suporte',
-      icon: <HelpCircle size={20} />,
-      href: '/student/suporte',
-      active: pathname.startsWith('/student/suporte'),
-      submenu: [
-        {
-          label: 'Tutoria e Mentoria',
-          icon: <MessageSquare size={16} />,
-          href: '/student/suporte/tutoria',
-          active: pathname.startsWith('/student/suporte/tutoria'),
-        },
-        {
-          label: 'Perguntas Frequentes',
-          icon: <HelpCircle size={16} />,
-          href: '/student/suporte/faq',
-          active: pathname.startsWith('/student/suporte/faq'),
-        },
-      ],
+      label: 'Mensagens',
+      icon: <MessagesSquare size={18} />,
+      href: '/student/messages',
+      active: pathname === '/student/messages',
     },
     {
-      label: 'Configurações',
-      icon: <Settings size={20} />,
-      href: '/student/configuracoes',
-      active: pathname.startsWith('/student/configuracoes'),
+      label: 'Minhas informações',
+      icon: <User size={18} />,
+      href: '/student/profile',
+      active: pathname === '/student/profile',
     },
   ];
 };

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Card,
@@ -6,6 +6,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
 import {
   Table,
@@ -23,7 +24,7 @@ import {
   FileTextIcon, 
   InfoIcon, 
   PrinterIcon,
-  CreditCardIcon as BanknoteIcon,
+  BanknoteIcon,
   AlertTriangleIcon,
   CheckCircleIcon,
   XCircleIcon
@@ -33,10 +34,38 @@ import { Spinner } from "@/components/ui/spinner";
 import StudentLayout from "@/components/layout/student-layout";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, formatDate } from "@/lib/formatters";
+import { Pagination } from "@/components/ui/pagination";
+
+// Definição da interface de Cobrança para melhorar a tipagem
+interface Charge {
+  id: string;
+  dateCreated: string;
+  customer: string;
+  customerName?: string;
+  value: number;
+  netValue: number;
+  description?: string;
+  billingType: string;
+  status: string;
+  dueDate: string;
+  originalDueDate?: string;
+  paymentDate?: string;
+  clientPaymentDate?: string;
+  invoiceUrl?: string;
+  bankSlipUrl?: string;
+  invoiceNumber?: string;
+  externalReference?: string;
+  deleted: boolean;
+  pixQrCode?: string;
+  fine?: number;
+  interest?: number;
+}
 
 export default function FinancialPage() {
   const { toast } = useToast();
-  const [selectedBilling, setSelectedBilling] = useState(null);
+  const [selectedBilling, setSelectedBilling] = useState<Charge | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10; // Número de itens por página
 
   // Consulta as cobranças do aluno
   const {
@@ -44,20 +73,40 @@ export default function FinancialPage() {
     isLoading,
     isError,
     error,
-  } = useQuery({
+  } = useQuery<Charge[]>({
     queryKey: ["/api/student/charges"],
     queryFn: async () => {
       try {
         console.log("Tentando carregar cobranças do aluno...");
         // Tenta usar a API real
         try {
-          return await apiRequest('/api/student/charges');
+          const response = await fetch('/api/student/charges');
+          
+          // Se a resposta não for OK (2xx), lançamos um erro
+          if (!response.ok) {
+            if (response.status === 401 || response.status === 403) {
+              console.warn(`Erro de autenticação: ${response.status}`);
+              throw new Error('Autenticação necessária');
+            } else {
+              throw new Error(`Erro ao carregar cobranças: ${response.statusText}`);
+            }
+          }
+          
+          const data = await response.json();
+          console.log("Cobranças carregadas com sucesso:", data.length);
+          return data;
         } catch (apiError) {
           console.warn("Erro na API real:", apiError);
           
           // Se a API real falhar devido a problemas de autenticação (401/403)
           // Retornamos dados de exemplo para que a interface possa ser visualizada
           console.log("Retornando dados de exemplo para visualização da interface");
+          
+          toast({
+            title: "Modo de visualização",
+            description: "Alguns recursos podem estar limitados. Faça login para ver suas cobranças reais.",
+            variant: "default",
+          });
           
           // Dados de exemplo para visualização da interface
           return [
@@ -130,9 +179,27 @@ export default function FinancialPage() {
     },
     staleTime: 1000 * 60 * 5, // 5 minutos
   });
+  
+  // Calcular as cobranças paginadas
+  const paginatedCharges = useMemo(() => {
+    if (!charges) return [];
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return charges.slice(startIndex, startIndex + itemsPerPage);
+  }, [charges, currentPage, itemsPerPage]);
+  
+  // Calcular o número total de páginas
+  const totalPages = useMemo(() => {
+    if (!charges) return 1;
+    return Math.ceil(charges.length / itemsPerPage);
+  }, [charges, itemsPerPage]);
+  
+  // Função para mudar de página
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
 
   // Função para baixar o boleto
-  const handleDownloadBoleto = (boletoUrl: string) => {
+  const handleDownloadBoleto = (boletoUrl: string | undefined) => {
     if (!boletoUrl) {
       toast({
         title: "Erro",
@@ -146,7 +213,7 @@ export default function FinancialPage() {
   };
 
   // Função para imprimir o boleto
-  const handlePrintBoleto = (boletoUrl: string) => {
+  const handlePrintBoleto = (boletoUrl: string | undefined) => {
     if (!boletoUrl) {
       toast({
         title: "Erro",
@@ -165,7 +232,7 @@ export default function FinancialPage() {
   };
 
   // Função para copiar o código PIX
-  const handleCopyPix = (pixCode: string) => {
+  const handleCopyPix = (pixCode: string | undefined) => {
     if (!pixCode) {
       toast({
         title: "Erro",
@@ -193,7 +260,7 @@ export default function FinancialPage() {
   };
 
   // Função para mostrar detalhes da cobrança
-  const handleViewDetails = (billing: any) => {
+  const handleViewDetails = (billing: Charge) => {
     setSelectedBilling(billing);
   };
 
@@ -269,7 +336,7 @@ export default function FinancialPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {charges.map((charge: any) => (
+                {paginatedCharges.map((charge) => (
                   <TableRow key={charge.id}>
                     <TableCell className="font-medium">{charge.description || "Mensalidade"}</TableCell>
                     <TableCell>{formatDate(new Date(charge.dueDate))}</TableCell>
@@ -336,7 +403,26 @@ export default function FinancialPage() {
               </TableBody>
             </Table>
           </div>
+          
+          {/* Informações de paginação e total */}
+          {charges && charges.length > 0 && (
+            <div className="mt-4 text-sm text-muted-foreground text-center">
+              Mostrando {paginatedCharges.length} de {charges.length} cobranças
+            </div>
+          )}
         </CardContent>
+        
+        {/* Componente de paginação */}
+        {charges && charges.length > itemsPerPage && (
+          <CardFooter>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+              className="mx-auto"
+            />
+          </CardFooter>
+        )}
       </Card>
     );
   }
@@ -366,7 +452,7 @@ export default function FinancialPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Cobranças pendentes</p>
                   <p className="text-2xl font-bold">
-                    {charges?.filter((charge: any) => 
+                    {charges?.filter((charge: Charge) => 
                       charge.status === "PENDING" || 
                       charge.status === "AWAITING_RISK_ANALYSIS" || 
                       charge.status === "DUNNING_REQUESTED"
@@ -389,7 +475,7 @@ export default function FinancialPage() {
               <div className="py-4">
                 <p className="text-sm text-muted-foreground">Total de pagamentos confirmados</p>
                 <p className="text-2xl font-bold">
-                  {charges?.filter((charge: any) => 
+                  {charges?.filter((charge: Charge) => 
                     charge.status === "RECEIVED" || 
                     charge.status === "CONFIRMED" || 
                     charge.status === "RECEIVED_IN_CASH" ||
@@ -412,7 +498,7 @@ export default function FinancialPage() {
               <div className="py-4">
                 <p className="text-sm text-muted-foreground">Total de pagamentos vencidos</p>
                 <p className="text-2xl font-bold">
-                  {charges?.filter((charge: any) => 
+                  {charges?.filter((charge: Charge) => 
                     charge.status === "OVERDUE"
                   ).length || 0}
                 </p>

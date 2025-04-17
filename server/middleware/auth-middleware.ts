@@ -3,6 +3,7 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
+import { logger } from '../utils/logger';
 
 /**
  * Interface para estender Request com informações do usuário autenticado
@@ -24,178 +25,101 @@ export interface AuthenticatedRequest extends Request {
 
 /**
  * Middleware para verificar se o usuário está autenticado
+ * @param req Requisição Express
+ * @param res Resposta Express
+ * @param next Função para passar para o próximo middleware
  */
-export const isAuthenticated = (
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction
-) => {
-  if (!req.session || !req.session.user) {
-    return res.status(401).json({ 
-      success: false, 
-      message: 'Acesso não autorizado. Faça login novamente.' 
-    });
+export const requireAuth = (req: Request, res: Response, next: NextFunction) => {
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
+    logger.warn('[Auth Middleware] Acesso não autenticado rejeitado');
+    return res.status(401).json({ success: false, message: 'Autenticação necessária' });
   }
-  req.user = req.session.user;
+  
+  if (!req.user) {
+    logger.error('[Auth Middleware] Sessão autenticada mas sem dados do usuário');
+    return res.status(401).json({ success: false, message: 'Dados de usuário não encontrados' });
+  }
+  
   next();
 };
 
 /**
- * Versão simplificada para rotas que apenas exigem autenticação
+ * Middleware para verificar se o usuário tem um tipo específico de portal
+ * @param portalType Tipo de portal permitido ("admin", "student", "polo", "partner", etc)
  */
-export const requireAuth = isAuthenticated;
-
-/**
- * Middleware para verificar se o usuário tem uma determinada role
- * @param role Role necessária para acessar a rota
- */
-export const hasRole = (role: string) => {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+export const requirePortalType = (portalType: string) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!req.isAuthenticated || !req.isAuthenticated()) {
+      logger.warn('[Auth Middleware] Acesso não autenticado rejeitado');
+      return res.status(401).json({ success: false, message: 'Autenticação necessária' });
+    }
+    
     if (!req.user) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Acesso não autorizado. Faça login novamente.' 
-      });
+      logger.error('[Auth Middleware] Sessão autenticada mas sem dados do usuário');
+      return res.status(401).json({ success: false, message: 'Dados de usuário não encontrados' });
     }
-
-    if (req.user.role !== role) {
-      return res.status(403).json({ 
-        success: false, 
-        message: 'Você não tem permissão para acessar este recurso.' 
-      });
-    }
-
-    next();
-  };
-};
-
-/**
- * Middleware para verificar se o usuário tem uma determinada role no portal
- * @param portalType Tipo de portal necessário para acessar a rota
- */
-export const hasPortalAccess = (portalType: string) => {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    if (!req.user) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Acesso não autorizado. Faça login novamente.' 
-      });
-    }
-
+    
+    // @ts-ignore - O TypeScript não reconhece a propriedade portalType, mas ela existe no objeto de usuário
     if (req.user.portalType !== portalType) {
+      logger.warn(`[Auth Middleware] Acesso negado para usuário do portal ${req.user.portalType} tentando acessar rota do portal ${portalType}`);
       return res.status(403).json({ 
         success: false, 
-        message: 'Você não tem permissão para acessar este portal.' 
+        message: `Acesso não autorizado. Esta funcionalidade é exclusiva para o portal ${portalType}.` 
       });
     }
-
+    
     next();
   };
 };
 
 /**
- * Middleware para verificar se o usuário é estudante
+ * Middleware para verificar se o usuário é um administrador
  */
-export const isStudent = (
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction
-) => {
+export const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
+    logger.warn('[Auth Middleware] Acesso não autenticado rejeitado');
+    return res.status(401).json({ success: false, message: 'Autenticação necessária' });
+  }
+  
   if (!req.user) {
-    return res.status(401).json({ 
+    logger.error('[Auth Middleware] Sessão autenticada mas sem dados do usuário');
+    return res.status(401).json({ success: false, message: 'Dados de usuário não encontrados' });
+  }
+  
+  // @ts-ignore - O TypeScript não reconhece a propriedade portalType, mas ela existe no objeto de usuário
+  if (req.user.portalType !== 'admin') {
+    logger.warn(`[Auth Middleware] Acesso negado para usuário do portal ${req.user.portalType} tentando acessar rota de administrador`);
+    return res.status(403).json({ 
       success: false, 
-      message: 'Acesso não autorizado. Faça login novamente.' 
+      message: 'Acesso não autorizado. Esta funcionalidade é exclusiva para administradores.' 
     });
   }
+  
+  next();
+};
 
+/**
+ * Middleware para verificar se o usuário é um estudante
+ */
+export const requireStudent = (req: Request, res: Response, next: NextFunction) => {
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
+    logger.warn('[Auth Middleware] Acesso não autenticado rejeitado');
+    return res.status(401).json({ success: false, message: 'Autenticação necessária' });
+  }
+  
+  if (!req.user) {
+    logger.error('[Auth Middleware] Sessão autenticada mas sem dados do usuário');
+    return res.status(401).json({ success: false, message: 'Dados de usuário não encontrados' });
+  }
+  
+  // @ts-ignore - O TypeScript não reconhece a propriedade portalType, mas ela existe no objeto de usuário
   if (req.user.portalType !== 'student') {
+    logger.warn(`[Auth Middleware] Acesso negado para usuário do portal ${req.user.portalType} tentando acessar rota de estudante`);
     return res.status(403).json({ 
       success: false, 
-      message: 'Acesso permitido apenas para estudantes.' 
+      message: 'Acesso não autorizado. Esta funcionalidade é exclusiva para estudantes.' 
     });
   }
-
+  
   next();
-};
-
-/**
- * Middleware para verificar se o usuário é administrador
- */
-export const isAdmin = (
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction
-) => {
-  if (!req.user) {
-    return res.status(401).json({ 
-      success: false, 
-      message: 'Acesso não autorizado. Faça login novamente.' 
-    });
-  }
-
-  if (req.user.role !== 'admin') {
-    return res.status(403).json({ 
-      success: false, 
-      message: 'Acesso permitido apenas para administradores.' 
-    });
-  }
-
-  next();
-};
-
-/**
- * Middleware para verificar se o usuário pertence a uma instituição
- */
-export const belongsToInstitution = (institutionId: number) => {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    if (!req.user) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Acesso não autorizado. Faça login novamente.' 
-      });
-    }
-
-    if (req.user.institutionId !== institutionId) {
-      return res.status(403).json({ 
-        success: false, 
-        message: 'Você não tem permissão para acessar recursos desta instituição.' 
-      });
-    }
-
-    next();
-  };
-};
-
-/**
- * Middleware para verificar se o usuário pertence a um polo
- */
-export const belongsToPolo = (poloId: number) => {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    if (!req.user) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Acesso não autorizado. Faça login novamente.' 
-      });
-    }
-
-    if (req.user.poloId !== poloId) {
-      return res.status(403).json({ 
-        success: false, 
-        message: 'Você não tem permissão para acessar recursos deste polo.' 
-      });
-    }
-
-    next();
-  };
-};
-
-export default {
-  isAuthenticated,
-  requireAuth,
-  hasRole,
-  hasPortalAccess,
-  isStudent,
-  isAdmin,
-  belongsToInstitution,
-  belongsToPolo
 };

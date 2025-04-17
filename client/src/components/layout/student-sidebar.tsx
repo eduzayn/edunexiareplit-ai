@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useLocation, Link } from 'wouter';
 import { cn } from '@/lib/utils';
-import { ChevronDown, LogOut } from 'lucide-react';
+import { ChevronDown, ChevronRight, LogOut } from 'lucide-react';
 import { getStudentSidebarItems, SidebarItem } from './student-sidebar-items';
 import {
   Sheet,
@@ -28,151 +28,136 @@ export const StudentSidebar: React.FC<StudentSidebarProps> = ({
   className = '',
 }) => {
   const [location] = useLocation();
-  const { user, logout } = useAuth();
-  const [openMenus, setOpenMenus] = useState<{ [key: string]: boolean }>({});
+  const { user } = useAuth();
+  const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
+  
+  // Obtém os itens da barra lateral baseado na localização atual
+  const sidebarItems = getStudentSidebarItems(location);
 
-  const items = getStudentSidebarItems(location);
-
+  // Alterna o estado de abertura/fechamento do submenu
   const toggleSubmenu = (label: string) => {
-    setOpenMenus(prev => ({
-      ...prev,
-      [label]: !prev[label]
-    }));
+    setOpenSubmenu(openSubmenu === label ? null : label);
   };
 
-  const handleLogout = async () => {
-    await logout();
-    window.location.href = '/auth/login';
-  };
-
+  // Renderiza um item do menu
   const renderMenuItem = (item: SidebarItem, index: number) => {
     const hasSubmenu = item.submenu && item.submenu.length > 0;
-    const isSubmenuOpen = openMenus[item.label] || false;
+    const isSubmenuOpen = openSubmenu === item.label;
+    
+    // Define a classe do item do menu baseada no estado ativo e hover
+    const itemClass = `
+      flex items-center justify-between rounded-md px-3 py-2.5 cursor-pointer
+      ${item.active ? 'bg-blue-100 text-primary-700 font-medium' : 'text-gray-700 hover:bg-blue-50'}
+      ${isMobile ? 'text-base' : 'text-sm'}
+      transition-all duration-200 ease-in-out
+    `;
 
+    // Renderiza o item como um botão se tiver submenu, ou como um link se não tiver
     return (
-      <li key={index} className="w-full">
+      <div key={index} className="my-1">
         {hasSubmenu ? (
           <>
-            <button
+            <div
+              className={itemClass}
               onClick={() => toggleSubmenu(item.label)}
-              className={cn(
-                'flex items-center justify-between w-full px-4 py-3 text-left rounded-lg transition-colors',
-                item.active
-                  ? 'bg-blue-100 text-blue-700'
-                  : 'hover:bg-blue-50'
-              )}
+              data-testid={`sidebar-item-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
             >
-              <div className="flex items-center">
-                <span className="mr-3 text-blue-600">{item.icon}</span>
-                <span className="font-medium">{item.label}</span>
+              <div className="flex items-center gap-3">
+                {item.icon}
+                <span>{item.label}</span>
               </div>
-              <ChevronDown
-                size={16}
-                className={cn(
-                  'transition-transform',
-                  isSubmenuOpen ? 'transform rotate-180' : ''
-                )}
-              />
-            </button>
-            {isSubmenuOpen && (
-              <ul className="ml-8 mt-1 space-y-1">
-                {item.submenu!.map((subItem, subIndex) => (
-                  <li key={subIndex}>
-                    <Link href={subItem.href}>
-                      <a
-                        className={cn(
-                          'flex items-center px-4 py-2 rounded-lg transition-colors text-sm',
-                          subItem.active
-                            ? 'bg-blue-100 text-blue-700'
-                            : 'hover:bg-blue-50'
-                        )}
-                        onClick={isMobile ? onClose : undefined}
-                      >
-                        <span className="mr-2 text-blue-600">{subItem.icon}</span>
-                        <span>{subItem.label}</span>
-                      </a>
-                    </Link>
-                  </li>
+              {isSubmenuOpen ? (
+                <ChevronDown size={16} />
+              ) : (
+                <ChevronRight size={16} />
+              )}
+            </div>
+            
+            {isSubmenuOpen && item.submenu && (
+              <div className="ml-6 mt-1">
+                {item.submenu.map((subItem, subIndex) => (
+                  <Link
+                    key={subIndex}
+                    href={subItem.href}
+                    onClick={onClose}
+                    className={`
+                      flex items-center gap-3 px-3 py-2 rounded-md text-sm
+                      ${subItem.active ? 'bg-blue-100 text-primary-700 font-medium' : 'text-gray-700 hover:bg-blue-50'}
+                      transition-all duration-200 ease-in-out
+                    `}
+                    data-testid={`sidebar-subitem-${subItem.label.toLowerCase().replace(/\s+/g, '-')}`}
+                  >
+                    {subItem.icon}
+                    <span>{subItem.label}</span>
+                  </Link>
                 ))}
-              </ul>
+              </div>
             )}
           </>
         ) : (
-          <Link href={item.href}>
-            <a
-              className={cn(
-                'flex items-center px-4 py-3 rounded-lg transition-colors',
-                item.active
-                  ? 'bg-blue-100 text-blue-700'
-                  : 'hover:bg-blue-50'
-              )}
-              onClick={isMobile ? onClose : undefined}
-            >
-              <span className="mr-3 text-blue-600">{item.icon}</span>
-              <span className="font-medium">{item.label}</span>
-            </a>
+          <Link
+            href={item.href}
+            onClick={() => {
+              if (item.onClick) item.onClick();
+              if (onClose) onClose();
+            }}
+            className={itemClass}
+            data-testid={`sidebar-item-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+          >
+            <div className="flex items-center gap-3">
+              {item.icon}
+              <span>{item.label}</span>
+            </div>
           </Link>
         )}
-      </li>
+      </div>
     );
   };
 
-  const sidebarContent = (
-    <div className="flex flex-col h-full">
-      <div className="px-4 py-6">
-        <div className="flex items-center mb-6">
-          <Avatar className="h-12 w-12 border border-gray-200">
-            <AvatarImage src={user?.profileImage || ''} alt={user?.name || "Usuário"} />
-            <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-              {(user?.name || "U").substring(0, 1).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          <div className="ml-3">
-            <h3 className="font-semibold text-gray-800">{user?.name || "Usuário"}</h3>
-            <p className="text-sm text-gray-500">Estudante</p>
-          </div>
-        </div>
-        <ul className="space-y-1">
-          {items.map(renderMenuItem)}
-        </ul>
-      </div>
-      <div className="mt-auto border-t border-gray-200 py-4 px-4">
-        <Button
-          variant="outline"
-          className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
-          onClick={handleLogout}
-        >
-          <LogOut className="mr-2 h-4 w-4" />
-          Sair
-        </Button>
-      </div>
-    </div>
-  );
-
-  if (isMobile) {
-    return (
-      <Sheet open={true} onOpenChange={onClose}>
-        <SheetContent side="left" className="p-0 w-64">
-          <SheetHeader className="px-4 py-3 border-b border-gray-200">
-            <SheetTitle className="text-blue-600">Portal do Aluno</SheetTitle>
-          </SheetHeader>
-          {sidebarContent}
-        </SheetContent>
-      </Sheet>
-    );
-  }
-
   return (
-    <aside
-      className={cn(
-        'bg-white border-r border-gray-200 h-screen w-64 flex-shrink-0 fixed z-10',
-        className
-      )}
+    <aside 
+      className={`flex flex-col pb-4 ${className} ${
+        isMobile ? 'w-full' : 'w-64 border-r border-gray-200'
+      }`}
     >
-      <div className="px-4 py-3 border-b border-gray-200">
-        <h2 className="text-xl font-semibold text-blue-600">Portal do Aluno</h2>
+      {/* Cabeçalho da barra lateral */}
+      <div className="flex flex-col p-4 bg-gradient-to-b from-blue-50 to-white">
+        <div className="flex flex-col items-center space-y-1 my-3">
+          <div className="w-16 h-16 rounded-full bg-primary-100 flex items-center justify-center overflow-hidden">
+            {user?.profileImage ? (
+              <Avatar className="h-16 w-16 border border-gray-200">
+                <AvatarImage src={user.profileImage} alt={user?.name || "Usuário"} />
+                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+                  {(user?.name || "U").substring(0, 1).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            ) : (
+              <div className="text-2xl font-bold text-primary">
+                {(user?.name || "ES").substring(0, 2).toUpperCase()}
+              </div>
+            )}
+          </div>
+          <h3 className="font-semibold text-gray-800">{user?.name || "Estudante"}</h3>
+          <span className="text-xs text-gray-500">Portal do Aluno</span>
+        </div>
       </div>
-      {sidebarContent}
+
+      {/* Lista de itens do menu */}
+      <nav className="flex-1 px-3 mt-3">
+        {sidebarItems.map(renderMenuItem)}
+      </nav>
+
+      {/* Botão de logout na barra lateral */}
+      <div className="px-3 mt-auto">
+        <Link
+          href="/auth/logout"
+          className="flex items-center gap-3 px-3 py-2 text-sm text-red-500 hover:bg-red-50 rounded-md transition-all duration-200 ease-in-out"
+          data-testid="sidebar-logout"
+        >
+          <LogOut size={18} />
+          <span>Sair da conta</span>
+        </Link>
+      </div>
     </aside>
   );
 };
