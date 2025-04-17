@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { studentChargesController } from '../controllers/student-charges-controller';
-import { requireAuth } from '../middlewares/auth-middleware';
+import { requireAuth, requireStudent } from '../middlewares/auth-middleware';
 
 const router = Router();
 
@@ -9,6 +9,6 @@ const router = Router();
  * @desc Obtém as cobranças do aluno autenticado
  * @access Private (Student only)
  */
-router.get('/charges', requireAuth, studentChargesController.getStudentCharges);
+router.get('/charges', requireAuth, requireStudent, studentChargesController.getStudentCharges);
 
 export default router;
