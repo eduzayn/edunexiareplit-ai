@@ -350,8 +350,8 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
         { 
           name: "Cobranças", 
           icon: <InvoiceIcon />, 
-          href: "/admin/finance/invoices",
-          active: currentPath === "/admin/finance/invoices" || (currentPath && currentPath.includes("/admin/finance/invoices/"))
+          href: "/admin/finance/charges",
+          active: currentPath === "/admin/finance/charges" || (currentPath && currentPath.includes("/admin/finance/charges/"))
         },
         { 
           name: "Pagamentos", 
