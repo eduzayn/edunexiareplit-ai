@@ -238,15 +238,15 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
 
   // Categoria: Operacional
   const operationalCategory: SidebarCategory = {
-    name: "OPERACIONAL",
-    icon: <FolderIcon className="text-blue-500" />,
+    name: "Operacional",
+    icon: <FolderIcon />,
     expanded: hasCategoryActiveItem({
       name: "Operacional",
       icon: <FolderIcon />,
       items: [
         { 
           name: "Relatórios", 
-          icon: <BarChartAltIcon className="text-muted-foreground" />, 
+          icon: <BarChartAltIcon />, 
           href: "/admin/reports",
           active: currentPath === "/admin/reports"
         },
@@ -264,8 +264,8 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
 
   // Categoria: Certificação
   const certificationCategory: SidebarCategory = {
-    name: "CERTIFICAÇÃO",
-    icon: <AwardIcon className="text-amber-500" />,
+    name: "Certificação",
+    icon: <AwardIcon />,
     expanded: hasCategoryActiveItem({
       name: "Certificação",
       icon: <AwardIcon />,
@@ -314,8 +314,8 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
 
   // Categoria: CRM & Gestão
   const crmCategory: SidebarCategory = {
-    name: "CRM & GESTÃO",
-    icon: <CRMIcon className="text-purple-500" />,
+    name: "CRM & Gestão",
+    icon: <CRMIcon />,
     expanded: hasCategoryActiveItem({
       name: "CRM & Gestão",
       icon: <CRMIcon />,
@@ -418,14 +418,14 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
   
   // Categoria: Comunicação
   const communicationCategory: SidebarCategory = {
-    name: "COMUNICAÇÃO",
-    icon: <MessageSquareIcon className="text-green-500" />,
+    name: "Comunicação",
+    icon: <MessageSquareIcon />,
     expanded: hasCategoryActiveItem({
       name: "Comunicação",
       icon: <MessageSquareIcon />,
       items: [
         { 
-          name: "CANAIS", 
+          name: "Canais", 
           icon: <InboxIcon />, 
           href: "/admin/comunicacao/inbox",
           active: currentPath === "/admin/comunicacao/inbox" || (currentPath && currentPath.includes("/admin/comunicacao/inbox/"))
@@ -446,7 +446,7 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
     }, currentPath),
     items: [
       { 
-        name: "CANAIS", 
+        name: "Canais", 
         icon: <InboxIcon />, 
         href: "/admin/comunicacao/inbox",
         active: currentPath === "/admin/comunicacao/inbox" || (currentPath && currentPath.includes("/admin/comunicacao/inbox/"))
@@ -468,8 +468,8 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
 
   // Categoria: Sistema
   const systemCategory: SidebarCategory = {
-    name: "SISTEMA",
-    icon: <BuildIcon className="text-gray-600" />,
+    name: "Sistema",
+    icon: <BuildIcon />,
     expanded: hasCategoryActiveItem({
       name: "Sistema",
       icon: <BuildIcon />,
