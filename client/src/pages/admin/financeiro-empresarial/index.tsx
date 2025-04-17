@@ -41,8 +41,8 @@ export default function FinanceiroEmpresarialPage() {
   const { user } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Verificação de acesso exclusivo para super_admin
-  if (!user?.isAdmin && user?.role !== "super_admin") {
+  // Verificação de acesso exclusivo para administradores
+  if (user?.portalType !== "admin") {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">

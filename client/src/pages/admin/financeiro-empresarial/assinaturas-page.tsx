@@ -5,10 +5,9 @@
  * e gerenciar planos de pagamento recorrentes.
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { Helmet } from "react-helmet";
 import { getAdminSidebarItems } from "@/components/layout/admin-sidebar-items";
 import { Sidebar } from "@/components/layout/sidebar";
 import {
@@ -127,8 +126,8 @@ export default function AssinaturasPage() {
     },
   ];
 
-  // Verificação de acesso exclusivo para super_admin
-  if (!user?.isAdmin && user?.role !== "super_admin") {
+  // Verificação de acesso exclusivo para administradores
+  if (user?.portalType !== "admin") {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
@@ -169,12 +168,12 @@ export default function AssinaturasPage() {
     return new Intl.DateTimeFormat("pt-BR").format(date);
   };
 
+  useEffect(() => {
+    document.title = "Assinaturas | Financeiro Empresarial";
+  }, []);
+
   return (
     <div className="flex h-screen bg-background">
-      <Helmet>
-        <title>Assinaturas | Financeiro Empresarial</title>
-      </Helmet>
-
       {/* Sidebar para navegação */}
       <Sidebar
         items={getAdminSidebarItems(location)}

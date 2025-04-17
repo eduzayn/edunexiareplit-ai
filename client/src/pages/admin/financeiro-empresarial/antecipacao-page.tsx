@@ -5,10 +5,9 @@
  * para melhorar o fluxo de caixa da instituição.
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { Helmet } from "react-helmet";
 import { getAdminSidebarItems } from "@/components/layout/admin-sidebar-items";
 import { Sidebar } from "@/components/layout/sidebar";
 import {
@@ -151,8 +150,8 @@ export default function AntecipacaoPage() {
     },
   ];
 
-  // Verificação de acesso exclusivo para super_admin
-  if (!user?.isAdmin && user?.role !== "super_admin") {
+  // Verificação de acesso exclusivo para administradores
+  if (user?.portalType !== "admin") {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
@@ -201,12 +200,12 @@ export default function AntecipacaoPage() {
   const anticipationFee = availableReceivables.reduce((total, item) => total + item.anticipationFee, 0);
   const netAmount = totalAvailable - anticipationFee;
 
+  useEffect(() => {
+    document.title = "Antecipação de Recebíveis | Financeiro Empresarial";
+  }, []);
+
   return (
     <div className="flex h-screen bg-background">
-      <Helmet>
-        <title>Antecipação de Recebíveis | Financeiro Empresarial</title>
-      </Helmet>
-
       {/* Sidebar para navegação */}
       <Sidebar
         items={getAdminSidebarItems(location)}
