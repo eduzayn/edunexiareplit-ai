@@ -14,16 +14,15 @@ async function throwIfResNotOk(res: Response) {
  * @returns Resposta convertida para o tipo T
  */
 export async function apiRequest<T = any>(
+  method: string = "GET",
   url: string,
-  options?: {
-    method?: string;
-    data?: unknown;
-    headers?: Record<string, string>;
-  }
-): Promise<T> {
-  const method = options?.method || 'GET';
-  const data = options?.data;
-  const customHeaders = options?.headers || {};
+  data?: unknown,
+  headers?: Record<string, string>
+): Promise<Response> {
+  const customHeaders = headers || {};
+
+  // Adicionar console.log para debug
+  console.log(`Realizando requisição ${method} para ${url}`);
 
   const res = await fetch(url, {
     method,
@@ -32,18 +31,15 @@ export async function apiRequest<T = any>(
       ...customHeaders
     },
     body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
+    credentials: "include", // Importante: inclui cookies de autenticação
   });
+
+  // Log para debug
+  console.log(`Resposta da requisição ${method} para ${url}: ${res.status}`);
 
   await throwIfResNotOk(res);
   
-  // Para requisições DELETE que não retornam conteúdo
-  if (res.status === 204) {
-    return {} as T;
-  }
-  
-  // Retorna os dados convertidos para o tipo T
-  return await res.json() as T;
+  return res;
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
