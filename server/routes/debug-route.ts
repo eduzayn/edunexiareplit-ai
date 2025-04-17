@@ -288,6 +288,47 @@ router.get('/asaas-charges', async (req, res) => {
   }
 });
 
+// Rota para cancelar uma cobrança Asaas
+router.post('/asaas-charges/:id/cancel', async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log(`[DEBUG] Cancelando cobrança ${id} no Asaas`);
+    
+    // Usar o serviço para cancelar a cobrança
+    try {
+      const result = await asaasChargesService.cancelCharge(id);
+      
+      console.log(`[DEBUG] Cobrança ${id} cancelada com sucesso`);
+      res.json({
+        success: true,
+        message: 'Cobrança cancelada com sucesso',
+        data: result
+      });
+    } catch (apiError) {
+      console.error(`[DEBUG] Erro ao cancelar cobrança ${id}:`, apiError);
+      
+      // Verificar se é um erro específico do Asaas ou genérico
+      const errorMessage = apiError.response?.data?.errors?.[0]?.description || 
+                          apiError.message || 
+                          'Erro ao cancelar cobrança';
+      
+      res.status(500).json({
+        success: false,
+        message: errorMessage,
+        error: apiError.message
+      });
+    }
+  } catch (error) {
+    console.error('Erro ao processar cancelamento de cobrança:', error);
+    
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno ao processar o cancelamento da cobrança',
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+});
+
 // Rota para buscar clientes do Asaas diretamente
 router.get('/asaas-customers', async (req, res) => {
   try {
