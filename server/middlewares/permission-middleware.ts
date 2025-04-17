@@ -4,6 +4,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { checkUserPermission } from '../services/permission-service';
+import { PortalType, portalTypes } from '../../shared/schema';
 
 /**
  * Mapeamento de recursos alternativos para verificação
@@ -225,6 +226,31 @@ export async function attachPermissions(req: Request, res: Response, next: NextF
     console.error('Erro ao anexar permissões:', error);
     next();
   }
+}
+
+/**
+ * Middleware para verificar se o usuário pertence a um determinado tipo de portal
+ * @param portalType Tipo de portal exigido (student, admin, partner, polo)
+ * @returns Middleware Express
+ */
+export function requirePortalType(portalType: PortalType) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    // Verificar se o usuário está autenticado
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ error: 'Autenticação necessária' });
+    }
+
+    // Verificar se o usuário tem o tipo de portal correto
+    if (req.user.portalType !== portalType) {
+      console.log(`Acesso negado: Usuário ${req.user.username} (${req.user.id}) tentou acessar portal ${portalType}, mas é do tipo ${req.user.portalType}`);
+      return res.status(403).json({
+        error: 'Acesso negado',
+        message: `Você não tem acesso a este portal`
+      });
+    }
+
+    next();
+  };
 }
 
 // Adiciona tipos ao Express Request
