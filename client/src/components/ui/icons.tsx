@@ -1,5 +1,6 @@
 // Arquivo de ícones para o sistema
 import React from "react";
+// IMPORTANTE: Não crie duplicações de ícones. Use os padrões existentes e use alias quando necessário.
 import { 
   Users,
   Folder,
@@ -48,7 +49,11 @@ import {
   Trash,
   ArrowLeft,
   Loader2,
-  Search
+  Search,
+  BarChart3,
+  PlayCircle,
+  Shield,
+  GraduationCap
 } from "lucide-react";
 
 // Ícones de Lucide exportados diretamente
@@ -65,6 +70,7 @@ export const PhoneIcon = Phone;
 export const CopyIcon = Copy;
 export const RefreshIcon = RefreshCw;
 export const DateRangeIcon = Calendar;
+export const CalendarIcon = Calendar;
 export const PlusIcon = Plus;
 export const PlusCircleIcon = PlusCircle;
 export const InfoIcon = Info;
@@ -718,7 +724,31 @@ export function DashboardIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
+// Função original para manter compatibilidade
 export function SchoolIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="m4 6 8-4 8 4" />
+      <path d="m18 10 4 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8l4-2" />
+      <path d="M14 22v-4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v4" />
+      <path d="M18 5v17" />
+      <path d="M6 5v17" />
+      <circle cx="12" cy="9" r="2" />
+    </svg>
+  );
+}
+
+// Versão alternativa do ícone de escola/educação
+export function SchoolAltIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -966,6 +996,25 @@ export function BarChartIcon(props: React.SVGProps<SVGSVGElement>) {
       strokeLinejoin="round"
       {...props}
     >
+      <rect x="3" y="12" width="6" height="8" />
+      <rect x="9" y="8" width="6" height="12" />
+      <rect x="15" y="4" width="6" height="16" />
+    </svg>
+  );
+}
+
+export function BarChartAltIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
       <line x1="12" x2="12" y1="20" y2="10" />
       <line x1="18" x2="18" y1="20" y2="4" />
       <line x1="6" x2="6" y1="20" y2="16" />
@@ -1198,6 +1247,7 @@ export function WavingHandIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
+// Função original para manter compatibilidade
 export function ShieldIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
@@ -1215,7 +1265,43 @@ export function ShieldIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
+export function ShieldAltIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    </svg>
+  );
+}
+
+// Função original para manter compatibilidade
 export function GraduationCapIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+      <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5" />
+    </svg>
+  );
+}
+
+export function GraduationCapAltIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -1271,7 +1357,26 @@ export function ChatIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
+// Função original para manter compatibilidade
 export function PlayCircleIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <circle cx="12" cy="12" r="10" />
+      <polygon points="10 8 16 12 10 16 10 8" />
+    </svg>
+  );
+}
+
+export function PlayCircleAltIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -1529,7 +1634,7 @@ export function BookIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
-export function CalendarIcon(props: React.SVGProps<SVGSVGElement>) {
+export function CalendarAltIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"

@@ -7,7 +7,7 @@ import {
   HandshakeIcon,
   StorefrontIcon,
   MonetizationOnIcon,
-  BarChartIcon,
+  BarChartAltIcon,
   CloudIcon,
   BuildIcon,
   SecurityIcon,
@@ -18,7 +18,7 @@ import {
   FolderIcon,
   ChevronDownIcon,
   ChevronRightIcon,
-  GraduationCapIcon,
+  GraduationCapAltIcon,
   BookIcon,
   BuildingIcon,
   AwardIcon,
@@ -114,7 +114,7 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
         },
         { 
           name: "Cursos", 
-          icon: <GraduationCapIcon className="text-muted-foreground" />, 
+          icon: <GraduationCapAltIcon className="text-muted-foreground" />, 
           href: "/admin/courses",
           active: currentPath === "/admin/courses" || (currentPath && currentPath.includes("/admin/courses/"))
         },
@@ -129,7 +129,7 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
       },
       { 
         name: "Cursos", 
-        icon: <GraduationCapIcon />, 
+        icon: <GraduationCapAltIcon />, 
         href: "/admin/courses",
         active: currentPath === "/admin/courses" || (currentPath && currentPath.includes("/admin/courses/"))
       },
@@ -246,7 +246,7 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
       items: [
         { 
           name: "Relatórios", 
-          icon: <BarChartIcon className="text-muted-foreground" />, 
+          icon: <BarChartAltIcon className="text-muted-foreground" />, 
           href: "/admin/reports",
           active: currentPath === "/admin/reports"
         },
@@ -255,7 +255,7 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
     items: [
       { 
         name: "Relatórios", 
-        icon: <BarChartIcon />, 
+        icon: <BarChartAltIcon />, 
         href: "/admin/reports",
         active: currentPath === "/admin/reports"
       },

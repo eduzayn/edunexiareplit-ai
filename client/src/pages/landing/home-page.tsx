@@ -6,16 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Logo } from "@/components/ui/logo";
 import { 
-  School as SchoolIcon,
-  PlayCircleIcon, 
+  SchoolAltIcon,
+  PlayCircleAltIcon, 
   CalendarIcon, 
   ChatIcon, 
   PaymentsIcon, 
   MapPinIcon,
   ChartIcon,
-  BarChartIcon,
-  ShieldIcon,
-  GraduationCapIcon
+  BarChartAltIcon,
+  ShieldAltIcon,
+  GraduationCapAltIcon
 } from "@/components/ui/icons";
 import studentOnlineImage from "@assets/teacher-talking-with-her-students-online (1).jpg";
 
@@ -75,7 +75,7 @@ export default function HomePage() {
                     className="bg-white text-primary hover:bg-gray-100 font-medium shadow-lg transition-all hover:scale-105"
                     onClick={() => navigate('/modulos')}
                   >
-                    <PlayCircleIcon className="mr-2 h-5 w-5" />
+                    <PlayCircleAltIcon className="mr-2 h-5 w-5" />
                     Assistir demonstração
                   </Button>
                   <Button 
@@ -109,7 +109,7 @@ export default function HomePage() {
                   <Card className="backdrop-blur-md bg-white/10 border-white/20 shadow-xl">
                     <CardContent className="p-3 flex flex-col items-center text-center">
                       <div className="w-10 h-10 rounded-full bg-blue-900/50 flex items-center justify-center mb-2">
-                        <GraduationCapIcon className="h-5 w-5 text-white" />
+                        <GraduationCapAltIcon className="h-5 w-5 text-white" />
                       </div>
                       <div className="text-2xl font-bold text-white">{animatedCounter.toLocaleString('pt-BR')}+</div>
                       <p className="text-white/80 text-xs">Alunos ativos</p>
@@ -160,7 +160,7 @@ export default function HomePage() {
               <div className="bg-white rounded-xl shadow-md overflow-hidden border border-neutral-200 hover:shadow-lg transition-shadow">
                 <div className="p-6">
                   <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center rounded-full bg-green-100">
-                    <GraduationCapIcon className="h-8 w-8 text-[#12B76A]" />
+                    <GraduationCapAltIcon className="h-8 w-8 text-[#12B76A]" />
                   </div>
                   <h3 className="text-xl font-semibold text-center text-neutral-900 mb-2">Portal do Aluno</h3>
                   <p className="text-sm text-neutral-600 text-center mb-4">
