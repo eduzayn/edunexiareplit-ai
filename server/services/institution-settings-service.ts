@@ -69,6 +69,14 @@ function validateEncryptionKey(): boolean {
     console.warn('AVISO: ENCRYPTION_KEY não definida. Valores encriptados não serão seguros!');
     return false;
   }
+  
+  // Verifica se a chave possui o tamanho adequado (32 bytes em formato hexadecimal = 64 caracteres)
+  if (key.length !== 64) {
+    console.warn(`AVISO: ENCRYPTION_KEY deve ter 64 caracteres hexadecimais (32 bytes). Tamanho atual: ${key.length}`);
+    return false;
+  }
+  
+  console.log('Chave de criptografia configurada corretamente.');
   return true;
 }
 
