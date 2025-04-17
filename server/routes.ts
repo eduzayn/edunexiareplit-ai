@@ -2522,124 +2522,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ================== Rotas para Finanças - Pagamentos ==================
-  // Listar pagamentos
+  // ================== Rotas para Finanças - Pagamentos (OBSOLETAS) ==================
+  // Todas as rotas de pagamentos foram removidas em favor da integração com o Asaas
+  // Listar pagamentos (obsoleto)
   app.get("/api/admin/finance/payments", requireAdmin, async (req, res) => {
-    try {
-      const invoiceId = req.query.invoiceId ? parseInt(req.query.invoiceId.toString()) : undefined;
-      const status = req.query.status?.toString();
-      const method = req.query.method?.toString();
-      const limit = parseInt(req.query.limit?.toString() || "50");
-      const offset = parseInt(req.query.offset?.toString() || "0");
-
-      const payments = await storage.getPayments(invoiceId, status, method, limit, offset);
-      res.json(payments);
-    } catch (error) {
-      console.error("Error fetching payments:", error);
-      res.status(500).json({ message: "Erro ao buscar pagamentos" });
-    }
+    console.log("AVISO: Requisição à API de pagamentos obsoleta. Módulo removido em favor da integração Asaas.");
+    res.status(410).json({ 
+      message: "Módulo de pagamentos foi removido",
+      redirectTo: "/api/admin/finance/charges",
+      details: "O módulo de pagamentos manual foi substituído pela robusta integração com o Asaas"
+    });
   });
 
-  // Obter um pagamento específico
+  // Obter um pagamento específico (obsoleto)
   app.get("/api/admin/finance/payments/:id", requireAdmin, async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const payment = await storage.getPayment(id);
-      
-      if (!payment) {
-        return res.status(404).json({ message: "Pagamento não encontrado" });
-      }
-      
-      res.json(payment);
-    } catch (error) {
-      console.error("Error fetching payment:", error);
-      res.status(500).json({ message: "Erro ao buscar pagamento" });
-    }
+    console.log("AVISO: Requisição à API de pagamentos obsoleta. Módulo removido em favor da integração Asaas.");
+    res.status(410).json({ 
+      message: "Módulo de pagamentos foi removido",
+      redirectTo: "/api/admin/finance/charges",
+      details: "O módulo de pagamentos manual foi substituído pela robusta integração com o Asaas"
+    });
   });
 
-  // Registrar um novo pagamento
+  // Registrar um novo pagamento (obsoleto)
   app.post("/api/admin/finance/payments", requireAdmin, async (req, res) => {
-    try {
-      // Validar os dados do pagamento
-      const paymentData = insertPaymentSchema.parse({ 
-        ...req.body,
-        createdById: req.user.id
-      });
-      
-      const payment = await storage.createPayment(paymentData);
-      
-      // Atualizar o status da fatura se necessário
-      await storage.updateInvoiceAfterPayment(paymentData.invoiceId);
-      
-      res.status(201).json(payment);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          message: "Dados inválidos", 
-          errors: error.errors 
-        });
-      }
-      console.error("Error creating payment:", error);
-      res.status(500).json({ message: "Erro ao registrar pagamento" });
-    }
+    console.log("AVISO: Requisição à API de pagamentos obsoleta. Módulo removido em favor da integração Asaas.");
+    res.status(410).json({ 
+      message: "Módulo de pagamentos foi removido",
+      redirectTo: "/api/admin/finance/charges",
+      details: "O módulo de pagamentos manual foi substituído pela robusta integração com o Asaas"
+    });
   });
 
-  // Atualizar um pagamento
+  // Atualizar um pagamento (obsoleto)
   app.put("/api/admin/finance/payments/:id", requireAdmin, async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const existingPayment = await storage.getPayment(id);
-      
-      if (!existingPayment) {
-        return res.status(404).json({ message: "Pagamento não encontrado" });
-      }
-      
-      // Validar os dados da atualização
-      const updateData = insertPaymentSchema.partial().parse(req.body);
-      
-      const updatedPayment = await storage.updatePayment(id, updateData);
-      
-      // Atualizar o status da fatura se o status do pagamento for alterado
-      if (updateData.status) {
-        await storage.updateInvoiceAfterPayment(existingPayment.invoiceId);
-      }
-      
-      res.json(updatedPayment);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          message: "Dados inválidos", 
-          errors: error.errors 
-        });
-      }
-      console.error("Error updating payment:", error);
-      res.status(500).json({ message: "Erro ao atualizar pagamento" });
-    }
+    console.log("AVISO: Requisição à API de pagamentos obsoleta. Módulo removido em favor da integração Asaas.");
+    res.status(410).json({ 
+      message: "Módulo de pagamentos foi removido",
+      redirectTo: "/api/admin/finance/charges",
+      details: "O módulo de pagamentos manual foi substituído pela robusta integração com o Asaas"
+    });
   });
 
-  // Excluir um pagamento
+  // Excluir um pagamento (obsoleto)
   app.delete("/api/admin/finance/payments/:id", requireAdmin, async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const payment = await storage.getPayment(id);
-      
-      if (!payment) {
-        return res.status(404).json({ message: "Pagamento não encontrado" });
-      }
-      
-      const success = await storage.deletePayment(id);
-      
-      if (success) {
-        // Atualizar o status da fatura após excluir o pagamento
-        await storage.updateInvoiceAfterPayment(payment.invoiceId);
-        res.status(204).end();
-      } else {
-        res.status(500).json({ message: "Erro ao excluir pagamento" });
-      }
-    } catch (error) {
-      console.error("Error deleting payment:", error);
-      res.status(500).json({ message: "Erro ao excluir pagamento" });
-    }
+    console.log("AVISO: Requisição à API de pagamentos obsoleta. Módulo removido em favor da integração Asaas.");
+    res.status(410).json({ 
+      message: "Módulo de pagamentos foi removido",
+      redirectTo: "/api/admin/finance/charges",
+      details: "O módulo de pagamentos manual foi substituído pela robusta integração com o Asaas"
+    });
   });
 
   // ================== Rotas para Integração com Gateway de Pagamento (Asaas) ==================

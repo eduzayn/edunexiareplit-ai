@@ -389,12 +389,7 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
         href: "/admin/finance/charges",
         active: currentPath === "/admin/finance/charges" || (currentPath && currentPath.includes("/admin/finance/charges/"))
       },
-      { 
-        name: "Pagamentos", 
-        icon: <PaymentsIcon />, 
-        href: "/admin/finance/payments",
-        active: currentPath === "/admin/finance/payments" || (currentPath && currentPath.includes("/admin/finance/payments/"))
-      },
+      /* Item Pagamentos removido - Obsoleto após integração com Asaas */
       // Submódulo Contratos
       { 
         name: "Contratos", 
