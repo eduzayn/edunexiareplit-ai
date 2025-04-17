@@ -27,25 +27,25 @@ export class FreepikService {
 
     try {
       const response = await axios.get(`${this.baseUrl}/v1/resources`, {
+        params: {
+          q: query,
+          page,
+          limit,
+        },
         headers: {
           'Accept-Language': 'pt-BR',
           'Accept': 'application/json',
+          'Content-Type': 'application/json',
           'X-Freepik-API-Key': this.apiKey
-        },
-        params: {
-          term: query,
-          page,
-          locale: 'pt-br',
-          limit,
-          filters: {
-            content_type: ['photo', 'vector']
-          }
         }
       });
 
       return response.data;
     } catch (error) {
-      console.error('Erro ao buscar imagens do Freepik:', error);
+      console.error('Erro ao buscar imagens no Freepik:', error);
+      if (axios.isAxiosError(error) && error.response) {
+        throw new Error(`Erro na API do Freepik: ${error.response.status} - ${error.response.data.message || 'Erro desconhecido'}`);
+      }
       throw error;
     }
   }
@@ -61,20 +61,19 @@ export class FreepikService {
     }
 
     try {
-      // Construir o payload para a API Mystic
-      const payload: any = {
-        prompt,
-        n: 1, // Número de imagens a gerar
+      const data: any = {
+        prompt: prompt
       };
-      
+
       if (style) {
-        payload.style = style;
+        data.style = style;
       }
 
-      const response = await axios.post(`${this.baseUrl}/v1/mystic/generations`, payload, {
+      const response = await axios.post(`${this.baseUrl}/v1/mystic/generations`, data, {
         headers: {
-          'Content-Type': 'application/json',
+          'Accept-Language': 'pt-BR',
           'Accept': 'application/json',
+          'Content-Type': 'application/json',
           'X-Freepik-API-Key': this.apiKey
         }
       });
@@ -82,6 +81,9 @@ export class FreepikService {
       return response.data;
     } catch (error) {
       console.error('Erro ao gerar imagem com Mystic:', error);
+      if (axios.isAxiosError(error) && error.response) {
+        throw new Error(`Erro na API do Freepik Mystic: ${error.response.status} - ${error.response.data.message || 'Erro desconhecido'}`);
+      }
       throw error;
     }
   }
@@ -97,12 +99,13 @@ export class FreepikService {
 
     try {
       const response = await axios.post(
-        `${this.baseUrl}/v1/upscaler`, 
+        `${this.baseUrl}/v1/mystic/upscale`,
         { image_url: imageUrl },
         {
           headers: {
-            'Content-Type': 'application/json',
+            'Accept-Language': 'pt-BR',
             'Accept': 'application/json',
+            'Content-Type': 'application/json',
             'X-Freepik-API-Key': this.apiKey
           }
         }
@@ -111,9 +114,13 @@ export class FreepikService {
       return response.data;
     } catch (error) {
       console.error('Erro ao melhorar resolução da imagem:', error);
+      if (axios.isAxiosError(error) && error.response) {
+        throw new Error(`Erro na API de upscaling do Freepik: ${error.response.status} - ${error.response.data.message || 'Erro desconhecido'}`);
+      }
       throw error;
     }
   }
 }
 
+// Instância única para uso em toda a aplicação
 export const freepikService = new FreepikService();

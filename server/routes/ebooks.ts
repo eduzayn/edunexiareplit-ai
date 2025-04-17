@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { storage } from "../storage";
 import { requireAuth, requireAdmin } from "../middleware/auth";
-import { openAIService } from "../services/openai-service";
-import { insertEBookSchema, insertEBookImageSchema, eBookContentSchema } from "@shared/schema";
+import { openaiService } from "../services/openai-service";
+import { freepikService } from "../services/freepik-service";
+import { insertEBookSchema, insertEBookImageSchema } from "@shared/schema";
 import { z } from "zod";
 
 const router = Router();
@@ -303,7 +304,11 @@ router.post("/:id/images/reorder", requireAuth, requireAdmin, async (req, res) =
 // Gerar conteúdo para e-book com OpenAI
 router.post("/generate-content", requireAuth, requireAdmin, async (req, res) => {
   try {
-    const { title, description, disciplineId } = eBookContentSchema.parse(req.body);
+    const { topic, disciplineId, additionalContext } = z.object({
+      topic: z.string().min(3, "O tópico deve ter pelo menos 3 caracteres"),
+      disciplineId: z.number({ required_error: "O ID da disciplina é obrigatório" }),
+      additionalContext: z.string().optional()
+    }).parse(req.body);
     
     // Verificar se a disciplina existe
     const discipline = await storage.getDiscipline(disciplineId);
@@ -313,10 +318,10 @@ router.post("/generate-content", requireAuth, requireAdmin, async (req, res) => 
     }
     
     // Gerar conteúdo usando o serviço OpenAI
-    const eBookContent = await openAIService.generateEBookContent(
-      title,
-      description,
-      disciplineId
+    const eBookContent = await openaiService.generateEBook(
+      topic,
+      discipline.name,
+      additionalContext
     );
     
     // Responder com o conteúdo gerado
@@ -330,30 +335,143 @@ router.post("/generate-content", requireAuth, requireAdmin, async (req, res) => 
   }
 });
 
-// Gerar sugestões de imagens para e-book com OpenAI
-router.post("/generate-image-suggestions", requireAuth, requireAdmin, async (req, res) => {
+// ==================== Rotas para integração com Freepik ====================
+
+// Buscar imagens no Freepik
+router.get("/freepik-search", requireAuth, requireAdmin, async (req, res) => {
   try {
-    const schema = z.object({
-      title: z.string().min(3),
-      description: z.string().min(10)
-    });
+    const { query, page, limit } = z.object({
+      query: z.string().min(3, "O termo de busca deve ter pelo menos 3 caracteres"),
+      page: z.string().optional().transform(val => val ? parseInt(val) : 1),
+      limit: z.string().optional().transform(val => val ? parseInt(val) : 10)
+    }).parse(req.query);
     
-    const { title, description } = schema.parse(req.body);
+    const results = await freepikService.searchImages(query, page, limit);
     
-    // Gerar sugestões de imagens usando o serviço OpenAI
-    const imageSuggestions = await openAIService.generateImageSuggestions(
-      title,
-      description
+    res.json(results);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Parâmetros de busca inválidos", details: error.errors });
+    }
+    console.error("Erro ao buscar imagens no Freepik:", error);
+    res.status(500).json({ error: "Erro ao buscar imagens" });
+  }
+});
+
+// Gerar imagem com AI usando o Mystic do Freepik
+router.post("/freepik-generate-image", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { prompt, style } = z.object({
+      prompt: z.string().min(10, "A descrição da imagem deve ter pelo menos 10 caracteres"),
+      style: z.string().optional()
+    }).parse(req.body);
+    
+    const result = await freepikService.generateImage(prompt, style);
+    
+    res.json(result);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Dados inválidos para geração de imagem", details: error.errors });
+    }
+    console.error("Erro ao gerar imagem com Freepik Mystic:", error);
+    res.status(500).json({ error: "Erro ao gerar imagem" });
+  }
+});
+
+// Melhorar resolução de uma imagem com o upscaler do Freepik
+router.post("/freepik-upscale-image", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { imageUrl } = z.object({
+      imageUrl: z.string().url("URL da imagem inválida")
+    }).parse(req.body);
+    
+    const result = await freepikService.upscaleImage(imageUrl);
+    
+    res.json(result);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "URL da imagem inválida", details: error.errors });
+    }
+    console.error("Erro ao melhorar resolução da imagem:", error);
+    res.status(500).json({ error: "Erro ao melhorar resolução da imagem" });
+  }
+});
+
+// Gerar o e-book completo (texto + imagens)
+router.post("/generate-complete-ebook", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { topic, disciplineId, additionalContext } = z.object({
+      topic: z.string().min(3, "O tópico deve ter pelo menos 3 caracteres"),
+      disciplineId: z.number({ required_error: "O ID da disciplina é obrigatório" }),
+      additionalContext: z.string().optional()
+    }).parse(req.body);
+    
+    // Verificar se a disciplina existe
+    const discipline = await storage.getDiscipline(disciplineId);
+    
+    if (!discipline) {
+      return res.status(404).json({ error: "Disciplina não encontrada" });
+    }
+    
+    // 1. Gerar conteúdo usando o serviço OpenAI
+    const eBookData = await openaiService.generateEBook(
+      topic,
+      discipline.name,
+      additionalContext
     );
     
-    // Responder com as sugestões geradas
-    res.json({ imageSuggestions });
+    // 2. Para cada prompt de imagem, gerar uma imagem com o Freepik
+    const images = [];
+    
+    for (const prompt of eBookData.imagePrompts) {
+      try {
+        // Tentar gerar imagem com o Freepik
+        const imageResult = await freepikService.generateImage(prompt);
+        
+        if (imageResult?.data?.imageUrl) {
+          images.push({
+            url: imageResult.data.imageUrl,
+            prompt: prompt
+          });
+        }
+      } catch (imageError) {
+        console.error(`Erro ao gerar imagem para o prompt "${prompt}":`, imageError);
+        // Continuar mesmo se uma imagem falhar
+      }
+    }
+    
+    // 3. Criar o e-book no banco de dados
+    const newEBook = await storage.createEBook({
+      title: eBookData.title,
+      description: eBookData.description,
+      content: eBookData.content,
+      disciplineId,
+      status: 'draft',
+      isGenerated: true,
+      createdById: req.session.user?.id
+    });
+    
+    // 4. Adicionar as imagens geradas ao e-book
+    for (let i = 0; i < images.length; i++) {
+      const image = images[i];
+      await storage.addImageToEBook({
+        eBookId: newEBook.id,
+        url: image.url,
+        caption: image.prompt,
+        order: i + 1
+      });
+    }
+    
+    // 5. Buscar o e-book completo com imagens
+    const completeEBook = await storage.getEBook(newEBook.id);
+    
+    res.json(completeEBook);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: "Dados de requisição inválidos", details: error.errors });
     }
-    console.error("Erro ao gerar sugestões de imagens:", error);
-    res.status(500).json({ error: "Erro ao gerar sugestões de imagens" });
+    console.error("Erro ao gerar e-book completo:", error);
+    res.status(500).json({ error: "Erro ao gerar e-book completo" });
   }
 });
 

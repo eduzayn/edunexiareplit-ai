@@ -1,113 +1,120 @@
 import OpenAI from "openai";
-import { storage } from "../storage";
-import { EBookContent } from "@shared/schema";
 
-// Inicializa o cliente da OpenAI com a chave da API
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
+/**
+ * Serviço para integração com a API do OpenAI
+ */
 export class OpenAIService {
+  private apiKey: string;
+  private client: OpenAI;
+
+  constructor() {
+    this.apiKey = process.env.OPENAI_API_KEY || '';
+    if (!this.apiKey) {
+      console.warn('OPENAI_API_KEY não está configurado!');
+    }
+    this.client = new OpenAI({ apiKey: this.apiKey });
+  }
+
   /**
-   * Gera conteúdo para um e-book interativo com base no título, descrição e contexto da disciplina
+   * Gera conteúdo de texto baseado no prompt fornecido
+   * @param prompt Descrição do que deve ser gerado
+   * @param options Opções adicionais
+   * @returns Texto gerado pelo modelo
    */
-  async generateEBookContent(
-    title: string, 
-    description: string, 
-    disciplineId: number
-  ): Promise<EBookContent> {
+  async generateText(prompt: string, options?: {
+    model?: string,
+    maxTokens?: number,
+    temperature?: number
+  }): Promise<string> {
+    if (!this.apiKey) {
+      throw new Error('OPENAI_API_KEY não está configurado');
+    }
+
     try {
-      // Buscar informações da disciplina para contexto
-      const discipline = await storage.getDiscipline(disciplineId);
-      
-      if (!discipline) {
-        throw new Error("Disciplina não encontrada");
-      }
-
-      // Construir o prompt para o modelo de linguagem
-      const prompt = `
-        Crie um e-book interativo educacional com o título: "${title}".
-        Descrição: ${description}
-        
-        Contexto da disciplina:
-        - Nome: ${discipline.name}
-        - Código: ${discipline.code}
-        - Ementa: ${discipline.syllabus}
-        - Carga horária: ${discipline.workload} horas
-        
-        O e-book deve incluir:
-        1. Uma introdução atraente ao tema
-        2. Entre 3 a 5 capítulos com conteúdo relevante
-        3. Exercícios interativos para cada capítulo
-        4. Um resumo ao final de cada capítulo
-        5. Referências bibliográficas relevantes
-        
-        Formate o conteúdo usando Markdown para estruturar o texto. Inclua sugestões de imagens e diagramas que poderiam ser adicionados depois.
-      `;
-
-      // Chamar a API da OpenAI (gpt-4o é o modelo mais recente e avançado)
-      // o modelo mais novo da OpenAI é "gpt-4o" que foi lançado após 13 de maio de 2024. não altere isso a menos que explicitamente solicitado pelo usuário
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o",
+      const response = await this.client.chat.completions.create({
+        model: options?.model || "gpt-4o", // o modelo mais recente é "gpt-4o" que foi lançado em 13 de maio de 2024
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.7,
-        max_tokens: 4000
+        max_tokens: options?.maxTokens || 2000,
+        temperature: options?.temperature || 0.7,
       });
 
-      // Extrair o conteúdo gerado
-      const markdownContent = response.choices[0].message.content || "";
-      
-      // Retornar o conteúdo estruturado
-      return {
-        title,
-        description,
-        content: markdownContent,
-        disciplineId,
-        generatedAt: new Date().toISOString()
-      };
-    } catch (error: any) {
-      console.error("Erro ao gerar conteúdo com OpenAI:", error);
-      throw new Error(`Falha na geração de conteúdo: ${error.message || "Erro desconhecido"}`);
+      return response.choices[0].message.content || '';
+    } catch (error) {
+      console.error('Erro ao gerar texto com OpenAI:', error);
+      throw error;
     }
   }
 
   /**
-   * Gera sugestões de imagens para ilustrar um e-book com base no título e descrição
+   * Gera um e-book completo com base nas especificações fornecidas
+   * @param topic Tópico principal do e-book
+   * @param disciplineName Nome da disciplina
+   * @param additionalContext Contexto adicional ou requisitos específicos
+   * @returns Objeto contendo título, conteúdo e sugestões de imagens
    */
-  async generateImageSuggestions(title: string, description: string): Promise<string[]> {
-    try {
-      const prompt = `
-        Sugira 5 descrições detalhadas de imagens educacionais para um e-book sobre "${title}" com a descrição: "${description}".
-        
-        Para cada imagem, forneça uma descrição clara e detalhada que poderia ser usada para:
-        1. Buscar no Freepik ou banco de imagens semelhante
-        2. Gerar com IA
-        
-        Formate como uma lista numerada, com cada item tendo entre 30-50 palavras.
-      `;
+  async generateEBook(topic: string, disciplineName: string, additionalContext?: string): Promise<{
+    title: string;
+    content: string;
+    description: string;
+    imagePrompts: string[];
+  }> {
+    const prompt = `Crie um e-book educacional completo sobre "${topic}" para a disciplina "${disciplineName}".
+    
+${additionalContext ? additionalContext + '\n' : ''}
 
-      // o modelo mais novo da OpenAI é "gpt-4o" que foi lançado após 13 de maio de 2024. não altere isso a menos que explicitamente solicitado pelo usuário
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.7,
-        max_tokens: 1000
+O e-book deve incluir:
+1. Um título cativante e educacional
+2. Uma descrição resumida do conteúdo (máximo 150 palavras)
+3. Conteúdo completo dividido em seções claras com subtítulos
+4. Pelo menos 5 sugestões de imagens (marcadas como [IMAGEM: descrição detalhada]) que poderiam ser geradas para ilustrar pontos-chave
+
+Retorne a resposta no seguinte formato:
+TÍTULO: [título do e-book]
+DESCRIÇÃO: [breve descrição]
+CONTEÚDO:
+[conteúdo completo com subtítulos e [IMAGEM: descrições de imagens]]
+
+O texto deve seguir padrões acadêmicos, ser informativo, ter tom profissional e ser adequado para estudantes de nível superior.`;
+
+    try {
+      const response = await this.generateText(prompt, {
+        maxTokens: 3500,
+        temperature: 0.7
       });
 
-      // Extrair o conteúdo gerado
-      const suggestionsText = response.choices[0].message.content || "";
+      // Extrair as partes do texto gerado
+      const titleMatch = response.match(/TÍTULO:\s*(.*)/);
+      const descriptionMatch = response.match(/DESCRIÇÃO:\s*([\s\S]*?)(?=CONTEÚDO:|$)/);
+      const contentMatch = response.match(/CONTEÚDO:\s*([\s\S]*)/);
+
+      // Extrair prompts de imagem do conteúdo
+      const imagePromptRegex = /\[IMAGEM:\s*(.*?)\]/g;
+      const imagePrompts: string[] = [];
       
-      // Dividir as sugestões em um array
-      const suggestions = suggestionsText
-        .split(/\d+\.\s+/)
-        .filter(suggestion => suggestion.trim().length > 0)
-        .map(suggestion => suggestion.trim());
-      
-      return suggestions;
-    } catch (error: any) {
-      console.error("Erro ao gerar sugestões de imagens:", error);
-      throw new Error(`Falha na geração de sugestões de imagens: ${error.message || "Erro desconhecido"}`);
+      let match;
+      const content = contentMatch ? contentMatch[1].trim() : '';
+      while ((match = imagePromptRegex.exec(content)) !== null) {
+        imagePrompts.push(match[1].trim());
+      }
+
+      // Remover os marcadores de imagem, deixando apenas uma referência numérica
+      const cleanedContent = content.replace(imagePromptRegex, (match, p1, offset) => {
+        const index = imagePrompts.findIndex(prompt => prompt === p1.trim());
+        return `[Imagem ${index + 1}]`;
+      });
+
+      return {
+        title: titleMatch ? titleMatch[1].trim() : 'E-book sobre ' + topic,
+        description: descriptionMatch ? descriptionMatch[1].trim() : '',
+        content: cleanedContent,
+        imagePrompts
+      };
+    } catch (error) {
+      console.error('Erro ao gerar e-book:', error);
+      throw new Error('Falha ao gerar conteúdo do e-book');
     }
   }
 }
 
-// Exporta uma instância do serviço para uso em outros módulos
-export const openAIService = new OpenAIService();
+// Instância única para uso em toda a aplicação
+export const openaiService = new OpenAIService();
