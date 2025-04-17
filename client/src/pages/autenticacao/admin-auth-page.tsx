@@ -17,6 +17,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Link, useLocation } from "wouter";
 import { SchoolIcon, ShieldIcon } from "@/components/ui/icons";
 import { queryClient } from "@/lib/queryClient";
+import { Eye, EyeOff } from "lucide-react";
 
 // Form schema
 const loginSchema = z.object({
@@ -30,6 +31,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export default function AdminAuthPage() {
   const { user, loginMutation, logoutMutation } = useAuth();
   const [, navigate] = useLocation();
+  const [showPassword, setShowPassword] = useState(false);
   
   // Efeito para verificar e limpar qualquer autenticação existente
   useEffect(() => {
@@ -141,13 +143,31 @@ export default function AdminAuthPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Senha</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="password" 
-                        placeholder="••••••••" 
-                        {...field} 
-                      />
-                    </FormControl>
+                    <div className="relative">
+                      <FormControl>
+                        <Input 
+                          type={showPassword ? "text" : "password"} 
+                          placeholder="••••••••" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 text-gray-400 hover:text-gray-600"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                        <span className="sr-only">
+                          {showPassword ? "Ocultar senha" : "Mostrar senha"}
+                        </span>
+                      </Button>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
