@@ -43,6 +43,7 @@ import {
   TelegramIcon,
   WidgetIcon,
 } from "@/components/ui/icons";
+import { CircleDollarSign } from "lucide-react";
 
 // Interfaces para definir a estrutura dos itens da barra lateral
 export interface SidebarItem {
@@ -238,13 +239,14 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
       items: [
         { 
           name: "Financeiro Empresarial", 
-          icon: <MonetizationOnIcon />, 
-          href: "/admin/financial",
-          active: currentPath === "/admin/financial"
+          icon: <CircleDollarSign className="text-muted-foreground" />, 
+          href: "/admin/financeiro-empresarial",
+          active: currentPath === "/admin/financeiro-empresarial" || 
+                  (currentPath && currentPath.includes("/admin/financeiro-empresarial"))
         },
         { 
           name: "Relatórios", 
-          icon: <BarChartIcon />, 
+          icon: <BarChartIcon className="text-muted-foreground" />, 
           href: "/admin/reports",
           active: currentPath === "/admin/reports"
         },
@@ -253,9 +255,10 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
     items: [
       { 
         name: "Financeiro Empresarial", 
-        icon: <MonetizationOnIcon />, 
-        href: "/admin/financial",
-        active: currentPath === "/admin/financial"
+        icon: <CircleDollarSign />, 
+        href: "/admin/financeiro-empresarial",
+        active: currentPath === "/admin/financeiro-empresarial" || 
+                (currentPath && currentPath.includes("/admin/financeiro-empresarial"))
       },
       { 
         name: "Relatórios", 
