@@ -986,6 +986,13 @@ export default function ChargesPage() {
                 <DropdownMenuItem onClick={() => navigate("/admin/finance/charges/advanced")}>
                   Cobrança com parcelamento
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate("/admin/finance/charges/subscription")}>
+                  <div className="flex items-center">
+                    Assinatura recorrente 
+                    <Badge className="ml-2 bg-blue-600">Novo</Badge>
+                  </div>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

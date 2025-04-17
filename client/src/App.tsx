@@ -55,6 +55,7 @@ import NewProductPage from "@/pages/admin/finance/new-product-page";
 import ChargesPage from "@/pages/admin/finance/charges-page";
 import SimpleNewChargePage from "@/pages/admin/finance/simple-new-charge-page";
 import AdvancedChargePage from "@/pages/admin/finance/advanced-charge-page";
+import SubscriptionChargePage from "@/pages/admin/finance/subscription-charge-page";
 import PaymentsPage from "@/pages/admin/finance/payments-page";
 import NewPaymentPage from "@/pages/admin/finance/new-payment-page";
 import ContractsPage from "@/pages/admin/contracts";
@@ -452,6 +453,10 @@ function Router() {
       
       <Route path="/admin/finance/charges/advanced">
         {() => user?.portalType === "admin" ? <AdvancedChargePage /> : <Redirect to="/admin" />}
+      </Route>
+      
+      <Route path="/admin/finance/charges/subscription">
+        {() => user?.portalType === "admin" ? <SubscriptionChargePage /> : <Redirect to="/admin" />}
       </Route>
       
       <Route path="/admin/finance/payments">

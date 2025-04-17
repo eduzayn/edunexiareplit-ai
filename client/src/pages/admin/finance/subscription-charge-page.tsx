@@ -59,7 +59,7 @@ export default function SubscriptionChargePage() {
   const [isActive, setIsActive] = useState(true);
 
   // Carregar clientes da API Asaas
-  const { data: customers, isLoading: isLoadingCustomers } = useQuery({
+  const { data: customers = { data: [] }, isLoading: isLoadingCustomers } = useQuery({
     queryKey: ['/api/debug/asaas-customers'],
     refetchOnWindowFocus: false,
   });
