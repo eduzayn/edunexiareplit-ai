@@ -68,26 +68,21 @@ export function Sidebar({
 
   const portalLabel = (portalType && portalTypeLabels[portalType as keyof typeof portalTypeLabels]) || "Portal";
 
-  // Função para aplicar cor por tipo de portal
+  // Função para aplicar cor por tipo de portal - uniformizada com o estilo do portal do aluno
   const getPortalColor = () => {
     switch(portalType) {
       case "student": return "bg-gradient-to-b from-[#f0f9ff] to-[#e0f2fe] border-r border-blue-100";
-      case "partner": return "bg-gradient-to-b from-[#f5f3ff] to-[#ede9fe] border-r border-purple-100";
-      case "polo": return "bg-gradient-to-b from-[#ecfdf5] to-[#d1fae5] border-r border-green-100";
-      case "admin": return "bg-gradient-to-b from-[#f0f9ff] to-[#dbeafe] border-r border-blue-100";
-      default: return "bg-gradient-to-b from-gray-50 to-gray-100 border-r border-gray-200";
+      case "partner": return "bg-gradient-to-b from-[#f0f9ff] to-[#e0f2fe] border-r border-blue-100";
+      case "polo": return "bg-gradient-to-b from-[#f0f9ff] to-[#e0f2fe] border-r border-blue-100";
+      case "admin": return "bg-gradient-to-b from-[#f0f9ff] to-[#e0f2fe] border-r border-blue-100";
+      default: return "bg-gradient-to-b from-[#f0f9ff] to-[#e0f2fe] border-r border-blue-100";
     }
   };
 
-  // Função para aplicar cor de destaque por tipo de portal
+  // Função para aplicar cor de destaque por tipo de portal - uniformizada com o estilo do portal do aluno
   const getHighlightColor = () => {
-    switch(portalType) {
-      case "student": return "text-blue-700 bg-blue-100 hover:bg-blue-200";
-      case "partner": return "text-purple-700 bg-purple-100 hover:bg-purple-200";
-      case "polo": return "text-green-700 bg-green-100 hover:bg-green-200";
-      case "admin": return "text-blue-700 bg-blue-100 hover:bg-blue-200";
-      default: return "text-gray-700 bg-gray-100 hover:bg-gray-200";
-    }
+    // Usando a mesma cor para todos os portais, seguindo o padrão do portal do aluno
+    return "text-blue-700 bg-blue-100 hover:bg-blue-200";
   };
   
   // Função para colorir ícones com base no nome da seção
@@ -163,7 +158,7 @@ export function Sidebar({
         className={`flex items-center px-4 py-2.5 rounded-md transition-all duration-150 ${
           isActive
             ? getHighlightColor()
-            : `text-gray-600 hover:bg-gray-100 hover:text-gray-800`
+            : `text-gray-600 hover:bg-blue-50 hover:text-blue-700`
         }`}
         onClick={closeOnClick ? () => setIsMobileMenuOpen(false) : undefined}
       >
@@ -189,7 +184,7 @@ export function Sidebar({
               className={`flex items-center justify-between w-full px-4 py-2.5 rounded-md transition-all duration-150 ${
                 isActive
                   ? `${getHighlightColor()} font-medium`
-                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-800'
+                  : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'
               }`}
             >
               <div className="flex items-center">
@@ -253,7 +248,7 @@ export function Sidebar({
         <div className="absolute bottom-0 w-64 p-4 border-t border-gray-200">
           <Button
             variant="ghost"
-            className="flex items-center w-full justify-start text-gray-500 hover:text-gray-800 hover:bg-gray-100"
+            className="flex items-center w-full justify-start text-gray-500 hover:text-blue-700 hover:bg-blue-50"
             onClick={handleLogout}
             disabled={logoutMutation.isPending}
           >
