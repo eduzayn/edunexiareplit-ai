@@ -46,8 +46,15 @@ export default function PortalSelectionPage() {
 
   const handlePortalSelect = (portalId: string) => {
     setSelectedPortal(portalId);
+    
+    // Aplicar um delay mais longo para garantir uma transição suave
     setTimeout(() => {
       // Direcionar para a rota específica do portal selecionado
+      console.log("Redirecionando para portal:", portalId);
+      
+      // Limpar qualquer estado anterior que possa estar em cache
+      queryClient.removeQueries({ queryKey: ["/api/user"] });
+      
       if (portalId === "admin") {
         navigate("/admin");
       } else if (portalId === "polo") {
@@ -55,7 +62,7 @@ export default function PortalSelectionPage() {
       } else {
         navigate(`/auth?portal=${portalId}`);
       }
-    }, 300);
+    }, 500);
   };
 
   const containerVariants = {

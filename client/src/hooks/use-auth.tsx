@@ -106,12 +106,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log("Enviando requisição de login com portalType:", data.portalType);
       return apiRequest<SelectUser>("/api/login", { method: 'POST', data });
     },
-    onSuccess: (user: SelectUser) => {
+    onSuccess: async (user: SelectUser) => {
       // Atualizar o cache do usuário com os dados mais recentes
       queryClient.setQueryData(["/api/user"], user);
       
       // Forçar uma invalidação do cache para garantir que temos os dados mais recentes
-      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       
       // Adicionar logs para debug
       console.log("Login bem-sucedido. Dados do usuário:", user);
@@ -123,12 +123,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: `Bem-vindo(a) de volta, ${user.fullName}!`,
       });
 
-      // Verificar se o portal do usuário corresponde ao tipo de portal solicitado
-      if (user.portalType) {
-        console.log("Login bem-sucedido, redirecionando para dashboard " + user.portalType);
-        // Redirect to the appropriate dashboard
-        setLocation(getNavigationPath(`/${user.portalType}/dashboard`));
-      }
+      // Garantir que haja um pequeno delay antes do redirecionamento
+      // para que a query de usuário tenha tempo de ser atualizada
+      setTimeout(() => {
+        // Verificar se o portal do usuário corresponde ao tipo de portal solicitado
+        if (user.portalType) {
+          console.log("Login bem-sucedido, redirecionando para dashboard " + user.portalType);
+          // Redirect to the appropriate dashboard
+          setLocation(getNavigationPath(`/${user.portalType}/dashboard`));
+        }
+      }, 300);
     },
     onError: (error: Error) => {
       toast({
