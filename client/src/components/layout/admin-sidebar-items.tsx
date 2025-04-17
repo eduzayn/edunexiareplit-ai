@@ -528,13 +528,13 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
       },
       { 
         name: "Configurações", 
-        icon: <SettingsIcon />, 
+        icon: <CircleIcon />, 
         href: "/admin/sistema/settings",
         active: currentPath === "/admin/sistema/settings" || (currentPath && currentPath.includes("/admin/sistema/settings"))
       },
       { 
         name: "Configurações da Instituição", 
-        icon: <Settings2Icon />, 
+        icon: <CircleIcon />, 
         href: "/admin/sistema/institution-settings",
         active: currentPath === "/admin/sistema/institution-settings" || (currentPath && currentPath.includes("/admin/sistema/institution-settings"))
       },
