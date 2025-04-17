@@ -159,12 +159,11 @@ async function createMusicDegree() {
         INSERT INTO course_disciplines (
           course_id, 
           discipline_id, 
-          "order", 
-          is_required
+          "order"
         ) VALUES (
-          $1, $2, $3, $4
+          $1, $2, $3
         );
-      `, [courseId, disciplineId, i + 1, true]);
+      `, [courseId, disciplineId, i + 1]);
       
       console.log(`Disciplina "${d.name}" vinculada ao curso com ordem ${i + 1}`);
     }
