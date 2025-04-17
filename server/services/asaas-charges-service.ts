@@ -201,6 +201,66 @@ export async function cancelCharge(id: string) {
   }
 }
 
+/**
+ * Interface para os dados de cliente retornados pela API Asaas
+ */
+export interface AsaasCustomer {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  mobilePhone: string;
+  address: string;
+  addressNumber: string;
+  complement: string;
+  province: string;
+  postalCode: string;
+  cpfCnpj: string;
+  personType: string;
+  deleted: boolean;
+  additionalEmails: string;
+  externalReference: string;
+  notificationDisabled: boolean;
+  city: number;
+  state: string;
+  country: string;
+  observations: string;
+}
+
+/**
+ * Busca um cliente pelo CPF/CNPJ no Asaas
+ */
+export async function findCustomerByCpfCnpj(cpfCnpj: string) {
+  try {
+    logger.info(`[AsaasChargesService] Buscando cliente pelo CPF/CNPJ: ${cpfCnpj}`);
+    
+    // Busca todos os clientes para depois filtrar pelo CPF/CNPJ
+    // (já que a API do Asaas não tem endpoint específico para busca por CPF/CNPJ)
+    const response = await asaasApi.get('/customers', {
+      params: { 
+        limit: 100 // Aumentamos o limite para aumentar chance de encontrar
+      }
+    });
+    
+    // Filtra o cliente pelo CPF/CNPJ
+    const customer = response.data.data.find((customer: AsaasCustomer) => 
+      customer.cpfCnpj === cpfCnpj
+    );
+    
+    if (customer) {
+      logger.info(`[AsaasChargesService] Cliente encontrado: ${customer.id} (${customer.name})`);
+      return customer;
+    }
+    
+    logger.warn(`[AsaasChargesService] Cliente não encontrado para CPF/CNPJ: ${cpfCnpj}`);
+    return null;
+  } catch (error: any) {
+    const errorMessage = error?.message || 'Erro desconhecido';
+    logger.error(`[AsaasChargesService] Erro ao buscar cliente por CPF/CNPJ: ${errorMessage}`);
+    throw new Error(`Erro ao buscar cliente no Asaas: ${errorMessage}`);
+  }
+}
+
 export default {
   getAllCharges,
   getChargeById,
@@ -209,5 +269,6 @@ export default {
   deleteCharge,
   getCustomerCharges,
   receivePayment,
-  cancelCharge
+  cancelCharge,
+  findCustomerByCpfCnpj
 };
