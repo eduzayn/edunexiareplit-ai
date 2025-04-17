@@ -1,18 +1,23 @@
 /**
  * Controladores para callbacks do Asaas Checkout
  * Esses endpoints são chamados após o usuário interagir com o link de checkout
+ * 
+ * Atualização: O módulo de leads foi removido. Este arquivo mantém algumas 
+ * funcionalidades para compatibilidade com o checkout do Asaas, agora
+ * operando diretamente com clientes.
  */
 import { Request, Response } from 'express';
 import { db } from '../db';
 import { sql } from 'drizzle-orm';
 import { AsaasService } from '../services/asaas-service';
 import { asaasCheckoutService } from '../services/asaas-checkout-service';
-import { Lead } from '../../shared/schema';
 
 /**
  * Callback de sucesso do checkout - chamado após o usuário preencher o formulário
  * Importante: Este endpoint é chamado independentemente do pagamento ter sido confirmado.
  * Ele é acionado quando o usuário preenche seus dados e finaliza o processo de checkout.
+ * 
+ * Atualização: O módulo de leads foi removido. Este callback agora usa apenas clientes.
  */
 export async function checkoutSuccessCallback(req: Request, res: Response) {
   try {
@@ -45,32 +50,6 @@ export async function checkoutSuccessCallback(req: Request, res: Response) {
 
     // Verificar se o checkout tem customer preenchido (significa que o form foi preenchido)
     if (asaasCheckoutStatus.customer) {
-      // Buscar o lead associado a este checkout
-      const lead = await db.execute(sql`
-        SELECT * FROM leads WHERE id = ${checkoutData.lead_id}
-      `);
-
-      if (!lead.rows.length) {
-        console.error(`Lead ${checkoutData.lead_id} não encontrado`);
-        return res.status(404).json({ error: 'Lead não encontrado' });
-      }
-
-      const leadData = lead.rows[0];
-      console.log('Dados do lead recuperados:', JSON.stringify(leadData, null, 2));
-
-      // Atualizar os dados do lead com as informações do customer
-      // (caso o usuário tenha modificado seus dados no form do Asaas)
-      await db.execute(sql`
-        UPDATE leads
-        SET 
-          name = ${asaasCheckoutStatus.customer.name},
-          email = ${asaasCheckoutStatus.customer.email},
-          phone = ${asaasCheckoutStatus.customer.phone || leadData.phone},
-          document = ${asaasCheckoutStatus.customer.document || leadData.document},
-          updated_at = NOW()
-        WHERE id = ${leadData.id}
-      `);
-
       // Verificar se o cliente já existe com o mesmo email
       const existingClient = await db.execute(sql`
         SELECT * FROM clients WHERE email = ${asaasCheckoutStatus.customer.email}
@@ -79,40 +58,36 @@ export async function checkoutSuccessCallback(req: Request, res: Response) {
       let clientId;
 
       if (!existingClient.rows.length) {
-        // Criar cliente no Asaas se não existir um ID do Asaas no lead
-        let asaasCustomerId = leadData.asaas_id;
-        
-        if (!asaasCustomerId) {
-          try {
-            // Criar cliente no Asaas
-            const asaasCustomer = await AsaasService.createCustomer({
-              name: asaasCheckoutStatus.customer.name,
-              email: asaasCheckoutStatus.customer.email,
-              phone: asaasCheckoutStatus.customer.phone || null,
-              document: asaasCheckoutStatus.customer.document || null,
-              status: 'active',
-            });
-            asaasCustomerId = asaasCustomer.id;
-          } catch (asaasError) {
-            console.error('Erro ao criar cliente no Asaas:', asaasError);
-            // Continua sem o ID do Asaas, não é crítico neste momento
-          }
+        // Criar cliente no Asaas
+        let asaasCustomerId = null;
+        try {
+          // Criar cliente no Asaas
+          const asaasCustomer = await AsaasService.createCustomer({
+            name: asaasCheckoutStatus.customer.name,
+            email: asaasCheckoutStatus.customer.email,
+            phone: asaasCheckoutStatus.customer.phone || null,
+            document: asaasCheckoutStatus.customer.document || null,
+            status: 'active',
+          });
+          asaasCustomerId = asaasCustomer.id;
+        } catch (asaasError) {
+          console.error('Erro ao criar cliente no Asaas:', asaasError);
+          // Continua sem o ID do Asaas, não é crítico neste momento
         }
 
         // Criar cliente local
         const newClient = await db.execute(sql`
           INSERT INTO clients (
             name, email, phone, document, status, segment, 
-            asaas_id, created_from_lead_id, created_at
+            asaas_id, created_at
           ) VALUES (
             ${asaasCheckoutStatus.customer.name},
             ${asaasCheckoutStatus.customer.email},
             ${asaasCheckoutStatus.customer.phone || null},
             ${asaasCheckoutStatus.customer.document || null},
             ${'active'},
-            ${leadData.segment || 'default'},
+            ${'default'},
             ${asaasCustomerId || null},
-            ${leadData.id},
             NOW()
           )
           RETURNING *
@@ -126,10 +101,9 @@ export async function checkoutSuccessCallback(req: Request, res: Response) {
             client_id, type, description, metadata, created_at
           ) VALUES (
             ${clientId},
-            ${'conversion'},
-            ${'Cliente criado a partir de lead'},
+            ${'new_checkout'},
+            ${'Cliente criado a partir de checkout'},
             ${JSON.stringify({
-              leadId: leadData.id,
               checkoutId: checkoutData.id,
               asaasCheckoutId: checkoutId
             })},
@@ -139,32 +113,6 @@ export async function checkoutSuccessCallback(req: Request, res: Response) {
       } else {
         // Usar cliente existente
         clientId = existingClient.rows[0].id;
-      }
-
-      // Atualizar lead para "converted" se ainda não foi convertido
-      if (leadData.status !== 'converted') {
-        await db.execute(sql`
-          UPDATE leads
-          SET status = ${'converted'}, converted_to_client_id = ${clientId}, updated_at = NOW()
-          WHERE id = ${leadData.id}
-        `);
-        
-        // Registrar atividade para o lead
-        await db.execute(sql`
-          INSERT INTO lead_activities (
-            lead_id, type, description, metadata, created_at
-          ) VALUES (
-            ${leadData.id},
-            ${'conversion'},
-            ${'Lead convertido para cliente'},
-            ${JSON.stringify({
-              clientId,
-              checkoutId: checkoutData.id,
-              asaasCheckoutId: checkoutId
-            })},
-            NOW()
-          )
-        `);
       }
 
       // Atualizar o checkout para vincular ao cliente
@@ -366,23 +314,21 @@ export async function checkoutNotificationCallback(req: Request, res: Response) 
 }
 
 /**
- * Verifica e converte leads com checkouts pendentes para clientes
- * Útil para processar leads que já preencheram o formulário do checkout mas não foram convertidos automaticamente
+ * Função legado para converter leads
+ * Substituída por nova abordagem direta com clientes
+ * Mantida apenas para compatibilidade com endpoints existentes
  */
 export async function checkAndConvertPendingLeads(req: Request, res: Response) {
   try {
-    console.log('Verificando leads com checkouts pendentes...');
+    console.log('Aviso: A função de conversão de leads está desativada pois o módulo de leads foi removido.');
     
-    // Buscar todos os leads com checkout links associados
-    const leadsWithCheckouts = await db.execute(sql`
-      SELECT l.*, c.id as checkout_id, c.asaas_checkout_id, c.status as checkout_status, c.client_id
-      FROM leads l
-      JOIN checkout_links c ON l.id = c.lead_id
-      WHERE l.status != 'won' 
-      AND c.status != 'canceled'
-      AND c.client_id IS NULL
-      ORDER BY l.id
-    `);
+    // Responder com sucesso mas sem processamento
+    return res.status(200).json({
+      success: true,
+      message: 'O módulo de leads foi removido. Utilize o módulo CRM para gerenciar clientes diretamente.',
+      count: 0,
+      leads: []
+    });
     
     console.log(`Encontrados ${leadsWithCheckouts.rows.length} leads com checkouts pendentes`);
     
