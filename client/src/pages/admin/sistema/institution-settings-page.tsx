@@ -100,7 +100,7 @@ const InstitutionSettingsPage: React.FC = () => {
   const { 
     data: asaasConfig, 
     isLoading: isAsaasLoading 
-  } = useQuery<{ configured: boolean }>({
+  } = useQuery({
     queryKey: ['/api/institution-settings/integrations/asaas'],
     retry: false,
     onError: () => {
@@ -333,7 +333,7 @@ const InstitutionSettingsPage: React.FC = () => {
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
                     <span>Verificando configuração...</span>
                   </div>
-                ) : asaasConfig?.configured ? (
+                ) : asaasConfig?.data?.configured ? (
                   <Alert className="mb-4 bg-green-50 border-green-200">
                     <CheckCircle className="h-4 w-4 text-green-600" />
                     <AlertTitle className="text-green-700">Integração Configurada</AlertTitle>
@@ -361,12 +361,12 @@ const InstitutionSettingsPage: React.FC = () => {
                           <FormLabel>Chave da API Asaas</FormLabel>
                           <FormControl>
                             <Input
-                              placeholder={asaasConfig?.configured ? "••••••••••••••••" : "$aact_YourApiKey"}
+                              placeholder={asaasConfig?.data?.configured ? "••••••••••••••••" : "$aact_YourApiKey"}
                               {...field}
                             />
                           </FormControl>
                           <FormDescription>
-                            {asaasConfig?.configured 
+                            {asaasConfig?.data?.configured 
                               ? "Insira uma nova chave para substituir a atual." 
                               : "Insira sua chave de API do Asaas. Começa com $aact_"}
                           </FormDescription>
@@ -381,7 +381,7 @@ const InstitutionSettingsPage: React.FC = () => {
                       {configureAsaasMutation.isPending && (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       )}
-                      {asaasConfig?.configured ? "Atualizar Chave" : "Configurar Integração"}
+                      {asaasConfig?.data?.configured ? "Atualizar Chave" : "Configurar Integração"}
                     </Button>
                   </form>
                 </Form>
