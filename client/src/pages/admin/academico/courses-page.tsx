@@ -73,7 +73,9 @@ export default function CoursesPage() {
   // Mutação para remover curso
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest("DELETE", `/api/admin/courses/${id}`);
+      await apiRequest(`/api/admin/courses/${id}`, {
+        method: "DELETE"
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/courses"] });
@@ -157,16 +159,16 @@ export default function CoursesPage() {
                           <TableCell>{formatCurrency(course.price)}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
-                              <Button size="sm" variant="outline" asChild>
-                                <Link to={`/admin/academico/courses/edit/${course.id}`}>
+                              <Link to={`/admin/academico/courses/edit/${course.id}`}>
+                                <Button size="sm" variant="outline">
                                   <Eye className="h-4 w-4" />
-                                </Link>
-                              </Button>
-                              <Button size="sm" variant="outline" asChild>
-                                <Link to={`/admin/academico/courses/edit/${course.id}`}>
+                                </Button>
+                              </Link>
+                              <Link to={`/admin/academico/courses/edit/${course.id}`}>
+                                <Button size="sm" variant="outline">
                                   <FileEdit className="h-4 w-4" />
-                                </Link>
-                              </Button>
+                                </Button>
+                              </Link>
                               <Button 
                                 size="sm" 
                                 variant="outline" 
