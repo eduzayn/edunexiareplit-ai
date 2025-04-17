@@ -102,6 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     mutationFn: async (credentials: LoginData) => {
       // Garantir que o portalType esteja presente na requisição
       const data = { ...credentials };
+      console.log("Tentando login como " + credentials.username + " com portalType:", data.portalType);
       console.log("Enviando requisição de login com portalType:", data.portalType);
       return apiRequest<SelectUser>("/api/login", { method: 'POST', data });
     },
@@ -122,12 +123,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: `Bem-vindo(a) de volta, ${user.fullName}!`,
       });
 
-      // Redirect to the appropriate dashboard usando setLocation ao invés de window.location
+      // Verificar se o portal do usuário corresponde ao tipo de portal solicitado
       if (user.portalType) {
-        // Pequeno atraso para garantir que os dados estejam atualizados
-        setTimeout(() => {
-          setLocation(getNavigationPath(`/${user.portalType}/dashboard`));
-        }, 100);
+        console.log("Login bem-sucedido, redirecionando para dashboard " + user.portalType);
+        // Redirect to the appropriate dashboard
+        setLocation(getNavigationPath(`/${user.portalType}/dashboard`));
       }
     },
     onError: (error: Error) => {
