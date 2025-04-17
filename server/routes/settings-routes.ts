@@ -1,12 +1,12 @@
 import express from "express";
 import fs from "fs";
 import path from "path";
-import { isAdmin, isAuthenticated } from "../middleware/auth";
+import { requireAuth, requireAdmin } from "../middleware/auth";
 
 const router = express.Router();
 
 // Obter configurações gerais
-router.get("/", isAuthenticated, (req, res) => {
+router.get("/", requireAuth, (req, res) => {
   // Mock para demonstração
   const settings = {
     siteName: "EdunexIA",
@@ -27,7 +27,7 @@ router.get("/", isAuthenticated, (req, res) => {
 });
 
 // Obter configurações de tema
-router.get("/theme", isAuthenticated, (req, res) => {
+router.get("/theme", requireAuth, (req, res) => {
   // Verificar se há um arquivo existente com as configurações do tema
   try {
     // Ler configurações do arquivo theme.json
@@ -59,7 +59,7 @@ router.get("/theme", isAuthenticated, (req, res) => {
 });
 
 // Atualizar configurações de tema
-router.post("/theme", isAuthenticated, isAdmin, (req, res) => {
+router.post("/theme", requireAuth, requireAdmin, (req, res) => {
   try {
     // Validar entrada
     const { theme } = req.body;
@@ -104,7 +104,7 @@ router.post("/theme", isAuthenticated, isAdmin, (req, res) => {
 });
 
 // Configurações de aparência adicionais
-router.get("/appearance", isAuthenticated, (req, res) => {
+router.get("/appearance", requireAuth, (req, res) => {
   try {
     // Mock para demonstração - no futuro isso poderia vir do banco de dados
     const appearance = {
@@ -147,7 +147,7 @@ router.get("/appearance", isAuthenticated, (req, res) => {
 });
 
 // Atualizar configurações de aparência
-router.post("/appearance", isAuthenticated, isAdmin, (req, res) => {
+router.post("/appearance", requireAuth, requireAdmin, (req, res) => {
   try {
     const { appearance } = req.body;
     
