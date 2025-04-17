@@ -46,6 +46,8 @@ import financeRoutes from "./routes/finance-routes";
 import contractsRoutes from "./routes/contracts-routes";
 import leadsRoutes from "./routes/leads-routes";
 import checkoutRoutes from "./routes/checkout-routes";
+// Importação das rotas de configurações de instituição
+import institutionSettingsRoutes from "./routes/institution-settings-routes";
 import { asaasCheckoutService } from "./services/asaas-checkout-service";
 import { db } from "./db";
 import { sql } from "drizzle-orm";

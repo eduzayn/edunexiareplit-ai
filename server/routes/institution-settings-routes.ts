@@ -1,0 +1,249 @@
+/**
+ * Rotas para gerenciar as configurações específicas das instituições
+ */
+import { Router } from 'express';
+import { z } from 'zod';
+import { institutionSettingsService } from '../services/institution-settings-service';
+import { authenticateSession } from '../middlewares/auth-middleware';
+import { checkPermission } from '../middlewares/permission-middleware';
+
+const router = Router();
+
+// Middleware de autenticação para todas as rotas
+router.use(authenticateSession);
+
+// Schema para validação do corpo da requisição ao criar/atualizar configuração
+const settingSchema = z.object({
+  key: z.string().min(1).max(255),
+  value: z.string(),
+  encrypted: z.boolean().default(false),
+});
+
+/**
+ * Obter todas as configurações de uma instituição
+ * GET /api/institution-settings
+ */
+router.get('/', checkPermission('configuracao', 'ler'), async (req, res) => {
+  try {
+    const { user } = req.session;
+    
+    if (!user?.institutionId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Instituição não identificada para o usuário atual' 
+      });
+    }
+    
+    // Por padrão não retornamos os valores criptografados
+    const includeEncrypted = req.query.includeEncrypted === 'true';
+    
+    const settings = await institutionSettingsService.listSettings(
+      user.institutionId, 
+      includeEncrypted
+    );
+    
+    return res.json({ success: true, data: settings });
+  } catch (error) {
+    console.error('Erro ao buscar configurações:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Erro ao buscar configurações da instituição' 
+    });
+  }
+});
+
+/**
+ * Obter uma configuração específica
+ * GET /api/institution-settings/:key
+ */
+router.get('/:key', checkPermission('configuracao', 'ler'), async (req, res) => {
+  try {
+    const { user } = req.session;
+    const { key } = req.params;
+    
+    if (!user?.institutionId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Instituição não identificada para o usuário atual' 
+      });
+    }
+    
+    const value = await institutionSettingsService.getSetting(user.institutionId, key);
+    
+    if (value === null) {
+      return res.status(404).json({ 
+        success: false, 
+        message: `Configuração '${key}' não encontrada` 
+      });
+    }
+    
+    return res.json({ success: true, data: { key, value } });
+  } catch (error) {
+    console.error(`Erro ao buscar configuração:`, error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Erro ao buscar configuração da instituição' 
+    });
+  }
+});
+
+/**
+ * Criar ou atualizar uma configuração
+ * POST /api/institution-settings
+ */
+router.post('/', checkPermission('configuracao', 'atualizar'), async (req, res) => {
+  try {
+    const { user } = req.session;
+    
+    if (!user?.institutionId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Instituição não identificada para o usuário atual' 
+      });
+    }
+    
+    // Validar o corpo da requisição
+    const validationResult = settingSchema.safeParse(req.body);
+    
+    if (!validationResult.success) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Dados inválidos', 
+        errors: validationResult.error.errors 
+      });
+    }
+    
+    const { key, value, encrypted } = validationResult.data;
+    
+    await institutionSettingsService.setSetting(
+      user.institutionId, 
+      key, 
+      value, 
+      encrypted
+    );
+    
+    return res.json({ 
+      success: true, 
+      message: `Configuração '${key}' salva com sucesso` 
+    });
+  } catch (error) {
+    console.error('Erro ao salvar configuração:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Erro ao salvar configuração da instituição' 
+    });
+  }
+});
+
+/**
+ * Excluir uma configuração
+ * DELETE /api/institution-settings/:key
+ */
+router.delete('/:key', checkPermission('configuracao', 'deletar'), async (req, res) => {
+  try {
+    const { user } = req.session;
+    const { key } = req.params;
+    
+    if (!user?.institutionId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Instituição não identificada para o usuário atual' 
+      });
+    }
+    
+    await institutionSettingsService.deleteSetting(user.institutionId, key);
+    
+    return res.json({ 
+      success: true, 
+      message: `Configuração '${key}' excluída com sucesso` 
+    });
+  } catch (error) {
+    console.error('Erro ao excluir configuração:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Erro ao excluir configuração da instituição' 
+    });
+  }
+});
+
+/**
+ * Rotas específicas para integrações
+ */
+
+/**
+ * Obter chave da API do Asaas
+ * GET /api/institution-settings/integrations/asaas
+ */
+router.get('/integrations/asaas', checkPermission('configuracao', 'ler'), async (req, res) => {
+  try {
+    const { user } = req.session;
+    
+    if (!user?.institutionId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Instituição não identificada para o usuário atual' 
+      });
+    }
+    
+    const apiKey = await institutionSettingsService.getAsaasApiKey(user.institutionId);
+    
+    if (!apiKey) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Chave da API Asaas não configurada para esta instituição' 
+      });
+    }
+    
+    return res.json({ 
+      success: true, 
+      data: { configured: true }
+    });
+  } catch (error) {
+    console.error('Erro ao buscar configuração do Asaas:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Erro ao buscar configuração do Asaas' 
+    });
+  }
+});
+
+/**
+ * Configurar chave da API do Asaas
+ * POST /api/institution-settings/integrations/asaas
+ */
+router.post('/integrations/asaas', checkPermission('configuracao', 'atualizar'), async (req, res) => {
+  try {
+    const { user } = req.session;
+    
+    if (!user?.institutionId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Instituição não identificada para o usuário atual' 
+      });
+    }
+    
+    const { apiKey } = req.body;
+    
+    if (!apiKey || typeof apiKey !== 'string') {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Chave da API Asaas não fornecida ou inválida' 
+      });
+    }
+    
+    await institutionSettingsService.setAsaasApiKey(user.institutionId, apiKey);
+    
+    return res.json({ 
+      success: true, 
+      message: 'Chave da API Asaas configurada com sucesso' 
+    });
+  } catch (error) {
+    console.error('Erro ao configurar chave do Asaas:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Erro ao configurar chave da API Asaas' 
+    });
+  }
+});
+
+export default router;

@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, doublePrecision, json, pgEnum, date } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, doublePrecision, json, pgEnum, date, varchar, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -1956,3 +1956,27 @@ export const institutionPhasePermissionsRelations = relations(institutionPhasePe
     references: [users.id],
   }),
 }));
+
+/**
+ * Esquema para configurações de instituições
+ * Armazena configurações específicas para cada instituição, incluindo chaves de API
+ */
+export const institutionSettings = pgTable("institution_settings", {
+  id: serial("id").primaryKey(),
+  institution_id: integer("institution_id").notNull().references(() => institutions.id, { onDelete: 'cascade' }),
+  key: varchar("key", { length: 255 }).notNull(),
+  value: text("value").notNull(),
+  encrypted: boolean("encrypted").default(false).notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const institutionSettingsRelations = relations(institutionSettings, ({ one }) => ({
+  institution: one(institutions, {
+    fields: [institutionSettings.institution_id],
+    references: [institutions.id],
+  }),
+}));
+
+// Configurar índices como comentário para referência futura
+// Índice será criado diretamente na migração SQL
