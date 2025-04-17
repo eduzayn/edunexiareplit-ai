@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useParams, useLocation } from "wouter";
+import { useParams, useLocation, Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Sidebar } from "@/components/layout/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -106,11 +106,7 @@ const materialFormSchema = z.object({
   url: z.string().url({ message: "URL inválida" }),
 });
 
-const ebookFormSchema = z.object({
-  title: z.string().min(3, { message: "Título deve ter pelo menos 3 caracteres" }),
-  description: z.string().min(10, { message: "Descrição deve ter pelo menos 10 caracteres" }),
-  url: z.string().url({ message: "URL inválida" }),
-});
+// E-book schema removido - usando interface completa em /admin/ebooks/generate
 
 const questionFormSchema = z.object({
   statement: z.string().min(5, { message: "Enunciado deve ter pelo menos 5 caracteres" }),
