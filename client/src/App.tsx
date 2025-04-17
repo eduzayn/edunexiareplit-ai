@@ -88,6 +88,7 @@ import StudentFinancialPage from "@/pages/student/financial-page";
 import EbooksIndexPage from "@/pages/admin/ebooks/index";
 import EbooksGeneratePage from "@/pages/admin/ebooks/generate";
 import EbookEditPage from "@/pages/admin/ebooks/[id]/edit";
+import AdvancedGenerateEBookPage from "@/pages/admin/ebooks/advanced-generate";
 // Módulo de Sistema
 import SecurityPage from "@/pages/admin/sistema/security-page";
 import SettingsPage from "@/pages/admin/sistema/settings-page";
@@ -240,6 +241,9 @@ function Router() {
       </Route>
       <Route path="/admin/ebooks/generate">
         {() => user?.portalType === "admin" ? <EbooksGeneratePage /> : <Redirect to="/admin" />}
+      </Route>
+      <Route path="/admin/ebooks/advanced-generate">
+        {() => user?.portalType === "admin" ? <AdvancedGenerateEBookPage /> : <Redirect to="/admin" />}
       </Route>
       <Route path="/admin/ebooks/:id/edit">
         {() => user?.portalType === "admin" ? <EbookEditPage /> : <Redirect to="/admin" />}
