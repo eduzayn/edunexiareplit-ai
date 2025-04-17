@@ -32,7 +32,7 @@ export const requireStudent = (req: Request, res: Response, next: NextFunction) 
   }
   
   // Verifica se é um estudante
-  if (!req.user || req.user.portalType !== 'aluno') {
+  if (!req.user || req.user.portalType !== 'student') {
     return res.status(403).json({
       error: "Acesso negado. Apenas estudantes podem acessar este recurso."
     });

@@ -192,6 +192,9 @@ function Router() {
       <Route path="/student/financial">
         {() => user?.portalType === "student" ? <StudentFinancialPage /> : <Redirect to="/auth" />}
       </Route>
+      <Route path="/student/financeiro">
+        {() => user?.portalType === "student" ? <Redirect to="/student/financial" /> : <Redirect to="/auth" />}
+      </Route>
       <ProtectedRoute path="/partner/dashboard" portalType="partner" />
       <ProtectedRoute path="/polo/dashboard" portalType="polo" />
       <Route path="/polo/enrollments">
