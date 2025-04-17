@@ -218,19 +218,19 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
     items: [
       { 
         name: "Usuários", 
-        icon: <CircleIcon />, 
+        icon: <GroupIcon />, 
         href: "/admin/pessoas/usuarios",
         active: currentPath === "/admin/pessoas/usuarios" || (currentPath && currentPath.includes("/admin/pessoas/usuarios/"))
       },
       { 
         name: "Papéis & Permissões", 
-        icon: <CircleIcon />, 
+        icon: <SecurityIcon />, 
         href: "/admin/pessoas/roles",
         active: currentPath === "/admin/pessoas/roles" || (currentPath && currentPath.includes("/admin/pessoas/roles"))
       },
       { 
         name: "Permissões Contextuais", 
-        icon: <CircleIcon />, 
+        icon: <BadgeCheckIcon />, 
         href: "/admin/pessoas/abac-permissions",
         active: currentPath === "/admin/pessoas/abac-permissions" || (currentPath && currentPath.includes("/admin/pessoas/abac"))
       },
@@ -294,19 +294,19 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
     items: [
       { 
         name: "Templates", 
-        icon: <CircleIcon />, 
+        icon: <ScrollTextIcon />, 
         href: "/admin/certification/templates",
         active: currentPath === "/admin/certification/templates" || (currentPath && currentPath.includes("/admin/certification/templates/"))
       },
       { 
         name: "Signatários", 
-        icon: <CircleIcon />, 
+        icon: <FileCheckIcon />, 
         href: "/admin/certification/signers",
         active: currentPath === "/admin/certification/signers" || (currentPath && currentPath.includes("/admin/certification/signers/"))
       },
       { 
         name: "Emissão de Certificados", 
-        icon: <CircleIcon />, 
+        icon: <BadgeCheckIcon />, 
         href: "/admin/certification/issue",
         active: currentPath === "/admin/certification/issue" || (currentPath && currentPath.includes("/admin/certification/issue/"))
       },
@@ -534,7 +534,7 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
       },
       { 
         name: "Configurações da Instituição", 
-        icon: <CircleIcon />, 
+        icon: <Settings2Icon />, 
         href: "/admin/sistema/institution-settings",
         active: currentPath === "/admin/sistema/institution-settings" || (currentPath && currentPath.includes("/admin/sistema/institution-settings"))
       },
