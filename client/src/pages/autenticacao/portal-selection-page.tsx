@@ -22,8 +22,24 @@ export default function PortalSelectionPage() {
           // Se o usuário já estiver autenticado, fazer logout primeiro
           await logoutMutation.mutateAsync();
           
-          // Limpar qualquer consulta de usuário em cache
-          queryClient.removeQueries({ queryKey: ["/api/user"] });
+          // Limpar todo o cache do cliente para garantir que não haja estado persistente
+          queryClient.clear();
+          
+          // Forçar limpeza do sessionStorage/localStorage
+          if (typeof window !== 'undefined') {
+            try {
+              // Limpar quaisquer dados armazenados localmente que possam interferir
+              sessionStorage.clear();
+              localStorage.removeItem('queryClient');
+            } catch (e) {
+              console.error("Erro ao limpar storage:", e);
+            }
+          }
+          
+          // Força a página a recarregar para limpar qualquer estado
+          if (window.location.pathname === '/portal-selection') {
+            window.location.reload();
+          }
         } catch (error) {
           console.error("Erro ao limpar autenticação:", error);
         }
@@ -76,10 +92,23 @@ export default function PortalSelectionPage() {
       if (user) {
         console.log("Limpando sessão existente antes de mudar de portal");
         await logoutMutation.mutateAsync();
+        
+        // Limpar todo o cache do cliente para garantir que não haja estado persistente
+        queryClient.clear();
+        
+        // Forçar limpeza do sessionStorage/localStorage
+        if (typeof window !== 'undefined') {
+          try {
+            sessionStorage.clear();
+            localStorage.removeItem('queryClient');
+          } catch (e) {
+            console.error("Erro ao limpar storage:", e);
+          }
+        }
+      } else {
+        // Mesmo sem usuário logado, limpar todo o cache por segurança
+        queryClient.clear();
       }
-      
-      // Limpar qualquer estado anterior que possa estar em cache
-      queryClient.removeQueries();
       
       // Aplicar um delay mais longo para garantir uma transição suave
       setTimeout(() => {
@@ -87,15 +116,29 @@ export default function PortalSelectionPage() {
         console.log("Redirecionando para portal:", portalId);
         
         if (portalId === "admin") {
-          navigate("/admin");
+          // Usar window.location para forçar recarregamento completo da página
+          window.location.href = "/admin";
         } else if (portalId === "polo") {
-          navigate("/polo");
+          window.location.href = "/polo";
         } else {
-          navigate(`/auth?portal=${portalId}`);
+          window.location.href = `/auth?portal=${portalId}`;
         }
       }, 500);
     } catch (error) {
       console.error("Erro ao mudar de portal:", error);
+      
+      // Em caso de erro no logout, limpar o estado manualmente e tentar redirecionar
+      queryClient.setQueryData(["/api/user"], null);
+      queryClient.clear();
+      
+      // Forçar redirecionamento após erro
+      setTimeout(() => {
+        window.location.href = portalId === "admin" 
+          ? "/admin" 
+          : portalId === "polo" 
+            ? "/polo" 
+            : `/auth?portal=${portalId}`;
+      }, 500);
     }
   };
 

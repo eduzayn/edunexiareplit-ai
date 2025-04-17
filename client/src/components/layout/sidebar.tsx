@@ -53,8 +53,22 @@ export function Sidebar({
     setExpandedCategories(initialExpandedState);
   }, [items]);
 
-  const handleLogout = () => {
-    logoutMutation.mutate();
+  const handleLogout = async () => {
+    try {
+      console.log("Iniciando logout do sidebar");
+      await logoutMutation.mutateAsync();
+      
+      // Limpar o cache e redirecionar após logout bem-sucedido
+      console.log("Logout bem-sucedido, redirecionando para seleção de portal");
+      
+      // Adicionamos um pequeno atraso para garantir que o logout seja processado completamente
+      setTimeout(() => {
+        navigate("/portal-selection");
+        window.location.href = "/portal-selection"; // Fallback para garantir o redirecionamento
+      }, 300);
+    } catch (error) {
+      console.error("Erro ao fazer logout:", error);
+    }
   };
   
   const getUserInitials = (fullName: string | undefined): string => {

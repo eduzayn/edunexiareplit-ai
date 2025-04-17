@@ -170,22 +170,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
+      console.log("Executando logout - mutationFn");
       await apiRequest<{}>("/api/logout", { method: 'POST' });
+      
+      // Limpar todos os dados em cache para evitar problemas de persistência
+      queryClient.clear();
     },
     onSuccess: () => {
+      console.log("Logout bem-sucedido - onSuccess");
+      
+      // Definir explicitamente o usuário como null no cache
       queryClient.setQueryData(["/api/user"], null);
-      setLocation(getNavigationPath("/"));
+      
+      // Notificar o usuário
       toast({
         title: "Logout bem-sucedido",
         description: "Você foi desconectado com sucesso.",
       });
+      
+      // Forçar limpeza do sessionStorage/localStorage
+      if (typeof window !== 'undefined') {
+        try {
+          // Limpar quaisquer dados armazenados localmente que possam interferir
+          sessionStorage.clear();
+          localStorage.removeItem('queryClient');
+        } catch (e) {
+          console.error("Erro ao limpar storage:", e);
+        }
+      }
+      
+      // Não redirecionamos aqui - deixamos para o componente que chama o logout
+      // decidir para onde redirecionar (ex: sidebar ou navbar)
     },
     onError: (error: Error) => {
+      console.error("Erro ao fazer logout:", error);
+      
       toast({
         title: "Falha no logout",
         description: error.message,
         variant: "destructive",
       });
+      
+      // Em caso de erro, tentar forçar o logout de qualquer maneira
+      queryClient.setQueryData(["/api/user"], null);
+      queryClient.clear();
     },
   });
 
