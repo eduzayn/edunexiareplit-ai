@@ -3012,9 +3012,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registro das rotas do módulo CRM
   app.use("/api/crm", crmRoutes);
   
-  // Registro das novas rotas para leads com Asaas Checkout
-  app.use("/api/v2/leads", leadsRoutes);
-  app.use("/api/v2", checkoutRoutes);
+  // Registro das rotas padronizadas para leads com Asaas Checkout
+  app.use("/api/leads", leadsRoutes);
+  app.use("/api/checkout", checkoutRoutes);
   
   // Registro das rotas do módulo Financeiro
   app.use("/api/finance", financeRoutes);

@@ -70,7 +70,7 @@ export const checkoutApi = {
       success: boolean;
       data: CheckoutLinkResponse;
       message?: string;
-    }>('/api/v2/checkout/links', {
+    }>('/api/checkout/links', {
       method: 'POST',
       data
     });
@@ -85,7 +85,7 @@ export const checkoutApi = {
     const response = await apiRequest<{
       success: boolean;
       data: CheckoutStatus;
-    }>(`/api/v2/checkout/status/${checkoutId}`);
+    }>(`/api/checkout/status/${checkoutId}`);
     
     return response.data;
   },
@@ -94,7 +94,7 @@ export const checkoutApi = {
    * Cancela um link de checkout ativo
    */
   cancelCheckoutLink: async (checkoutId: string): Promise<{ success: boolean; message: string }> => {
-    return apiRequest<{ success: boolean; message: string }>(`/api/v2/checkout/links/${checkoutId}/cancel`, {
+    return apiRequest<{ success: boolean; message: string }>(`/api/checkout/links/${checkoutId}/cancel`, {
       method: 'POST'
     });
   },
@@ -106,7 +106,7 @@ export const checkoutApi = {
     const response = await apiRequest<{
       success: boolean;
       data: CheckoutLinkResponse[];
-    }>(`/api/v2/checkout/links/lead/${leadId}`);
+    }>(`/api/checkout/links/lead/${leadId}`);
     
     return response.data;
   }

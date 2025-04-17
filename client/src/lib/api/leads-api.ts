@@ -99,21 +99,21 @@ export const leadsApi = {
     if (search) queryParams.append('search', search);
     if (status) queryParams.append('status', status);
     
-    return apiRequest<PaginatedLeadsResponse>(`/api/v2/leads?${queryParams.toString()}`);
+    return apiRequest<PaginatedLeadsResponse>(`/api/leads?${queryParams.toString()}`);
   },
   
   /**
    * Busca um lead específico pelo ID
    */
   getLeadById: async (id: number): Promise<LeadDetailResponse> => {
-    return apiRequest<LeadDetailResponse>(`/api/v2/leads/${id}`);
+    return apiRequest<LeadDetailResponse>(`/api/leads/${id}`);
   },
   
   /**
    * Cria um novo lead
    */
   createLead: async (data: CreateLeadData): Promise<Lead> => {
-    const response = await apiRequest<{ data: Lead }>('/api/v2/leads', {
+    const response = await apiRequest<{ data: Lead }>('/api/leads', {
       method: 'POST',
       data
     });
@@ -125,7 +125,7 @@ export const leadsApi = {
    * Atualiza um lead existente
    */
   updateLead: async (id: number, data: UpdateLeadData): Promise<Lead> => {
-    const response = await apiRequest<{ data: Lead }>(`/api/v2/leads/${id}`, {
+    const response = await apiRequest<{ data: Lead }>(`/api/leads/${id}`, {
       method: 'PATCH',
       data
     });
@@ -137,7 +137,7 @@ export const leadsApi = {
    * Adiciona uma atividade a um lead
    */
   addLeadActivity: async (leadId: number, data: CreateLeadActivityData): Promise<LeadActivity> => {
-    const response = await apiRequest<{ data: LeadActivity }>(`/api/v2/leads/${leadId}/activities`, {
+    const response = await apiRequest<{ data: LeadActivity }>(`/api/leads/${leadId}/activities`, {
       method: 'POST',
       data
     });

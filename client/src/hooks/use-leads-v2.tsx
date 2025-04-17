@@ -32,7 +32,7 @@ export function useLeadsV2() {
    */
   const useLeadsList = (page = currentPage, limit = pageSize, search?: string, status?: string) => {
     return useQuery({
-      queryKey: ['/api/v2/leads', { page, limit, search, status }],
+      queryKey: ['/api/leads', { page, limit, search, status }],
       queryFn: () => leadsApi.getLeads(page, limit, search, status),
     });
   };
@@ -42,7 +42,7 @@ export function useLeadsV2() {
    */
   const useLead = (id?: number) => {
     return useQuery({
-      queryKey: ['/api/v2/leads', id],
+      queryKey: ['/api/leads', id],
       queryFn: () => leadsApi.getLeadById(id!),
       enabled: !!id,
     });
@@ -54,7 +54,7 @@ export function useLeadsV2() {
   const createLeadMutation = useMutation({
     mutationFn: (data: CreateLeadData) => leadsApi.createLead(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/v2/leads'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/leads'] });
       toast({
         title: 'Lead criado',
         description: 'O lead foi criado com sucesso.',
@@ -76,8 +76,8 @@ export function useLeadsV2() {
     mutationFn: ({ id, data }: { id: number; data: UpdateLeadData }) => 
       leadsApi.updateLead(id, data),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/v2/leads'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/v2/leads', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/leads'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/leads', variables.id] });
       toast({
         title: 'Lead atualizado',
         description: 'O lead foi atualizado com sucesso.',
@@ -99,7 +99,7 @@ export function useLeadsV2() {
     mutationFn: ({ leadId, data }: { leadId: number; data: CreateLeadActivityData }) => 
       leadsApi.addLeadActivity(leadId, data),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/v2/leads', variables.leadId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/leads', variables.leadId] });
       toast({
         title: 'Atividade registrada',
         description: 'A atividade foi registrada com sucesso.',
@@ -120,7 +120,7 @@ export function useLeadsV2() {
   const createCheckoutLinkMutation = useMutation({
     mutationFn: (data: CheckoutLinkData) => checkoutApi.createCheckoutLink(data),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/v2/leads', data.leadId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/leads', data.leadId] });
       toast({
         title: 'Link de pagamento criado',
         description: 'O link de pagamento foi criado com sucesso.',
@@ -142,7 +142,7 @@ export function useLeadsV2() {
     mutationFn: ({ checkoutId, leadId }: { checkoutId: string; leadId: number }) => 
       checkoutApi.cancelCheckoutLink(checkoutId),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/v2/leads', variables.leadId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/leads', variables.leadId] });
       toast({
         title: 'Link de pagamento cancelado',
         description: 'O link de pagamento foi cancelado com sucesso.',
@@ -162,7 +162,7 @@ export function useLeadsV2() {
    */
   const useCheckoutStatus = (checkoutId?: string) => {
     return useQuery({
-      queryKey: ['/api/v2/checkout/status', checkoutId],
+      queryKey: ['/api/checkout/status', checkoutId],
       queryFn: () => checkoutApi.getCheckoutStatus(checkoutId!),
       enabled: !!checkoutId,
       // Refresh a cada 30 segundos para verificar mudanças de status
