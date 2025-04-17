@@ -1,5 +1,6 @@
 // Arquivo de ícones para o sistema
 import React from "react";
+import { cn } from "@/lib/utils";
 // IMPORTANTE: Não crie duplicações de ícones. Use os padrões existentes e use alias quando necessário.
 import { 
   Users,
