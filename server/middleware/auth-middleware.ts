@@ -1,6 +1,12 @@
-import { Request, Response, NextFunction } from 'express';
-import logger from '../utils/logger';
+/**
+ * Middleware de autenticação e autorização para a aplicação
+ */
 
+import { Request, Response, NextFunction } from 'express';
+
+/**
+ * Interface para estender Request com informações do usuário autenticado
+ */
 export interface AuthenticatedRequest extends Request {
   user?: {
     id: number;
@@ -19,33 +25,44 @@ export interface AuthenticatedRequest extends Request {
 /**
  * Middleware para verificar se o usuário está autenticado
  */
-export const requireAuth = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  // Verifica se existe uma sessão e se o usuário está logado
+export const isAuthenticated = (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
   if (!req.session || !req.session.user) {
-    logger.debug('Acesso não autorizado: Usuário não está logado');
-    return res.status(401).json({ message: 'Acesso não autorizado' });
+    return res.status(401).json({ 
+      success: false, 
+      message: 'Acesso não autorizado. Faça login novamente.' 
+    });
   }
-
-  // Define o usuário na requisição
   req.user = req.session.user;
   next();
 };
 
 /**
- * Middleware para verificar se o usuário tem uma determinada role
- * @param roles Lista de roles permitidas
+ * Versão simplificada para rotas que apenas exigem autenticação
  */
-export const requireRole = (roles: string[]) => {
+export const requireAuth = isAuthenticated;
+
+/**
+ * Middleware para verificar se o usuário tem uma determinada role
+ * @param role Role necessária para acessar a rota
+ */
+export const hasRole = (role: string) => {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     if (!req.user) {
-      logger.debug('Acesso não autorizado: Usuário não está logado');
-      return res.status(401).json({ message: 'Acesso não autorizado' });
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Acesso não autorizado. Faça login novamente.' 
+      });
     }
 
-    // Verifica se o usuário tem uma das roles especificadas
-    if (!roles.includes(req.user.role)) {
-      logger.debug(`Acesso negado: Usuário ${req.user.id} (${req.user.email}) não tem permissão. Role atual: ${req.user.role}, Roles necessárias: ${roles.join(', ')}`);
-      return res.status(403).json({ message: 'Acesso negado: Você não tem permissão para acessar este recurso' });
+    if (req.user.role !== role) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Você não tem permissão para acessar este recurso.' 
+      });
     }
 
     next();
@@ -53,73 +70,132 @@ export const requireRole = (roles: string[]) => {
 };
 
 /**
- * Middleware para verificar se o usuário está no portal do estudante
+ * Middleware para verificar se o usuário tem uma determinada role no portal
+ * @param portalType Tipo de portal necessário para acessar a rota
  */
-export const requireStudentPortal = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+export const hasPortalAccess = (portalType: string) => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Acesso não autorizado. Faça login novamente.' 
+      });
+    }
+
+    if (req.user.portalType !== portalType) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Você não tem permissão para acessar este portal.' 
+      });
+    }
+
+    next();
+  };
+};
+
+/**
+ * Middleware para verificar se o usuário é estudante
+ */
+export const isStudent = (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
   if (!req.user) {
-    logger.debug('Acesso não autorizado: Usuário não está logado');
-    return res.status(401).json({ message: 'Acesso não autorizado' });
+    return res.status(401).json({ 
+      success: false, 
+      message: 'Acesso não autorizado. Faça login novamente.' 
+    });
   }
 
-  // Verifica se o usuário está acessando o portal estudante
   if (req.user.portalType !== 'student') {
-    logger.debug(`Acesso negado: Usuário ${req.user.id} não está no portal do estudante. Portal atual: ${req.user.portalType}`);
-    return res.status(403).json({ message: 'Acesso negado: Você não tem permissão para acessar este recurso' });
+    return res.status(403).json({ 
+      success: false, 
+      message: 'Acesso permitido apenas para estudantes.' 
+    });
   }
 
   next();
 };
 
 /**
- * Middleware para verificar se o usuário está no portal do polo
+ * Middleware para verificar se o usuário é administrador
  */
-export const requirePoloPortal = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+export const isAdmin = (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
   if (!req.user) {
-    logger.debug('Acesso não autorizado: Usuário não está logado');
-    return res.status(401).json({ message: 'Acesso não autorizado' });
+    return res.status(401).json({ 
+      success: false, 
+      message: 'Acesso não autorizado. Faça login novamente.' 
+    });
   }
 
-  // Verifica se o usuário está acessando o portal do polo
-  if (req.user.portalType !== 'polo') {
-    logger.debug(`Acesso negado: Usuário ${req.user.id} não está no portal do polo. Portal atual: ${req.user.portalType}`);
-    return res.status(403).json({ message: 'Acesso negado: Você não tem permissão para acessar este recurso' });
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ 
+      success: false, 
+      message: 'Acesso permitido apenas para administradores.' 
+    });
   }
 
   next();
 };
 
 /**
- * Middleware para verificar se o usuário está no portal admin
+ * Middleware para verificar se o usuário pertence a uma instituição
  */
-export const requireAdminPortal = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  if (!req.user) {
-    logger.debug('Acesso não autorizado: Usuário não está logado');
-    return res.status(401).json({ message: 'Acesso não autorizado' });
-  }
+export const belongsToInstitution = (institutionId: number) => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Acesso não autorizado. Faça login novamente.' 
+      });
+    }
 
-  // Verifica se o usuário está acessando o portal admin
-  if (req.user.portalType !== 'admin') {
-    logger.debug(`Acesso negado: Usuário ${req.user.id} não está no portal admin. Portal atual: ${req.user.portalType}`);
-    return res.status(403).json({ message: 'Acesso negado: Você não tem permissão para acessar este recurso' });
-  }
+    if (req.user.institutionId !== institutionId) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Você não tem permissão para acessar recursos desta instituição.' 
+      });
+    }
 
-  next();
+    next();
+  };
 };
 
 /**
- * Middleware para verificar se o usuário está no portal da instituição
+ * Middleware para verificar se o usuário pertence a um polo
  */
-export const requireInstitutionPortal = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  if (!req.user) {
-    logger.debug('Acesso não autorizado: Usuário não está logado');
-    return res.status(401).json({ message: 'Acesso não autorizado' });
-  }
+export const belongsToPolo = (poloId: number) => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Acesso não autorizado. Faça login novamente.' 
+      });
+    }
 
-  // Verifica se o usuário está acessando o portal da instituição
-  if (req.user.portalType !== 'institution') {
-    logger.debug(`Acesso negado: Usuário ${req.user.id} não está no portal da instituição. Portal atual: ${req.user.portalType}`);
-    return res.status(403).json({ message: 'Acesso negado: Você não tem permissão para acessar este recurso' });
-  }
+    if (req.user.poloId !== poloId) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Você não tem permissão para acessar recursos deste polo.' 
+      });
+    }
 
-  next();
+    next();
+  };
+};
+
+export default {
+  isAuthenticated,
+  requireAuth,
+  hasRole,
+  hasPortalAccess,
+  isStudent,
+  isAdmin,
+  belongsToInstitution,
+  belongsToPolo
 };

@@ -23,7 +23,7 @@ import {
   FileTextIcon, 
   InfoIcon, 
   PrinterIcon,
-  BanknotesIcon,
+  BanknoteIcon,
   AlertTriangleIcon,
   CheckCircleIcon,
   XCircleIcon
@@ -244,7 +244,7 @@ export default function FinancialPage() {
                             onClick={() => handleCopyPix(charge.pixQrCode)}
                             title="Copiar código PIX"
                           >
-                            <BanknotesIcon className="h-4 w-4" />
+                            <BanknoteIcon className="h-4 w-4" />
                           </Button>
                         )}
                       </div>
