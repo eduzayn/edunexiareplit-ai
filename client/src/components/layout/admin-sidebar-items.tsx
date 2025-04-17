@@ -323,12 +323,6 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
       items: [
         // Submódulo CRM
         { 
-          name: "Leads", 
-          icon: <UserPlusIcon />, 
-          href: "/admin/crm/leads",
-          active: currentPath === "/admin/crm/leads" || (currentPath && currentPath.includes("/admin/crm/leads/"))
-        },
-        { 
           name: "Clientes", 
           icon: <BuildingStoreIcon />, 
           href: "/admin/crm/clients",
@@ -370,12 +364,6 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
     }, currentPath),
     items: [
       // Submódulo CRM
-      { 
-        name: "Leads", 
-        icon: <UserPlusIcon />, 
-        href: "/admin/crm/leads",
-        active: currentPath === "/admin/crm/leads" || (currentPath && currentPath.includes("/admin/crm/leads/"))
-      },
       { 
         name: "Clientes", 
         icon: <BuildingStoreIcon />, 
