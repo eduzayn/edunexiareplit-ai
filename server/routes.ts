@@ -1940,7 +1940,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             videoAulas: [
               {
                 id: disciplineId * 100 + 1,
-                title: `Vídeo-aula 1: Introdução à ${demoDiscipline.name}`,
+                title: `Direção de Grupos Vocais e/ou Instrumentais - Apostila`,
+                apostilaPdfUrl: "https://storage.googleapis.com/your-bucket/direcao-grupos-vocais-instrumentais.pdf",
                 duration: Math.floor(Math.random() * 30) + 15, // 15-45 minutos
                 url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
                 thumbnail: "https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg",
