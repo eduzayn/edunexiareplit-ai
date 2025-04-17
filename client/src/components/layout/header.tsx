@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { SchoolIcon } from "@/components/ui/icons";
+import { Logo } from "@/components/ui/logo";
 import {
   Sheet,
   SheetContent,
@@ -34,26 +34,23 @@ export default function Header({ onLogin }: HeaderProps) {
   ];
 
   return (
-    <header className="bg-white shadow-sm sticky top-0 z-50">
+    <header className="bg-white/95 backdrop-blur-sm border-b border-slate-200 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex-shrink-0 flex items-center">
-            <Link href="/" className="text-2xl font-bold text-primary">
-              <span className="flex items-center">
-                <SchoolIcon className="h-8 w-8 mr-2" />
-                EdunexIA
-              </span>
+            <Link href="/">
+              <Logo size="md" />
             </Link>
           </div>
           
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex space-x-10">
+          <nav className="hidden md:flex space-x-2">
             {navItems.map((item) => (
               <Link 
                 key={item.name} 
                 href={item.href} 
-                className="text-black hover:text-primary px-3 py-2 text-sm font-medium"
+                className="text-slate-600 hover:text-primary hover:bg-slate-50 rounded-md px-4 py-2 text-sm font-medium transition-colors"
               >
                 {item.name}
               </Link>
@@ -63,7 +60,9 @@ export default function Header({ onLogin }: HeaderProps) {
           {/* Login Button - Desktop */}
           <div className="hidden md:flex items-center">
             <Button 
-              className="ml-8" 
+              variant="default"
+              size="sm"
+              className="ml-4 px-6 shadow-sm"
               onClick={handleLoginClick}
             >
               LOGIN
@@ -75,21 +74,18 @@ export default function Header({ onLogin }: HeaderProps) {
             <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon">
-                  <Menu className="h-6 w-6 text-neutral-500" />
+                  <Menu className="h-6 w-6 text-slate-600" />
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-[80%] p-0">
                 <div className="flex flex-col h-full">
                   <div className="px-6 py-4 flex justify-between items-center border-b">
-                    <Link href="/" className="text-xl font-bold text-primary">
-                      <span className="flex items-center">
-                        <SchoolIcon className="h-6 w-6 mr-2" />
-                        EdunexIA
-                      </span>
+                    <Link href="/">
+                      <Logo size="sm" />
                     </Link>
                     <SheetClose asChild>
                       <Button variant="ghost" size="icon">
-                        <X className="h-5 w-5 text-neutral-500" />
+                        <X className="h-5 w-5 text-slate-500" />
                       </Button>
                     </SheetClose>
                   </div>
@@ -99,13 +95,13 @@ export default function Header({ onLogin }: HeaderProps) {
                         <SheetClose key={item.name} asChild>
                           <Link 
                             href={item.href} 
-                            className="px-3 py-3 rounded-md text-base font-medium text-black hover:text-primary hover:bg-neutral-100"
+                            className="px-3 py-3 rounded-md text-base font-medium text-slate-700 hover:text-primary hover:bg-slate-50"
                           >
                             {item.name}
                           </Link>
                         </SheetClose>
                       ))}
-                      <div className="pt-4">
+                      <div className="pt-6 px-2">
                         <SheetClose asChild>
                           <Button 
                             className="w-full"

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'wouter';
+import { Logo } from '@/components/ui/logo';
 import { 
-  School as SchoolIcon,
   Facebook, 
   Twitter, 
   Instagram, 
@@ -81,36 +81,38 @@ const contactInfo = [
 
 export default function FooterMain() {
   return (
-    <footer className="bg-blue-950 text-white">
-      <div className="container py-12 md:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
+    <footer className="bg-gradient-to-br from-primary to-blue-950 text-white">
+      <div className="container py-16 md:py-20">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
           {/* Company Info */}
           <div className="lg:col-span-2">
-            <Link href="/" className="text-2xl font-bold flex items-center">
-              <SchoolIcon className="h-8 w-8 mr-2 text-blue-400" />
-              EdunexIA
+            <Link href="/">
+              <Logo variant="light" size="md" />
             </Link>
-            <p className="mt-4 text-blue-200 max-w-md">
-              A plataforma mais completa para gestão educacional. Transformando a educação à distância com tecnologia e inovação.
+            
+            <p className="mt-6 text-blue-100 max-w-md leading-relaxed">
+              A plataforma mais completa para gestão educacional. Transformando a educação à distância com tecnologia e inovação brasileira.
             </p>
             
-            <div className="mt-6 space-y-2">
+            <div className="mt-8 space-y-3">
               {contactInfo.map((item, index) => (
-                <div key={index} className="flex items-center text-blue-200">
-                  <span className="mr-3 text-blue-400">{item.icon}</span>
+                <div key={index} className="flex items-center text-blue-100 hover:text-white transition-colors">
+                  <div className="w-8 h-8 rounded-full bg-blue-800/30 flex items-center justify-center mr-3">
+                    <span className="text-white">{item.icon}</span>
+                  </div>
                   <span>{item.text}</span>
                 </div>
               ))}
             </div>
             
-            <div className="mt-6 flex space-x-4">
+            <div className="mt-8 flex space-x-3">
               {socialLinks.map((social, index) => (
                 <a 
                   key={index} 
                   href={social.href} 
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-300 hover:text-white transition-colors"
+                  className="w-10 h-10 rounded-full bg-blue-800/30 flex items-center justify-center text-blue-200 hover:text-white hover:bg-blue-800/50 transition-colors"
                   aria-label={social.label}
                 >
                   {social.icon}
@@ -122,13 +124,13 @@ export default function FooterMain() {
           {/* Footer Sections */}
           {footerSections.map((section) => (
             <div key={section.title}>
-              <h3 className="text-lg font-medium mb-4 text-white">{section.title}</h3>
+              <h3 className="text-lg font-medium mb-5 text-white border-b border-blue-800/40 pb-2">{section.title}</h3>
               <ul className="space-y-3">
                 {section.links.map((link) => (
                   <li key={link.name}>
                     <Link 
                       href={link.href} 
-                      className="text-blue-200 hover:text-white transition-colors"
+                      className="text-blue-100 hover:text-white transition-colors inline-block py-1"
                     >
                       {link.name}
                     </Link>
@@ -139,8 +141,8 @@ export default function FooterMain() {
           ))}
         </div>
         
-        <div className="mt-12 pt-8 border-t border-blue-900/60">
-          <div className="flex flex-col sm:flex-row justify-between items-center text-blue-300 text-sm">
+        <div className="mt-16 pt-8 border-t border-blue-800/30">
+          <div className="flex flex-col sm:flex-row justify-between items-center text-blue-200 text-sm">
             <p>© {new Date().getFullYear()} EdunexIA. Todos os direitos reservados.</p>
             <div className="mt-4 sm:mt-0 space-x-6">
               <Link href="/privacidade" className="hover:text-white transition-colors">
