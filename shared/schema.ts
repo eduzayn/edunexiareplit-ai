@@ -1978,5 +1978,19 @@ export const institutionSettingsRelations = relations(institutionSettings, ({ on
   }),
 }));
 
+// Schema Zod para validação dos dados de configurações da instituição
+export const insertInstitutionSettingSchema = createInsertSchema(institutionSettings)
+  .omit({ id: true, created_at: true, updated_at: true });
+
+// Definição de tipos para uso no frontend e backend
+export type InsertInstitutionSetting = z.infer<typeof insertInstitutionSettingSchema>;
+export type InstitutionSetting = typeof institutionSettings.$inferSelect;
+
+// Schema Zod para configuração da API Asaas
+export const asaasApiConfigSchema = z.object({
+  apiKey: z.string().min(5, { message: "A chave de API deve ter pelo menos 5 caracteres" })
+    .startsWith("$", { message: "A chave de API do Asaas deve começar com $" }),
+});
+
 // Configurar índices como comentário para referência futura
 // Índice será criado diretamente na migração SQL

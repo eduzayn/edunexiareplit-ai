@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
-import { Loader2, Save, Plus, Trash2, AlertCircle, CheckCircle, ShieldAlert } from "lucide-react";
+import { Loader2, Save, Plus, Trash2, AlertCircle, CheckCircle, ShieldAlert, Settings2 } from "lucide-react";
+import * as z from "zod";
 
 import {
   Alert,
@@ -50,7 +51,6 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import * as z from "zod";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Defina o esquema de validação para o formulário de configurações
@@ -68,9 +68,9 @@ type SettingFormValues = z.infer<typeof settingFormSchema>;
 
 // Esquema para chave do Asaas
 const asaasApiKeySchema = z.object({
-  apiKey: z.string().min(1, {
-    message: "A chave da API é obrigatória.",
-  })
+  apiKey: z.string()
+    .min(5, { message: "A chave de API deve ter pelo menos 5 caracteres" })
+    .startsWith("$", { message: "A chave de API do Asaas deve começar com $" }),
 });
 
 type AsaasApiKeyValues = z.infer<typeof asaasApiKeySchema>;
