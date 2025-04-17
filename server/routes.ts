@@ -53,6 +53,7 @@ import { db } from "./db";
 import { sql } from "drizzle-orm";
 import studentChargesRoutes from "./routes/student-charges-routes";
 import ebooksRoutes from "./routes/ebooks";
+import advancedEbooksRoutes from "./routes/advanced-ebooks";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
@@ -2922,6 +2923,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // E-books interativos
   app.use("/api/ebooks", ebooksRoutes);
+  
+  // Rotas avançadas para e-books com recursos aprimorados de IA
+  app.use("/api/advanced-ebooks", advancedEbooksRoutes);
 
   const httpServer = createServer(app);
 

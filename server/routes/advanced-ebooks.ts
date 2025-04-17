@@ -114,8 +114,9 @@ router.post("/", requireAuth, requireAdmin, async (req, res) => {
       disciplineId,
       status: 'draft',
       isGenerated: true,
-      createdById: req.session.user?.id,
-      metadata: tableOfContents ? { tableOfContents } : undefined
+      createdById: (req as any).user?.id
+      // Nota: o campo metadata não existe no esquema, então armazenaremos a tabela de conteúdo no conteúdo do e-book
+      // ou implementaremos essa funcionalidade no future quando o esquema for atualizado
     });
     
     // Responder com o e-book criado

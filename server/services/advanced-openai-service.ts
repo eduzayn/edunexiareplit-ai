@@ -33,7 +33,8 @@ export class AdvancedOpenAIService {
     }
 
     try {
-      const messages = [];
+      // Criar array de mensagens tipadas corretamente para a API OpenAI
+      const messages: OpenAI.ChatCompletionMessageParam[] = [];
       
       // Adicionar prompt do sistema se fornecido
       if (options?.systemPrompt) {
@@ -44,7 +45,7 @@ export class AdvancedOpenAIService {
       messages.push({ role: "user", content: prompt });
       
       const response = await this.client.chat.completions.create({
-        model: options?.model || "gpt-4o", // o modelo mais recente é "gpt-4o"
+        model: options?.model || "gpt-4o", // o modelo mais recente é "gpt-4o" que foi lançado em maio de 2024. não altere a menos que o usuário solicite explicitamente
         messages: messages,
         max_tokens: options?.maxTokens || 2000,
         temperature: options?.temperature || 0.7,
