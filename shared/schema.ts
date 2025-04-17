@@ -22,7 +22,7 @@ export const paymentGatewayEnum = pgEnum("payment_gateway", ["asaas", "lytex"]);
 export const integrationTypeEnum = pgEnum("integration_type", ["asaas", "lytex", "openai", "elevenlabs", "zapi"]);
 
 // Enums para o módulo CRM e Gestão
-export const leadStatusEnum = pgEnum("lead_status", ["new", "contacted", "qualified", "proposal", "negotiation", "won", "lost", "inactive"]);
+// Enums para outros módulos
 export const clientTypeEnum = pgEnum("client_type", ["pf", "pj"]);  // Pessoa Física ou Pessoa Jurídica
 export const invoiceStatusEnum = pgEnum("invoice_status", ["draft", "pending", "paid", "overdue", "cancelled", "partial"]);
 export const paymentStatusEnum = pgEnum("payment_status", ["completed", "pending", "failed", "refunded"]);
@@ -329,29 +329,7 @@ export const institutions = pgTable("institutions", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Módulo CRM
-export const leads = pgTable("leads", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  email: text("email").notNull(),
-  phone: text("phone"),
-  company: text("company"),
-  position: text("position"),
-  source: text("source"), // Website, indicação, campanha, etc.
-  status: leadStatusEnum("status").default("new").notNull(),
-  score: integer("score"), // Score do lead (0-100)
-  lastContactDate: timestamp("last_contact_date"),
-  nextContactDate: timestamp("next_contact_date"),
-  assignedToId: integer("assigned_to_id").references(() => users.id),
-  institutionId: integer("institution_id").references(() => institutions.id),
-  notes: text("notes"),
-  interests: json("interests").$type<string[]>(), // Interesses (cursos, serviços)
-  segment: text("segment"), // Segmento do lead (Educacional, Empresarial, etc)
-  metadata: json("metadata"), // Dados adicionais
-  createdById: integer("created_by_id").references(() => users.id),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+// Módulo CRM - Clientes e Contatos
 
 export const clients = pgTable("clients", {
   id: serial("id").primaryKey(),
@@ -631,7 +609,6 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   certificatesCreated: many(certificates, { relationName: "createdCertificates" }), // Certificados criados por este usuário
   certificateTemplatesCreated: many(certificateTemplates),
   certificateSignersCreated: many(certificateSigners),
-  leadsCreated: many(leads),
   clientsCreated: many(clients),
   productsCreated: many(products),
   invoicesCreated: many(invoices),
@@ -924,20 +901,6 @@ export const certificateSignersRelations = relations(certificateSigners, ({ one,
 }));
 
 // Relações de CRM
-export const leadsRelations = relations(leads, ({ one }) => ({
-  institution: one(institutions, {
-    fields: [leads.institutionId],
-    references: [institutions.id],
-  }),
-  assignedTo: one(users, {
-    fields: [leads.assignedToId],
-    references: [users.id],
-  }),
-  createdBy: one(users, {
-    fields: [leads.createdById],
-    references: [users.id],
-  }),
-}));
 
 export const clientsRelations = relations(clients, ({ one, many }) => ({
   institution: one(institutions, {
@@ -1530,27 +1493,7 @@ export type InsertCertificateHistory = z.infer<typeof insertCertificateHistorySc
 export type CertificateHistory = typeof certificateHistory.$inferSelect;
 
 // Schemas para o módulo CRM
-export const insertLeadSchema = createInsertSchema(leads).pick({
-  name: true,
-  email: true,
-  phone: true,
-  company: true,
-  position: true,
-  source: true,
-  status: true,
-  score: true,
-  lastContactDate: true,
-  nextContactDate: true,
-  assignedToId: true,
-  institutionId: true,
-  notes: true,
-  interests: true,
-  segment: true,
-  metadata: true,
-  createdById: true,
-});
-export type InsertLead = z.infer<typeof insertLeadSchema>;
-export type Lead = typeof leads.$inferSelect;
+
 
 export const insertClientSchema = createInsertSchema(clients).pick({
   name: true,

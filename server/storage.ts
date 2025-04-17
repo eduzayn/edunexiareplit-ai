@@ -14,7 +14,6 @@ import { users, type User, type InsertUser,
   contractTemplates, type ContractTemplate, type InsertContractTemplate,
   contracts, type Contract, type InsertContract,
   // CRM
-  leads, type Lead, type InsertLead,
   clients, type Client, type InsertClient,
   contacts, type Contact, type InsertContact,
   // Finanças

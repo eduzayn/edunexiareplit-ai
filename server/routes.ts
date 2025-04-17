@@ -13,7 +13,6 @@ import {
   insertAssessmentQuestionSchema,
   insertInstitutionSchema,
   // Schemas para CRM
-  insertLeadSchema,
   insertClientSchema,
   insertContactSchema,
   // Schemas para Finanças
