@@ -33,6 +33,9 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
+  const isProd = process.env.NODE_ENV === 'production';
+  console.log(`Ambiente: ${isProd ? 'Produção' : 'Desenvolvimento'}`);
+  
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || "edunexia-secret-key",
     resave: false,
@@ -41,10 +44,18 @@ export function setupAuth(app: Express) {
     cookie: {
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
       httpOnly: true,
-      sameSite: 'lax', // Isso permitirá que o cookie seja enviado quando o usuário clicar em um link para o site
+      sameSite: isProd ? 'none' : 'lax', // 'none' permite cookies em requisições cross-origin em produção
+      secure: isProd, // Sempre usar HTTPS em produção
       path: '/',
     }
   };
+  
+  // Log para debug
+  console.log('Configuração de cookies:', {
+    sameSite: sessionSettings.cookie?.sameSite,
+    secure: sessionSettings.cookie?.secure,
+    httpOnly: sessionSettings.cookie?.httpOnly,
+  });
 
   app.set("trust proxy", 1);
   app.use(session(sessionSettings));
