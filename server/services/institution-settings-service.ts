@@ -6,6 +6,7 @@ import { db } from '../db';
 import { institutionSettings } from '../../shared/schema';
 import { eq, and } from 'drizzle-orm';
 import * as crypto from 'crypto';
+import 'dotenv/config';
 
 // Cache em memória para configurações (evita consultas desnecessárias ao banco)
 const configCache = new Map<string, Map<string, string>>();
@@ -64,6 +65,9 @@ function decrypt(text: string): string {
  * Valida se há uma chave de criptografia disponível no ambiente
  */
 function validateEncryptionKey(): boolean {
+  console.log('Validando chave de criptografia...');
+  console.log('Variáveis de ambiente disponíveis: ', Object.keys(process.env));
+  
   const key = process.env.ENCRYPTION_KEY;
   if (!key) {
     console.warn('AVISO: ENCRYPTION_KEY não definida. Valores encriptados não serão seguros!');
