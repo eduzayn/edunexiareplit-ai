@@ -115,12 +115,16 @@ export default function PortalSelectionPage() {
         // Direcionar para a rota específica do portal selecionado
         console.log("Redirecionando para portal:", portalId);
         
+        // Usar window.location para forçar recarregamento completo da página
         if (portalId === "admin") {
-          // Usar window.location para forçar recarregamento completo da página
           window.location.href = "/admin";
         } else if (portalId === "polo") {
+          // Corrigir o redirecionamento do portal do polo para a página de autenticação correta
           window.location.href = "/polo";
+        } else if (portalId === "student" || portalId === "partner") {
+          window.location.href = `/auth?portal=${portalId}`;
         } else {
+          // Fallback para qualquer outro tipo de portal
           window.location.href = `/auth?portal=${portalId}`;
         }
       }, 500);
