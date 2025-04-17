@@ -9,7 +9,20 @@ import { queryClient } from "@/lib/queryClient";
 
 export default function PortalSelectionPage() {
   const [, navigate] = useLocation();
+  const { user, logoutMutation } = useAuth();
   const [selectedPortal, setSelectedPortal] = useState<string | null>(null);
+
+  // Efeito para lidar com usuário já autenticado
+  useEffect(() => {
+    if (user) {
+      // Se o usuário já estiver autenticado, fazer logout primeiro
+      // para garantir uma transição limpa entre portais
+      logoutMutation.mutate();
+      
+      // Limpar qualquer consulta de usuário em cache
+      queryClient.removeQueries({ queryKey: ["/api/user"] });
+    }
+  }, []);
 
   const portals = [
     {

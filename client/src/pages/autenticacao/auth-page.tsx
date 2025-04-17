@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -6,6 +6,7 @@ import { z } from "zod";
 import { insertUserSchema, PortalType } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { queryClient } from "@/lib/queryClient";
 import {
   Form,
   FormControl,

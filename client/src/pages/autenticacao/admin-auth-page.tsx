@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,6 +16,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Link, useLocation } from "wouter";
 import { SchoolIcon, ShieldIcon } from "@/components/ui/icons";
+import { queryClient } from "@/lib/queryClient";
 
 // Form schema
 const loginSchema = z.object({
@@ -27,8 +28,22 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function AdminAuthPage() {
-  const { loginMutation } = useAuth();
+  const { user, loginMutation, logoutMutation } = useAuth();
   const [, navigate] = useLocation();
+  
+  // Efeito para verificar e limpar qualquer autenticação existente
+  useEffect(() => {
+    const prepareAuthState = async () => {
+      if (user) {
+        console.log("Usuário já autenticado, fazendo logout para limpar estado");
+        // Limpar cache e fazer logout se o usuário já estiver autenticado
+        await logoutMutation.mutateAsync();
+        queryClient.removeQueries({ queryKey: ["/api/user"] });
+      }
+    };
+    
+    prepareAuthState();
+  }, []);
   
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
