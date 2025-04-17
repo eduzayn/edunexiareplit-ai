@@ -479,6 +479,7 @@ export default function AuthPage({ adminOnly = false }: AuthPageProps) {
                 
                 <Button 
                   type="submit" 
+                  variant="primaryLight"
                   className="w-full" 
                   disabled={loginMutation.isPending}
                 >

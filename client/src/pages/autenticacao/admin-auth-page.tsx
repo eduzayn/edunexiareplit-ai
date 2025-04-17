@@ -152,6 +152,7 @@ export default function AdminAuthPage() {
               
               <Button 
                 type="submit" 
+                variant="primaryLight"
                 className="w-full" 
                 disabled={loginMutation.isPending}
               >
