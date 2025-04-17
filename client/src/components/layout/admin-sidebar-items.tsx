@@ -448,19 +448,19 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
     items: [
       { 
         name: "Canais", 
-        icon: <CircleIcon />, 
+        icon: <InboxIcon />, 
         href: "/admin/comunicacao/inbox",
         active: currentPath === "/admin/comunicacao/inbox" || (currentPath && currentPath.includes("/admin/comunicacao/inbox/"))
       },
       { 
         name: "WhatsApp", 
-        icon: <CircleIcon />, 
+        icon: <WhatsAppIcon />, 
         href: "/admin/comunicacao/whatsapp",
         active: currentPath === "/admin/comunicacao/whatsapp" || (currentPath && currentPath.includes("/admin/comunicacao/whatsapp/"))
       },
       { 
         name: "Email", 
-        icon: <CircleIcon />, 
+        icon: <MailIcon />, 
         href: "/admin/comunicacao/email",
         active: currentPath === "/admin/comunicacao/email" || (currentPath && currentPath.includes("/admin/comunicacao/email/"))
       },
@@ -510,25 +510,25 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
     items: [
       { 
         name: "Integrações", 
-        icon: <CircleIcon />, 
+        icon: <CloudIcon />, 
         href: "/admin/integracoes/integrations",
         active: currentPath === "/admin/integracoes/integrations" || (currentPath && currentPath.includes("/admin/integracoes/"))
       },
       { 
         name: "Segurança", 
-        icon: <CircleIcon />, 
+        icon: <SecurityIcon />, 
         href: "/admin/sistema/security",
         active: currentPath === "/admin/sistema/security" || (currentPath && currentPath.includes("/admin/sistema/security"))
       },
       { 
         name: "Auditoria", 
-        icon: <CircleIcon />, 
+        icon: <FileCheckIcon />, 
         href: "/admin/auditoria/logs",
         active: currentPath === "/admin/auditoria/logs" || (currentPath && currentPath.includes("/admin/auditoria/"))
       },
       { 
         name: "Configurações", 
-        icon: <CircleIcon />, 
+        icon: <SettingsIcon />, 
         href: "/admin/sistema/settings",
         active: currentPath === "/admin/sistema/settings" || (currentPath && currentPath.includes("/admin/sistema/settings"))
       },
