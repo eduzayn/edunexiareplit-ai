@@ -245,6 +245,84 @@ export default function ChargesPage() {
     }
   };
   
+  // Função para cancelar múltiplas cobranças de uma vez
+  const handleBulkCancel = async (chargeIds: string[]) => {
+    if (chargeIds.length === 0) {
+      toast({
+        title: "Nenhuma cobrança selecionada",
+        description: "Selecione pelo menos uma cobrança para cancelar.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Iniciar o processo com feedback visual
+    toast({
+      title: "Iniciando cancelamento em lote",
+      description: `Cancelando ${chargeIds.length} cobranças...`,
+    });
+    
+    try {
+      // Chamar a API para cancelar as cobranças em lote
+      const response = await fetch('/api/debug/asaas-charges/bulk/cancel', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ chargeIds }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao cancelar cobranças');
+      }
+      
+      const result = await response.json();
+      
+      // Exibir resultado do processamento
+      if (result.data.successCount > 0) {
+        toast({
+          title: "Cobranças canceladas",
+          description: `${result.data.successCount} de ${result.data.totalProcessed} cobranças foram canceladas com sucesso.`,
+        });
+        
+        // Se houver erros, mostrar detalhes adicionais
+        if (result.data.errorCount > 0) {
+          toast({
+            title: "Algumas cobranças não puderam ser canceladas",
+            description: `${result.data.errorCount} cobranças tiveram problemas. Verifique o console para mais detalhes.`,
+            variant: "destructive"
+          });
+          console.error("Erros no cancelamento em lote:", result.data.errors);
+        }
+        
+        // Limpar seleções após o cancelamento
+        setSelectedCharges({});
+        
+        // Recarregar os dados da tabela
+        queryClient.invalidateQueries({ queryKey: ["/api/debug/asaas-charges"] });
+      } else {
+        // Se nenhuma cobrança foi cancelada com sucesso
+        toast({
+          title: "Falha no cancelamento",
+          description: `Nenhuma cobrança foi cancelada. Verifique os detalhes dos erros no console.`,
+          variant: "destructive"
+        });
+        console.error("Erros no cancelamento em lote:", result.data.errors);
+      }
+    } catch (error) {
+      console.error("Erro ao processar o cancelamento em lote:", error);
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Ocorreu um erro ao cancelar as cobranças",
+        variant: "destructive"
+      });
+    } finally {
+      // Fechar o modal de confirmação
+      setIsBulkRemoveDialogOpen(false);
+    }
+  };
+  
   // Selecionar/deselecionar todas as cobranças
   const toggleSelectAll = (isSelected: boolean) => {
     const newSelectedCharges: Record<string, boolean> = {};
@@ -1711,17 +1789,17 @@ export default function ChargesPage() {
       <Dialog open={isBulkRemoveDialogOpen} onOpenChange={setIsBulkRemoveDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Remover cobranças em lote</DialogTitle>
+            <DialogTitle>Cancelar cobranças em lote</DialogTitle>
             <p className="text-sm text-muted-foreground">
-              Você está prestes a remover {countSelectedCharges()} cobranças.
+              Você está prestes a cancelar {countSelectedCharges()} cobranças.
               Esta ação não pode ser desfeita.
             </p>
           </DialogHeader>
           
           <div className="py-4">
             <p className="text-sm text-red-500">
-              Atenção: A remoção de cobranças é irreversível. Todas as informações relacionadas a essas 
-              cobranças serão perdidas.
+              Atenção: O cancelamento de cobranças é irreversível. As cobranças serão marcadas 
+              como canceladas no sistema Asaas e não poderão mais ser pagas pelos clientes.
             </p>
           </div>
           
@@ -1730,20 +1808,26 @@ export default function ChargesPage() {
               variant="outline" 
               onClick={() => setIsBulkRemoveDialogOpen(false)}
             >
-              Cancelar
+              Voltar
             </Button>
             <Button 
               variant="destructive"
               onClick={() => {
-                toast({
-                  title: "Cobranças removidas",
-                  description: `${countSelectedCharges()} cobranças foram removidas com sucesso.`,
-                });
-                setIsBulkRemoveDialogOpen(false);
-                clearSelection();
+                // Obter os IDs das cobranças selecionadas
+                const selectedChargeIds = Object.keys(selectedCharges).filter(id => selectedCharges[id]);
+                if (selectedChargeIds.length > 0) {
+                  handleBulkCancel(selectedChargeIds);
+                } else {
+                  toast({
+                    title: "Nenhuma cobrança selecionada",
+                    description: "Selecione pelo menos uma cobrança para cancelar.",
+                    variant: "destructive"
+                  });
+                  setIsBulkRemoveDialogOpen(false);
+                }
               }}
             >
-              Confirmar remoção
+              Confirmar cancelamento
             </Button>
           </DialogFooter>
         </DialogContent>
