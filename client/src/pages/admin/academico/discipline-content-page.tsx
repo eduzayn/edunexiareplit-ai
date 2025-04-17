@@ -124,7 +124,7 @@ const assessmentFormSchema = z.object({
 
 type VideoFormValues = z.infer<typeof videoFormSchema>;
 type MaterialFormValues = z.infer<typeof materialFormSchema>;
-type EbookFormValues = z.infer<typeof ebookFormSchema>;
+// Tipo EbookFormValues removido - usando interface completa em /admin/ebooks/generate
 type QuestionFormValues = z.infer<typeof questionFormSchema>;
 type AssessmentFormValues = z.infer<typeof assessmentFormSchema>;
 
@@ -417,14 +417,7 @@ export default function DisciplineContentPage() {
     },
   });
   
-  const ebookForm = useForm<EbookFormValues>({
-    resolver: zodResolver(ebookFormSchema),
-    defaultValues: {
-      title: "",
-      description: "",
-      url: "",
-    },
-  });
+  // Formulário ebookForm removido - usando interface completa em /admin/ebooks/generate
   
   const questionForm = useForm<QuestionFormValues>({
     resolver: zodResolver(questionFormSchema),
