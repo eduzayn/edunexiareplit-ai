@@ -51,6 +51,7 @@ import settingsRoutes from "./routes/settings-routes";
 import { asaasCheckoutService } from "./services/asaas-checkout-service";
 import { db } from "./db";
 import { sql } from "drizzle-orm";
+import studentChargesRoutes from "./routes/student-charges-routes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes

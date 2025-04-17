@@ -42,7 +42,7 @@ export async function getStudentCharges(req: Request, res: Response) {
     // Se não encontrou pelo CPF, tenta buscar pelas matrículas do aluno
     if (!asaasCustomerId) {
       logger.info(`[StudentChargesController] Buscando matrículas do aluno: ${userId}`);
-      const enrollments = await storage.getEnrollmentsByStudentId(userId);
+      const enrollments = await storage.getStudentEnrollments(userId);
       
       // Se encontrou matrículas, tenta obter o paymentExternalId que pode conter o ID do cliente
       if (enrollments && enrollments.length > 0) {
