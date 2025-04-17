@@ -73,9 +73,8 @@ export default function CoursesPage() {
   // Mutação para remover curso
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest(`/api/admin/courses/${id}`, {
-        method: "DELETE"
-      });
+      await apiRequest("DELETE", `/api/admin/courses/${id}`);
+      return {};
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/courses"] });
