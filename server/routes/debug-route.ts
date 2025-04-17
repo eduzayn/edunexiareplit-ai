@@ -288,6 +288,69 @@ router.get('/asaas-charges', async (req, res) => {
   }
 });
 
+// Rota para atualizar uma cobrança no Asaas
+router.patch('/asaas-charges/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+    
+    console.log(`[DEBUG] Atualizando cobrança ${id} no Asaas`);
+    console.log(`[DEBUG] Dados para atualização:`, updateData);
+    
+    const ASAAS_API_URL = process.env.ASAAS_API_URL || 'https://api.asaas.com/v3';
+    const ASAAS_API_KEY = process.env.ASAAS_ZAYN_KEY;
+    
+    if (!ASAAS_API_KEY) {
+      return res.status(500).json({
+        success: false,
+        message: 'Chave da API Asaas não está configurada'
+      });
+    }
+    
+    try {
+      // Criar cliente Axios para o Asaas
+      const asaasApi = axios.create({
+        baseURL: ASAAS_API_URL,
+        headers: {
+          'access_token': ASAAS_API_KEY,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      // Enviar para Asaas
+      const response = await asaasApi.post(`/payments/${id}`, updateData);
+      
+      console.log(`[DEBUG] Cobrança ${id} atualizada com sucesso`);
+      res.json({
+        success: true,
+        message: 'Cobrança atualizada com sucesso',
+        data: response.data
+      });
+    } catch (apiError: any) {
+      console.error(`[DEBUG] Erro ao atualizar cobrança ${id}:`, apiError);
+      
+      // Verificar se é um erro específico do Asaas ou genérico
+      const errorMessage = apiError.response?.data?.errors?.[0]?.description || 
+                          apiError.message || 
+                          'Erro ao atualizar cobrança';
+      
+      res.status(500).json({
+        success: false,
+        message: errorMessage,
+        error: apiError.message
+      });
+    }
+  } catch (error) {
+    console.error('Erro ao processar atualização de cobrança:', error);
+    
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno ao processar a atualização da cobrança',
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+});
+
 // Rota para cancelar uma cobrança Asaas
 router.post('/asaas-charges/:id/cancel', async (req, res) => {
   try {

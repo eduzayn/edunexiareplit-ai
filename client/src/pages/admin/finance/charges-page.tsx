@@ -121,6 +121,7 @@ type Charge = {
   };
   invoiceUrl?: string;
   bankSlipUrl?: string | null;
+  externalReference?: string | null;
   customer?: {
     id: string;
     name: string;
@@ -141,7 +142,15 @@ export default function ChargesPage() {
   const [isFilterDialogOpen, setIsFilterDialogOpen] = useState(false);
   const [isBulkModifyDialogOpen, setIsBulkModifyDialogOpen] = useState(false);
   const [isBulkRemoveDialogOpen, setIsBulkRemoveDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedCharges, setSelectedCharges] = useState<Record<string, boolean>>({});
+  const [chargeToEdit, setChargeToEdit] = useState<Charge | null>(null);
+  const [editFormData, setEditFormData] = useState({
+    description: '',
+    value: '',
+    dueDate: '',
+    externalReference: ''
+  });
   
   // Acesso ao queryClient para atualizações de cache
   const queryClient = useQueryClient();
@@ -1655,7 +1664,22 @@ export default function ChargesPage() {
                               
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-gray-800">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-8 w-8 text-gray-500 hover:text-gray-800"
+                                    onClick={() => {
+                                      // Preparar para edição
+                                      setChargeToEdit(charge);
+                                      setEditFormData({
+                                        description: charge.description || '',
+                                        value: charge.value.toString(),
+                                        dueDate: charge.dueDate.split('/').reverse().join('-'), // Converter para YYYY-MM-DD
+                                        externalReference: charge.externalReference || ''
+                                      });
+                                      setIsEditDialogOpen(true);
+                                    }}
+                                  >
                                     <EditIcon className="h-4 w-4" />
                                   </Button>
                                 </TooltipTrigger>
@@ -1828,6 +1852,139 @@ export default function ChargesPage() {
               }}
             >
               Confirmar cancelamento
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal para editar uma cobrança individualmente */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar cobrança</DialogTitle>
+            <DialogDescription>
+              {chargeToEdit && (
+                <span>
+                  ID: {chargeToEdit.id} | Cliente: {chargeToEdit.name}
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="description">Descrição</Label>
+              <Input 
+                id="description" 
+                value={editFormData.description} 
+                onChange={(e) => setEditFormData({...editFormData, description: e.target.value})}
+                placeholder="Descrição da cobrança"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="value">Valor (R$)</Label>
+              <Input 
+                id="value" 
+                type="number"
+                step="0.01"
+                value={editFormData.value} 
+                onChange={(e) => setEditFormData({...editFormData, value: e.target.value})}
+                placeholder="0.00"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="dueDate">Data de vencimento</Label>
+              <Input 
+                id="dueDate" 
+                type="date"
+                value={editFormData.dueDate} 
+                onChange={(e) => setEditFormData({...editFormData, dueDate: e.target.value})}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="externalReference">Referência externa</Label>
+              <Input 
+                id="externalReference" 
+                value={editFormData.externalReference} 
+                onChange={(e) => setEditFormData({...editFormData, externalReference: e.target.value})}
+                placeholder="Código ou referência do seu sistema (opcional)"
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsEditDialogOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={async () => {
+                if (!chargeToEdit) return;
+                
+                try {
+                  // Converter data no formato YYYY-MM-DD para formato brasileiro DD/MM/YYYY
+                  const dateParts = editFormData.dueDate.split('-');
+                  const formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+                  
+                  // Preparar dados para envio
+                  const updateData = {
+                    description: editFormData.description,
+                    value: parseFloat(editFormData.value),
+                    dueDate: formattedDate,
+                    externalReference: editFormData.externalReference || null
+                  };
+                  
+                  // Exibir feedback de carregamento
+                  toast({
+                    title: "Atualizando cobrança",
+                    description: "Aguarde enquanto processamos a atualização...",
+                  });
+                  
+                  // Enviar para a API
+                  const response = await fetch(`/api/debug/asaas-charges/${chargeToEdit.id}`, {
+                    method: "PATCH",
+                    headers: {
+                      "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(updateData)
+                  });
+                  
+                  if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || "Ocorreu um erro ao atualizar a cobrança");
+                  }
+                  
+                  const result = await response.json();
+                  
+                  // Feedback de sucesso
+                  toast({
+                    title: "Cobrança atualizada",
+                    description: "A cobrança foi atualizada com sucesso no Asaas.",
+                  });
+                  
+                  // Atualizar os dados na interface
+                  queryClient.invalidateQueries({ queryKey: ["/api/debug/asaas-charges"] });
+                  
+                  // Fechar o modal
+                  setIsEditDialogOpen(false);
+                  
+                } catch (error) {
+                  console.error("Erro ao atualizar cobrança:", error);
+                  
+                  toast({
+                    title: "Erro ao atualizar",
+                    description: error instanceof Error ? error.message : "Ocorreu um erro ao atualizar a cobrança. Tente novamente.",
+                    variant: "destructive"
+                  });
+                }
+              }}
+            >
+              Salvar alterações
             </Button>
           </DialogFooter>
         </DialogContent>
