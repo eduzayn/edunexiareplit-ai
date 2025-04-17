@@ -67,12 +67,15 @@ export function setupAuth(app: Express) {
     try {
       const user = await storage.getUser(id);
       if (!user) {
-        return done(new Error(`User with id ${id} not found`), null);
+        console.log(`Usuário com id ${id} não encontrado. Invalidando sessão.`);
+        // Em vez de um erro, retorna null sem erro para invalidar a sessão silenciosamente
+        return done(null, null);
       }
       return done(null, user);
     } catch (error) {
       console.error("Error deserializing user:", error);
-      return done(error, null);
+      // Em caso de erro, também invalidamos a sessão silenciosamente
+      return done(null, null);
     }
   });
 
