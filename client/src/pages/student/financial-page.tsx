@@ -46,6 +46,15 @@ export default function FinancialPage() {
     error,
   } = useQuery({
     queryKey: ["/api/student/charges"],
+    queryFn: async () => {
+      try {
+        // Usa a função apiRequest para garantir consistência com o restante da aplicação
+        return await apiRequest('/api/student/charges');
+      } catch (err) {
+        console.error("Erro ao carregar cobranças:", err);
+        throw err;
+      }
+    },
     staleTime: 1000 * 60 * 5, // 5 minutos
   });
 
