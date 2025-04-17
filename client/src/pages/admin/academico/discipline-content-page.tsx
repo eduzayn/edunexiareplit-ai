@@ -1166,14 +1166,7 @@ export default function DisciplineContentPage() {
                             </Button>
                             <Button
                               variant="outline"
-                              onClick={() => {
-                                ebookForm.reset({
-                                  title: ebook.title,
-                                  description: ebook.description,
-                                  url: ebook.url,
-                                });
-                                setIsEbookDialogOpen(true);
-                              }}
+                              onClick={() => navigate(`/admin/ebooks/${ebook.id}/edit`)}
                             >
                               <PencilIcon className="mr-1 h-4 w-4" />
                               Editar
