@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -186,6 +187,10 @@ export default function NewClientPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            <div className="bg-blue-50 p-4 rounded-md mb-6 text-sm text-blue-800 border border-blue-200">
+              <h3 className="font-semibold mb-1">Formulário simplificado</h3>
+              <p>Este formulário foi simplificado para incluir apenas os campos essenciais para a integração com o Asaas. Os campos marcados com * são obrigatórios. Demais campos podem ser preenchidos posteriormente pelo aluno.</p>
+            </div>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <Tabs defaultValue="basic" className="w-full">
@@ -371,9 +376,9 @@ export default function NewClientPage() {
                         name="number"
                         render={({ field }) => (
                           <FormItem className="md:col-span-3">
-                            <FormLabel>Número*</FormLabel>
+                            <FormLabel>Número</FormLabel>
                             <FormControl>
-                              <Input id="number" placeholder="Número" {...field} />
+                              <Input id="number" placeholder="Número (opcional)" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -399,9 +404,9 @@ export default function NewClientPage() {
                         name="neighborhood"
                         render={({ field }) => (
                           <FormItem className="md:col-span-4">
-                            <FormLabel>Bairro*</FormLabel>
+                            <FormLabel>Bairro</FormLabel>
                             <FormControl>
-                              <Input placeholder="Bairro" {...field} />
+                              <Input placeholder="Bairro (opcional)" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -413,9 +418,9 @@ export default function NewClientPage() {
                         name="city"
                         render={({ field }) => (
                           <FormItem className="md:col-span-3">
-                            <FormLabel>Cidade*</FormLabel>
+                            <FormLabel>Cidade</FormLabel>
                             <FormControl>
-                              <Input placeholder="Cidade" {...field} />
+                              <Input placeholder="Cidade (opcional)" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -427,7 +432,7 @@ export default function NewClientPage() {
                         name="state"
                         render={({ field }) => (
                           <FormItem className="md:col-span-1">
-                            <FormLabel>UF*</FormLabel>
+                            <FormLabel>UF</FormLabel>
                             <FormControl>
                               <Input 
                                 placeholder="UF" 
