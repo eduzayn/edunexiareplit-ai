@@ -104,6 +104,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = { ...credentials };
       console.log("Tentando login como " + credentials.username + " com portalType:", data.portalType);
       console.log("Enviando requisição de login com portalType:", data.portalType);
+      
+      // Limpar o cache de usuário antes de tentar o login
+      // para evitar conflitos de estado entre logins
+      queryClient.removeQueries({ queryKey: ["/api/user"] });
+      
       return apiRequest<SelectUser>("/api/login", { method: 'POST', data });
     },
     onSuccess: async (user: SelectUser) => {
@@ -116,23 +121,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Adicionar logs para debug
       console.log("Login bem-sucedido. Dados do usuário:", user);
       console.log("Portal type:", user.portalType);
-      console.log("Redirecionando para:", getNavigationPath(`/${user.portalType}/dashboard`));
       
       toast({
         title: "Login bem-sucedido",
         description: `Bem-vindo(a) de volta, ${user.fullName}!`,
       });
 
-      // Garantir que haja um pequeno delay antes do redirecionamento
-      // para que a query de usuário tenha tempo de ser atualizada
-      setTimeout(() => {
-        // Verificar se o portal do usuário corresponde ao tipo de portal solicitado
-        if (user.portalType) {
-          console.log("Login bem-sucedido, redirecionando para dashboard " + user.portalType);
-          // Redirect to the appropriate dashboard
-          setLocation(getNavigationPath(`/${user.portalType}/dashboard`));
-        }
-      }, 300);
+      // Não fazemos redirecionamento automático aqui
+      // O redirecionamento será feito pelo componente que chamou o login
+      // Isso evita problemas de sincronização com o estado da autenticação
     },
     onError: (error: Error) => {
       toast({

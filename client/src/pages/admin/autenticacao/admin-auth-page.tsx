@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,6 +16,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Link, useLocation } from "wouter";
 import { SchoolIcon, ShieldIcon } from "@/components/ui/icons";
+import { queryClient } from "@/lib/queryClient";
 
 // Form schema
 const loginSchema = z.object({
@@ -27,8 +28,42 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function AdminAuthPage() {
-  const { loginMutation } = useAuth();
+  const { user, loginMutation, logoutMutation } = useAuth();
   const [, navigate] = useLocation();
+  const [loginSuccess, setLoginSuccess] = useState(false);
+  
+  // Efeito para verificar e limpar qualquer autenticação existente
+  useEffect(() => {
+    const prepareAuthState = async () => {
+      if (user) {
+        try {
+          console.log("Usuário já autenticado, fazendo logout para limpar estado do portal admin");
+          
+          // Limpar cache e fazer logout se o usuário já estiver autenticado
+          await logoutMutation.mutateAsync();
+          
+          // Limpar todas as queries em cache para garantir um estado limpo
+          queryClient.removeQueries();
+          
+          console.log("Autenticação anterior limpa com sucesso");
+        } catch (error) {
+          console.error("Erro ao limpar autenticação anterior:", error);
+        }
+      }
+    };
+    
+    prepareAuthState();
+  }, []);
+  
+  // Efeito para redirecionar após login bem-sucedido
+  useEffect(() => {
+    // Se o login foi bem-sucedido e o usuário está disponível com o portalType correto
+    if (loginSuccess && user && user.portalType === 'admin') {
+      console.log("Login bem-sucedido, redirecionando para dashboard admin");
+      // Usar window.location para forçar um recarregamento completo
+      window.location.href = "/admin/dashboard";
+    }
+  }, [loginSuccess, user]);
   
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -49,9 +84,14 @@ export default function AdminAuthPage() {
         portalType: "admin",
       });
       
-      // Login bem-sucedido, vamos esperar os dados serem atualizados antes de navegar
-      console.log("Login bem-sucedido, redirecionando para dashboard administrativo");
-      navigate("/admin/dashboard");
+      // Definir o estado de login bem-sucedido
+      setLoginSuccess(true);
+      
+      // Forçar uma nova consulta para obter as informações do usuário mais atualizadas
+      await queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      
+      // O redirecionamento será tratado pelo useEffect acima
+      console.log("Login bem-sucedido, preparando redirecionamento...");
     } catch (error) {
       console.error("Erro no login:", error);
     }

@@ -44,6 +44,15 @@ export function ProtectedRoute({ path, portalType }: ProtectedRouteProps) {
           window.location.href = `/${portalType}`;
         }, 300);
       }
+    } else if (!isLoading && user && user.portalType !== portalType) {
+      // Se o usuário estiver autenticado, mas com o tipo de portal errado
+      console.log("useEffect - Portal type incorreto, redirecionando...");
+      console.log("Tipo atual:", user.portalType, "Tipo esperado:", portalType);
+      
+      // Redirecionar para o portal correto
+      setTimeout(() => {
+        window.location.href = `/${user.portalType}/dashboard`;
+      }, 300);
     }
   }, [isLoading, user, portalType]);
 
