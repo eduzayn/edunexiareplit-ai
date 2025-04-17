@@ -2021,126 +2021,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ================== Rotas para CRM - Leads ==================
-  // Listar leads
+  // ================== Rotas desativadas para CRM - Leads ==================
+  // (Módulo de leads removido em favor do módulo de clientes direto)
+  
+  // Listar leads (desativado)
   app.get("/api/admin/crm/leads", requireAdmin, async (req, res) => {
-    try {
-      const search = req.query.search?.toString();
-      const status = req.query.status?.toString();
-      const limit = parseInt(req.query.limit?.toString() || "50");
-      const offset = parseInt(req.query.offset?.toString() || "0");
-
-      const leads = await storage.getLeads(search, status, limit, offset);
-      res.json(leads);
-    } catch (error) {
-      console.error("Error fetching leads:", error);
-      res.status(500).json({ message: "Erro ao buscar leads" });
-    }
+    console.log("Módulo de leads removido. Tentativa de acesso à rota GET /api/admin/crm/leads");
+    return res.status(410).json({
+      error: "Gone",
+      message: "O módulo de leads foi removido. Utilize o módulo de clientes para gerenciar contatos.",
+      redirectTo: "/api/admin/crm/clients"
+    });
   });
 
-  // Obter um lead específico
+  // Obter um lead específico (desativado)
   app.get("/api/admin/crm/leads/:id", requireAdmin, async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const lead = await storage.getLead(id);
-      
-      if (!lead) {
-        return res.status(404).json({ message: "Lead não encontrado" });
-      }
-      
-      res.json(lead);
-    } catch (error) {
-      console.error("Error fetching lead:", error);
-      res.status(500).json({ message: "Erro ao buscar lead" });
-    }
+    console.log(`Módulo de leads removido. Tentativa de acesso à rota GET /api/admin/crm/leads/${req.params.id}`);
+    return res.status(410).json({
+      error: "Gone",
+      message: "O módulo de leads foi removido. Utilize o módulo de clientes para gerenciar contatos.",
+      redirectTo: "/api/admin/crm/clients"
+    });
   });
 
-  // Criar um novo lead
+  // Criar um novo lead (desativado)
   app.post("/api/admin/crm/leads", requireAdmin, async (req, res) => {
-    try {
-      // Validar os dados do lead
-      const leadData = insertLeadSchema.parse({ 
-        ...req.body,
-        createdById: req.user.id
-      });
-      
-      const lead = await storage.createLead(leadData);
-      res.status(201).json(lead);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          message: "Dados inválidos", 
-          errors: error.errors 
-        });
-      }
-      console.error("Error creating lead:", error);
-      res.status(500).json({ message: "Erro ao criar lead" });
-    }
+    console.log("Módulo de leads removido. Tentativa de acesso à rota POST /api/admin/crm/leads");
+    return res.status(410).json({
+      error: "Gone",
+      message: "O módulo de leads foi removido. Utilize o módulo de clientes para gerenciar contatos.",
+      redirectTo: "/api/admin/crm/clients"
+    });
   });
 
-  // Atualizar um lead
+  // Atualizar um lead (desativado)
   app.put("/api/admin/crm/leads/:id", requireAdmin, async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const existingLead = await storage.getLead(id);
-      
-      if (!existingLead) {
-        return res.status(404).json({ message: "Lead não encontrado" });
-      }
-      
-      // Validar os dados da atualização
-      const updateData = insertLeadSchema.partial().parse(req.body);
-      
-      const updatedLead = await storage.updateLead(id, updateData);
-      res.json(updatedLead);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          message: "Dados inválidos", 
-          errors: error.errors 
-        });
-      }
-      console.error("Error updating lead:", error);
-      res.status(500).json({ message: "Erro ao atualizar lead" });
-    }
+    console.log(`Módulo de leads removido. Tentativa de acesso à rota PUT /api/admin/crm/leads/${req.params.id}`);
+    return res.status(410).json({
+      error: "Gone",
+      message: "O módulo de leads foi removido. Utilize o módulo de clientes para gerenciar contatos.",
+      redirectTo: "/api/admin/crm/clients"
+    });
   });
 
-  // Excluir um lead
+  // Excluir um lead (desativado)
   app.delete("/api/admin/crm/leads/:id", requireAdmin, async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const success = await storage.deleteLead(id);
-      
-      if (!success) {
-        return res.status(404).json({ message: "Lead não encontrado ou não pode ser excluído" });
-      }
-      
-      res.status(204).end();
-    } catch (error) {
-      console.error("Error deleting lead:", error);
-      res.status(500).json({ message: "Erro ao excluir lead" });
-    }
+    console.log(`Módulo de leads removido. Tentativa de acesso à rota DELETE /api/admin/crm/leads/${req.params.id}`);
+    return res.status(410).json({
+      error: "Gone",
+      message: "O módulo de leads foi removido. Utilize o módulo de clientes para gerenciar contatos.",
+      redirectTo: "/api/admin/crm/clients"
+    });
   });
   
-  // Converter lead para cliente
+  // Converter lead para cliente (desativado)
   app.post("/api/admin/crm/leads/:id/convert", requireAdmin, async (req, res) => {
-    try {
-      const leadId = parseInt(req.params.id);
-      const lead = await storage.getLead(leadId);
-      
-      if (!lead) {
-        return res.status(404).json({ message: "Lead não encontrado" });
-      }
-      
-      // Dados adicionais necessários para criar o cliente
-      const additionalData = req.body;
-      
-      // Converter o lead em cliente
-      const client = await storage.convertLeadToClient(leadId, additionalData, req.user.id);
-      res.status(201).json(client);
-    } catch (error) {
-      console.error("Error converting lead to client:", error);
-      res.status(500).json({ message: "Erro ao converter lead para cliente" });
-    }
+    console.log(`Módulo de leads removido. Tentativa de acesso à rota POST /api/admin/crm/leads/${req.params.id}/convert`);
+    return res.status(410).json({
+      error: "Gone",
+      message: "O módulo de leads foi removido. Utilize o módulo de clientes para gerenciar contatos.",
+      redirectTo: "/api/admin/crm/clients"
+    });
   });
 
   // ================== Rotas para CRM - Clientes ==================
@@ -2819,14 +2760,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Verificar e converter leads com checkout preenchido para clientes
-  // (endpoint público temporariamente para testes)
+  // (módulo de leads removido - rotas mantidas para compatibilidade)
   app.post("/api/v2/checkout/convert-pending-leads", async (req, res) => {
-    await checkAndConvertPendingLeads(req, res);
+    console.log("Aviso: O endpoint /api/v2/checkout/convert-pending-leads está obsoleto. Módulo de leads removido.");
+    res.status(410).json({
+      error: "Gone",
+      message: "O módulo de leads foi removido. Use o módulo de clientes diretamente.",
+      redirectTo: "/api/admin/crm/clients"
+    });
   });
   
-  // Rota adicional para testes - converter leads pendentes
+  // Rota adicional para testes - converter leads pendentes (desativada)
   app.post("/api/v2/checkout/check-convert-pending", async (req, res) => {
-    await checkAndConvertPendingLeads(req, res);
+    console.log("Aviso: O endpoint /api/v2/checkout/check-convert-pending está obsoleto. Módulo de leads removido.");
+    res.status(410).json({
+      error: "Gone",
+      message: "O módulo de leads foi removido. Use o módulo de clientes diretamente.",
+      redirectTo: "/api/admin/crm/clients"
+    });
   });
   
   // Rota para testar busca de pagamentos por checkout
