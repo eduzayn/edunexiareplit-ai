@@ -1,3 +1,4 @@
+import React, { useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
 import { Redirect, Route, useLocation } from "wouter";
@@ -6,6 +7,7 @@ import { StudentDashboard } from "@/components/dashboard/student-dashboard";
 import { PartnerDashboard } from "@/components/dashboard/partner-dashboard";
 import { PoloDashboard } from "@/components/dashboard/polo-dashboard";
 import { AdminDashboard } from "@/components/dashboard/admin-dashboard";
+import { queryClient } from "@/lib/queryClient";
 
 interface ProtectedRouteProps {
   path: string;
@@ -26,6 +28,25 @@ export function ProtectedRoute({ path, portalType }: ProtectedRouteProps) {
 
   const DashboardComponent = dashboardComponents[portalType];
 
+  // Usar useEffect para evitar problemas de renderização e redirecionamento
+  useEffect(() => {
+    // Se não estiver carregando e o usuário não estiver autenticado, redirecionar manualmente
+    if (!isLoading && !user) {
+      console.log("useEffect - Usuário não autenticado, redirecionando...");
+      
+      // Limpar qualquer cache que possa estar interferindo
+      queryClient.clear();
+      
+      // Usar window.location para forçar um recarregamento completo e evitar problemas de estado
+      if (window.location.pathname.includes(`/${portalType}/`)) {
+        // Pequeno delay para garantir que o efeito não entre em loop
+        setTimeout(() => {
+          window.location.href = `/${portalType}`;
+        }, 300);
+      }
+    }
+  }, [isLoading, user, portalType]);
+
   return (
     <Route path={path}>
       {() => {
@@ -45,20 +66,15 @@ export function ProtectedRoute({ path, portalType }: ProtectedRouteProps) {
           );
         }
 
-        // Se o usuário não estiver autenticado, redirecione para a página de autenticação
+        // Se o usuário não estiver autenticado, mostrar mensagem e redirecionar
+        // O redirecionamento efetivo é feito pelo useEffect acima
         if (!user) {
           console.log("ProtectedRoute - Usuário não autenticado");
-          
-          // Usando setTimeout para evitar redirecionamentos imediatos que podem ser
-          // interrompidos por atualizações de estado subsequentes
-          setTimeout(() => {
-            navigate(`/auth?portal=${portalType}`);
-          }, 100);
           
           return (
             <div className="flex items-center justify-center min-h-screen">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <p className="ml-2 text-gray-600">Redirecionando para página de autenticação...</p>
+              <p className="ml-2 text-gray-600">Verificando autenticação...</p>
             </div>
           );
         }
