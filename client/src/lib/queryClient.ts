@@ -48,11 +48,20 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
+    // Log para debug
+    console.log(`QueryClient fazendo requisição para: ${queryKey[0]}`);
+    
     const res = await fetch(queryKey[0] as string, {
-      credentials: "include",
+      method: "GET",
+      headers: {},
+      credentials: "include", // Importante: inclui cookies de autenticação
     });
 
+    // Log para debug
+    console.log(`Resposta da requisição para ${queryKey[0]}: ${res.status}`);
+
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
+      console.log(`Retornando null para requisição não autenticada: ${queryKey[0]}`);
       return null;
     }
 

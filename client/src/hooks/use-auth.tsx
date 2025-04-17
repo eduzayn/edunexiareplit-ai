@@ -15,7 +15,7 @@ type AuthContextType = {
   isLoading: boolean;
   error: Error | null;
   loginMutation: UseMutationResult<SelectUser, Error, LoginData>;
-  logoutMutation: UseMutationResult<void, Error, void>;
+  logoutMutation: UseMutationResult<{}, Error, void>;
   registerMutation: UseMutationResult<SelectUser, Error, InsertUser>;
 };
 
@@ -40,7 +40,7 @@ const defaultLoginMutation = {
 
 const defaultLogoutMutation = {
   mutate: () => {},
-  mutateAsync: async () => {},
+  mutateAsync: async () => ({} as any),
   isPending: false,
   isSuccess: false,
   isError: false,
@@ -79,7 +79,7 @@ const defaultAuthContext: AuthContextType = {
   isLoading: false,
   error: null,
   loginMutation: defaultLoginMutation as unknown as UseMutationResult<SelectUser, Error, LoginData>,
-  logoutMutation: defaultLogoutMutation as unknown as UseMutationResult<void, Error, void>,
+  logoutMutation: defaultLogoutMutation as unknown as UseMutationResult<{}, Error, void>,
   registerMutation: defaultRegisterMutation as unknown as UseMutationResult<SelectUser, Error, InsertUser>,
 };
 

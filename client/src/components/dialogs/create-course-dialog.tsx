@@ -117,10 +117,8 @@ export function CreateCourseDialog({
   // Mutação para criar curso
   const createCourseMutation = useMutation({
     mutationFn: async (values: CourseFormValues) => {
-      return await apiRequest("/api/admin/courses", {
-        method: "POST",
-        data: values
-      });
+      const response = await apiRequest("POST", "/api/admin/courses", values);
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/courses"] });
