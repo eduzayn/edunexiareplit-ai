@@ -85,6 +85,7 @@ import LearningPage from "@/pages/student/learning-page";
 // Módulo de Sistema
 import SecurityPage from "@/pages/admin/sistema/security-page";
 import SettingsPage from "@/pages/admin/sistema/settings-page";
+import InstitutionSettingsPage from "@/pages/admin/sistema/institution-settings-page";
 // Import polo pages
 import PoloEnrollmentsPage from "@/pages/polo/enrollments-page";
 import PoloNewEnrollmentPage from "@/pages/polo/new-enrollment-page";
@@ -526,6 +527,10 @@ function Router() {
       
       <Route path="/admin/sistema/settings">
         {() => user?.portalType === "admin" ? <SettingsPage /> : <Redirect to="/admin" />}
+      </Route>
+      
+      <Route path="/admin/sistema/institution-settings">
+        {() => user?.portalType === "admin" ? <InstitutionSettingsPage /> : <Redirect to="/admin" />}
       </Route>
       
       <Route component={NotFound} />
