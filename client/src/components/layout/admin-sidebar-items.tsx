@@ -294,19 +294,19 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
     items: [
       { 
         name: "Templates", 
-        icon: <ScrollTextIcon />, 
+        icon: <CircleIcon />, 
         href: "/admin/certification/templates",
         active: currentPath === "/admin/certification/templates" || (currentPath && currentPath.includes("/admin/certification/templates/"))
       },
       { 
         name: "Signatários", 
-        icon: <FileCheckIcon />, 
+        icon: <CircleIcon />, 
         href: "/admin/certification/signers",
         active: currentPath === "/admin/certification/signers" || (currentPath && currentPath.includes("/admin/certification/signers/"))
       },
       { 
         name: "Emissão de Certificados", 
-        icon: <BadgeCheckIcon />, 
+        icon: <CircleIcon />, 
         href: "/admin/certification/issue",
         active: currentPath === "/admin/certification/issue" || (currentPath && currentPath.includes("/admin/certification/issue/"))
       },
@@ -448,19 +448,19 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
     items: [
       { 
         name: "Canais", 
-        icon: <InboxIcon />, 
+        icon: <CircleIcon />, 
         href: "/admin/comunicacao/inbox",
         active: currentPath === "/admin/comunicacao/inbox" || (currentPath && currentPath.includes("/admin/comunicacao/inbox/"))
       },
       { 
         name: "WhatsApp", 
-        icon: <WhatsAppIcon />, 
+        icon: <CircleIcon />, 
         href: "/admin/comunicacao/whatsapp",
         active: currentPath === "/admin/comunicacao/whatsapp" || (currentPath && currentPath.includes("/admin/comunicacao/whatsapp/"))
       },
       { 
         name: "Email", 
-        icon: <MailIcon />, 
+        icon: <CircleIcon />, 
         href: "/admin/comunicacao/email",
         active: currentPath === "/admin/comunicacao/email" || (currentPath && currentPath.includes("/admin/comunicacao/email/"))
       },
@@ -510,19 +510,19 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
     items: [
       { 
         name: "Integrações", 
-        icon: <CloudIcon />, 
+        icon: <CircleIcon />, 
         href: "/admin/integracoes/integrations",
         active: currentPath === "/admin/integracoes/integrations" || (currentPath && currentPath.includes("/admin/integracoes/"))
       },
       { 
         name: "Segurança", 
-        icon: <SecurityIcon />, 
+        icon: <CircleIcon />, 
         href: "/admin/sistema/security",
         active: currentPath === "/admin/sistema/security" || (currentPath && currentPath.includes("/admin/sistema/security"))
       },
       { 
         name: "Auditoria", 
-        icon: <FileCheckIcon />, 
+        icon: <CircleIcon />, 
         href: "/admin/auditoria/logs",
         active: currentPath === "/admin/auditoria/logs" || (currentPath && currentPath.includes("/admin/auditoria/"))
       },
