@@ -17,7 +17,7 @@
  */
 
 import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import AdminLayout from "@/components/layout/admin-layout";
@@ -142,6 +142,9 @@ export default function ChargesPage() {
   const [isBulkModifyDialogOpen, setIsBulkModifyDialogOpen] = useState(false);
   const [isBulkRemoveDialogOpen, setIsBulkRemoveDialogOpen] = useState(false);
   const [selectedCharges, setSelectedCharges] = useState<Record<string, boolean>>({});
+  
+  // Acesso ao queryClient para atualizações de cache
+  const queryClient = useQueryClient();
   
   // Estados para os filtros
   const [dueDateFilterStart, setDueDateFilterStart] = useState<Date | undefined>(undefined);
@@ -356,6 +359,57 @@ export default function ChargesPage() {
     }
   };
   
+  // Função para enviar fatura por e-mail
+  // Função para cancelar uma cobrança
+  const cancelCharge = async (charge: Charge) => {
+    try {
+      // Confirmação com o usuário antes de cancelar
+      const confirmed = window.confirm(`Tem certeza que deseja cancelar a cobrança ${charge.id} no valor de ${formatCurrency(charge.value)}?`);
+      if (!confirmed) return;
+      
+      // Exibir feedback de carregamento
+      toast({
+        title: "Cancelando cobrança",
+        description: "Aguarde enquanto processamos o cancelamento...",
+      });
+      
+      // Fazer a requisição para a API de cancelamento
+      const response = await fetch(`/api/debug/asaas-charges/${charge.id}/cancel`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
+      
+      // Processar a resposta
+      if (response.ok) {
+        toast({
+          title: "Cobrança cancelada",
+          description: "A cobrança foi cancelada com sucesso.",
+        });
+        
+        // Atualizar a lista de cobranças após o cancelamento
+        // Usando o cache key que foi definido na query original
+        const queryClient = useQueryClient();
+        queryClient.invalidateQueries({ queryKey: ["/api/debug/asaas-charges"] });
+      } else {
+        const errorData = await response.json();
+        toast({
+          title: "Erro ao cancelar cobrança",
+          description: errorData.message || "Ocorreu um erro ao cancelar a cobrança. Tente novamente.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao cancelar cobrança:", error);
+      toast({
+        title: "Erro ao cancelar cobrança",
+        description: "Ocorreu um erro ao cancelar a cobrança. Tente novamente.",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Função para enviar fatura por e-mail
   const sendInvoiceEmail = async (charge: Charge) => {
     if (!charge.customer?.email) {
