@@ -25,15 +25,58 @@ export default function SettingsPage() {
     enabled: activeTab === "integrations",
   });
 
-  const handleSaveSettings = () => {
-    setIsSubmitting(true);
-    setTimeout(() => {
+  const handleSaveSettings = async () => {
+    try {
+      setIsSubmitting(true);
+      
+      // Pegar valores dos campos
+      const primaryColor = (document.getElementById("primary-color") as HTMLInputElement)?.value || "#5277e2";
+      const secondaryColor = (document.getElementById("secondary-color") as HTMLInputElement)?.value || "#ff6600";
+      const backgroundColor = (document.getElementById("background-color") as HTMLInputElement)?.value || "#f0f9ff";
+      const textColor = (document.getElementById("text-color") as HTMLInputElement)?.value || "#1e293b";
+      
+      // Converter para HSL para o tema
+      const primaryColorHSL = "hsl(230, 70%, 55%)"; // Ideal seria converter a cor HEX para HSL
+      
+      // Variantes e temas
+      const theme = document.querySelector('button[data-state="active"][id^="theme-"]')?.getAttribute('value') || "light";
+      const variant = document.querySelector('button[data-state="active"][id^="variant-"]')?.getAttribute('value') || "vibrant";
+      const radius = document.querySelector('button[data-state="active"][id^="radius-"]')?.getAttribute('value') || "0.75";
+      
+      // Criar objeto de tema
+      const themeConfig = {
+        primary: primaryColorHSL,
+        appearance: theme,
+        variant: variant,
+        radius: parseFloat(radius)
+      };
+      
+      // Simular API para salvar as configurações
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      
+      // Atualizar arquivo theme.json - em um ambiente real, isso seria feito via API
+      console.log("Atualizando tema:", themeConfig);
+      
+      // Simulando alterações aplicadas na interface
+      document.documentElement.style.setProperty('--primary', primaryColor);
+      document.documentElement.style.setProperty('--secondary', secondaryColor);
+      document.documentElement.style.setProperty('--background', backgroundColor);
+      document.documentElement.style.setProperty('--text', textColor);
+      
       setIsSubmitting(false);
       toast({
         title: "Configurações salvas",
-        description: "As configurações foram atualizadas com sucesso",
+        description: "As configurações visuais foram atualizadas com sucesso",
       });
-    }, 1000);
+    } catch (error) {
+      console.error("Erro ao salvar configurações:", error);
+      setIsSubmitting(false);
+      toast({
+        title: "Erro ao salvar",
+        description: "Ocorreu um erro ao salvar as configurações. Tente novamente.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (isLoadingSettings) {
@@ -194,9 +237,12 @@ export default function SettingsPage() {
                 <div className="space-y-2">
                   <Label htmlFor="primary-color">Cor Primária</Label>
                   <div className="flex space-x-2">
-                    <Input id="primary-color" type="color" defaultValue="#0066cc" className="w-16 h-10" />
-                    <Input defaultValue="#0066cc" className="flex-1" />
+                    <Input id="primary-color" type="color" defaultValue="#5277e2" className="w-16 h-10" />
+                    <Input defaultValue="hsl(230, 70%, 55%)" className="flex-1" />
                   </div>
+                  <p className="text-sm text-muted-foreground">
+                    Esta cor será aplicada aos botões, links e elementos principais da interface
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="secondary-color">Cor Secundária</Label>
@@ -204,6 +250,32 @@ export default function SettingsPage() {
                     <Input id="secondary-color" type="color" defaultValue="#ff6600" className="w-16 h-10" />
                     <Input defaultValue="#ff6600" className="flex-1" />
                   </div>
+                  <p className="text-sm text-muted-foreground">
+                    Esta cor será aplicada a elementos de destaque e acentuação na interface
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="background-color">Cor de Fundo</Label>
+                  <div className="flex space-x-2">
+                    <Input id="background-color" type="color" defaultValue="#f0f9ff" className="w-16 h-10" />
+                    <Input defaultValue="#f0f9ff" className="flex-1" />
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Cor de fundo para barras laterais e cabeçalhos
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="text-color">Cor do Texto</Label>
+                  <div className="flex space-x-2">
+                    <Input id="text-color" type="color" defaultValue="#1e293b" className="w-16 h-10" />
+                    <Input defaultValue="#1e293b" className="flex-1" />
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Cor principal para textos e conteúdos escritos
+                  </p>
                 </div>
               </div>
 
@@ -222,6 +294,22 @@ export default function SettingsPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="variant">Variante Visual</Label>
+                  <Select defaultValue="vibrant">
+                    <SelectTrigger id="variant">
+                      <SelectValue placeholder="Selecione uma variante" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="vibrant">Vibrante</SelectItem>
+                      <SelectItem value="professional">Profissional</SelectItem>
+                      <SelectItem value="tint">Suave</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
                   <Label htmlFor="font">Fonte Principal</Label>
                   <Select defaultValue="inter">
                     <SelectTrigger id="font">
@@ -232,6 +320,22 @@ export default function SettingsPage() {
                       <SelectItem value="roboto">Roboto</SelectItem>
                       <SelectItem value="poppins">Poppins</SelectItem>
                       <SelectItem value="open-sans">Open Sans</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="radius">Arredondamento de Bordas</Label>
+                  <Select defaultValue="0.75">
+                    <SelectTrigger id="radius">
+                      <SelectValue placeholder="Selecione um valor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">Sem arredondamento</SelectItem>
+                      <SelectItem value="0.3">Mínimo (0.3)</SelectItem>
+                      <SelectItem value="0.5">Leve (0.5)</SelectItem>
+                      <SelectItem value="0.75">Médio (0.75)</SelectItem>
+                      <SelectItem value="1">Grande (1.0)</SelectItem>
+                      <SelectItem value="1.5">Muito grande (1.5)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -257,6 +361,24 @@ export default function SettingsPage() {
                   </div>
                   <div className="flex justify-center">
                     <Button variant="outline">Alterar Favicon</Button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border rounded-md p-4 bg-blue-50">
+                <h3 className="font-medium mb-2">Visualização</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="flex flex-col items-center">
+                    <div className="w-full h-24 bg-[#5277e2] rounded-md mb-2 shadow-sm"></div>
+                    <span className="text-sm">Cor Primária</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="w-full h-24 bg-[#ff6600] rounded-md mb-2 shadow-sm"></div>
+                    <span className="text-sm">Cor Secundária</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="w-full h-24 bg-gradient-to-b from-[#f0f9ff] to-[#e0f2fe] rounded-md mb-2 shadow-sm border border-blue-100"></div>
+                    <span className="text-sm">Gradiente de Fundo</span>
                   </div>
                 </div>
               </div>
