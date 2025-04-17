@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { SchoolIcon, HandshakeIcon, MapPinIcon, ShieldIcon, ArrowLeftIcon } from "@/components/ui/icons";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
+import { useAuth } from "@/hooks/use-auth";
+import { queryClient } from "@/lib/queryClient";
 
 export default function PortalSelectionPage() {
   const [, navigate] = useLocation();
