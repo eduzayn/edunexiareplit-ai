@@ -136,10 +136,7 @@ router.patch("/:id", requireAuth, requireAdmin, async (req, res) => {
     }
     
     const eBookData = insertEBookSchema.partial().parse(req.body);
-    const updatedEBook = await storage.updateEBook(id, {
-      ...eBookData,
-      updatedAt: new Date()
-    });
+    const updatedEBook = await storage.updateEBook(id, eBookData);
     
     res.json(updatedEBook);
   } catch (error) {
