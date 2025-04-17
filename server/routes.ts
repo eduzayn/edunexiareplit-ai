@@ -2915,6 +2915,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registro das rotas de configurações
   app.use("/api/institution-settings", institutionSettingsRoutes);
   app.use("/api/settings", settingsRoutes);
+  
+  // Registro das rotas de cobranças do aluno
+  app.use("/api/student/charges", studentChargesRoutes);
 
   const httpServer = createServer(app);
 
