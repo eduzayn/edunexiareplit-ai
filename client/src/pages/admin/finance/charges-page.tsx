@@ -707,6 +707,7 @@ export default function ChargesPage() {
         installment: installmentInfo,
         invoiceUrl: charge.invoiceUrl,
         bankSlipUrl: charge.bankSlipUrl,
+        externalReference: charge.externalReference,
         // Adicionar informações do cliente
         customer: {
           id: charge.customer,

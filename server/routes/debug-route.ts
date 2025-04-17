@@ -317,8 +317,8 @@ router.patch('/asaas-charges/:id', async (req, res) => {
         }
       });
       
-      // Enviar para Asaas
-      const response = await asaasApi.post(`/payments/${id}`, updateData);
+      // Enviar para Asaas usando PATCH (o método correto para atualizações)
+      const response = await asaasApi.patch(`/payments/${id}`, updateData);
       
       console.log(`[DEBUG] Cobrança ${id} atualizada com sucesso`);
       res.json({
