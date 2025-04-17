@@ -1151,12 +1151,14 @@ export default function DisciplineContentPage() {
                       </CardDescription>
                     </div>
                     <Button
-                      onClick={handleOpenEbookDialog}
+                      asChild
                       className="mt-4 md:mt-0"
                       disabled={ebook !== null && ebook !== undefined}
                     >
-                      <PlusIcon className="mr-1 h-4 w-4" />
-                      {ebook ? "Substituir E-book" : "Adicionar E-book"}
+                      <Link href={`/admin/ebooks/generate?disciplineId=${disciplineId}`}>
+                        <BookIcon className="mr-1 h-4 w-4" />
+                        {ebook ? "Substituir E-book" : "Gerar E-book com IA"}
+                      </Link>
                     </Button>
                   </div>
                 </CardHeader>
@@ -1176,9 +1178,11 @@ export default function DisciplineContentPage() {
                       <p className="mt-1 text-gray-500">
                         Adicione um e-book interativo para proporcionar uma experiência rica de aprendizado.
                       </p>
-                      <Button onClick={handleOpenEbookDialog} className="mt-4">
-                        <PlusIcon className="mr-1 h-4 w-4" />
-                        Adicionar E-book
+                      <Button asChild className="mt-4">
+                        <Link href={`/admin/ebooks/generate?disciplineId=${disciplineId}`}>
+                          <BookIcon className="mr-1 h-4 w-4" />
+                          Gerar E-book com IA
+                        </Link>
                       </Button>
                     </div>
                   ) : (
