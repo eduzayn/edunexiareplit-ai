@@ -182,6 +182,25 @@ export async function receivePayment(id: string, paymentData: any) {
   }
 }
 
+/**
+ * Cancela uma cobrança pelo ID
+ */
+export async function cancelCharge(id: string) {
+  try {
+    logger.info(`[AsaasChargesService] Cancelando cobrança: ${id}`);
+    
+    // Endpoint para cancelamento de cobrança no Asaas
+    const response = await asaasApi.post(`/payments/${id}/cancel`);
+    
+    logger.info(`[AsaasChargesService] Cobrança cancelada com sucesso: ${id}`);
+    return response.data;
+  } catch (error: any) {
+    const errorMessage = error?.response?.data?.errors?.[0]?.description || error?.message || 'Erro desconhecido';
+    logger.error(`[AsaasChargesService] Erro ao cancelar cobrança ${id}: ${errorMessage}`);
+    throw new Error(`Erro ao cancelar cobrança no Asaas: ${errorMessage}`);
+  }
+}
+
 export default {
   getAllCharges,
   getChargeById,
@@ -189,5 +208,6 @@ export default {
   updateCharge,
   deleteCharge,
   getCustomerCharges,
-  receivePayment
+  receivePayment,
+  cancelCharge
 };

@@ -1636,12 +1636,17 @@ export default function ChargesPage() {
                               
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-red-600">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-8 w-8 text-gray-500 hover:text-red-600"
+                                    onClick={() => cancelCharge(charge)}
+                                  >
                                     <Trash2Icon className="h-4 w-4" />
                                   </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                  <p>Excluir</p>
+                                  <p>Cancelar/Excluir</p>
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
