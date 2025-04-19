@@ -24,14 +24,18 @@ export interface VideoGenerationResult {
 }
 
 export class ReplicateService {
-  private apiToken: string;
+  private apiToken?: string;
   private baseUrl: string = 'https://api.replicate.com/v1';
+  private isAvailable: boolean = false;
 
   constructor() {
     if (!process.env.REPLICATE_API_TOKEN) {
-      throw new Error('REPLICATE_API_TOKEN environment variable is not set');
+      console.warn('REPLICATE_API_TOKEN environment variable is not set. Video generation service will be disabled.');
+      this.isAvailable = false;
+    } else {
+      this.apiToken = process.env.REPLICATE_API_TOKEN;
+      this.isAvailable = true;
     }
-    this.apiToken = process.env.REPLICATE_API_TOKEN;
   }
 
   /**
@@ -39,6 +43,10 @@ export class ReplicateService {
    * @param options Opções para geração de vídeo
    */
   async generateVideo(options: ReplicateVideoOptions): Promise<VideoGenerationResult> {
+    if (!this.isAvailable) {
+      throw new Error('Replicate service is not available. Please configure REPLICATE_API_TOKEN environment variable.');
+    }
+    
     try {
       // Define modelo padrão para Zeroscope (geração de vídeo da Replicate)
       const modelVersion = options.model || 'anotherjesse/zeroscope-v2-xl:9f747673945c62801b13b84701c783929c0ee784e361be391d0f87af6eaa3375';
@@ -127,6 +135,9 @@ export class ReplicateService {
    * Salva um vídeo do Replicate para o sistema de arquivos
    */
   async saveVideoToFile(videoUrl: string, outputDir: string = 'uploads/ebook-videos'): Promise<string> {
+    if (!this.isAvailable) {
+      throw new Error('Replicate service is not available. Please configure REPLICATE_API_TOKEN environment variable.');
+    }
     try {
       // Criar diretório se não existir
       if (!fs.existsSync(outputDir)) {
@@ -184,4 +195,7 @@ export class ReplicateService {
   }
 }
 
-export default new ReplicateService();
+// Exportar uma classe em vez de uma instância para permitir inicialização controlada
+const replicateService = new ReplicateService();
+console.log(`[REPLICATE SERVICE] Status: ${replicateService.isAvailable ? 'Disponível' : 'Indisponível'}`);
+export default replicateService;
