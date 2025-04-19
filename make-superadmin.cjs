@@ -16,7 +16,7 @@ async function makeSuperAdmin() {
     await client.query('BEGIN');
     
     // Nome de usuário que receberá o papel de Super Admin
-    const username = 'ana.diretoria';
+    const username = 'admin';
     
     // Obter ID do usuário
     const userResult = await client.query(

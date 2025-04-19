@@ -111,3 +111,33 @@ export interface UserRole {
   createdById?: number;
   createdAt: Date;
 }
+
+/**
+ * Status interno do link de pagamento
+ */
+export type PaymentLinkStatus =
+  | 'Active'     // Link ativo e com imagem
+  | 'ImageError' // Link ativo mas sem imagem
+  | 'Error'      // Erro na criação do link
+  | 'Disabled';  // Link desativado
+
+/**
+ * Interface para representar um link de pagamento personalizado
+ */
+export interface EdunexaPaymentLink {
+  id: number;
+  courseId: number;
+  linkName: string;
+  amount: number;
+  description?: string;
+  asaasPaymentLinkId: string;
+  asaasPaymentLinkUrl: string;
+  internalStatus: PaymentLinkStatus;
+  externalReference?: string;
+  notificationEnabled: boolean;
+  payerName?: string;
+  payerCpf?: string;
+  payerEmail?: string;
+  generatingConsultantId?: number;
+  createdAt: Date;
+}

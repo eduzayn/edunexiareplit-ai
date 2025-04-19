@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import asaasChargesService from '../services/asaas-charges-service';
 import { storage } from '../storage';
-import { logger } from '../utils/logger';
+import logger from '../utils/logger';
 
 export const studentChargesController = {
   /**

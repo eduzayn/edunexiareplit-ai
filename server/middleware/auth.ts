@@ -1,91 +1,85 @@
 /**
- * Middlewares de autenticação e autorização centralizados para o sistema
- * Este arquivo consolida todos os middlewares relacionados à autenticação
+ * Middleware para autenticação
  */
 
-import { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction } from 'express';
 
 /**
  * Middleware para verificar se o usuário está autenticado
- * @param req Request do Express
- * @param res Response do Express
- * @param next Função next do Express
- * @returns void ou resposta de erro 401
  */
-export const requireAuth = (req: Request, res: Response, next: NextFunction) => {
+export function requireAuth(req: Request, res: Response, next: NextFunction) {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ 
-      success: false,
-      message: "Usuário não autenticado" 
+      success: false, 
+      message: 'Não autorizado'
     });
   }
+  
   next();
-};
+}
 
 /**
- * Middleware para garantir que o usuário seja um administrador
- * @param req Request do Express
- * @param res Response do Express
- * @param next Função next do Express
- * @returns void ou resposta de erro 403
+ * Middleware para verificar se o usuário é um administrador
  */
-export const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
-  if (!req.isAuthenticated() || req.user.portalType !== "admin") {
+export function requireAdmin(req: Request, res: Response, next: NextFunction) {
+  console.log('⚠️ [Auth Debug] isAuthenticated:', req.isAuthenticated());
+  console.log('⚠️ [Auth Debug] req.user:', req.user);
+  console.log('⚠️ [Auth Debug] cookies:', req.headers.cookie);
+  
+  if (!req.isAuthenticated() || !req.user || req.user.portalType !== 'admin') {
     return res.status(403).json({ 
-      success: false,
-      message: "Acesso restrito a administradores" 
+      success: false, 
+      message: 'Acesso restrito a administradores',
+      debug: {
+        isAuthenticated: req.isAuthenticated(),
+        user: req.user || 'Nenhum usuário na sessão',
+        cookies: req.headers.cookie || 'Nenhum cookie encontrado'
+      }
     });
   }
+  
+  console.log('⚠️ [Auth Debug] Acesso admin autorizado para:', req.user.username);
   next();
-};
+}
 
 /**
- * Middleware para garantir que o usuário seja um aluno
- * @param req Request do Express
- * @param res Response do Express
- * @param next Função next do Express
- * @returns void ou resposta de erro 403
+ * Middleware para verificar se o usuário é um estudante
  */
-export const requireStudent = (req: Request, res: Response, next: NextFunction) => {
-  if (!req.isAuthenticated() || req.user.portalType !== "student") {
+export function requireStudent(req: Request, res: Response, next: NextFunction) {
+  if (!req.isAuthenticated() || !req.user || req.user.portalType !== 'student') {
     return res.status(403).json({ 
-      success: false,
-      message: "Acesso restrito a alunos" 
+      success: false, 
+      message: 'Acesso restrito a estudantes'
     });
   }
+  
   next();
-};
+}
 
 /**
- * Middleware para garantir que o usuário seja um polo
- * @param req Request do Express
- * @param res Response do Express
- * @param next Função next do Express
- * @returns void ou resposta de erro 403
+ * Middleware para verificar se o usuário é um parceiro
  */
-export const requirePolo = (req: Request, res: Response, next: NextFunction) => {
-  if (!req.isAuthenticated() || req.user.portalType !== "polo") {
+export function requirePartner(req: Request, res: Response, next: NextFunction) {
+  if (!req.isAuthenticated() || !req.user || req.user.portalType !== 'partner') {
     return res.status(403).json({ 
-      success: false,
-      message: "Acesso restrito a polos" 
+      success: false, 
+      message: 'Acesso restrito a parceiros'
     });
   }
+  
   next();
-};
+}
 
 /**
- * Middleware para garantir que o usuário seja um parceiro
- * @param req Request do Express
- * @param res Response do Express
- * @param next Função next do Express
- * @returns void ou resposta de erro 403
+ * Middleware para verificar se o usuário é um polo
  */
-export const requirePartner = (req: Request, res: Response, next: NextFunction) => {
-  if (!req.isAuthenticated() || req.user.portalType !== "partner") {
+export function requirePolo(req: Request, res: Response, next: NextFunction) {
+  if (!req.isAuthenticated() || !req.user || req.user.portalType !== 'polo') {
     return res.status(403).json({ 
-      success: false,
-      message: "Acesso restrito a parceiros" 
+      success: false, 
+      message: 'Acesso restrito a polos'
     });
   }
+  
   next();
-};
+}

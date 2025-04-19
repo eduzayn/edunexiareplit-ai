@@ -9,7 +9,9 @@ import { Course, Discipline, courseStatusEnum, courseModalityEnum } from "@share
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { Copy, Link as LinkIcon, RefreshCw, Info as InfoIcon } from "lucide-react";
 import { useLocation, Link } from "wouter";
+import { PaymentLinksManager } from "@/components/payment-links/payment-links-manager";
 
 import {
   Table,
@@ -116,6 +118,7 @@ export default function CourseFormPage() {
   const [activeTab, setActiveTab] = useState("info");
   const [isEditMode, setIsEditMode] = useState(false);
   const [courseId, setCourseId] = useState<number | null>(null);
+  const [courseName, setCourseName] = useState<string>("");
   const [calculateAutomatically, setCalculateAutomatically] = useState(true);
   const [totalWorkload, setTotalWorkload] = useState(0);
   
@@ -128,6 +131,15 @@ export default function CourseFormPage() {
     if (mode === 'edit' && !isNaN(parseInt(lastPart))) {
       setIsEditMode(true);
       setCourseId(parseInt(lastPart));
+      
+      // Verificar se há um parâmetro na URL que indica qual tab deve estar ativa
+      const urlParams = new URLSearchParams(window.location.search);
+      const tabParam = urlParams.get('tab');
+      
+      if (tabParam && ['info', 'disciplines'].includes(tabParam)) {
+        setActiveTab(tabParam);
+        console.log('Definindo aba ativa para:', tabParam);
+      }
     } else {
       setIsEditMode(false);
       setCourseId(null);
@@ -310,6 +322,8 @@ export default function CourseFormPage() {
       });
     },
   });
+  
+
 
   // Form para o curso
   const form = useForm<CourseFormValues>({
@@ -357,6 +371,9 @@ export default function CourseFormPage() {
         evaluationMethod: courseData.evaluationMethod || "",
         modality: courseData.modality || "ead",
       });
+      
+      // Atualiza o nome do curso para uso na aba de links de pagamento
+      setCourseName(courseData.name);
       
       // Se o curso tem uma carga horária definida que é diferente da calculada,
       // desativamos o cálculo automático
@@ -468,7 +485,7 @@ export default function CourseFormPage() {
 
           {/* Conteúdo do formulário */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="info" className="flex items-center">
                 <FileTextIcon className="mr-2 h-4 w-4" />
                 Informações Básicas
@@ -476,6 +493,10 @@ export default function CourseFormPage() {
               <TabsTrigger value="disciplines" className="flex items-center">
                 <BookIcon className="mr-2 h-4 w-4" />
                 Disciplinas
+              </TabsTrigger>
+              <TabsTrigger value="payment-links" className="flex items-center">
+                <LinkIcon className="mr-2 h-4 w-4" />
+                Links de Pagamento
               </TabsTrigger>
             </TabsList>
 
@@ -937,6 +958,43 @@ export default function CourseFormPage() {
                       {isEditMode ? "Salvar Alterações" : "Criar Curso"}
                     </Button>
                   </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Tab de Links de Pagamento */}
+            <TabsContent value="payment-links">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Links de Pagamento</CardTitle>
+                  <CardDescription>
+                    Gerencie os links de pagamento personalizados para este curso
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {isEditMode && courseId ? (
+                    <PaymentLinksManager 
+                      courseId={courseId} 
+                      courseName={form.getValues("name") || courseName || "Curso"} 
+                    />
+                  ) : (
+                    <div className="text-center py-10">
+                      <LinkIcon className="mx-auto h-10 w-10 text-gray-400 mb-3" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-1">
+                        Crie o curso primeiro
+                      </h3>
+                      <p className="text-gray-500 max-w-md mx-auto mb-6">
+                        Para criar links de pagamento, salve o curso primeiro. Você poderá gerar links personalizados após a criação do curso.
+                      </p>
+                      <Button
+                        type="button"
+                        onClick={() => setActiveTab("info")}
+                        variant="outline"
+                      >
+                        Voltar para Informações
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>

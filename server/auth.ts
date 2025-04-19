@@ -7,6 +7,7 @@ import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
 import { requireAuth } from "./middleware/auth";
+import bcrypt from "bcrypt";
 
 declare global {
   namespace Express {
@@ -26,10 +27,34 @@ async function hashPassword(password: string) {
 }
 
 async function comparePasswords(supplied: string, stored: string) {
-  const [hashed, salt] = stored.split(".");
-  const hashedBuf = Buffer.from(hashed, "hex");
-  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-  return timingSafeEqual(hashedBuf, suppliedBuf);
+  try {
+    // Verificar formato de senha
+    if (stored.startsWith('$2b$') || stored.startsWith('$2a$')) {
+      // Formato bcrypt - usar bcrypt para comparação
+      return await bcrypt.compare(supplied, stored);
+    }
+    
+    // Formato padrão (hash.salt)
+    const [hashed, salt] = stored.split(".");
+    
+    // Verificar se temos os componentes necessários
+    if (!hashed || !salt) {
+      console.log("Formato de senha inválido");
+      return false;
+    }
+    
+    // Gerar hash da senha fornecida usando o mesmo salt
+    const suppliedHash = (await scryptAsync(supplied, salt, 64)) as Buffer;
+    
+    // Para evitar erros de tamanho diferente, comparamos as strings em hex
+    const hashedSupplied = suppliedHash.toString('hex');
+    
+    // Comparar os hashes em formato de string
+    return hashed === hashedSupplied;
+  } catch (error) {
+    console.error("Erro na comparação de senhas:", error);
+    return false;
+  }
 }
 
 export function setupAuth(app: Express) {

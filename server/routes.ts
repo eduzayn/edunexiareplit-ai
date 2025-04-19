@@ -1,9 +1,12 @@
+import fs from 'fs';
+import path from 'path';
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import debugRoutes from "./routes/debug-route";
 import emailRoutes from "./routes/email-routes";
+import uploadsRoutes from "./routes/uploads"; // Importando novas rotas de upload
 import { 
   insertDisciplineSchema, 
   insertCourseSchema, 
@@ -28,6 +31,7 @@ import poloRoutes from "./routes/polo-routes";
 import poloEnrollmentsRoutes from "./routes/polo-enrollments";
 import { aiServicesRouter } from "./routes/ai-services";
 import { createPaymentGateway } from "./services/payment-gateways";
+// Importação removida: advancedEbooksRoutes
 import certificatesRoutes from "./routes/certificates";
 import certificateTemplatesRoutes from "./routes/certificate-templates";
 import certificateSignersRoutes from "./routes/certificate-signers";
@@ -43,6 +47,7 @@ import auditRoutes from "./routes/audit-routes";
 import crmRoutes from "./routes/crm-routes";
 import financeRoutes from "./routes/finance-routes";
 import contractsRoutes from "./routes/contracts-routes";
+import coursePaymentLinksRoutes from "./routes/course-payment-links";
 // Remoção do módulo de leads
 import checkoutRoutes from "./routes/checkout-routes";
 // Importação das rotas de configurações
@@ -53,6 +58,13 @@ import { db } from "./db";
 import { sql } from "drizzle-orm";
 import studentChargesRoutes from "./routes/student-charges-routes";
 import ebooksRoutes from "./routes/ebooks";
+import mediaGenerationRoutes from "./routes/media-generation";
+import simplifiedEnrollmentRoutes from "./routes/simplified-enrollment-routes";
+import newSimplifiedEnrollmentRoutes from "./routes/new-simplified-enrollment-routes";
+import documentAnalysisRoutes from "./routes/document-analysis-routes";
+import asaasRoutes from "./routes/asaas-routes";
+import paymentLinksRoutes from "./routes/payment-links-routes";
+import enhancedPaymentLinksRoutes from "./routes/payment-links-routes-enhanced";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
@@ -64,8 +76,123 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registro das rotas de integrações
   app.use("/api/integrations", integrationsRoutes);
   
+  // Registro das rotas para o Asaas
+  app.use("/api/asaas", asaasRoutes);
+  
+  // Registro das rotas para links de pagamento personalizados com imagem (versão original)
+  app.use("/api/payment-links", paymentLinksRoutes);
+  
+  // Registro das rotas aprimoradas para links de pagamento
+  app.use("/api/payment-links/v2", enhancedPaymentLinksRoutes);
+  
+  // Endpoint de teste para verificar a conexão com o banco de dados
+  app.get("/api/test-db", async (req, res) => {
+    try {
+      const result = await db.execute(sql`SELECT COUNT(*) FROM users`);
+      console.log("Conexão com banco de dados testada com sucesso:", result);
+      res.json({
+        success: true,
+        message: "Conexão com banco de dados testada com sucesso",
+        data: result
+      });
+    } catch (error) {
+      console.error("Erro ao conectar ao banco de dados:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Erro ao conectar ao banco de dados", 
+        error: String(error) 
+      });
+    }
+  });
+  
+  // Endpoint para listar todas as tabelas disponíveis
+  app.get("/api/test-tables", async (req, res) => {
+    try {
+      const result = await db.execute(sql`
+        SELECT table_name, table_schema 
+        FROM information_schema.tables 
+        WHERE table_schema = 'public'
+        ORDER BY table_name
+      `);
+      console.log("Listagem de tabelas concluída com sucesso:", result.rows.length);
+      res.json({
+        success: true,
+        message: "Listagem de tabelas concluída com sucesso",
+        count: result.rows.length,
+        tables: result.rows
+      });
+    } catch (error) {
+      console.error("Erro ao listar tabelas:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Erro ao listar tabelas", 
+        error: String(error) 
+      });
+    }
+  });
+  
+  // Endpoint para listar os primeiros registros de uma tabela específica
+  app.get("/api/test-table/:tableName", async (req, res) => {
+    try {
+      const { tableName } = req.params;
+      
+      // Lista de tabelas permitidas para consulta
+      const allowedTables = ["courses", "disciplines", "institutions", "polos"];
+      
+      if (!allowedTables.includes(tableName)) {
+        return res.status(400).json({
+          success: false,
+          message: "Tabela não permitida para consulta direta"
+        });
+      }
+      
+      let selectQuery = "";
+      
+      // Definir campos específicos para cada tabela para limitar a saída
+      switch (tableName) {
+        case "courses":
+          selectQuery = "SELECT id, name, code, status, modality, description, workload, price, category, created_at FROM courses LIMIT 5";
+          break;
+        case "disciplines":
+          selectQuery = "SELECT id, name, code, description, workload_hours, status, created_at FROM disciplines LIMIT 5";
+          break;
+        case "institutions":
+          selectQuery = "SELECT id, name, document_number, type, status, country, state, city, created_at FROM institutions LIMIT 5";
+          break;
+        case "polos":
+          selectQuery = "SELECT id, name, institution_id, status, country, state, city, address, created_at FROM polos LIMIT 5";
+          break;
+        default:
+          selectQuery = `SELECT * FROM ${tableName} LIMIT 5`;
+      }
+      
+      const result = await db.execute(sql.raw(selectQuery));
+      console.log(`Consulta à tabela ${tableName} concluída com sucesso:`, result.rows.length, "registros");
+      
+      res.json({
+        success: true,
+        message: `Consulta à tabela ${tableName} concluída com sucesso`,
+        count: result.rows.length,
+        records: result.rows
+      });
+    } catch (error) {
+      console.error(`Erro ao consultar tabela:`, error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Erro ao consultar tabela", 
+        error: String(error) 
+      });
+    }
+  });
+  
   // Registro das rotas de serviços de IA
   app.use("/api/ai", aiServicesRouter);
+  
+  // Registro das rotas de geração de mídia
+  app.use("/api/media", mediaGenerationRoutes);
+  
+  // Registro das rotas de upload
+  app.use("/api/uploads", uploadsRoutes);
   
   // Registro das rotas do Portal do Polo
   app.use("/api/polo", poloRoutes);
@@ -510,6 +637,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Nova rota - Adicionar uma disciplina a um curso (compatibilidade com frontend)
+  app.post("/api/admin/course-disciplines", requireAdmin, async (req, res) => {
+    try {
+      // Validar os dados
+      const courseDisciplineData = insertCourseDisciplineSchema.parse({
+        ...req.body
+      });
+      
+      const newCourseDiscipline = await storage.addDisciplineToCourse(courseDisciplineData);
+      res.status(201).json(newCourseDiscipline);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Dados inválidos", 
+          errors: error.errors 
+        });
+      }
+      console.error("Error adding discipline to course:", error);
+      res.status(500).json({ message: "Erro ao adicionar disciplina ao curso" });
+    }
+  });
+
   // Adicionar uma disciplina a um curso
   app.post("/api/admin/courses/:courseId/disciplines", requireAdmin, async (req, res) => {
     try {
@@ -553,6 +702,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error removing discipline from course:", error);
       res.status(500).json({ message: "Erro ao remover disciplina do curso" });
+    }
+  });
+
+  // Remover todas as disciplinas de um curso
+  app.delete("/api/admin/courses/:courseId/disciplines", requireAdmin, async (req, res) => {
+    try {
+      const courseId = parseInt(req.params.courseId);
+      
+      // Implementar a funcionalidade no storage
+      const courseDisciplines = await storage.getCourseDisciplines(courseId);
+      
+      // Se não houver disciplinas, retorna sucesso
+      if (!courseDisciplines || courseDisciplines.length === 0) {
+        return res.status(204).end();
+      }
+      
+      // Remove cada disciplina individualmente
+      const deletePromises = courseDisciplines.map(cd => 
+        storage.removeDisciplineFromCourse(courseId, cd.disciplineId)
+      );
+      
+      await Promise.all(deletePromises);
+      
+      res.status(204).end();
+    } catch (error) {
+      console.error("Error removing all disciplines from course:", error);
+      res.status(500).json({ message: "Erro ao remover todas as disciplinas do curso" });
     }
   });
 
@@ -2922,6 +3098,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // E-books interativos
   app.use("/api/ebooks", ebooksRoutes);
+  
+  // E-books com geração avançada - temporariamente desabilitado 
+  // app.use("/api/advanced-ebooks", advancedEbooksRoutes);
+  
+  // Registro das rotas de matrículas simplificadas
+  app.use("/api/simplified-enrollments", simplifiedEnrollmentRoutes);
+  
+  // Nova implementação de matrículas simplificadas com melhor integração Asaas
+  app.use("/api/v2/simplified-enrollments", newSimplifiedEnrollmentRoutes);
+  
+  // Registro das rotas de análise de documentos com Anthropic Claude
+  app.use("/api/document-analysis", documentAnalysisRoutes);
+  
+  // Registro das rotas de links de pagamento de cursos
+  app.use("/api/course-payment-links", coursePaymentLinksRoutes);
+  
+  // Registro das rotas de links de pagamento personalizados com imagem
+  app.use("/api/payment-links", paymentLinksRoutes);
 
   const httpServer = createServer(app);
 

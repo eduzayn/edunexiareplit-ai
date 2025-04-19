@@ -2,7 +2,15 @@ import axios from 'axios';
 import { Client, InsertClient } from '../../shared/schema';
 
 // Configurações da API do Asaas
-// IMPORTANTE: Usamos a nova chave ASAAS_ZAYN_KEY (nos secrets do Replit)
+/**
+ * IMPORTANTE: Sistema utiliza duas chaves diferentes para o Asaas:
+ * 
+ * 1. ASAAS_ZAYN_KEY - Usada EXCLUSIVAMENTE para matrículas de alunos no sistema CRM
+ *    Esta chave é utilizada nos serviços simplified-enrollment-service.ts e aqui
+ * 
+ * 2. ASAAS_API_KEY - Usada para cadastro de instituições nas páginas públicas do site principal
+ *    NÃO deve ser usada para operações no CRM
+ */
 const ASAAS_API_KEY = process.env.ASAAS_ZAYN_KEY;
 // Forçamos o uso do ambiente de produção conforme orientação
 const ASAAS_API_URL = 'https://api.asaas.com/v3';
@@ -256,24 +264,109 @@ export const AsaasService = {
       // Removendo caracteres especiais do CPF/CNPJ para garantir o formato correto
       const formattedCpfCnpj = cpfCnpj.replace(/[^\d]+/g, '');
       
-      // Buscando clientes pelo CPF/CNPJ
-      const response = await asaasClient.get('/customers', {
-        params: { cpfCnpj: formattedCpfCnpj }
-      });
+      console.log(`[Asaas] DEBUG - Buscando cliente pelo CPF/CNPJ: ${formattedCpfCnpj}`);
+      console.log(`[Asaas] DEBUG - Usando API URL: ${ASAAS_API_URL}`);
+      console.log(`[Asaas] DEBUG - Token de API presente: ${Boolean(ASAAS_API_KEY)}`);
       
-      // Se encontrou algum resultado
-      if (response.data.data && response.data.data.length > 0) {
-        // Filtra para encontrar clientes não deletados
-        const activeCustomers = response.data.data.filter((customer: AsaasCustomerResponse) => !customer.deleted);
+      // ABORDAGEM 1: Tentando acessar diretamente o endpoint específico de busca por CPF/CNPJ
+      try {
+        console.log(`[Asaas] DEBUG - Tentando endpoint específico primeiro: /customers/findByCpfCnpj/${formattedCpfCnpj}`);
         
-        if (activeCustomers.length > 0) {
-          return activeCustomers[0]; // Retorna o primeiro cliente ativo encontrado
+        const searchResponse = await asaasClient.get(`/customers/findByCpfCnpj/${formattedCpfCnpj}`);
+        
+        console.log(`[Asaas] DEBUG - Resposta da API específica recebida com status: ${searchResponse.status}`);
+        console.log(`[Asaas] DEBUG - Resposta da API específica:`, JSON.stringify(searchResponse.data));
+        
+        if (searchResponse.data && !searchResponse.data.deleted) {
+          console.log(`[Asaas] Cliente encontrado pelo endpoint específico: ${searchResponse.data.id}`);
+          return searchResponse.data;
+        }
+      } catch (searchError: any) {
+        // A API retorna 404 se não encontrar, o que é esperado e não um erro real
+        const statusCode = searchError.response?.status;
+        console.log(`[Asaas] DEBUG - Erro no endpoint específico com status: ${statusCode}`);
+        
+        if (searchError.response) {
+          console.log(`[Asaas] DEBUG - Detalhes da resposta de erro:`, 
+            JSON.stringify(searchError.response.data));
+        }
+        
+        if (searchError.response && searchError.response.status !== 404) {
+          console.error(`[Asaas] Erro na busca específica: ${searchError.message}`);
+        } else if (searchError.response && searchError.response.status === 404) {
+          console.log(`[Asaas] Cliente não encontrado no endpoint específico (404)`);
         }
       }
       
-      return null; // Nenhum cliente encontrado ou todos deletados
-    } catch (error) {
-      console.error(`Erro ao buscar cliente por CPF/CNPJ no Asaas (${cpfCnpj}):`, error);
+      // ABORDAGEM 2: Se não encontrou pelo endpoint específico, vamos tentar usando o endpoint de listagem
+      try {
+        console.log(`[Asaas] DEBUG - Tentando busca por listagem: /customers?cpfCnpj=${formattedCpfCnpj}`);
+        
+        // Buscando clientes pelo CPF/CNPJ usando o endpoint de listagem
+        const response = await asaasClient.get('/customers', {
+          params: { cpfCnpj: formattedCpfCnpj }
+        });
+        
+        console.log(`[Asaas] DEBUG - Resposta da API de listagem recebida com status: ${response.status}`);
+        console.log(`[Asaas] DEBUG - Resposta da API de listagem:`, JSON.stringify(response.data));
+        
+        // Se encontrou algum resultado
+        if (response.data.data && response.data.data.length > 0) {
+          // Filtra para encontrar clientes não deletados
+          const activeCustomers = response.data.data.filter((customer: AsaasCustomerResponse) => !customer.deleted);
+          
+          if (activeCustomers.length > 0) {
+            console.log(`[Asaas] Cliente encontrado na listagem pelo CPF/CNPJ: ${activeCustomers[0].id}`);
+            return activeCustomers[0]; // Retorna o primeiro cliente ativo encontrado
+          }
+        }
+        
+        console.log(`[Asaas] Nenhum cliente ativo encontrado na listagem`);
+      } catch (listError: any) {
+        const statusCode = listError.response?.status;
+        console.log(`[Asaas] DEBUG - Erro na busca por listagem com status: ${statusCode}`);
+        
+        if (listError.response) {
+          console.log(`[Asaas] DEBUG - Detalhes da resposta de erro na listagem:`, 
+            JSON.stringify(listError.response.data));
+        }
+        
+        console.error(`[Asaas] Erro na busca por listagem: ${listError.message}`);
+      }
+      
+      // ABORDAGEM 3: Implementação direta com axios
+      try {
+        console.log(`[Asaas] DEBUG - Tentando implementação direta com axios`);
+        
+        const axios = require('axios');
+        const directResponse = await axios.get(`${ASAAS_API_URL}/customers/findByCpfCnpj/${formattedCpfCnpj}`, {
+          headers: {
+            'access-token': ASAAS_API_KEY,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        console.log(`[Asaas] DEBUG - Resposta direta recebida com status: ${directResponse.status}`);
+        console.log(`[Asaas] DEBUG - Resposta direta:`, JSON.stringify(directResponse.data));
+        
+        if (directResponse.data && !directResponse.data.deleted) {
+          console.log(`[Asaas] Cliente encontrado pela implementação direta: ${directResponse.data.id}`);
+          return directResponse.data;
+        }
+      } catch (directError: any) {
+        const statusCode = directError.response?.status;
+        console.log(`[Asaas] DEBUG - Erro na implementação direta com status: ${statusCode}`);
+        
+        if (directError.response && directError.response.status !== 404) {
+          console.error(`[Asaas] Erro na implementação direta: ${directError.message}`);
+        }
+      }
+      
+      console.log(`[Asaas] Nenhum cliente encontrado com o CPF/CNPJ: ${formattedCpfCnpj} após todas as tentativas`);
+      return null; // Nenhum cliente encontrado em nenhuma das abordagens
+    } catch (error: any) {
+      console.error(`[Asaas] Erro geral ao buscar cliente por CPF/CNPJ (${cpfCnpj}):`, error);
+      console.error(`[Asaas] Stack trace:`, error.stack);
       throw error;
     }
   }

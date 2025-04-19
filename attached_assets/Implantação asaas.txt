@@ -1,0 +1,397 @@
+\Implantação asaas
+
+Especificação Técnica: Integração de Matrícula Simplificada Edunexa-AsaasIntroduçãoEste documento detalha a especificação técnica para a implementação de um fluxo de matrícula simplificado no sistema CRM Edunexa. O objetivo principal é acelerar o processo de matrícula e reduzir a carga operacional dos consultores educacionais através da geração de links de pagamento personalizados via Asaas, pré-preenchidos com dados básicos do aluno. A integração proposta visa alavancar a infraestrutura de conexão com a Asaas já existente no Edunexa, adaptando-a para suportar esta nova funcionalidade.O fluxo proposto inicia com o consultor preenchendo dados básicos do aluno no CRM Edunexa, que então interage com a API da Asaas para gerar um link de pagamento único. Este link é enviado ao aluno, que o acessa para completar informações adicionais e efetuar o pagamento da primeira parcela ou taxa de matrícula. Após a confirmação da Asaas (recebida via webhook), o Edunexa automatiza a criação da conta do aluno no Portal do Aluno, define suas credenciais de acesso e libera o acesso inicial ao curso. A assinatura digital do contrato ocorre no primeiro acesso do aluno ao portal.Este documento serve como um guia técnico para as equipes de desenvolvimento e arquitetura responsáveis pela implementação, cobrindo a análise da API Asaas, modificações no CRM Edunexa, lógica de backend, configuração e tratamento de webhooks, processo de automação de matrícula, implementação da assinatura de contrato e estratégias de tratamento de erros.Seção 1: Análise da API Asaas para Matrícula SimplificadaA integração eficaz com a Asaas requer uma compreensão clara de seus mecanismos de autenticação, endpoints relevantes e as melhores práticas de segurança e gerenciamento de ambientes.
+
+1.1. Autenticação e Gerenciamento de Ambientes
+
+Chaves de API: A comunicação com a API da Asaas é autenticada através de uma chave de API (API Key). É fundamental utilizar chaves distintas para os ambientes de Sandbox (teste) e Produção. A URL base para o ambiente de Sandbox é https://api-sandbox.asaas.com/v3 e para Produção é https://api.asaas.com/v3. As chaves são geradas exclusivamente através da interface web da Asaas, na seção de Integrações, e não podem ser recuperadas caso perdidas; uma nova chave deve ser gerada, invalidando a anterior.1 Podem ser criadas até 10 chaves por conta Asaas, permitindo nomeação e definição de data de expiração.1
+Segurança: A responsabilidade pela segurança da chave de API recai inteiramente sobre o cliente (Edunexa).1 A Asaas enfatiza a importância de práticas rigorosas de segurança: as chaves devem ser armazenadas de forma segura, utilizando gerenciadores de segredos (como AWS Secrets Manager, Azure Key Vault) ou variáveis de ambiente protegidas. É crucial nunca incorporar chaves diretamente no código-fonte, logs do sistema ou arquivos de configuração acessíveis publicamente. A comunicação com a API deve ocorrer exclusivamente via HTTPS, preferencialmente utilizando TLS 1.3.1 A autenticação é realizada enviando a chave no cabeçalho (header) access_token.1 A falha na autenticação (chave inválida, cabeçalho incorreto) resultará em um erro HTTP 401.1 Medidas adicionais como restrição de IPs autorizados e rotação periódica das chaves são recomendadas para mitigar riscos.1 A negligência na segurança da chave de API expõe a conta Asaas vinculada ao Edunexa a riscos significativos, uma vez que a chave concede amplos privilégios de acesso.1
+Uso do Sandbox: É fortemente recomendado realizar testes exaustivos no ambiente Sandbox da Asaas antes da implantação em produção. O Sandbox replica o ambiente de produção, permitindo o uso de dados fictícios e a simulação de confirmações de pagamento com um clique, facilitando a validação completa da integração sem impactar operações reais.1 É importante notar que as credenciais (API Keys) são distintas entre Sandbox e Produção.1
+
+
+
+1.2. Endpoints de Gerenciamento de Clientes (/v3/customers)
+
+Verificação de Existência de Cliente (GET /v3/customers): Antes de criar um novo cliente na Asaas, é essencial verificar se já existe um registro para o aluno, utilizando o CPF/CNPJ como critério de busca. A API permite filtrar a listagem de clientes através do parâmetro cpfCnpj na query string (ex: GET /v3/customers?cpfCnpj=12345678901).6 Esta verificação é crucial porque a Asaas permite a criação de clientes duplicados.6 A responsabilidade de evitar duplicidade recai sobre a lógica implementada no Edunexa. A API retorna uma lista paginada de clientes que correspondem ao filtro.6 A falha em implementar esta verificação prévia pode levar à criação de múltiplos perfis Asaas para o mesmo aluno, complicando a gestão de cobranças, o histórico financeiro e relatórios futuros.
+Criação de Novos Clientes (POST /v3/customers): Para criar um novo cliente, utiliza-se o método POST no endpoint /v3/customers.6 Os parâmetros mandatórios identificados são name (nome completo) e cpfCnpj.6 Embora não explicitamente mandatórios em toda a documentação revisada, é fortemente recomendado incluir também email e mobilePhone para completar o cadastro.6 Recomenda-se também a inclusão do campo externalReference (mesmo que não obrigatório pela API neste endpoint) para armazenar um identificador interno do Edunexa (como o ID do aluno no CRM), facilitando a vinculação bidirecional. A resposta da API em caso de sucesso incluirá o ID único do cliente na Asaas (formato cus_xxxxxxxxxxxx).7
+
+
+
+1.3. Endpoint de Geração de Link de Pagamento (/v3/paymentLinks)
+
+Criação de Links Personalizados (POST /v3/paymentLinks): A geração do link de pagamento personalizado é feita através de uma requisição POST para o endpoint /v3/paymentLinks.10 Os parâmetros chave para este fluxo são:
+
+name (obrigatório): Nome do link, visível ao aluno (ex: "Matrícula - Nome do Curso").10
+description (opcional): Descrição adicional sobre a cobrança ou curso.10
+amount (obrigatório): Valor da cobrança (primeira parcela ou taxa de matrícula), definido pelo 'Plano Financeiro' selecionado no Edunexa.10
+billingType (obrigatório): Define os métodos de pagamento permitidos no link. Valores possíveis incluem BOLETO, CREDIT_CARD, PIX, UNDEFINED (permite ao aluno escolher).10 O exemplo em 11 usa BOLETO na criação direta de pagamento, mas o link pode oferecer mais opções. É necessário definir qual(is) método(s) serão habilitados (e.g., allowBoleto, allowCreditCard, allowPix podem ser parâmetros relevantes, conforme 10).
+dueDateLimitDays (opcional): Número de dias úteis para pagamento após geração do boleto, se BOLETO for permitido.10
+externalReference (opcional, mas essencial para este fluxo): Campo livre que deve ser preenchido com um identificador único gerado pelo Edunexa (ex: ID de pré-matrícula). Este campo é a chave para correlacionar a notificação de pagamento (webhook) recebida posteriormente da Asaas com a tentativa de matrícula específica no Edunexa.10 O seu uso é demonstrado na criação direta de pagamentos 11, indicando sua importância para rastreamento.
+
+
+Análise de Limitações (Pré-preenchimento e Associação de Cliente): A documentação analisada para o endpoint /v3/paymentLinks 10 não indica a existência de parâmetros para pré-preencher dados do aluno (Nome, Email, CPF) no formulário que a Asaas apresentará, nem para associar diretamente um customer ID da Asaas existente no momento da criação do link. Isto implica que o aluno precisará inserir ou confirmar seus dados na página da Asaas acessada através do link.
+Consideração Alternativa (API de Checkout Asaas): Caso o pré-preenchimento de dados seja um requisito indispensável, a API de Checkout da Asaas (POST /v3/checkouts 12) pode oferecer maior flexibilidade e opções de customização. No entanto, isso exigiria uma análise separada dessa API e potencialmente uma abordagem de integração diferente da proposta neste documento.10
+Diferença entre Link de Pagamento e Cobrança Direta: É importante distinguir a API de Link de Pagamento (/v3/paymentLinks) da API de Criação de Pagamento (/v3/payments 11). O link gera uma URL que direciona o usuário para uma página de pagamento hospedada pela Asaas, onde a transação é efetivamente iniciada e finalizada pelo aluno. A criação direta de pagamento gera imediatamente uma cobrança específica associada a um cliente já existente na Asaas. O fluxo descrito na solicitação do usuário utiliza a abordagem de link. Isso significa que o objeto payment na Asaas só será criado após a interação do aluno com o link. Consequentemente, os webhooks relevantes para o Edunexa serão disparados em relação a eventos do objeto payment (como PAYMENT_RECEIVED), e não da criação do link em si.
+
+
+Seção 2: Revisão da Arquitetura de Integração no CRM EdunexaA implementação do novo fluxo requer modificações em componentes específicos da arquitetura atual do Edunexa que interage com a Asaas.
+
+2.1. Visão Geral da Integração Asaas Existente
+
+Assume-se que o Edunexa possui atualmente um módulo ou serviço dedicado à comunicação com a API da Asaas. Este componente é responsável por gerenciar a autenticação (armazenamento e uso seguro da API Key), construir as requisições HTTP, enviar chamadas para os endpoints da Asaas e processar as respostas.
+Adicionalmente, presume-se a existência de um endpoint de webhook no Edunexa, configurado para receber notificações da Asaas e capaz de realizar algum processamento básico desses eventos. É necessário identificar como a chave de API e o token de autenticação de webhook (se utilizado) são gerenciados atualmente.
+
+
+
+2.2. Identificação dos Pontos de Modificação
+
+Módulo de Matrículas (Frontend/Backend): Este é o ponto de origem do novo fluxo. Requer alterações na interface do usuário (UI) para incluir o novo formulário de dados básicos e o botão de geração de link. O backend deste módulo precisará orquestrar a chamada para a lógica de geração do link.
+Serviço/Módulo de Integração Asaas: Este componente central necessitará de novos métodos para interagir com os endpoints da Asaas de:
+
+Verificação/Criação de Clientes (GET e POST /v3/customers).
+Geração de Links de Pagamento (POST /v3/paymentLinks).
+
+
+Endpoint Listener de Webhook: A lógica deste endpoint deverá ser estendida para:
+
+Identificar e processar especificamente os eventos de pagamento relevantes para este fluxo (ex: PAYMENT_RECEIVED, PAYMENT_CONFIRMED).
+Utilizar o campo externalReference presente no payload do webhook para correlacionar o evento à tentativa de matrícula correta no Edunexa.
+Validar o asaas-access-token se um authToken for configurado no webhook.
+
+
+Módulo de Alunos/Matrículas (Core): Lógica adicional será necessária neste módulo para ser acionada pelo listener de webhook, realizando as tarefas automatizadas de criação/atualização do cadastro do aluno, matrícula no curso, definição de credenciais e liberação de acesso.
+
+
+Seção 3: Modificações no CRM Edunexa para Geração do LinkA interface do usuário e a lógica associada no módulo de Matrículas do Edunexa precisam ser adaptadas para suportar a coleta dos dados iniciais e a ação de gerar o link Asaas.
+
+3.1. Novo Formulário no Módulo 'Matrículas'
+
+Um novo formulário ou seção deve ser adicionado à interface do módulo de Matrículas (acessível tanto no Portal Administrativo quanto no Portal do Polo).
+Campos Necessários:
+
+Nome Completo: Campo de texto.
+E-mail: Campo de texto com validação de formato de e-mail.
+CPF: Campo de texto com máscara de formatação e validação de CPF.
+Curso: Campo de seleção (Dropdown, Autocomplete/Lookup) para buscar e selecionar o curso desejado.
+Plano Financeiro: Campo de seleção (Dropdown, Autocomplete/Lookup), cujas opções devem ser filtradas com base no curso selecionado, exibindo apenas os planos financeiros aplicáveis.
+
+
+
+
+
+3.2. Botão "Gerar Link Asaas"
+
+Posicionamento: O botão deve estar claramente visível no formulário, habilitado preferencialmente após o preenchimento válido de todos os campos obrigatórios.
+Ação: Ao ser clicado, o botão deve disparar uma ação no backend do Edunexa. Recomenda-se o uso de uma chamada assíncrona (ex: AJAX) para um endpoint dedicado da API interna do Edunexa. Os dados do formulário (Nome, E-mail, CPF, ID do Curso, ID do Plano Financeiro) devem ser enviados nesta chamada.
+
+
+
+3.3. Armazenamento do Link e Referência
+
+O processo de backend do Edunexa, após invocar a API da Asaas e receber a confirmação da criação do link (detalhado na Seção 4), obterá a URL do Link de Pagamento Asaas e o identificador externalReference único que foi enviado na chamada à API da Asaas.
+Exibição para o Consultor: A URL do link gerado deve ser apresentada de volta ao consultor na interface do Edunexa (ex: em um campo de texto somente leitura, um modal com botão de copiar) para que ele possa facilmente enviá-la ao aluno via WhatsApp, e-mail, etc.
+Armazenamento Interno: É fundamental que o backend do Edunexa armazene de forma segura e persistente o externalReference gerado, associando-o aos dados da tentativa de matrícula (Nome, Email, CPF, Curso, Plano Financeiro) e, opcionalmente, a própria URL do link e o ID do cliente Asaas (asaasCustomerId). Esta associação é a chave para conectar a futura notificação de webhook ao contexto correto da matrícula pendente. Uma tabela como PendingEnrollments pode ser utilizada para este fim.
+
+
+Seção 4: Lógica de Backend para Interação com API Asaas (Lado Edunexa)O backend do Edunexa será responsável por orquestrar as chamadas à API da Asaas com base nos dados fornecidos pelo consultor.
+
+4.1. Diagrama de Sequência: Ação do Consultor -> Backend Edunexa -> API Asaas
+Snippet de códigosequenceDiagram
+    participant Consultor (UI)
+    participant Backend Edunexa
+    participant API Asaas
+
+    Consultor (UI)->>+Backend Edunexa: Submeter Formulário (Nome, Email, CPF, CursoID, PlanoID)
+    Backend Edunexa->>Backend Edunexa: Gerar uniqueExternalReference
+    Backend Edunexa->>+API Asaas: GET /v3/customers?cpfCnpj={CPF}
+    API Asaas-->>-Backend Edunexa: Resposta (Cliente existe/não existe)
+    alt Cliente Não Existe
+        Backend Edunexa->>+API Asaas: POST /v3/customers (Nome, Email, CPF)
+        API Asaas-->>-Backend Edunexa: Resposta (Novo asaasCustomerId)
+    else Cliente Existe
+        Backend Edunexa->>Backend Edunexa: Recuperar asaasCustomerId existente
+    end
+    Backend Edunexa->>Backend Edunexa: Obter 'amount' do Plano Financeiro
+    Backend Edunexa->>+API Asaas: POST /v3/paymentLinks (name, amount, billingType, externalReference=uniqueExternalReference)
+    API Asaas-->>-Backend Edunexa: Resposta (paymentLinkUrl, linkId)
+    Backend Edunexa->>Backend Edunexa: Armazenar (uniqueExternalReference, Dados Matrícula, asaasCustomerId, paymentLinkUrl)
+    Backend Edunexa-->>-Consultor (UI): Retornar paymentLinkUrl
+
+
+
+4.2. Lógica de Programação (Conceitual/Pseudocódigo)
+Plaintextfunction handleGenerateAsaasLinkRequest(nome, email, cpf, cursoId, planoFinanceiroId):
+    // 1. Gerar referência única para esta tentativa
+    uniqueExternalReference = generateUniqueId()
+
+    // 2. Garantir que o cliente existe na Asaas
+    try:
+        asaasCustomerId = findOrCreateAsaasCustomer(nome, email, cpf)
+    except AsaasApiException as e:
+        logError("Falha ao verificar/criar cliente Asaas: ", e)
+        return ErrorResponse("Erro ao comunicar com Asaas (Cliente).")
+
+    // 3. Obter detalhes do plano financeiro
+    try:
+        plano = getPlanoFinanceiroDetails(planoFinanceiroId)
+        amount = plano.valorPrimeiraParcela
+        // Definir billingType com base nas regras de negócio ou configuração do plano
+        billingType = "UNDEFINED" // ou BOLETO, CREDIT_CARD, PIX
+        linkName = "Matrícula - " + getCursoName(cursoId)
+        linkDescription = "Pagamento referente à matrícula no curso " + getCursoName(cursoId)
+    except Exception as e:
+        logError("Erro ao obter detalhes do plano financeiro: ", e)
+        return ErrorResponse("Erro interno ao processar plano financeiro.")
+
+    // 4. Chamar API Asaas para criar o link de pagamento
+    try:
+        asaasApiPayload = {
+            "name": linkName,
+            "description": linkDescription,
+            "amount": amount,
+            "billingType": billingType,
+            // Habilitar métodos de pagamento conforme necessário (ex: allowPix: true)
+            "externalReference": uniqueExternalReference
+            // Outros parâmetros relevantes: dueDateLimitDays, etc.
+        }
+        asaasResponse = callAsaasApi("POST", "/v3/paymentLinks", asaasApiPayload)
+        paymentLinkUrl = asaasResponse.url
+        asaasLinkId = asaasResponse.id // Se retornado e útil
+    except AsaasApiException as e:
+        logError("Falha ao gerar link de pagamento Asaas: ", e, " Payload: ", asaasApiPayload)
+        return ErrorResponse("Erro ao comunicar com Asaas (Link Pagamento).")
+
+    // 5. Armazenar dados da matrícula pendente no Edunexa
+    try:
+        savePendingEnrollment(
+            externalReference=uniqueExternalReference,
+            nome=nome, email=email, cpf=cpf,
+            cursoId=cursoId, planoFinanceiroId=planoFinanceiroId,
+            asaasCustomerId=asaasCustomerId,
+            paymentLinkUrl=paymentLinkUrl,
+            status="PENDING"
+        )
+    except DatabaseException as e:
+        logError("Falha ao salvar matrícula pendente no DB Edunexa: ", e)
+        // Considerar lógica de compensação/rollback se necessário
+        return ErrorResponse("Erro interno ao registrar matrícula.")
+
+    // 6. Retornar URL para o frontend
+    return SuccessResponse(paymentLinkUrl)
+
+// Função auxiliar
+function findOrCreateAsaasCustomer(name, email, cpf):
+    // Chama GET /v3/customers?cpfCnpj={cpf}
+    existingCustomer = callAsaasApi("GET", "/v3/customers?cpfCnpj=" + cpf)
+    if existingCustomer.totalCount > 0:
+        return existingCustomer.data.id
+    else:
+        // Chama POST /v3/customers
+        newCustomerPayload = { "name": name, "email": email, "cpfCnpj": cpf }
+        newCustomer = callAsaasApi("POST", "/v3/customers", newCustomerPayload)
+        return newCustomer.id
+
+Nota: A implementação real deve incluir tratamento robusto de erros, logging detalhado e gerenciamento seguro de credenciais.
+
+
+Desacoplamento da Criação de Cliente e Link: A lógica proposta separa a verificação/criação do cliente Asaas da geração do link de pagamento. Embora a API de link (/v3/paymentLinks) não pareça aceitar um customer ID como parâmetro direto 10, garantir que o cliente exista previamente na Asaas pode otimizar o processo interno da Asaas quando o aluno utilizar o link. Uma cobrança, em última instância, precisa ser associada a um cliente na Asaas.14 Ao criar/verificar o cliente primeiro, o Edunexa garante que este registro está pronto. Armazenar o asaasCustomerId junto com o externalReference no registro de matrícula pendente do Edunexa fornece um identificador adicional que pode ser útil para reconciliação ou futuras consultas, complementando o externalReference como chave primária para o fluxo de webhook.
+
+Seção 5: Tratamento da Confirmação Asaas via WebhooksA automação da matrícula no Edunexa depende criticamente do recebimento e processamento correto das notificações enviadas pela Asaas via webhooks.
+
+5.1. Configuração de Webhooks Asaas
+
+Mecanismo: A Asaas notifica sistemas externos sobre eventos ocorridos na plataforma enviando requisições HTTP POST para uma URL pré-configurada.15 Esta configuração pode ser realizada tanto pela interface web da Asaas (Menu Integrações > Webhooks) quanto via API, utilizando o endpoint POST /v3/webhooks.6 É possível configurar até 10 URLs de webhook distintas por conta Asaas.15
+Endpoint Edunexa: É necessário definir um endpoint HTTPS estável e dedicado no Edunexa para receber estas notificações POST. Exemplo: https://crm.edunexa.com/api/webhooks/asaas.
+Token de Autenticação (authToken): É altamente recomendável configurar um token de autenticação (authToken) único e seguro (ex: UUID v4) ao registrar o webhook na Asaas (seja pela UI ou pelo parâmetro authToken na API). A Asaas incluirá este token no cabeçalho asaas-access-token de cada requisição de webhook enviada.15 O endpoint listener do Edunexa deve obrigatoriamente validar este token em cada requisição recebida para garantir a autenticidade da origem e prevenir processamento de chamadas maliciosas ou não autorizadas.
+
+
+
+5.2. Eventos de Webhook Necessários
+
+Considerando o fluxo desejado (aluno paga/confirma e obtém acesso imediato), os eventos primários de interesse são:
+
+PAYMENT_RECEIVED: Indica que a cobrança foi recebida pela Asaas (ex: pagamento de boleto compensado, PIX recebido, cartão de crédito capturado e liquidado). Este parece ser o gatilho mais apropriado para conceder o acesso imediato, conforme a descrição da funcionalidade ("Ganha acesso imediato [...] independente do pagamento").19
+PAYMENT_CONFIRMED: Indica que o pagamento foi confirmado, mas o valor pode ainda não estar disponível (ex: boleto pago aguardando compensação, cartão autorizado mas não capturado/liquidado).19 Pode ser útil para atualizações de status intermediárias, mas talvez não para a liberação imediata de acesso total, dependendo da interpretação da regra de negócio.
+
+
+É fundamental configurar o webhook na Asaas para assinar apenas os eventos estritamente necessários para o funcionamento da integração.16 Isso minimiza o tráfego de rede e a carga de processamento no endpoint do Edunexa. Outros eventos como PAYMENT_CREATED, PAYMENT_OVERDUE, PAYMENT_REFUNDED 19 podem ser relevantes para outros fluxos, mas não diretamente para o gatilho de matrícula inicial deste processo.
+
+
+
+5.3. Lógica do Endpoint Listener de Webhook Edunexa
+
+Resposta Imediata (HTTP 200 OK): A primeira e mais crítica ação do endpoint ao receber uma requisição de webhook é retornar uma resposta HTTP 200 OK o mais rápido possível.16 Isso sinaliza à Asaas que a notificação foi recebida com sucesso. Falhas consecutivas em retornar 200 (15 vezes) farão com que a Asaas pause a fila de sincronização para aquele webhook, interrompendo o envio de novas notificações.16
+Processamento Assíncrono: Todo o processamento substancial (consultas ao banco de dados, validações complexas, chamadas a outros serviços, lógica de criação de aluno e matrícula) deve ser delegado a um mecanismo de processamento assíncrono (como uma fila de mensagens e workers/jobs em background).16 Isso garante que a resposta 200 seja enviada rapidamente, sem aguardar a conclusão de tarefas potencialmente demoradas.
+Validação do Token: Como primeira etapa do processamento (idealmente antes de enfileirar o job), o listener deve verificar a presença e a validade do token no cabeçalho asaas-access-token contra o valor esperado configurado.15 Requisições sem token ou com token inválido devem ser descartadas (respondendo 200 OK para não bloquear a fila, mas registrando o incidente).
+Parsing do Payload: O corpo da requisição POST conterá um objeto JSON.15 O listener (ou o job assíncrono) deve fazer o parse deste JSON para extrair o tipo de evento (event) e o objeto principal relacionado (neste caso, payment).
+Idempotência: É crucial implementar lógica para tratar eventos duplicados. A Asaas garante entrega "pelo menos uma vez" (at least once), o que significa que o mesmo evento pode ser enviado mais de uma vez em certas condições de falha ou retry.16 O sistema Edunexa deve ser capaz de identificar se um evento específico já foi processado com sucesso para evitar ações duplicadas (como criar o mesmo aluno duas vezes). Isso pode ser feito armazenando e verificando um identificador único do evento (se disponível no payload, como o id do evento em 20) ou uma combinação do ID do objeto (payment.id) e o status/evento relevante.
+
+
+
+5.4. Extração de Dados Chave do Payload
+
+O objeto payment dentro do payload do webhook 11 contém as informações necessárias para a automação no Edunexa. Os campos críticos a serem extraídos são:
+
+payment.id: O ID único da cobrança na Asaas.
+payment.status: O status que disparou o evento (ex: RECEIVED).
+payment.value: O valor bruto da cobrança.
+payment.netValue: O valor líquido recebido após taxas Asaas.
+payment.customer: O ID do cliente Asaas associado à cobrança.
+payment.externalReference: O identificador crucial que liga este pagamento à matrícula pendente no Edunexa.
+Outros campos potencialmente úteis: payment.dueDate, payment.paymentDate, payment.billingType, payment.invoiceUrl, payment.bankSlipUrl. A estrutura completa do objeto payment pode ser consultada na referência da API.14
+
+
+Centralidade do Webhook e externalReference: Todo o processo de automação subsequente no Edunexa depende da recepção confiável do webhook, da validação de sua autenticidade e da capacidade de usar o externalReference para localizar o registro correto da matrícula pendente. Uma falha em qualquer um desses pontos (webhook não chega, token inválido, externalReference ausente ou incorreto) impedirá a automação de ocorrer.
+
+Tabela: Campos Essenciais do Payload do Webhook (Evento: PAYMENT_RECEIVED)
+
+Caminho do CampoTipo de DadoDescrição/Propósito no Fluxo EdunexaeventStringTipo do evento (ex: "PAYMENT_RECEIVED"). Usado para rotear o processamento.payment.idStringID único da cobrança na Asaas. Pode ser armazenado no Edunexa para referência futura.payment.statusStringStatus atual da cobrança (ex: "RECEIVED"). Confirma o gatilho para a automação.payment.valueNumberValor bruto pago. Pode ser usado para verificação ou registro financeiro.payment.netValueNumberValor líquido recebido. Pode ser relevante para conciliação financeira.payment.customerStringID do cliente na Asaas. Usado para associar ao registro do aluno no Edunexa.payment.externalReferenceStringChave de ligação: ID único gerado pelo Edunexa e enviado na criação do link. Usado para localizar a matrícula pendente correspondente no Edunexa.payment.paymentDateDate/StringData em que o pagamento foi efetivado na Asaas. Pode ser armazenado no registro da matrícula.Seção 6: Processo Automatizado de Matrícula no EdunexaUma vez que o webhook da Asaas é recebido, validado e correlacionado com sucesso, um processo automatizado deve ser disparado no Edunexa para finalizar a matrícula do aluno.
+
+6.1. Gatilho
+
+O gatilho para iniciar a automação é a conclusão bem-sucedida do processamento de um webhook relevante (ex: PAYMENT_RECEIVED) pelo listener do Edunexa (conforme Seção 5).
+Isso inclui a validação do token (se aplicável), a prevenção de processamento duplicado (idempotência) e a localização bem-sucedida do registro de matrícula pendente no banco de dados do Edunexa usando o externalReference extraído do payload do webhook.
+
+
+
+6.2. Fluxo de Trabalho da Automação (Executado por Job Assíncrono)
+
+Entrada: O job assíncrono recebe os dados extraídos do webhook (ID Pagamento Asaas, Status, Valor, ID Cliente Asaas, externalReference) e os dados da matrícula pendente correspondente recuperados do banco de dados Edunexa (Nome, Email, CPF, ID Curso, ID Plano Financeiro).
+Passo 1: Localizar/Criar Aluno no Edunexa:
+
+Verificar se já existe um registro de aluno no banco de dados do Portal do Aluno Edunexa utilizando o CPF ou o E-mail como chave de busca.
+Se existir: Atualizar o registro existente, se necessário. É importante associar o asaasCustomerId (obtido do webhook) a este registro de aluno Edunexa para referência futura e consistência.
+Se não existir: Criar um novo registro de aluno utilizando os dados disponíveis (Nome, Email, CPF). Armazenar o asaasCustomerId junto com este novo registro.
+
+
+Passo 2: Matricular Aluno no Curso:
+
+Criar a relação de matrícula no Edunexa, associando o registro do aluno (novo ou existente) ao cursoId e planoFinanceiroId que estavam armazenados no registro da matrícula pendente.
+Registrar detalhes da matrícula, como a data e o ID do pagamento Asaas (payment.id do webhook) que a confirmou.
+
+
+Passo 3: Definir Credenciais Padrão:
+
+Provisionar as credenciais de acesso para o Portal do Aluno, conforme especificado: Login = E-mail do aluno, Senha Padrão = CPF do aluno.
+Importante: Garantir que a senha (CPF, neste caso) seja armazenada de forma segura no banco de dados do Edunexa, utilizando um algoritmo de hashing forte e salting. O aluno deve ser instruído (ou forçado) a alterar esta senha padrão no primeiro login.
+
+
+Passo 4: Conceder Acesso Inicial ao Curso:
+
+Atualizar o status ou as permissões do aluno no sistema Edunexa para liberar o acesso imediato ao conteúdo do curso no qual ele foi matriculado. Conforme a solicitação, este acesso deve ser concedido neste momento, independentemente da liquidação final da primeira parcela (confiando no evento PAYMENT_RECEIVED).
+
+
+Passo 5: Atualizar Status da Matrícula Pendente:
+
+Marcar o registro original da matrícula pendente (identificado pelo externalReference) como 'Concluído' ou 'Processado' no banco de dados do Edunexa, removendo-o da fila de pendências.
+
+
+Passo 6: Notificações (Opcional, mas Recomendado):
+
+Disparar notificações internas, por exemplo, para o consultor que iniciou o processo, informando sobre a conclusão da matrícula.
+Disparar notificações externas, como um e-mail de boas-vindas para o aluno, contendo as instruções de acesso ao Portal do Aluno (link, login/email, senha padrão/CPF) e a orientação para alteração da senha.
+
+
+
+
+Seção 7: Implementação da Assinatura Digital do ContratoA exigência de assinatura digital do contrato no primeiro acesso adiciona uma camada de formalização ao processo de matrícula simplificado.
+
+7.1. Detecção do Primeiro Login
+
+É necessário implementar um mecanismo no backend do Portal do Aluno Edunexa para identificar inequivocamente o primeiro login bem-sucedido de um aluno.
+Uma abordagem comum é adicionar um campo booleano na tabela de usuários/alunos do Edunexa (ex: contrato_assinado, inicializado como false). Alternativamente, pode-se verificar a existência de um registro de assinatura associado ao aluno.
+
+
+
+7.2. Apresentação e Assinatura do Contrato
+
+Ao detectar que é o primeiro login (ex: contrato_assinado é false), o sistema deve redirecionar o aluno compulsoriamente para uma página específica de visualização e assinatura do contrato, antes de permitir o acesso a qualquer outra área do portal (dashboard, cursos, etc.).
+Nesta página, o contrato de prestação de serviços educacionais relevante deve ser exibido dinamicamente. O conteúdo do contrato pode variar com base no cursoId e planoFinanceiroId associados à matrícula do aluno.
+A integração de um método de assinatura digital é necessária:
+
+Opção A (Simples - "Aceite Eletrônico"): Exibir o contrato completo e incluir uma caixa de seleção (checkbox) com um texto claro como "Li e concordo com os termos do contrato de prestação de serviços educacionais". O sistema deve registrar o aceite (ID do aluno, timestamp, versão do contrato) quando a caixa for marcada e a ação confirmada.
+Opção B (Robusta - Assinatura Eletrônica/Digital): Integrar com uma plataforma de assinatura eletrônica de terceiros (ex: Clicksign, DocuSign, ZapSign) via API. O fluxo envolveria enviar o contrato e os dados do aluno para a plataforma e incorporar a interface de assinatura no portal Edunexa ou redirecionar o aluno temporariamente. Esta opção oferece maior validade jurídica, mas implica custos adicionais e complexidade de integração.
+
+
+A escolha entre a Opção A e B deve considerar os requisitos legais e o nível de formalidade desejado para o contrato.
+
+
+
+7.3. Lógica de Acesso Condicional
+
+Implementar um controle de acesso (ex: middleware na aplicação web do Portal do Aluno) que verifique o status da assinatura do contrato (contrato_assinado) em cada requisição de acesso a páginas protegidas.
+Se o status for false (e a página solicitada não for a própria página de assinatura ou páginas públicas essenciais), o aluno deve ser redirecionado de volta para a página de assinatura do contrato.
+O acesso completo ao dashboard, conteúdos do curso e demais funcionalidades do portal só deve ser permitido após o sistema registrar a assinatura bem-sucedida (ex: o campo contrato_assinado ser atualizado para true).
+
+
+
+Implicações do Momento da Assinatura: A decisão de colocar a assinatura do contrato após a confirmação do pagamento e a concessão do acesso inicial (no primeiro login) difere do fluxo tradicional onde o contrato é aceito antes da liberação do serviço. Esta abordagem simplifica o fluxo inicial para o consultor e aluno, mas levanta questões sobre a exigibilidade do contrato caso o aluno acesse o conteúdo e depois se recuse a assinar formalmente. Além disso, a validade jurídica do método de assinatura escolhido (Opção A vs. Opção B) é crucial. É imperativo que esta abordagem e o método de assinatura sejam revisados e validados pelo departamento jurídico da instituição para garantir conformidade com a legislação aplicável e a proteção dos interesses de ambas as partes.
+
+Seção 8: Tratamento de Erros e Cenários de ExceçãoUm sistema robusto deve antecipar e tratar adequadamente diversas situações de erro que podem ocorrer ao longo do fluxo de matrícula simplificado.
+
+8.1. Falhas na Geração do Link
+
+Causas Possíveis: Dados inválidos enviados à API Asaas (CPF mal formatado, valor inválido, parâmetro obrigatório ausente), erro interno ou indisponibilidade da API Asaas (resposta não-2xx), problemas de conectividade de rede entre Edunexa e Asaas, chave de API (access_token) inválida ou expirada resultando em erro 401.1
+Detecção: Monitoramento das respostas das chamadas à API Asaas (POST /v3/customers, POST /v3/paymentLinks) no backend do Edunexa (Seção 4). Verificar códigos de status HTTP e mensagens de erro no corpo da resposta.
+Tratamento: Registrar detalhadamente o erro (timestamp, endpoint, payload enviado, resposta recebida). Informar o consultor na interface do Edunexa de forma clara e concisa (ex: "Falha ao gerar link Asaas. Verifique os dados ou tente novamente. Detalhe:"). Não criar um registro de matrícula pendente no Edunexa se a geração do link falhar criticamente.
+
+
+
+8.2. Falhas no Pagamento (Lado do Aluno)
+
+Causas Possíveis: Aluno abandona o processo na página Asaas, dados do cartão incorretos, cartão recusado pelo banco emissor, saldo insuficiente, falha na autenticação 3D Secure, expiração do prazo de pagamento do boleto ou Pix.
+Detecção: A Asaas gerencia a interação de pagamento. O Edunexa detecta a falha pela ausência do recebimento do webhook PAYMENT_RECEIVED esperado. Eventos como PAYMENT_CREDIT_CARD_CAPTURE_REFUSED 17 podem eventualmente ser recebidos, mas a ausência do evento de sucesso é o principal indicador.
+Tratamento: Nenhuma ação de matrícula automatizada é disparada no Edunexa. O registro de matrícula pendente permanece com status 'PENDING'. Implementar uma política de expiração ou limpeza para registros pendentes que não são concluídos dentro de um prazo razoável (ex: X dias). Opcionalmente, pode-se notificar o consultor se um link gerado não resultar em pagamento após um período configurado, permitindo um acompanhamento manual.
+
+
+
+8.3. Registros Duplicados
+
+Causas Possíveis: Condições de corrida (múltiplas submissões simultâneas), usuário submetendo o formulário do consultor duas vezes rapidamente, falha na lógica de verificação de duplicidade do Edunexa antes de chamar a API Asaas, aluno já existente na base Edunexa (cadastrado por outro meio) antes deste fluxo ser iniciado. A Asaas permite clientes duplicados.6
+Detecção:
+
+Duplicidade na Asaas: A verificação prévia GET /v3/customers?cpfCnpj={CPF} no backend Edunexa (Seção 4.2) deve prevenir a criação de clientes duplicados na Asaas através deste fluxo específico.
+Duplicidade no Edunexa: A lógica de automação (Seção 6.2, Passo 1) deve verificar a existência de um aluno no Edunexa (por CPF ou E-mail) antes de tentar criar um novo registro.
+
+
+Tratamento: Se a lógica de automação encontrar um aluno já existente no Edunexa, ela deve associar os detalhes da nova matrícula (curso, plano, ID cliente Asaas) a esse registro existente, em vez de criar um novo aluno. Registrar um log ou alerta sobre a detecção de duplicidade pode ser útil para auditoria.
+
+
+
+8.4. Falhas de Webhook
+
+Causas Possíveis: Problemas de rede entre Asaas e o endpoint Edunexa, indisponibilidade do endpoint Edunexa, erros internos na lógica do listener impedindo a resposta HTTP 200 OK, token de autenticação (authToken) inválido ou não verificado corretamente, fila de sincronização pausada na Asaas devido a falhas repetidas.16
+Detecção: A Asaas envia notificações por e-mail caso a fila de webhooks seja pausada.16 Monitorar os logs do endpoint listener no Edunexa em busca de erros. Utilizar a interface de Logs de Webhook na Asaas para diagnosticar falhas de entrega e respostas do endpoint.22
+Tratamento:
+
+Confiabilidade do Endpoint: Garantir alta disponibilidade e resiliência do endpoint de webhook no Edunexa.
+Resposta Rápida e Processamento Assíncrono: Implementar o padrão de responder 200 OK imediatamente e processar a carga útil em background.16
+Logging Detalhado: Registrar todas as requisições recebidas, validações (token, idempotência) e o resultado do enfileiramento para processamento assíncrono.
+Alertas: Configurar monitoramento e alertas para erros no endpoint ou falhas nos jobs da fila de processamento assíncrono no Edunexa.
+Fila Pausada: Se a fila na Asaas for pausada, investigar a causa raiz utilizando os logs da Asaas 22, corrigir o problema no endpoint Edunexa e reativar manualmente a fila na interface da Asaas.16 Estar ciente do limite de retenção de eventos de 14 dias pela Asaas.16
+Idempotência: Implementar a verificação de eventos duplicados é crucial para evitar processamento repetido caso a Asaas reenvie notificações após uma falha.16
+
+
+
+
+
+8.5. Discrepâncias de Dados
+
+Causas Possíveis: Aluno insere informações ligeiramente diferentes (ex: variação no nome, e-mail secundário) no formulário da Asaas em comparação com os dados inseridos pelo consultor no Edunexa; corrupção de dados durante a transmissão ou armazenamento.
+Detecção: Difícil de detectar automaticamente de forma completa. Pode ser identificado se o payload do webhook contiver dados do cliente que conflitem com os dados armazenados na matrícula pendente do Edunexa (comparando após localizar pelo externalReference). O CPF deve ser o identificador primário e consistente.
+Tratamento: Priorizar o CPF como identificador único para vincular registros. Registrar discrepâncias significativas (ex: nome muito diferente) em logs para possível revisão manual. Se a Asaas incluir dados do cliente no payload do webhook PAYMENT_RECEIVED (além do asaasCustomerId), pode-se implementar uma lógica para atualizar os dados no Edunexa com base na informação fornecida pelo aluno na Asaas, ou apenas registrar a divergência. Disponibilizar ferramentas administrativas no Edunexa para correção manual de dados, se necessário.
+
+
+
+Importância Crítica do externalReference e Confiabilidade do Webhook: A automação completa deste fluxo depende fundamentalmente de dois pilares: (1) A geração, armazenamento e recuperação correta do externalReference único para ligar a ação inicial do consultor ao evento de pagamento subsequente. (2) A entrega e processamento confiável do webhook pela Asaas e pelo Edunexa. Uma falha em qualquer um desses pilares resultará na quebra silenciosa da automação – o pagamento pode ser feito, mas a matrícula não será efetivada automaticamente no Edunexa.10 Isso exige um cuidado especial no design do armazenamento do externalReference e na implementação e monitoramento do listener de webhook.
+
+Tabela: Matriz de Tratamento de Erros
+CenárioCausas PossíveisMétodo de DetecçãoAção/Resolução EdunexaFalha na Geração do Link AsaasDados inválidos, API Asaas indisponível/erro, Chave API inválida 1Resposta não-2xx da API Asaas no backend EdunexaLogar erro detalhado. Exibir mensagem clara ao consultor. Não criar registro pendente.Falha no Pagamento (Aluno)Abandono, Cartão recusado, Saldo insuficiente, Boleto/Pix expiradoAusência de webhook PAYMENT_RECEIVED após prazo esperadoNenhuma automação disparada. Registro pendente expira/limpo após timeout. Opcional: notificar consultor para follow-up.Duplicidade de Aluno (Edunexa)Aluno já cadastrado por outro meioVerificação por CPF/Email no Passo 1 da automação (Seção 6.2)Associar nova matrícula ao aluno existente. Não criar novo aluno. Logar ocorrência.Webhook Não Recebido/ProcessadoRede, Endpoint Edunexa indisponível, Erro interno no listener, Fila Asaas pausada 16Monitoramento de logs Edunexa, Alertas de erro, Email da Asaas (fila pausada), Logs Asaas 22Garantir alta disponibilidade do endpoint. Corrigir erros no listener. Reativar fila Asaas se pausada. Implementar retries ou reconciliação manual.Falha na Autenticação do WebhookToken asaas-access-token ausente ou inválido 15Verificação do header asaas-access-token no listener EdunexaDescartar requisição (responder 200 OK). Logar tentativa de acesso inválida. Investigar causa (configuração incorreta, tentativa maliciosa).Falha na Correlação (externalReference)externalReference ausente no webhook, externalReference não encontrado no DB EdunexaFalha ao buscar registro pendente usando externalReference do webhookLogar erro grave (webhook órfão). Investigar causa (falha no armazenamento inicial, externalReference incorreto no webhook?). Requer intervenção manual.Discrepância de DadosAluno informa dados diferentes na Asaas vs. EdunexaComparação de dados (se disponíveis no webhook) com registro pendente EdunexaPriorizar CPF. Logar discrepâncias. Definir política (ignorar, atualizar Edunexa, sinalizar para revisão).
+ConclusãoA implementação do fluxo de matrícula simplificado via links personalizados Asaas apresenta um potencial significativo para otimizar o processo de captação de alunos no Edunexa, reduzindo a carga administrativa e agilizando a jornada do estudante. A integração proposta, detalhada neste documento, fornece um roteiro técnico abrangente, abordando desde a interação com a API Asaas e as modificações necessárias no CRM Edunexa até o tratamento de confirmações via webhook e a automação dos passos subsequentes de criação de conta e liberação de acesso.Os pontos críticos para o sucesso desta implementação incluem:
+Gerenciamento Seguro de Credenciais: A proteção rigorosa da chave de API da Asaas e do token de autenticação do webhook é fundamental.
+Lógica Robusta de Backend: A orquestração correta das chamadas à API Asaas, incluindo a verificação de duplicidade de clientes e o uso consistente do externalReference.
+Processamento Confiável de Webhooks: A implementação de um listener de webhook resiliente, seguro e idempotente, com processamento assíncrono.
+Fluxo de Automação Preciso: A execução correta dos passos automatizados de criação de aluno, matrícula e liberação de acesso no Edunexa.
+Tratamento Abrangente de Erros: A capacidade de detectar e lidar adequadamente com falhas em diferentes pontos do processo.
+Validação Jurídica: A revisão da abordagem de assinatura de contrato pós-acesso para garantir conformidade legal.
+Os próximos passos envolvem o desenvolvimento das funcionalidades descritas, seguidos por testes rigorosos no ambiente Sandbox da Asaas 4 para validar todos os cenários, incluindo casos de sucesso e de erro, antes da implantação no ambiente de produção do Edunexa. A colaboração contínua entre as equipes de desenvolvimento, arquitetura e produto será essencial para garantir uma implementação bem-sucedida e alinhada aos objetivos de negócio.

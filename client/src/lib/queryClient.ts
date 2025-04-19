@@ -14,12 +14,15 @@ async function throwIfResNotOk(res: Response) {
  * @returns Resposta convertida para o tipo T
  */
 export async function apiRequest<T = any>(
-  method: string = "GET",
   url: string,
-  data?: unknown,
-  headers?: Record<string, string>
+  options?: {
+    method?: string;
+    body?: string;
+    headers?: Record<string, string>;
+  }
 ): Promise<Response> {
-  const customHeaders = headers || {};
+  const method = options?.method || "GET";
+  const customHeaders = options?.headers || {};
 
   // Adicionar console.log para debug
   console.log(`Realizando requisição ${method} para ${url}`);
@@ -27,10 +30,10 @@ export async function apiRequest<T = any>(
   const res = await fetch(url, {
     method,
     headers: {
-      ...(data ? { "Content-Type": "application/json" } : {}),
+      ...(options?.body ? { "Content-Type": "application/json" } : {}),
       ...customHeaders
     },
-    body: data ? JSON.stringify(data) : undefined,
+    body: options?.body,
     credentials: "include", // Importante: inclui cookies de autenticação
   });
 

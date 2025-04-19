@@ -10,6 +10,7 @@ import { Discipline, videoSourceEnum, contentCompletionStatusEnum } from "@share
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import PdfUploadDialog from "@/components/pdf-upload-dialog";
 import {
   Card,
   CardContent,
@@ -142,6 +143,7 @@ export default function DisciplineContentPage() {
   const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
   const [isVideoEditDialogOpen, setIsVideoEditDialogOpen] = useState(false);
   const [isMaterialDialogOpen, setIsMaterialDialogOpen] = useState(false);
+  const [isPdfUploadDialogOpen, setIsPdfUploadDialogOpen] = useState(false);
   // Estado isEbookDialogOpen removido - usando interface completa em /admin/ebooks/generate
   const [isQuestionDialogOpen, setIsQuestionDialogOpen] = useState(false);
   const [isAssessmentDialogOpen, setIsAssessmentDialogOpen] = useState(false);
@@ -460,6 +462,35 @@ export default function DisciplineContentPage() {
   const handleOpenMaterialDialog = () => {
     materialForm.reset();
     setIsMaterialDialogOpen(true);
+  };
+  
+  const handleOpenPdfUploadDialog = () => {
+    setIsPdfUploadDialogOpen(true);
+  };
+  
+  const handlePdfUploadComplete = (fileData: any) => {
+    // Verificamos se recebemos um objeto completo ou apenas a URL como string
+    const fileUrl = typeof fileData === 'string' ? fileData : fileData.url;
+    
+    // Registrar no console para debugging
+    console.log('URL do arquivo recebida:', fileUrl);
+    
+    // Após o upload bem-sucedido, preencheremos o formulário de material com a URL do PDF
+    materialForm.setValue("url", fileUrl);
+    
+    // Se o material ainda não existir, abrimos o diálogo para preencher os outros campos
+    if (!material) {
+      // Auto-preencher com um título e descrição padrão que o usuário pode modificar
+      materialForm.setValue("title", `Apostila da disciplina ${discipline?.name || ''}`);
+      materialForm.setValue("description", "Material em PDF da disciplina com o conteúdo completo para estudo.");
+      setIsMaterialDialogOpen(true);
+    } else {
+      // Se já existir um material, atualizamos diretamente com a nova URL
+      addMaterialMutation.mutate({
+        ...material,
+        url: fileUrl
+      });
+    }
   };
   
   // Manipulador removido - usando interface completa em /admin/ebooks/generate
@@ -1030,14 +1061,24 @@ export default function DisciplineContentPage() {
                         Adicione a apostila principal em PDF para esta disciplina
                       </CardDescription>
                     </div>
-                    <Button
-                      onClick={handleOpenMaterialDialog}
-                      className="mt-4 md:mt-0"
-                      disabled={material !== null && material !== undefined}
-                    >
-                      <PlusIcon className="mr-1 h-4 w-4" />
-                      {material ? "Substituir Apostila" : "Adicionar Apostila"}
-                    </Button>
+                    <div className="flex flex-col md:flex-row gap-2 mt-4 md:mt-0">
+                      <Button
+                        onClick={handleOpenPdfUploadDialog}
+                        className="flex-1"
+                        disabled={false}
+                      >
+                        <UploadIcon className="mr-1 h-4 w-4" />
+                        {material ? "Enviar Novo PDF" : "Enviar PDF"}
+                      </Button>
+                      <Button
+                        onClick={handleOpenMaterialDialog}
+                        className="flex-1"
+                        disabled={material !== null && material !== undefined}
+                      >
+                        <PlusIcon className="mr-1 h-4 w-4" />
+                        {material ? "Editar Detalhes" : "Adicionar Via URL"}
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -1056,10 +1097,16 @@ export default function DisciplineContentPage() {
                       <p className="mt-1 text-gray-500">
                         Adicione uma apostila em PDF com o conteúdo principal da disciplina.
                       </p>
-                      <Button onClick={handleOpenMaterialDialog} className="mt-4">
-                        <PlusIcon className="mr-1 h-4 w-4" />
-                        Adicionar Apostila
-                      </Button>
+                      <div className="flex flex-col sm:flex-row gap-2 mt-4">
+                        <Button onClick={handleOpenPdfUploadDialog} className="flex-1">
+                          <UploadIcon className="mr-1 h-4 w-4" />
+                          Enviar PDF
+                        </Button>
+                        <Button onClick={handleOpenMaterialDialog} className="flex-1">
+                          <PlusIcon className="mr-1 h-4 w-4" />
+                          Adicionar Via URL
+                        </Button>
+                      </div>
                     </div>
                   ) : (
                     <Card>
@@ -2135,6 +2182,15 @@ export default function DisciplineContentPage() {
           </Form>
         </DialogContent>
       </Dialog>
+
+      {/* PDF Upload Dialog */}
+      <PdfUploadDialog
+        open={isPdfUploadDialogOpen}
+        onOpenChange={setIsPdfUploadDialogOpen}
+        onUploadComplete={handlePdfUploadComplete}
+        title="Enviar Apostila PDF"
+        description="Selecione um arquivo PDF para enviar como apostila da disciplina"
+      />
     </div>
   );
 }

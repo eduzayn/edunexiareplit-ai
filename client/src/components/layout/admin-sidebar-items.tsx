@@ -348,6 +348,12 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
           active: currentPath === "/admin/finance/charges" || (currentPath && currentPath.includes("/admin/finance/charges/"))
         },
         { 
+          name: "Matrícula Simplificada", 
+          icon: <UserPlusIcon />, 
+          href: "/admin/crm/simplified-enrollment",
+          active: currentPath === "/admin/crm/simplified-enrollment" || (currentPath && currentPath.includes("/admin/crm/simplified-enrollment/"))
+        },
+        { 
           name: "Pagamentos", 
           icon: <PaymentsIcon />, 
           href: "/admin/finance/payments",
@@ -388,6 +394,12 @@ export function getAdminSidebarItems(currentPath: string): SidebarItemOrCategory
         icon: <InvoiceIcon />, 
         href: "/admin/finance/charges",
         active: currentPath === "/admin/finance/charges" || (currentPath && currentPath.includes("/admin/finance/charges/"))
+      },
+      { 
+        name: "Matrícula Simplificada", 
+        icon: <UserPlusIcon />, 
+        href: "/admin/crm/simplified-enrollment",
+        active: currentPath === "/admin/crm/simplified-enrollment" || (currentPath && currentPath.includes("/admin/crm/simplified-enrollment/"))
       },
       /* Item Pagamentos removido - Obsoleto após integração com Asaas */
       // Submódulo Contratos
