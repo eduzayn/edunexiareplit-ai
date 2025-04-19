@@ -3,22 +3,13 @@ import asaasChargesService from '../services/asaas-charges-service';
 import { storage } from '../storage';
 import logger from '../utils/logger';
 
-interface AuthenticatedRequest extends Request {
-  user?: {
-    id: number;
-    portalType?: string;
-    cpf?: string;
-    [key: string]: any;
-  };
-}
-
 export const studentChargesController = {
   /**
    * Obtém as cobranças do aluno autenticado
    * @param req Requisição Express
    * @param res Resposta Express
    */
-  async getStudentCharges(req: AuthenticatedRequest, res: Response) {
+  async getStudentCharges(req: Request, res: Response) {
     try {
       // Verificar autenticação
       if (!req.user || !req.user.id) {

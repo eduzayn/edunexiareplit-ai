@@ -1,5 +1,4 @@
 import React from 'react';
-import { cn } from '@/lib/utils';
 
 /**
  * Props para o componente Spinner
@@ -24,32 +23,27 @@ export const Spinner: React.FC<SpinnerProps> = ({
   label = 'Carregando...',
   className = '',
 }) => {
-  // Configurar as classes de tamanho
+  // Define o tamanho do spinner baseado na prop size
   const sizeClasses = {
     sm: 'w-4 h-4',
-    md: 'w-8 h-8',
-    lg: 'w-12 h-12',
+    md: 'w-6 h-6',
+    lg: 'w-8 h-8',
   };
 
-  // Configurar as classes de cor
+  // Define a cor do spinner baseado na prop color
   const colorClasses = {
     primary: 'text-primary',
     white: 'text-white',
   };
 
   return (
-    <div role="status" className="inline-flex items-center justify-center">
+    <div className={`flex items-center justify-center ${className}`} role="status">
       <svg
-        className={cn(
-          'animate-spin',
-          sizeClasses[size],
-          colorClasses[color],
-          className
-        )}
+        className={`animate-spin ${sizeClasses[size]} ${colorClasses[color]}`}
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"
-        data-testid="loading-spinner"
+        aria-label={label}
       >
         <circle
           className="opacity-25"

@@ -9,16 +9,13 @@
  * @returns String formatada
  */
 export const formatCurrency = (
-  value: number | string,
+  value: number,
   options: {
     decimals?: number;
     showSymbol?: boolean;
     showZero?: boolean;
   } = {}
 ): string => {
-  // Converte string para number se necessário
-  const numericValue = typeof value === 'string' ? parseFloat(value) : value;
-
   // Configurações padrão
   const config = {
     decimals: 2,
@@ -28,7 +25,7 @@ export const formatCurrency = (
   };
 
   // Se o valor for zero e não quiser mostrar zero, retorna traço
-  if (numericValue === 0 && !config.showZero) {
+  if (value === 0 && !config.showZero) {
     return '—';
   }
 
@@ -38,7 +35,7 @@ export const formatCurrency = (
     currency: 'BRL',
     minimumFractionDigits: config.decimals,
     maximumFractionDigits: config.decimals,
-  }).format(numericValue);
+  }).format(value);
 
   // Remove o símbolo se necessário
   if (!config.showSymbol) {

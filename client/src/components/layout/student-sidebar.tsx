@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useLocation, Link } from 'wouter';
 import { cn } from '@/lib/utils';
-import { ChevronDown, ChevronRight, LogOut } from 'lucide-react';
-import { getStudentSidebarItems, SidebarItem } from './student-sidebar-items';
+import { ChevronDown, LogOut, X } from 'lucide-react';
+import studentSidebarItems, { SidebarItem } from './student-sidebar-items';
 import {
   Sheet,
   SheetContent,
@@ -14,150 +14,178 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/use-auth';
 
 interface StudentSidebarProps {
-  isMobile?: boolean;
-  onClose?: () => void;
-  className?: string;
+  isOpen: boolean;
+  toggleSidebar: () => void;
 }
 
-/**
- * Componente para exibir a barra lateral do portal do estudante
- */
-export const StudentSidebar: React.FC<StudentSidebarProps> = ({
-  isMobile = false,
-  onClose,
-  className = '',
+const StudentSidebar: React.FC<StudentSidebarProps> = ({
+  isOpen,
+  toggleSidebar,
 }) => {
   const [location] = useLocation();
-  const { user } = useAuth();
-  const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
+  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
+  const { user, logoutMutation } = useAuth();
   
-  // Obtém os itens da barra lateral baseado na localização atual
-  const sidebarItems = getStudentSidebarItems(location);
+  // Tipo do usuário pode variar, então usamos nomes alternativos
+  const userName = user?.fullName || user?.username || 'Aluno';
+  
+  // Extrair iniciais do nome do usuário
+  const initials = user?.fullName 
+    ? user.fullName
+        .split(' ')
+        .map((n: string) => n[0])
+        .slice(0, 2)
+        .join('')
+        .toUpperCase()
+    : user?.username?.substring(0, 2).toUpperCase() || 'EA';
 
-  // Alterna o estado de abertura/fechamento do submenu
-  const toggleSubmenu = (label: string) => {
-    setOpenSubmenu(openSubmenu === label ? null : label);
+  const toggleExpandItem = (label: string) => {
+    setExpandedItems((prev) => ({
+      ...prev,
+      [label]: !prev[label],
+    }));
   };
 
-  // Renderiza um item do menu
-  const renderMenuItem = (item: SidebarItem, index: number) => {
-    const hasSubmenu = item.submenu && item.submenu.length > 0;
-    const isSubmenuOpen = openSubmenu === item.label;
-    
-    // Define a classe do item do menu baseada no estado ativo e hover
-    const itemClass = `
-      flex items-center justify-between rounded-md px-3 py-2.5 cursor-pointer
-      ${item.active ? 'bg-blue-100 text-primary-700 font-medium' : 'text-gray-700 hover:bg-blue-50'}
-      ${isMobile ? 'text-base' : 'text-sm'}
-      transition-all duration-200 ease-in-out
-    `;
+  const renderSidebarItem = (item: SidebarItem, depth = 0) => {
+    const isActive = location === item.href;
+    const hasSubItems = item.subItems && item.subItems.length > 0;
+    const isExpanded = expandedItems[item.label];
 
-    // Renderiza o item como um botão se tiver submenu, ou como um link se não tiver
     return (
-      <div key={index} className="my-1">
-        {hasSubmenu ? (
-          <>
-            <div
-              className={itemClass}
-              onClick={() => toggleSubmenu(item.label)}
-              data-testid={`sidebar-item-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
-            >
-              <div className="flex items-center gap-3">
-                {item.icon}
-                <span>{item.label}</span>
-              </div>
-              {isSubmenuOpen ? (
-                <ChevronDown size={16} />
-              ) : (
-                <ChevronRight size={16} />
-              )}
-            </div>
-            
-            {isSubmenuOpen && item.submenu && (
-              <div className="ml-6 mt-1">
-                {item.submenu.map((subItem, subIndex) => (
-                  <Link
-                    key={subIndex}
-                    href={subItem.href}
-                    onClick={onClose}
-                    className={`
-                      flex items-center gap-3 px-3 py-2 rounded-md text-sm
-                      ${subItem.active ? 'bg-blue-100 text-primary-700 font-medium' : 'text-gray-700 hover:bg-blue-50'}
-                      transition-all duration-200 ease-in-out
-                    `}
-                    data-testid={`sidebar-subitem-${subItem.label.toLowerCase().replace(/\s+/g, '-')}`}
-                  >
-                    {subItem.icon}
-                    <span>{subItem.label}</span>
-                  </Link>
-                ))}
-              </div>
+      <div key={item.href} className="mb-1">
+        <Link href={item.href}>
+          <a
+            className={cn(
+              'flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors',
+              isActive
+                ? 'bg-primary text-primary-foreground'
+                : 'text-gray-700 hover:bg-primary/10 hover:text-primary',
+              depth > 0 && 'ml-4'
             )}
-          </>
-        ) : (
-          <Link
-            href={item.href}
-            onClick={() => {
-              if (item.onClick) item.onClick();
-              if (onClose) onClose();
+            onClick={(e) => {
+              if (hasSubItems) {
+                e.preventDefault();
+                toggleExpandItem(item.label);
+              }
             }}
-            className={itemClass}
-            data-testid={`sidebar-item-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
           >
-            <div className="flex items-center gap-3">
-              {item.icon}
-              <span>{item.label}</span>
-            </div>
-          </Link>
+            <item.icon className="mr-2 h-4 w-4" />
+            <span className="flex-1">{item.label}</span>
+            {hasSubItems && (
+              <ChevronDown
+                className={cn(
+                  'h-4 w-4 transition-transform',
+                  isExpanded && 'transform rotate-180'
+                )}
+              />
+            )}
+          </a>
+        </Link>
+        {hasSubItems && isExpanded && (
+          <div className="mt-1 space-y-1">
+            {item.subItems?.map((subItem) => renderSidebarItem(subItem, depth + 1))}
+          </div>
         )}
       </div>
     );
   };
 
-  return (
-    <aside 
-      className={`flex flex-col pb-4 ${className} ${
-        isMobile ? 'w-full' : 'w-64 border-r border-gray-200'
-      }`}
-    >
-      {/* Cabeçalho da barra lateral */}
-      <div className="flex flex-col p-4 bg-gradient-to-b from-blue-50 to-white">
-        <div className="flex flex-col items-center space-y-1 my-3">
-          <div className="w-16 h-16 rounded-full bg-primary-100 flex items-center justify-center overflow-hidden">
-            {user?.profileImage ? (
-              <Avatar className="h-16 w-16 border border-gray-200">
-                <AvatarImage src={user.profileImage} alt={user?.name || "Usuário"} />
-                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-                  {(user?.name || "U").substring(0, 1).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-            ) : (
-              <div className="text-2xl font-bold text-primary">
-                {(user?.name || "ES").substring(0, 2).toUpperCase()}
-              </div>
-            )}
+  // Versão mobile usando Sheet
+  const mobileSidebar = (
+    <Sheet open={isOpen} onOpenChange={toggleSidebar}>
+      <SheetContent side="left" className="p-0 w-[280px]">
+        <SheetHeader className="p-4 border-b">
+          <SheetTitle className="flex items-center">
+            <span className="text-xl font-bold text-primary">Edunexia</span>
+            <span className="ml-2 text-sm bg-primary/10 text-primary px-2 py-1 rounded-full">
+              Aluno
+            </span>
+          </SheetTitle>
+        </SheetHeader>
+        
+        <div className="flex flex-col h-full">
+          <div className="flex-1 overflow-auto p-4">
+            <div className="space-y-1">
+              {studentSidebarItems.map((item) => renderSidebarItem(item))}
+            </div>
           </div>
-          <h3 className="font-semibold text-gray-800">{user?.name || "Estudante"}</h3>
-          <span className="text-xs text-gray-500">Portal do Aluno</span>
+          
+          <div className="border-t p-4">
+            <div className="flex items-center mb-4">
+              <Avatar className="h-9 w-9">
+                <AvatarImage src="" alt={userName} />
+                <AvatarFallback>{initials}</AvatarFallback>
+              </Avatar>
+              <div className="ml-3">
+                <p className="text-sm font-medium">{userName}</p>
+                <p className="text-xs text-gray-500">{user?.email || ''}</p>
+              </div>
+            </div>
+            
+            <Button
+              variant="outline"
+              className="w-full flex items-center justify-center"
+              onClick={() => logoutMutation.mutate()}
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Sair
+            </Button>
+          </div>
         </div>
-      </div>
+      </SheetContent>
+    </Sheet>
+  );
 
-      {/* Lista de itens do menu */}
-      <nav className="flex-1 px-3 mt-3">
-        {sidebarItems.map(renderMenuItem)}
-      </nav>
-
-      {/* Botão de logout na barra lateral */}
-      <div className="px-3 mt-auto">
-        <Link
-          href="/auth/logout"
-          className="flex items-center gap-3 px-3 py-2 text-sm text-red-500 hover:bg-red-50 rounded-md transition-all duration-200 ease-in-out"
-          data-testid="sidebar-logout"
-        >
-          <LogOut size={18} />
-          <span>Sair da conta</span>
+  // Versão desktop
+  const desktopSidebar = (
+    <div className="hidden md:flex md:flex-col md:w-64 md:bg-white md:border-r md:min-h-screen">
+      <div className="p-4 border-b">
+        <Link href="/student/dashboard">
+          <a className="flex items-center">
+            <span className="text-xl font-bold text-primary">Edunexia</span>
+            <span className="ml-2 text-sm bg-primary/10 text-primary px-2 py-1 rounded-full">
+              Aluno
+            </span>
+          </a>
         </Link>
       </div>
-    </aside>
+      
+      <div className="flex-1 overflow-auto p-4">
+        <div className="space-y-1">
+          {studentSidebarItems.map((item) => renderSidebarItem(item))}
+        </div>
+      </div>
+      
+      <div className="border-t p-4">
+        <div className="flex items-center mb-4">
+          <Avatar className="h-9 w-9">
+            <AvatarImage src="" alt={userName} />
+            <AvatarFallback>{initials}</AvatarFallback>
+          </Avatar>
+          <div className="ml-3">
+            <p className="text-sm font-medium">{userName}</p>
+            <p className="text-xs text-gray-500">{user?.email || ''}</p>
+          </div>
+        </div>
+        
+        <Button
+          variant="outline"
+          className="w-full flex items-center justify-center"
+          onClick={() => logoutMutation.mutate()}
+        >
+          <LogOut className="mr-2 h-4 w-4" />
+          Sair
+        </Button>
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      {mobileSidebar}
+      {desktopSidebar}
+    </>
   );
 };
+
+export default StudentSidebar;

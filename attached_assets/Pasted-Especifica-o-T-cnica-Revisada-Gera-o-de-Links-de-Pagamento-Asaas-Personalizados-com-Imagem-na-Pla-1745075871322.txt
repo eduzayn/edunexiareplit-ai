@@ -1,0 +1,130 @@
+Especificação Técnica Revisada: Geração de Links de Pagamento Asaas Personalizados com Imagem na Plataforma Edunexa1. IntroduçãoEste documento detalha a especificação técnica revisada para a implementação da funcionalidade de geração de links de pagamento Asaas personalizados, associados a cursos específicos, diretamente na plataforma Edunexa. O objetivo é permitir que consultores gerem links de pagamento que incluam uma imagem representativa do curso, alinhando-se mais de perto com a interface de criação de links do próprio Asaas e facilitando o processo de cobrança para alunos potenciais. A integração utilizará a API v3 do Asaas em ambiente de produção, acessada através da chave de API configurada como ASAAS_ZAYN_KEY. Dada a natureza da operação diretamente em produção, uma atenção rigorosa ao tratamento de erros, logging e monitoramento é fundamental, pois não haverá um ambiente de sandbox para testes prévios desta integração específica.12. Interface do Usuário (UI) - Página de Detalhes do CursoA interface do usuário na página de detalhes de cada curso será modificada para incorporar a funcionalidade de geração e visualização de links de pagamento.2.1. Nova Seção: Geração de Link de PagamentoUma nova seção, intitulada "Geração de Link de Pagamento" ou similar, será adicionada à página de detalhes do curso (localizada em ACADÊMICO > Cursos). Esta área centralizará as funcionalidades relacionadas aos links de pagamento para o curso específico em visualização.2.2. Formulário de Geração (Revisado)Dentro da nova seção, um formulário simplificado permitirá a entrada dos dados necessários para a criação do link, espelhando a primeira etapa da interface do Asaas:
+Campos do Formulário:
+
+Valor (da cobrança): Campo numérico, obrigatório. Deve aceitar formato de moeda (ex: R$ 1.234,56) e validar se o valor é positivo.
+Nome do Link de Pagamento: Campo de texto, obrigatório. Sugestão: Pré-preencher com o nome do curso atual (ex: "Pagamento Curso [Nome do Curso]"), mas permitir edição pelo consultor. Este nome é visível na gestão do link e para o pagador.3
+Descrição da Cobrança: Campo de texto (textarea), opcional. Permite adicionar detalhes sobre o link ou a cobrança.3
+Ativar Notificações Asaas?: Checkbox ou Toggle Switch, opcional. Se incluído, permite ao consultor decidir se o Asaas enviará notificações sobre este link (o padrão da API é true 3). Se desmarcado/desativado, o backend deve enviar notificationEnabled: false para a API Asaas.
+Imagem do Link: Mecanismo para upload de imagem (ex: botão "Adicionar Imagem" ou área de arrastar e soltar). Permitir o upload de uma imagem (formatos JPG, JPEG, PNG). Esta imagem será associada ao link no Asaas.4 O sistema pode sugerir usar a imagem principal do curso, mas deve permitir o upload de outra imagem.
+
+
+Dados do Pagador (Removidos Desta Etapa): Conforme a interface do Asaas e a solicitação de correção, os campos Nome Completo, CPF e E-mail do pagador não serão coletados neste formulário inicial de geração de link. O pagador preencherá seus dados diretamente na página do Asaas ao acessar o link.
+Validação no Cliente (Client-Side): Implementar validações básicas (campo Valor obrigatório e positivo, Nome do Link obrigatório, formato de imagem permitido).
+Botão: "Gerar Link de Pagamento Asaas" (Texto ajustado para refletir a ausência de dados do pagador)
+
+Ação: Ao ser clicado, aciona as validações do cliente. Se válidos, envia uma requisição assíncrona (AJAX/fetch) para o endpoint interno da API Edunexa (Seção 3), contendo os dados do formulário (Valor, Nome do Link, Descrição, Ativar Notificações?, dados da imagem) e o ID do curso atual.
+Gerenciamento de Estado: Desabilitar o botão e exibir indicador de carregamento durante o processamento.
+
+
+2.3. Área de Exibição do ResultadoPermanece como na especificação anterior:
+Sucesso: Exibir a AsaasPaymentLinkUrl, botão "Copiar", e mensagem de sucesso.
+Falha: Exibir mensagem de erro clara e direcionada (ver Seção 6.5).
+2.4. Lista/Tabela de Links Gerados (Revisado)Na mesma seção, exibir a lista/tabela de links gerados para o curso específico [6a].
+Fonte dos Dados: Backend Edunexa, consultando EdunexaPaymentLinks com filtro por CourseId.
+Colunas Exibidas (Ajustadas):
+
+Nome do Link (Campo LinkName da tabela - novo campo necessário)
+Valor (Campo Amount, formatado)
+Data de Criação (Campo CreationTimestamp, formatado)
+Link (Exibir AsaasPaymentLinkUrl)
+Ação (Botão "Copiar Link")
+
+
+Filtragem: Mandatório filtrar por CourseId.
+Considerações de UI: Paginação/lazy loading para muitos links.
+3. Implementação do Backend - API Interna Edunexa3.1. Definição do EndpointPermanece como antes:
+Rota: POST /api/internal/courses/{courseId}/payment-links
+Método HTTP: POST
+Autenticação/Autorização: Protegido, identificar GeneratingConsultantId.
+3.2. Payload da Requisição (Revisado)O endpoint esperará um corpo de requisição JSON contendo os dados do formulário revisado:JSON{
+  "linkName": "Nome do Link de Pagamento", // Obrigatório
+  "amount": 150.50, // Obrigatório, numérico positivo
+  "description": "Descrição opcional da cobrança", // Opcional
+  "notificationEnabled": true, // Opcional, boolean, default true
+  "imageData": "..." // Representação da imagem (ex: base64 ou referência a um upload temporário) - a ser definida pela implementação
+}
+O {courseId} vem da URL.3.3. Validação de Entrada (Server-Side)A validação rigorosa no servidor continua crítica [6.2].
+Verificações Essenciais (Ajustadas):
+
+linkName: Não pode ser vazio ou nulo.
+amount: Deve ser um valor numérico estritamente positivo.
+description: Validar tamanho máximo, se aplicável.
+notificationEnabled: Deve ser booleano, se presente.
+imageData: Validar formato e tamanho da imagem, se aplicável.
+courseId: Deve corresponder a um curso válido.
+GeneratingConsultantId: Deve corresponder a um consultor válido.
+
+
+3.4. Lógica de OrquestraçãoA lógica geral permanece, mas adaptada aos novos dados de entrada:
+Receber requisição.
+Validar dados (Seção 3.3). Erro 400 se inválido.
+Obter GeneratingConsultantId.
+Recuperar informações do curso (Nome do Curso, URL da Imagem Principal - se a imagem não for enviada diretamente) usando courseId. Erro 404 se não encontrado.
+Construir externalReference: edunexa_curso:<ID_CURSO>_consultor:<ID_CONSULTOR>.3
+Invocar Serviço de Integração Asaas (Seção 4) para criar o link, passando amount (ou value - verificar API 3), linkName, description, notificationEnabled, billingType: UNDEFINED, chargeType: DETACHED, externalReference.
+Tratamento do Resultado da Criação:
+
+Sucesso: Obter paymentLinkId e paymentLinkUrl.
+
+Prosseguir para associar a imagem. Invocar Serviço Asaas (Seção 4.3) passando paymentLinkId e os dados da imagem (imageData ou a imagem baixada da URL da Imagem Principal).
+Tratamento do Resultado da Imagem:
+
+Sucesso: Persistir (Seção 5) com InternalStatus: 'Active'. Retornar 201 com AsaasPaymentLinkUrl.
+Falha: Logar erro. Persistir (Seção 5) com InternalStatus: 'ImageError'. Retornar erro apropriado (ex: 502) informando sucesso parcial (Seção 6.5).
+
+
+
+
+Falha: Logar erro. Não persistir. Retornar erro apropriado (ex: 502) (Seção 6.5).
+
+
+3.5. Payload da RespostaPermanece como antes:
+Sucesso (HTTP 201 Created): { "asaasPaymentLinkUrl": "..." }
+Erro: { "error": "Mensagem clara." }
+4. Implementação do Backend - Serviço de Integração com API Asaas4.1. Configuração e InicializaçãoPermanece como antes, reforçando:
+URL Base: Produção https://api.asaas.com/v3.1
+Chave de API: ASAAS_ZAYN_KEY (gerenciada com segurança).1
+Cliente HTTP: Cabeçalhos padrão, access_token: <ASAAS_ZAYN_KEY> 1, timeout adequado.
+4.2. Etapa 1: Criar Link de Pagamento (Revisado)
+Endpoint: POST /v3/paymentLinks.3
+Corpo da Requisição (JSON - Ajustado):
+
+name (string, obrigatório): Usar linkName da requisição interna.3
+description (string, opcional): Usar description da requisição interna.3
+value (number, obrigatório): Usar amount da requisição interna. Nota: A documentação de referência da API (/v3/paymentLinks) usa value 3, portanto, usar value aqui.
+billingType (string, obrigatório): UNDEFINED.3
+chargeType (string, obrigatório): DETACHED.3
+externalReference (string, opcional mas crucial): edunexa_curso:<ID_CURSO>_consultor:<ID_CONSULTOR>.3
+notificationEnabled (boolean, opcional): Usar notificationEnabled da requisição interna (padrão true se omitido na API Asaas 3).
+Outros Parâmetros da UI Asaas (Opcional/Fora do Escopo Inicial): Parâmetros como dueDateLimitDays, maxInstallmentCount, endDate, isAddressRequired 3 podem ser adicionados futuramente se a UI da Edunexa for expandida para coletá-los, mas não são incluídos com base no formulário simplificado atual.
+
+
+Tratamento de Resposta e Erros: Permanece como antes (extrair id e url no sucesso, logar e mapear erros 4xx/5xx).
+4.3. Etapa 2: Associar Imagem do CursoPermanece como antes:
+Pré-requisito: Sucesso na Etapa 4.2 (paymentLinkId obtido).
+Fonte da Imagem: imageData da requisição interna ou download da URL do curso.
+Endpoint: POST /v3/paymentLinks/{paymentLinkId}/images.4
+Configuração: Content-Type: multipart/form-data, access_token.4
+Parâmetros (Form Data):
+
+image (file, obrigatório): Dados binários da imagem.4
+main (boolean, obrigatório): true.4
+
+
+Tratamento de Resposta e Erros: Permanece como antes (logar sucesso, tratar erros de busca de imagem ou da API Asaas).
+Endpoint Alternativo (PUT /mainImage): Manter a recomendação de usar POST /images com main: true devido à documentação mais clara 4 vs. a falta de detalhes para o PUT.6
+4.4. Implicações da Natureza Não-AtômicaPermanece como antes. A separação das chamadas exige tratamento do estado ImageError e logging detalhado.5. Persistência de Dados - Banco de Dados Edunexa5.1. Esquema da Tabela: EdunexaPaymentLinks (Revisado)
+Propósito: Armazenar registro dos links gerados, essencial para UI, cópia, auditoria, rastreamento e status [5a, 6a, 1d, 6b, 7c].
+Colunas Propostas (Ajustadas):
+
+Nome da ColunaTipo de DadosRestrições/ÍndicesDescriçãoInternalIdUUID ou INTChave Primária, Auto-Increment (se INT)Identificador único interno na Edunexa.AsaasPaymentLinkIdVARCHARIndexado, UNIQUE recomendadoArmazena o id retornado pela API Asaas na criação do link.3AsaasPaymentLinkUrlTEXTArmazena a url retornada pela API Asaas.3 Necessária para exibição e cópia.LinkNameVARCHARNOT NULLNome do link, conforme inserido no formulário Edunexa (Seção 2.2). (Campo Adicionado)DescriptionTEXTNULLDescrição da cobrança, conforme inserido no formulário Edunexa (Seção 2.2). (Campo Adicionado)PayerNameVARCHARNULLNome do pagador. Não preenchido por este fluxo de geração. Mantido como NULO para possível uso futuro.PayerCPFVARCHARIndexado, NULLCPF do pagador. Não preenchido por este fluxo. Armazenar limpo (só dígitos).PayerEmailVARCHARNULLE-mail do pagador. Não preenchido por este fluxo.AmountDECIMAL(10, 2)NOT NULLValor da cobrança informado.CourseIdINT ou UUIDChave Estrangeira (Tabela de Cursos), IndexadoAssocia o link ao curso Edunexa específico [6a].GeneratingConsultantIdINT ou UUIDChave Estrangeira (Tabela de Usuários/Consultores), IndexadoIdentifica o consultor que gerou o link [7c].AsaasExternalReferenceVARCHARIndexadoArmazena a string edunexa_curso:X_consultor:Y.3CreationTimestampDATETIME/TIMESTAMPDEFAULT CURRENT_TIMESTAMPData e hora em que o registro foi criado na Edunexa.InternalStatusVARCHAREstado interno (ex: 'Active', 'ImageError', 'CreationFailed').
+
+Justificativa da Mudança: Adicionados LinkName e Description (coletados na UI revisada). Campos PayerName, PayerCPF, PayerEmail agora são NULL pois não são coletados inicialmente.
+5.2. Lógica de Inserção de DadosPermanece como antes: Inserir após tentativas Asaas, definir InternalStatus corretamente, tratar erros de DB.6. Tratamento de Erros e Considerações de ProduçãoPermanece crucial devido à operação em produção [7c].6.1. Validação na Interface (Frontend)Validar campos revisados da Seção 2.2.6.2. Validação no Backend (Server-Side)Validar payload revisado da Seção 3.3. Essencial.6.3. Tratamento de Erros da API AsaasPermanece como antes: try-catch, tratar erros 4xx/5xx (especialmente 401 para ASAAS_ZAYN_KEY 13), logging detalhado da resposta de erro Asaas [7c], considerar retentativas com cautela (não para POST /paymentLinks), Circuit Breaker.6.4. Tratamento de Erros de Banco de DadosPermanece como antes: Tratar exceções de INSERT, logar, definir comportamento em caso de falha pós-Asaas.6.5. Feedback ao Usuário (UI)Permanece como antes: Mensagens claras, não técnicas, cobrindo validação, falhas Asaas (genéricas ou parciais como ImageError), e erros internos Edunexa.6.6. Especificidades do Ambiente de ProduçãoReforçar todos os pontos anteriores:
+Segurança da Chave: ASAAS_ZAYN_KEY via env var/secrets manager.1
+Logging: Nível INFO/DEBUG, registrar todas as etapas e respostas de erro Asaas [7c].
+Monitoramento: Endpoint Edunexa, chamadas Asaas, interações DB.
+Alertas: Erros Asaas, falhas DB, latência.
+Idempotência (UI): Desabilitar botão durante processamento.
+Duplicação de Clientes Asaas: Confirmar que a ausência de coleta de dados do pagador na Edunexa significa que o Asaas criará/gerenciará o cliente quando o link for usado, potencialmente levando a duplicatas no Asaas se o mesmo pagador usar múltiplos links.14 Isso é aceito neste fluxo.
+7. Conclusão (Revisada)Esta especificação técnica revisada alinha a funcionalidade de geração de links de pagamento Asaas na Edunexa com a interface e o fluxo observados na própria plataforma Asaas, focando na criação do link com seus detalhes intrínsecos (nome, valor, descrição, imagem) sem a coleta inicial de dados do pagador. A integração direta com o ambiente de produção usando a chave ASAAS_ZAYN_KEY exige uma implementação cuidadosa, com ênfase na segurança, validação robusta, tratamento de erros detalhado (incluindo a natureza não-atômica da adição de imagem) e monitoramento contínuo [7c].A estrutura de dados revisada acomoda as informações coletadas na UI e mantém campos para dados do pagador como nulos, permitindo flexibilidade futura. O logging detalhado das interações com a API Asaas, especialmente em caso de erro, será fundamental para a operação e manutenção em produção. Seguindo estas diretrizes, a equipe poderá implementar uma ferramenta eficaz e alinhada às expectativas para os consultores Edunexa.

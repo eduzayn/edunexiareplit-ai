@@ -1,0 +1,58 @@
+Implementação do Sistema Simplificado de Matrículas
+
+A próxima funcionalidade prioritária no projeto é a criação de um módulo de matrículas simplificadas, que deverá ser acessível tanto no Portal Administrativo quanto no Portal do Polo. O nome do módulo pode ser apenas "Matrículas".
+
+Objetivo
+Desenvolver um processo de matrícula ágil e descomplicado, utilizando as integrações já existentes com o sistema financeiro (Asaas) e reduzindo ao máximo a burocracia para garantir acesso imediato do aluno à plataforma.
+
+Requisitos Funcionais
+Interface de Cadastro de Matrícula
+O formulário deverá captar apenas os seguintes dados:
+
+Nome completo
+
+CPF
+
+RG (opcional)
+
+E-mail
+
+Curso escolhido
+
+Plano financeiro (selecionado de uma lista de planos configurados previamente)
+
+Integrações com o ASAS (já existentes)
+
+Criação automática do cliente no ASAS.
+
+Geração da cobrança referente ao plano financeiro selecionado.
+
+Padrão de Acesso ao Portal do Aluno
+
+Login: E-mail do aluno
+
+Senha inicial: CPF (sem pontuação)
+
+O aluno poderá alterar a senha posteriormente dentro do portal.
+
+Acesso Imediato
+
+Após finalização da matrícula, o aluno será vinculado automaticamente ao curso escolhido.
+
+A conta do aluno será criada no Portal do Aluno com acesso liberado para assistir às aulas imediatamente.
+
+O contrato será assinado digitalmente dentro do próprio Portal do Aluno.
+
+Não será exigido o envio de documentação neste fluxo simplificado.
+
+Verificações Técnicas
+Antes de iniciarmos o desenvolvimento, precisamos revisar os seguintes pontos:
+
+Verificar se as integrações atuais com o ASAS (clientes e cobranças) estão 100% operacionais e reutilizáveis neste módulo.
+
+Validar se o processo de criação de usuário e vinculação ao curso já está funcionando de forma automática na plataforma.
+
+Garantir que o portal do aluno esteja pronto para reconhecer esse novo fluxo e liberar o acesso às aulas corretamente após a matrícula.
+
+Considerações Finais
+Este processo simplificado de matrícula será um diferencial competitivo por sua agilidade, integração e usabilidade. Deve estar alinhado com a lógica do ecossistema Edunéxia e seguir os padrões já definidos de design, autenticação e experiência do usuário.

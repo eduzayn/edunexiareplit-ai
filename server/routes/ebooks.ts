@@ -2,7 +2,7 @@ import { Router } from "express";
 import { storage } from "../storage";
 import { requireAuth, requireAdmin } from "../middleware/auth";
 import { openaiService } from "../services/openai-service";
-import { freepikService } from "../services/freepik-service";
+import freepikService from "../services/freepik-service";
 import { insertEBookSchema, insertEBookImageSchema } from "@shared/schema";
 import { z } from "zod";
 

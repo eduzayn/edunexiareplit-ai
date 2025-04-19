@@ -9,6 +9,7 @@ import {
   CreditCardIcon,
   HelpOutlineIcon,
   LaptopIcon,
+  UserPlusIcon,
 } from "@/components/ui/icons";
 
 /**
@@ -28,6 +29,12 @@ export function getPoloSidebarItems(currentPath: string) {
       icon: <AssignmentIcon />, 
       href: "/polo/enrollments",
       active: currentPath === "/polo/enrollments" || currentPath === "/polo/enrollments/new"
+    },
+    { 
+      name: "Matrícula Simplificada", 
+      icon: <UserPlusIcon />, 
+      href: "/polo/simplified-enrollment",
+      active: currentPath === "/polo/simplified-enrollment" || currentPath.startsWith("/polo/simplified-enrollment/")
     },
     { 
       name: "Alunos", 

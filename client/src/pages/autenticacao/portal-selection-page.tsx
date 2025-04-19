@@ -12,41 +12,12 @@ export default function PortalSelectionPage() {
   const { user, logoutMutation } = useAuth();
   const [selectedPortal, setSelectedPortal] = useState<string | null>(null);
 
-  // Efeito para lidar com usuário já autenticado
+  // Efeito para lidar com usuário já autenticado - desativado para evitar ciclos infinitos
+  // O logout agora será feito apenas sob demanda, quando o usuário selecionar um novo portal
   useEffect(() => {
-    const cleanupAuth = async () => {
-      if (user) {
-        console.log("Limpando autenticação na seleção de portal");
-        
-        try {
-          // Se o usuário já estiver autenticado, fazer logout primeiro
-          await logoutMutation.mutateAsync();
-          
-          // Limpar todo o cache do cliente para garantir que não haja estado persistente
-          queryClient.clear();
-          
-          // Forçar limpeza do sessionStorage/localStorage
-          if (typeof window !== 'undefined') {
-            try {
-              // Limpar quaisquer dados armazenados localmente que possam interferir
-              sessionStorage.clear();
-              localStorage.removeItem('queryClient');
-            } catch (e) {
-              console.error("Erro ao limpar storage:", e);
-            }
-          }
-          
-          // Força a página a recarregar para limpar qualquer estado
-          if (window.location.pathname === '/portal-selection') {
-            window.location.reload();
-          }
-        } catch (error) {
-          console.error("Erro ao limpar autenticação:", error);
-        }
-      }
-    };
-    
-    cleanupAuth();
+    // Evitamos forçar logout no carregamento inicial da página
+    // Isso previne o ciclo de autenticação/logout infinito
+    console.log("Portal Selection Page carregada - sem limpeza automática");
   }, []);
 
   const portals = [

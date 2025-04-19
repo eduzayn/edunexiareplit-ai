@@ -10,84 +10,65 @@ import {
   BriefcaseBusiness,
   Handshake,
   Banknote,
-  MessagesSquare
+  MessagesSquare,
+  Home, 
+  BookOpen, 
+  CalendarClock, 
+  Medal
 } from 'lucide-react';
 
-export type SidebarItem = {
+export interface SidebarItem {
+  icon: React.ElementType;
   label: string;
-  icon: React.ReactNode;
   href: string;
-  active?: boolean;
-  submenu?: SidebarItem[];
-  onClick?: () => void;
+  subItems?: SidebarItem[];
+}
+
+export const getStudentSidebarItems = (): SidebarItem[] => {
+  return studentSidebarItems;
 };
 
-/**
- * Retorna os itens do menu da barra lateral do estudante
- * @param pathname Caminho atual da rota
- * @returns Array de itens do menu
- */
-export const getStudentSidebarItems = (pathname: string): SidebarItem[] => {
-  return [
-    {
-      label: 'Início',
-      icon: <LayoutDashboard size={18} />,
-      href: '/student',
-      active: pathname === '/student',
-    },
-    {
-      label: 'Meus cursos',
-      icon: <BookOpenText size={18} />,
-      href: '/student/courses',
-      active: pathname === '/student/courses' || pathname.startsWith('/student/courses/'),
-    },
-    {
-      label: 'Meus certificados',
-      icon: <GraduationCap size={18} />,
-      href: '/student/certificates',
-      active: pathname === '/student/certificates',
-    },
-    {
-      label: 'Avaliações',
-      icon: <FileQuestion size={18} />,
-      href: '/student/assessments',
-      active: pathname === '/student/assessments',
-    },
-    {
-      label: 'Meus estágios',
-      icon: <BriefcaseBusiness size={18} />,
-      href: '/student/internships',
-      active: pathname === '/student/internships',
-    },
-    {
-      label: 'Contratos',
-      icon: <Handshake size={18} />,
-      href: '/student/contracts',
-      active: pathname === '/student/contracts',
-    },
-    {
-      label: 'Financeiro',
-      icon: <Banknote size={18} />,
-      href: '/student/financial',
-      active: pathname === '/student/financial',
-    },
-    {
-      label: 'Calendário',
-      icon: <Calendar size={18} />,
-      href: '/student/calendar',
-      active: pathname === '/student/calendar',
-    },
-    {
-      label: 'Mensagens',
-      icon: <MessagesSquare size={18} />,
-      href: '/student/messages',
-      active: pathname === '/student/messages',
-    },
-    {
-      label: 'Minhas informações',
-      icon: <User size={18} />,
-      href: '/student/profile',
-      active: pathname === '/student/profile',
-    },
-  ];
-};
+export const studentSidebarItems: SidebarItem[] = [
+  {
+    icon: LayoutDashboard,
+    label: 'Dashboard',
+    href: '/student/dashboard',
+  },
+  {
+    icon: BookOpenText,
+    label: 'Meus Cursos',
+    href: '/student/courses',
+  },
+  {
+    icon: CalendarClock,
+    label: 'Calendário',
+    href: '/student/calendar',
+  },
+  {
+    icon: FileText,
+    label: 'Materiais',
+    href: '/student/materials',
+  },
+  {
+    icon: Medal,
+    label: 'Certificados',
+    href: '/student/certificates',
+  },
+  {
+    icon: Banknote,
+    label: 'Financeiro',
+    href: '/student/financial',
+  },
+  {
+    icon: User,
+    label: 'Meu Perfil',
+    href: '/student/profile',
+  },
+  {
+    icon: MessagesSquare,
+    label: 'Mensagens',
+    href: '/student/messages',
+  },
+];
+
+export default studentSidebarItems;

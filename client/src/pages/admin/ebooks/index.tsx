@@ -51,8 +51,7 @@ import {
   Eye, 
   Upload,
   BookOpenText,
-  Sparkles,
-  Zap
+  Sparkles
 } from 'lucide-react';
 
 // Tipos
@@ -229,22 +228,10 @@ const EBooksPage: React.FC = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">E-Books Interativos</h1>
         <div className="flex gap-3">
-          <Button asChild variant="outline">
+          <Button asChild variant="default">
             <Link href="/admin/ebooks/advanced-generate">
-              <Sparkles className="mr-2 h-4 w-4 text-yellow-500" />
-              Gerador Avançado
-            </Link>
-          </Button>
-          <Button asChild>
-            <Link href="/admin/ebooks/generate">
-              <BookOpenText className="mr-2 h-4 w-4" />
-              Gerar com IA
-            </Link>
-          </Button>
-          <Button asChild>
-            <Link href="/admin/ebooks/new">
-              <Plus className="mr-2 h-4 w-4" />
-              Novo E-Book
+              <Sparkles className="mr-2 h-4 w-4" />
+              Gerar E-Book com IA
             </Link>
           </Button>
         </div>
@@ -331,12 +318,14 @@ const EBooksPage: React.FC = () => {
               <p className="text-muted-foreground mb-4">
                 Você ainda não criou nenhum e-book interativo.
               </p>
-              <Button asChild>
-                <Link href="/admin/ebooks/new">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Criar E-Book
-                </Link>
-              </Button>
+              <div className="justify-center">
+                <Button asChild>
+                  <Link href="/admin/ebooks/advanced-generate">
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Gerar E-Book com IA
+                  </Link>
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>

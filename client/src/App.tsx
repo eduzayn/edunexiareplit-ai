@@ -50,6 +50,15 @@ import NewClientPage from "@/pages/admin/crm/new-client-page";
 import ClientDetailsPage from "@/pages/admin/crm/client-details-page";
 import ContactsPage from "@/pages/admin/crm/contacts-page";
 import NewContactPage from "@/pages/admin/crm/new-contact-page";
+import NewSimplifiedEnrollmentPage from "@/pages/admin/crm/new-simplified-enrollment-page";
+import NewSimplifiedEnrollmentDetailsPage from "@/pages/admin/crm/new-simplified-enrollment-details-page";
+import NewSimplifiedEnrollmentCreatePage from "@/pages/admin/crm/new-simplified-enrollment-create-page";
+import DocumentAnalysisTestPage from "@/pages/admin/crm/document-analysis-test-page";
+
+// Matrícula Simplificada para o Portal do Polo
+import PoloSimplifiedEnrollmentPage from "@/pages/polo/simplified-enrollment-page";
+import PoloSimplifiedEnrollmentNewPage from "@/pages/polo/simplified-enrollment-new-page";
+import PoloSimplifiedEnrollmentDetailsPage from "@/pages/polo/simplified-enrollment-details-page";
 import ProductsPage from "@/pages/admin/finance/products-page";
 import NewProductPage from "@/pages/admin/finance/new-product-page";
 import ChargesPage from "@/pages/admin/finance/charges-page";
@@ -86,13 +95,17 @@ import StudentFinancialPage from "@/pages/student/financial-page";
 
 // Import ebooks pages
 import EbooksIndexPage from "@/pages/admin/ebooks/index";
-import EbooksGeneratePage from "@/pages/admin/ebooks/generate";
+// Importação temporariamente removida (arquivo não encontrado)
+// import EbooksAdvancedGeneratePage from "@/pages/admin/ebooks/advanced-generate";
 import EbookEditPage from "@/pages/admin/ebooks/[id]/edit";
-import AdvancedGenerateEBookPage from "@/pages/admin/ebooks/advanced-generate";
 // Módulo de Sistema
 import SecurityPage from "@/pages/admin/sistema/security-page";
 import SettingsPage from "@/pages/admin/sistema/settings-page";
 import InstitutionSettingsPage from "@/pages/admin/sistema/institution-settings-page";
+import CoursePaymentLinksPage from "@/pages/admin/cursos/course-payment-links";
+import EnhancedCoursePaymentLinksPage from "@/pages/admin/cursos/enhanced-course-payment-links";
+import { PaymentLinksManager } from "@/components/payment-links/payment-links-manager";
+import { EnhancedPaymentLinksManager } from "@/components/payment-links/enhanced-payment-links-manager";
 // Import polo pages
 import PoloEnrollmentsPage from "@/pages/polo/enrollments-page";
 import PoloNewEnrollmentPage from "@/pages/polo/new-enrollment-page";
@@ -131,9 +144,14 @@ function Router() {
       <Route path="/portal-selection" component={PortalSelectionPage} />
       <Route path="/admin">
         {() => {
+          // Se o usuário já estiver autenticado como administrador, redirecionar para o dashboard
           if (user && user.portalType === "admin") {
+            console.log("Usuário já autenticado como admin, redirecionando para dashboard");
             return <Redirect to="/admin/dashboard" />;
           }
+          // Caso contrário, mostrar a página de login do admin
+          console.log("Exibindo página de login do admin");
+          // Usar o componente de autenticação do diretório admin/autenticacao
           return <AdminAuthPage />;
         }}
       </Route>
@@ -198,9 +216,6 @@ function Router() {
       <Route path="/student/financial">
         {() => user?.portalType === "student" ? <StudentFinancialPage /> : <Redirect to="/auth" />}
       </Route>
-      <Route path="/student/financeiro">
-        {() => user?.portalType === "student" ? <Redirect to="/student/financial" /> : <Redirect to="/auth" />}
-      </Route>
       <ProtectedRoute path="/partner/dashboard" portalType="partner" />
       <ProtectedRoute path="/polo/dashboard" portalType="polo" />
       <Route path="/polo/enrollments">
@@ -221,6 +236,19 @@ function Router() {
       <Route path="/polo/sales-links">
         {() => user?.portalType === "polo" ? <PoloSalesLinksPage /> : <Redirect to="/polo" />}
       </Route>
+      
+      {/* Rotas de Matrícula Simplificada para o Portal do Polo */}
+      <Route path="/polo/simplified-enrollment" exact>
+        {() => user?.portalType === "polo" ? <PoloSimplifiedEnrollmentPage /> : <Redirect to="/polo" />}
+      </Route>
+      
+      <Route path="/polo/simplified-enrollment/new">
+        {() => user?.portalType === "polo" ? <PoloSimplifiedEnrollmentNewPage /> : <Redirect to="/polo" />}
+      </Route>
+      
+      <Route path="/polo/simplified-enrollment/:id">
+        {() => user?.portalType === "polo" ? <PoloSimplifiedEnrollmentDetailsPage /> : <Redirect to="/polo" />}
+      </Route>
       <ProtectedRoute path="/admin/dashboard" portalType="admin" />
       <Route path="/admin/disciplines">
         {() => user?.portalType === "admin" ? <DisciplinesPage /> : <Redirect to="/admin" />}
@@ -239,12 +267,14 @@ function Router() {
       <Route path="/admin/ebooks">
         {() => user?.portalType === "admin" ? <EbooksIndexPage /> : <Redirect to="/admin" />}
       </Route>
+      {/* Rotas de geração avançada temporariamente desabilitadas */}
       <Route path="/admin/ebooks/generate">
-        {() => user?.portalType === "admin" ? <EbooksGeneratePage /> : <Redirect to="/admin" />}
+        {() => user?.portalType === "admin" ? <Redirect to="/admin/ebooks" /> : <Redirect to="/admin" />}
       </Route>
+      {/* Rota avançada temporariamente desabilitada
       <Route path="/admin/ebooks/advanced-generate">
-        {() => user?.portalType === "admin" ? <AdvancedGenerateEBookPage /> : <Redirect to="/admin" />}
-      </Route>
+        {() => user?.portalType === "admin" ? <EbooksAdvancedGeneratePage /> : <Redirect to="/admin" />}
+      </Route> */}
       <Route path="/admin/ebooks/:id/edit">
         {() => user?.portalType === "admin" ? <EbookEditPage /> : <Redirect to="/admin" />}
       </Route>
@@ -336,6 +366,30 @@ function Router() {
       
       <Route path="/admin/certification/signers">
         {() => user?.portalType === "admin" ? <CertificationSignersPage /> : <Redirect to="/admin" />}
+      </Route>
+      
+      {/* Rotas para Links de Pagamento de Cursos */}
+      <Route path="/admin/cursos/payment-links">
+        {() => user?.portalType === "admin" ? <CoursePaymentLinksPage /> : <Redirect to="/admin" />}
+      </Route>
+      
+      {/* Rota aprimorada para gestão de links de pagamento */}
+      <Route path="/admin/cursos/enhanced-payment-links">
+        {() => user?.portalType === "admin" ? <EnhancedCoursePaymentLinksPage /> : <Redirect to="/admin" />}
+      </Route>
+      
+      <Route path="/admin/cursos/:id/payment-links">
+        {() => user?.portalType === "admin" ? <PaymentLinksManager /> : <Redirect to="/admin" />}
+      </Route>
+      
+      <Route path="/admin/cursos/:id/enhanced-payment-links">
+        {({params}) => user?.portalType === "admin" ? (
+          <EnhancedPaymentLinksManager courseId={parseInt(params.id)} courseName="" />
+        ) : <Redirect to="/admin" />}
+      </Route>
+      
+      <Route path="/admin/academico/cursos/:id/payment-links">
+        {() => user?.portalType === "admin" ? <PaymentLinksManager /> : <Redirect to="/admin" />}
       </Route>
       
       {/* Rotas do Módulo CRM */}
@@ -469,6 +523,36 @@ function Router() {
       
       <Route path="/admin/crm/contacts/new">
         {() => user?.portalType === "admin" ? <NewContactPage /> : <Redirect to="/admin" />}
+      </Route>
+      
+      {/* Redirecionamento da URL antiga para a nova rota */}
+      <Route path="/admin/crm/simplified-enrollment">
+        {() => <Redirect to="/admin/crm/new-simplified-enrollments" />}
+      </Route>
+      
+      <Route path="/admin/crm/simplified-enrollment/:id">
+        {({params}) => {
+          // Recebe o parâmetro diretamente como props
+          return <Redirect to={`/admin/crm/new-simplified-enrollments/${params.id}`} />;
+        }}
+      </Route>
+      
+      {/* Novas rotas de matrículas simplificadas V2 */}
+      <Route path="/admin/crm/new-simplified-enrollments">
+        {() => user?.portalType === "admin" ? <NewSimplifiedEnrollmentPage /> : <Redirect to="/admin" />}
+      </Route>
+      
+      <Route path="/admin/crm/new-simplified-enrollments/create">
+        {() => user?.portalType === "admin" ? <NewSimplifiedEnrollmentCreatePage /> : <Redirect to="/admin" />}
+      </Route>
+      
+      <Route path="/admin/crm/new-simplified-enrollments/:id">
+        {() => user?.portalType === "admin" ? <NewSimplifiedEnrollmentDetailsPage /> : <Redirect to="/admin" />}
+      </Route>
+      
+      {/* Página de teste para análise de documentos */}
+      <Route path="/admin/crm/document-analysis-test">
+        {() => user?.portalType === "admin" ? <DocumentAnalysisTestPage /> : <Redirect to="/admin" />}
       </Route>
       
       {/* Rotas do Módulo Financeiro */}

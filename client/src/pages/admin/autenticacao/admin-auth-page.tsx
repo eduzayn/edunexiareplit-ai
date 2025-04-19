@@ -30,40 +30,24 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export default function AdminAuthPage() {
   const { user, loginMutation, logoutMutation } = useAuth();
   const [, navigate] = useLocation();
-  const [loginSuccess, setLoginSuccess] = useState(false);
   
-  // Efeito para verificar e limpar qualquer autenticação existente
+  // Verificar se o usuário já está autenticado
   useEffect(() => {
-    const prepareAuthState = async () => {
-      if (user) {
-        try {
-          console.log("Usuário já autenticado, fazendo logout para limpar estado do portal admin");
-          
-          // Limpar cache e fazer logout se o usuário já estiver autenticado
-          await logoutMutation.mutateAsync();
-          
-          // Limpar todas as queries em cache para garantir um estado limpo
-          queryClient.removeQueries();
-          
-          console.log("Autenticação anterior limpa com sucesso");
-        } catch (error) {
-          console.error("Erro ao limpar autenticação anterior:", error);
-        }
-      }
-    };
-    
-    prepareAuthState();
-  }, []);
-  
-  // Efeito para redirecionar após login bem-sucedido
-  useEffect(() => {
-    // Se o login foi bem-sucedido e o usuário está disponível com o portalType correto
-    if (loginSuccess && user && user.portalType === 'admin') {
-      console.log("Login bem-sucedido, redirecionando para o Portal Administrativo");
-      // Usar window.location para forçar um recarregamento completo
-      window.location.href = "/admin/dashboard";
+    if (user && user.portalType === 'admin') {
+      console.log("Usuário já autenticado como admin, redirecionando para dashboard");
+      navigate("/admin/dashboard");
     }
-  }, [loginSuccess, user]);
+  }, [user, navigate]);
+  
+  // Comentamos esta limpeza automática para evitar ciclos de autenticação
+  // useEffect(() => {
+  //   const prepareAuthState = async () => {
+  //     // Limpamos o cache da query do usuário para garantir que dados novos sejam carregados
+  //     queryClient.removeQueries({ queryKey: ["/api/user"] });
+  //   };
+  //   
+  //   prepareAuthState();
+  // }, []);
   
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -78,20 +62,18 @@ export default function AdminAuthPage() {
     console.log("Tentando login como admin com portalType:", "admin");
     
     try {
-      await loginMutation.mutateAsync({
+      const user = await loginMutation.mutateAsync({
         username: data.username,
         password: data.password,
         portalType: "admin",
       });
       
-      // Definir o estado de login bem-sucedido
-      setLoginSuccess(true);
-      
       // Forçar uma nova consulta para obter as informações do usuário mais atualizadas
       await queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       
-      // O redirecionamento será tratado pelo useEffect acima
-      console.log("Login bem-sucedido, preparando acesso ao Portal Administrativo...");
+      // Redirecionamento para o dashboard admin
+      console.log("Login bem-sucedido, redirecionando para o Portal Administrativo...");
+      navigate("/admin/dashboard");
     } catch (error) {
       console.error("Erro no login:", error);
     }

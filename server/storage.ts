@@ -11,6 +11,7 @@ import { users, type User, type InsertUser,
   financialCategories, type FinancialCategory, type InsertFinancialCategory,
   enrollments, type Enrollment, type InsertEnrollment,
   enrollmentStatusHistory, type EnrollmentStatusHistory, type InsertEnrollmentStatusHistory,
+  simplifiedEnrollments, type SimplifiedEnrollment, type InsertSimplifiedEnrollment,
   contractTemplates, type ContractTemplate, type InsertContractTemplate,
   contracts, type Contract, type InsertContract,
   // CRM
@@ -223,6 +224,22 @@ export interface IStorage {
   updatePayment(id: number, payment: Partial<InsertPayment>): Promise<Payment | undefined>;
   deletePayment(id: number): Promise<boolean>;
   updateInvoiceAfterPayment(invoiceId: number): Promise<Invoice | undefined>;
+  
+  // Matrículas Simplificadas
+  getSimplifiedEnrollment(id: number): Promise<SimplifiedEnrollment | undefined>;
+  getSimplifiedEnrollmentByExternalReference(externalReference: string): Promise<SimplifiedEnrollment | undefined>;
+  getSimplifiedEnrollments(
+    status?: string,
+    courseId?: number,
+    poloId?: number,
+    institutionId?: number,
+    limit?: number,
+    offset?: number
+  ): Promise<SimplifiedEnrollment[]>;
+  createSimplifiedEnrollment(enrollment: InsertSimplifiedEnrollment): Promise<SimplifiedEnrollment>;
+  updateSimplifiedEnrollment(id: number, enrollment: Partial<SimplifiedEnrollment>): Promise<SimplifiedEnrollment | undefined>;
+  updateSimplifiedEnrollmentStatus(id: number, status: string, processedById?: number, errorDetails?: string): Promise<SimplifiedEnrollment | undefined>;
+  processSimplifiedEnrollment(id: number, enrollmentId: number, processedById: number): Promise<SimplifiedEnrollment | undefined>;
   
   // E-Books Interativos
   getEBook(id: number): Promise<EBook | undefined>;
@@ -2057,6 +2074,461 @@ export class DatabaseStorage implements IStorage {
     
     // Atualizar o status da fatura
     return await this.updateInvoiceStatus(invoiceId, newStatus);
+  }
+
+  // ==================== Matrículas Simplificadas ====================
+  async getSimplifiedEnrollment(id: number): Promise<SimplifiedEnrollment | undefined> {
+    try {
+      // Usar o Drizzle ORM em vez de SQL raw para buscar a matrícula
+      const [enrollment] = await db
+        .select()
+        .from(simplifiedEnrollments)
+        .where(eq(simplifiedEnrollments.id, id))
+        .limit(1);
+      
+      if (!enrollment) {
+        return undefined;
+      }
+      
+      // Buscar dados do curso relacionado
+      let courseName: string | undefined;
+      if (enrollment.course_id) {
+        const course = await this.getCourse(enrollment.course_id);
+        courseName = course?.name;
+      }
+      
+      // Buscar dados do polo relacionado
+      let poloName: string | undefined;
+      if (enrollment.polo_id) {
+        const polo = await this.getPolo(enrollment.polo_id);
+        poloName = polo?.name;
+      }
+      
+      // Buscar dados da instituição relacionada
+      let institutionName: string | undefined;
+      if (enrollment.institution_id) {
+        const institution = await this.getInstitution(enrollment.institution_id);
+        institutionName = institution?.name;
+      }
+      
+      // Converter resultado para objeto SimplifiedEnrollment com os dados extras
+      return {
+        id: enrollment.id,
+        externalReference: enrollment.external_reference,
+        studentName: enrollment.student_name,
+        studentEmail: enrollment.student_email,
+        studentCpf: enrollment.student_cpf,
+        courseId: enrollment.course_id,
+        courseName: courseName,
+        poloId: enrollment.polo_id,
+        poloName: poloName,
+        institutionId: enrollment.institution_id,
+        institutionName: institutionName,
+        financialPlanId: enrollment.financial_plan_id,
+        amount: enrollment.amount,
+        asaasCustomerId: enrollment.asaas_customer_id,
+        paymentLinkUrl: enrollment.payment_link_url,
+        paymentLinkId: enrollment.payment_link_id,
+        paymentId: null, // Coluna que ainda não existe no banco
+        status: enrollment.status,
+        enrollmentId: enrollment.enrollment_id,
+        sourceChannel: enrollment.source_channel,
+        createdById: enrollment.created_by_id,
+        processedById: enrollment.processed_by_id,
+        createdAt: enrollment.created_at,
+        updatedAt: enrollment.updated_at,
+        processedAt: enrollment.processed_at,
+        errorDetails: enrollment.error_details,
+        webhookData: enrollment.webhook_data
+      };
+    } catch (error) {
+      console.error("Erro ao buscar matrícula simplificada:", error);
+      return undefined;
+    }
+  }
+
+  async getSimplifiedEnrollmentByExternalReference(externalReference: string): Promise<SimplifiedEnrollment | undefined> {
+    try {
+      // Usar o Drizzle ORM em vez de SQL raw
+      const [enrollment] = await db
+        .select()
+        .from(simplifiedEnrollments)
+        .where(eq(simplifiedEnrollments.externalReference, externalReference))
+        .limit(1);
+      
+      if (!enrollment) {
+        return undefined;
+      }
+      
+      // Buscar dados do curso relacionado
+      let courseName: string | undefined;
+      if (enrollment.course_id) {
+        const course = await this.getCourse(enrollment.course_id);
+        courseName = course?.name;
+      }
+      
+      // Buscar dados do polo relacionado
+      let poloName: string | undefined;
+      if (enrollment.polo_id) {
+        const polo = await this.getPolo(enrollment.polo_id);
+        poloName = polo?.name;
+      }
+      
+      // Buscar dados da instituição relacionada
+      let institutionName: string | undefined;
+      if (enrollment.institution_id) {
+        const institution = await this.getInstitution(enrollment.institution_id);
+        institutionName = institution?.name;
+      }
+      
+      // Converter resultado para objeto SimplifiedEnrollment com dados extras
+      return {
+        id: enrollment.id,
+        externalReference: enrollment.external_reference,
+        studentName: enrollment.student_name,
+        studentEmail: enrollment.student_email,
+        studentCpf: enrollment.student_cpf,
+        courseId: enrollment.course_id,
+        courseName: courseName,
+        poloId: enrollment.polo_id,
+        poloName: poloName,
+        institutionId: enrollment.institution_id,
+        institutionName: institutionName,
+        financialPlanId: enrollment.financial_plan_id,
+        amount: enrollment.amount,
+        asaasCustomerId: enrollment.asaas_customer_id,
+        paymentLinkUrl: enrollment.payment_link_url,
+        paymentLinkId: enrollment.payment_link_id,
+        paymentId: null, // Coluna que ainda não existe no banco
+        status: enrollment.status,
+        enrollmentId: enrollment.enrollment_id,
+        sourceChannel: enrollment.source_channel,
+        createdById: enrollment.created_by_id,
+        processedById: enrollment.processed_by_id,
+        createdAt: enrollment.created_at,
+        updatedAt: enrollment.updated_at,
+        processedAt: enrollment.processed_at,
+        errorDetails: enrollment.error_details,
+        webhookData: enrollment.webhook_data
+      };
+    } catch (error) {
+      console.error("Erro ao buscar matrícula simplificada por referência externa:", error);
+      return undefined;
+    }
+  }
+
+  async getSimplifiedEnrollments(
+    status?: string,
+    courseId?: number,
+    poloId?: number,
+    institutionId?: number,
+    limit: number = 50,
+    offset: number = 0
+  ): Promise<SimplifiedEnrollment[]> {
+    try {
+      // Construir a query usando o Drizzle ORM
+      let query = db.select().from(simplifiedEnrollments);
+      
+      // Adicionar filtros
+      const filters = [];
+      
+      if (status) {
+        filters.push(eq(simplifiedEnrollments.status, status as any));
+      }
+      
+      if (courseId) {
+        filters.push(eq(simplifiedEnrollments.courseId, courseId));
+      }
+      
+      if (poloId) {
+        filters.push(eq(simplifiedEnrollments.poloId, poloId));
+      }
+      
+      if (institutionId) {
+        filters.push(eq(simplifiedEnrollments.institutionId, institutionId));
+      }
+      
+      // Aplicar filtros se houver algum
+      if (filters.length > 0) {
+        query = query.where(and(...filters));
+      }
+      
+      // Ordenação, limite e offset
+      query = query
+        .orderBy(desc(simplifiedEnrollments.createdAt))
+        .limit(limit)
+        .offset(offset);
+      
+      // Executar a consulta
+      const enrollments = await query;
+      
+      // Buscar informações adicionais de cursos, polos e instituições
+      const coursesMap = new Map<number, any>();
+      const polosMap = new Map<number, any>();
+      const institutionsMap = new Map<number, any>();
+      
+      // Coletar IDs únicos
+      const courseIds = [...new Set(enrollments.map(e => e.course_id).filter(Boolean))];
+      const poloIds = [...new Set(enrollments.map(e => e.polo_id).filter(Boolean))];
+      const institutionIds = [...new Set(enrollments.map(e => e.institution_id).filter(Boolean))];
+      
+      // Buscar cursos em lote
+      if (courseIds.length > 0) {
+        try {
+          // Importar a tabela de cursos explicitamente para evitar conflito de nomes
+          const { courses: coursesTable } = await import('@shared/schema');
+          
+          const courseResults = await db
+            .select()
+            .from(coursesTable)
+            .where(inArray(coursesTable.id, courseIds));
+          
+          courseResults.forEach(course => {
+            coursesMap.set(course.id, course);
+          });
+        } catch (error) {
+          console.error("Erro ao buscar cursos:", error);
+        }
+      }
+      
+      // Buscar polos em lote
+      if (poloIds.length > 0) {
+        try {
+          // Importar a tabela de polos explicitamente para evitar conflito de nomes
+          const { polos: polosTable } = await import('@shared/schema');
+          
+          const poloResults = await db
+            .select()
+            .from(polosTable)
+            .where(inArray(polosTable.id, poloIds));
+          
+          poloResults.forEach(polo => {
+            polosMap.set(polo.id, polo);
+          });
+        } catch (error) {
+          console.error("Erro ao buscar polos:", error);
+        }
+      }
+      
+      // Buscar instituições em lote
+      if (institutionIds.length > 0) {
+        try {
+          // Importar a tabela de instituições explicitamente para evitar conflito de nomes
+          const { institutions: institutionsTable } = await import('@shared/schema');
+          
+          const institutionResults = await db
+            .select()
+            .from(institutionsTable)
+            .where(inArray(institutionsTable.id, institutionIds));
+          
+          institutionResults.forEach(institution => {
+            institutionsMap.set(institution.id, institution);
+          });
+        } catch (error) {
+          console.error("Erro ao buscar instituições:", error);
+        }
+      }
+      
+      // Converter resultado para objetos SimplifiedEnrollment com dados relacionados
+      return Promise.all(enrollments.map(async (row) => {
+        // Buscar dados do curso relacionado
+        let courseName: string | undefined;
+        if (row.course_id) {
+          const course = coursesMap.get(row.course_id) || await this.getCourse(row.course_id);
+          courseName = course?.name;
+        }
+        
+        // Buscar dados do polo relacionado
+        let poloName: string | undefined;
+        if (row.polo_id) {
+          const polo = polosMap.get(row.polo_id) || await this.getPolo(row.polo_id);
+          poloName = polo?.name;
+        }
+        
+        // Buscar dados da instituição relacionada
+        let institutionName: string | undefined;
+        if (row.institution_id) {
+          const institution = institutionsMap.get(row.institution_id) || await this.getInstitution(row.institution_id);
+          institutionName = institution?.name;
+        }
+        
+        return {
+          id: row.id,
+          externalReference: row.external_reference,
+          studentName: row.student_name,
+          studentEmail: row.student_email,
+          studentCpf: row.student_cpf,
+          courseId: row.course_id,
+          courseName: courseName,
+          poloId: row.polo_id,
+          poloName: poloName,
+          institutionId: row.institution_id,
+          institutionName: institutionName,
+          financialPlanId: row.financial_plan_id,
+          amount: row.amount,
+          asaasCustomerId: row.asaas_customer_id,
+          paymentLinkUrl: row.payment_link_url,
+          paymentLinkId: row.payment_link_id,
+          paymentId: null, // Coluna que ainda não existe no banco
+          status: row.status,
+          enrollmentId: row.enrollment_id,
+          sourceChannel: row.source_channel,
+          createdById: row.created_by_id,
+          processedById: row.processed_by_id,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+          processedAt: row.processed_at,
+          errorDetails: row.error_details,
+          webhookData: row.webhook_data
+        };
+      }));
+    } catch (error) {
+      console.error("Erro ao buscar matrículas simplificadas:", error);
+      return [];
+    }
+  }
+
+  async createSimplifiedEnrollment(enrollment: InsertSimplifiedEnrollment): Promise<SimplifiedEnrollment> {
+    try {
+      // Importar o serviço de matrícula simplificada
+      const { SimplifiedEnrollmentService } = await import('./services/simplified-enrollment-service');
+      
+      // Se não foi fornecida uma referência externa, gerar uma
+      const enrollmentData = { ...enrollment };
+      if (!enrollmentData.externalReference) {
+        enrollmentData.externalReference = SimplifiedEnrollmentService.generateExternalReference();
+      }
+      
+      // Criar a matrícula simplificada
+      const [newEnrollment] = await db
+        .insert(simplifiedEnrollments)
+        .values(enrollmentData)
+        .returning();
+      
+      // Buscar informações adicionais necessárias
+      const course = await this.getCourse(enrollmentData.courseId);
+      if (!course) {
+        throw new Error(`Curso não encontrado: ${enrollmentData.courseId}`);
+      }
+      
+      try {
+        // Criar/buscar o cliente no Asaas
+        const customer = await SimplifiedEnrollmentService.createOrGetAsaasCustomer(
+          enrollmentData.studentName,
+          enrollmentData.studentEmail,
+          enrollmentData.studentCpf
+        );
+        
+        // Criar link de pagamento no Asaas
+        const paymentLink = await SimplifiedEnrollmentService.createPaymentLink(
+          customer.id,
+          enrollmentData.amount,
+          course.name,
+          enrollmentData.externalReference
+        );
+        
+        // Preparar objeto para atualização
+        const updateData: Partial<SimplifiedEnrollment> = {
+          asaasCustomerId: customer.id,
+          paymentLinkId: paymentLink.id,
+          paymentLinkUrl: paymentLink.url,
+          status: 'waiting_payment' // Atualizar status para indicar que o link foi gerado com sucesso
+        };
+        
+        // Se tiver um paymentId (quando usamos o método alternativo de cobrança direta)
+        if (paymentLink.paymentId) {
+          updateData.paymentId = paymentLink.paymentId;
+        }
+        
+        // Atualizar a matrícula com informações do Asaas
+        await this.updateSimplifiedEnrollment(newEnrollment.id, updateData);
+        
+        // Carregar a versão atualizada
+        const [updatedEnrollment] = await db
+          .select()
+          .from(simplifiedEnrollments)
+          .where(eq(simplifiedEnrollments.id, newEnrollment.id));
+        
+        return updatedEnrollment;
+      } catch (asaasError) {
+        console.error('Erro ao integrar com Asaas:', asaasError);
+        
+        // Atualizar o status para erro
+        await this.updateSimplifiedEnrollmentStatus(
+          newEnrollment.id, 
+          'failed', 
+          undefined, 
+          `Erro na integração com Asaas: ${asaasError.message}`
+        );
+        
+        // Retornar a matrícula mesmo com erro
+        return newEnrollment;
+      }
+    } catch (error) {
+      console.error('Erro ao criar matrícula simplificada:', error);
+      throw error;
+    }
+  }
+
+  async updateSimplifiedEnrollment(id: number, enrollment: Partial<SimplifiedEnrollment>): Promise<SimplifiedEnrollment | undefined> {
+    const [updatedEnrollment] = await db
+      .update(simplifiedEnrollments)
+      .set({
+        ...enrollment,
+        updatedAt: new Date()
+      })
+      .where(eq(simplifiedEnrollments.id, id))
+      .returning();
+    return updatedEnrollment;
+  }
+
+  async updateSimplifiedEnrollmentStatus(
+    id: number, 
+    status: string, 
+    processedById?: number, 
+    errorDetails?: string
+  ): Promise<SimplifiedEnrollment | undefined> {
+    const updates: Partial<SimplifiedEnrollment> = {
+      status: status as any,
+      updatedAt: new Date()
+    };
+    
+    if (processedById) {
+      updates.processedById = processedById;
+      updates.processedAt = new Date();
+    }
+    
+    if (errorDetails) {
+      updates.errorDetails = errorDetails;
+    }
+    
+    const [updatedEnrollment] = await db
+      .update(simplifiedEnrollments)
+      .set(updates)
+      .where(eq(simplifiedEnrollments.id, id))
+      .returning();
+    
+    return updatedEnrollment;
+  }
+
+  async processSimplifiedEnrollment(
+    id: number, 
+    enrollmentId: number, 
+    processedById: number
+  ): Promise<SimplifiedEnrollment | undefined> {
+    const [updatedEnrollment] = await db
+      .update(simplifiedEnrollments)
+      .set({
+        status: 'completed',
+        enrollmentId,
+        processedById,
+        processedAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(simplifiedEnrollments.id, id))
+      .returning();
+    
+    return updatedEnrollment;
   }
 
   // ==================== E-Books Interativos ====================

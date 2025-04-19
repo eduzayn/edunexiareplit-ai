@@ -9,6 +9,7 @@ export type PortalType = typeof portalTypes[number];
 
 // Enums
 export const courseStatusEnum = pgEnum("course_status", ["draft", "published", "archived"]);
+export const paymentLinkStatusEnum = pgEnum("payment_link_status", ["Active", "ImageError", "Error"]);
 export const evaluationMethodEnum = pgEnum("evaluation_method", ["quiz", "exam", "project", "mixed"]);
 export const courseModalityEnum = pgEnum("course_modality", ["ead", "hybrid", "presential"]);
 export const videoSourceEnum = pgEnum("video_source", ["youtube", "onedrive", "google_drive", "vimeo", "upload"]);
@@ -20,6 +21,7 @@ export const poloStatusEnum = pgEnum("polo_status", ["active", "inactive"]);
 export const enrollmentStatusEnum = pgEnum("enrollment_status", ["pending_payment", "active", "completed", "cancelled", "suspended"]);
 export const paymentGatewayEnum = pgEnum("payment_gateway", ["asaas", "lytex"]);
 export const integrationTypeEnum = pgEnum("integration_type", ["asaas", "lytex", "openai", "elevenlabs", "zapi"]);
+export const simplifiedEnrollmentStatusEnum = pgEnum("simplified_enrollment_status", ["pending", "waiting_payment", "processing", "completed", "cancelled", "failed"]);
 
 // Enums para o módulo CRM e Gestão
 // Enums para outros módulos
@@ -107,6 +109,11 @@ export const courses = pgTable("courses", {
   thumbnail: text("thumbnail"), // URL da imagem de capa
   requirements: text("requirements"), // Pré-requisitos (opcional)
   objectives: text("objectives"), // Objetivos do curso
+  
+  // Links de pagamento para o curso (integração Asaas)
+  paymentLinkId: text("payment_link_id"), // ID do link de pagamento no Asaas
+  paymentLinkUrl: text("payment_link_url"), // URL do link de pagamento
+  paymentOptions: json("payment_options").$type<string>(), // JSON com todas as opções de pagamento
   category: text("category"), // Categoria do curso
   modality: courseModalityEnum("modality").default("ead").notNull(), // Modalidade (EAD, híbrido, presencial)
   evaluationMethod: evaluationMethodEnum("evaluation_method").default("mixed"),
@@ -185,6 +192,62 @@ export const polos = pgTable("polos", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+
+// Links de pagamento personalizados - Integração Asaas
+export const edunexaPaymentLinks = pgTable("edunexa_payment_links", {
+  id: serial("id").primaryKey(),
+  asaasPaymentLinkId: varchar("asaas_payment_link_id"),
+  asaasPaymentLinkUrl: text("asaas_payment_link_url"),
+  linkName: varchar("link_name", { length: 255 }).notNull(),
+  amount: doublePrecision("amount").notNull(),
+  description: text("description"),
+  courseId: integer("course_id").notNull().references(() => courses.id, { onDelete: 'cascade' }),
+  generatingConsultantId: integer("generating_consultant_id").references(() => users.id),
+  billingType: varchar("billing_type", { length: 50 }).default("UNDEFINED"),
+  chargeType: varchar("charge_type", { length: 50 }).default("DETACHED"),
+  status: varchar("status", { length: 20 }).default("active"),
+  internalStatus: paymentLinkStatusEnum("internal_status").default("Active"),
+  customImageUrl: text("custom_image_url"),
+  
+  // Os seguintes campos são null se não forem coletados inicialmente
+  payerName: text("payer_name"),
+  payerCpf: varchar("payer_cpf", { length: 20 }),
+  payerEmail: varchar("payer_email", { length: 255 }),
+  notificationEnabled: boolean("notification_enabled").default(true),
+  externalReference: text("external_reference"),
+  
+  // Campos de data
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Schema para validação da criação de links de pagamento
+export const insertEdunexaPaymentLinkSchema = createInsertSchema(edunexaPaymentLinks)
+  .omit({ 
+    id: true,  
+    createdAt: true, 
+    updatedAt: true, 
+    asaasPaymentLinkId: true, 
+    asaasPaymentLinkUrl: true 
+  })
+  .extend({
+    amount: z.number().positive("O valor deve ser maior que zero"),
+    linkName: z.string().min(3, "O nome do link deve ter pelo menos 3 caracteres"),
+    notificationEnabled: z.boolean().optional().default(true),
+    billingType: z.string().optional().default("UNDEFINED"),
+    chargeType: z.string().optional().default("DETACHED"),
+    description: z.string().optional(),
+    // Campos do pagador são opcionais
+    payerName: z.string().optional(),
+    payerCpf: z.string().optional(),
+    payerEmail: z.string().optional().or(z.literal('')),
+    // Campo de imagem personalizada
+    customImageUrl: z.string().optional()
+  });
+
+// Tipos derivados do schema
+export type InsertEdunexaPaymentLink = z.infer<typeof insertEdunexaPaymentLinkSchema>;
+export type EdunexaPaymentLink = typeof edunexaPaymentLinks.$inferSelect;
 
 // Transações financeiras
 export const financialTransactions = pgTable("financial_transactions", {
@@ -265,6 +328,46 @@ export const enrollmentStatusHistory = pgTable("enrollment_status_history", {
   sourceChannel: text("source_channel"), // Canal de origem da operação (admin, polo, website)
   ipAddress: text("ip_address"), // Endereço IP de onde veio a requisição
   userAgent: text("user_agent"), // Informações do navegador/dispositivo
+});
+
+// Matrículas Simplificadas (integração com Asaas)
+export const simplifiedEnrollments = pgTable("simplified_enrollments", {
+  id: serial("id").primaryKey(),
+  externalReference: text("external_reference").notNull().unique(), // Referência única para rastrear no webhook
+  
+  // Dados do aluno
+  studentName: text("student_name").notNull(),
+  studentEmail: text("student_email").notNull(),
+  studentCpf: text("student_cpf").notNull(),
+  
+  // Curso e Plano Financeiro
+  courseId: integer("course_id").notNull().references(() => courses.id),
+  financialPlanId: integer("financial_plan_id"), // ID do plano financeiro (se aplicável)
+  amount: doublePrecision("amount").notNull(), // Valor da primeira parcela
+  
+  // Dados do Asaas
+  asaasCustomerId: text("asaas_customer_id"), // ID do cliente no Asaas
+  paymentLinkUrl: text("payment_link_url"), // URL do link de pagamento
+  paymentLinkId: text("payment_link_id"), // ID do link de pagamento
+  paymentId: text("payment_id"), // ID do pagamento quando confirmado
+  
+  // Status e processamento
+  status: simplifiedEnrollmentStatusEnum("status").default("pending").notNull(),
+  enrollmentId: integer("enrollment_id").references(() => enrollments.id), // Referência à matrícula após processamento
+  
+  // Controle e Auditoria
+  poloId: integer("polo_id").references(() => polos.id), // Polo que realizou a operação (se aplicável)
+  institutionId: integer("institution_id").references(() => institutions.id),
+  sourceChannel: text("source_channel").default("polo_portal"), // Canal de origem: admin, polo_portal
+  
+  // Metadados
+  createdById: integer("created_by_id").references(() => users.id),
+  processedById: integer("processed_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  processedAt: timestamp("processed_at"), // Data de processamento
+  errorDetails: text("error_details"), // Detalhes de erro, se houver
+  webhookData: json("webhook_data"), // Dados do webhook recebido (quando processado)
 });
 
 // Auditoria de matrículas (mais abrangente que o histórico de status)
@@ -749,6 +852,7 @@ export const disciplinesRelations = relations(disciplines, ({ many, one }) => ({
 export const coursesRelations = relations(courses, ({ many, one }) => ({
   courseDisciplines: many(courseDisciplines),
   enrollments: many(enrollments),
+  simplifiedEnrollments: many(simplifiedEnrollments),
   createdBy: one(users, {
     fields: [courses.createdById],
     references: [users.id],
@@ -859,6 +963,34 @@ export const enrollmentAuditsRelations = relations(enrollmentAudits, ({ one }) =
   polo: one(polos, {
     fields: [enrollmentAudits.poloId],
     references: [polos.id],
+  }),
+}));
+
+// Relações de Matrículas Simplificadas
+export const simplifiedEnrollmentsRelations = relations(simplifiedEnrollments, ({ one }) => ({
+  course: one(courses, {
+    fields: [simplifiedEnrollments.courseId],
+    references: [courses.id],
+  }),
+  enrollment: one(enrollments, {
+    fields: [simplifiedEnrollments.enrollmentId],
+    references: [enrollments.id],
+  }),
+  polo: one(polos, {
+    fields: [simplifiedEnrollments.poloId],
+    references: [polos.id],
+  }),
+  institution: one(institutions, {
+    fields: [simplifiedEnrollments.institutionId],
+    references: [institutions.id],
+  }),
+  createdBy: one(users, {
+    fields: [simplifiedEnrollments.createdById],
+    references: [users.id],
+  }),
+  processedBy: one(users, {
+    fields: [simplifiedEnrollments.processedById],
+    references: [users.id],
   }),
 }));
 
@@ -1247,6 +1379,29 @@ export const insertEnrollmentSchema = createInsertSchema(enrollments).pick({
 });
 export type InsertEnrollment = z.infer<typeof insertEnrollmentSchema>;
 export type Enrollment = typeof enrollments.$inferSelect;
+
+// Schema para inserção de matrículas simplificadas
+export const insertSimplifiedEnrollmentSchema = createInsertSchema(simplifiedEnrollments).pick({
+  externalReference: true,
+  studentName: true,
+  studentEmail: true,
+  studentCpf: true,
+  courseId: true,
+  financialPlanId: true,
+  amount: true,
+  poloId: true,
+  institutionId: true,
+  sourceChannel: true,
+  createdById: true,
+}).extend({
+  // Tornar campos obrigatórios opcionais para o frontend
+  amount: z.number().optional(),
+  externalReference: z.string().optional(),
+  sourceChannel: z.string().default("admin_portal"),
+  institutionId: z.number(),
+});
+export type InsertSimplifiedEnrollment = z.infer<typeof insertSimplifiedEnrollmentSchema>;
+export type SimplifiedEnrollment = typeof simplifiedEnrollments.$inferSelect;
 
 // Schemas e tipos para Histórico de Status de Matrículas
 export const insertEnrollmentStatusHistorySchema = createInsertSchema(enrollmentStatusHistory).pick({
