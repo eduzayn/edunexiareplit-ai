@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLocation, Link } from 'wouter';
 import StudentSidebar from './student-sidebar';
 import { Menu, X } from 'lucide-react';
@@ -11,62 +11,64 @@ interface StudentLayoutProps {
  * Layout principal para as páginas do portal do estudante
  */
 const StudentLayout: React.FC<StudentLayoutProps> = ({ children }) => {
-  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [location] = useLocation();
-  
-  // Fecha a barra lateral quando a localização muda (navegação em dispositivos móveis)
-  React.useEffect(() => {
-    setIsSidebarOpen(false);
-  }, [location]);
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
-      {/* Sidebar para desktop (visível em telas maiores) */}
-      <div className="hidden md:block">
-        <StudentSidebar />
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      {/* Header do portal do estudante */}
+      <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-10">
+        <div className="container mx-auto px-4 py-3 flex justify-between items-center">
+          <div className="flex items-center">
+            <button
+              onClick={toggleSidebar}
+              className="mr-3 md:hidden text-gray-600 hover:text-gray-900 focus:outline-none"
+              aria-label="Toggle sidebar"
+            >
+              <Menu size={24} />
+            </button>
+            <Link href="/student/dashboard">
+              <a className="flex items-center">
+                <span className="text-xl font-bold text-primary">Edunexia</span>
+                <span className="ml-2 text-sm bg-primary/10 text-primary px-2 py-1 rounded-full">
+                  Aluno
+                </span>
+              </a>
+            </Link>
+          </div>
+
+          <div className="flex items-center space-x-4">
+            <Link href="/student/profile">
+              <a className="text-sm text-gray-600 hover:text-primary">Meu Perfil</a>
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      {/* Container principal */}
+      <div className="flex flex-1">
+        {/* Sidebar */}
+        <StudentSidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
+
+        {/* Conteúdo principal */}
+        <main className="flex-1 p-4 md:p-6 max-w-screen-2xl mx-auto">
+          <div className="bg-white rounded-lg shadow p-4 md:p-6 min-h-[calc(100vh-150px)]">
+            {children}
+          </div>
+        </main>
       </div>
 
-      {/* Overlay para quando a sidebar está aberta em dispositivos móveis */}
-      {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 z-40 bg-black bg-opacity-50 md:hidden"
-          onClick={() => setIsSidebarOpen(false)}
-        />
+      {/* Overlay para fechar o sidebar em telas pequenas */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"
+          onClick={toggleSidebar}
+        ></div>
       )}
-
-      {/* Sidebar para dispositivos móveis (visível quando isSidebarOpen=true) */}
-      {isSidebarOpen && (
-        <div className="fixed inset-y-0 left-0 z-50 w-64 md:hidden">
-          <StudentSidebar 
-            isMobile={true} 
-            onClose={() => setIsSidebarOpen(false)} 
-          />
-        </div>
-      )}
-
-      {/* Conteúdo principal */}
-      <main className="flex-1 flex flex-col h-full overflow-hidden">
-        {/* Cabeçalho para dispositivos móveis */}
-        <header className="bg-white border-b border-gray-200 py-3 px-4 flex items-center justify-between md:hidden">
-          <button
-            onClick={() => setIsSidebarOpen(true)}
-            className="p-1 rounded-md text-gray-600 hover:bg-gray-100"
-          >
-            <Menu size={24} />
-          </button>
-          
-          <Link href="/student" className="flex items-center space-x-1">
-            <span className="font-semibold text-gray-800">Portal do Aluno</span>
-          </Link>
-          
-          <div className="w-8" /> {/* Espaço para equilibrar o layout */}
-        </header>
-
-        {/* Área de rolagem do conteúdo */}
-        <div className="flex-1 overflow-y-auto pb-6">
-          {children}
-        </div>
-      </main>
     </div>
   );
 };
